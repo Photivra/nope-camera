@@ -1,6 +1,6 @@
 # Launch screen
 
-Design version: 1.0.0, direction B · Reach. Proposed 2026-11-18 for release 1.0.0; accepted by the owner the same day with all eight recommendations of section 11 (option B, built on A). Built for 1.0.0; the Simulator results of section 9 are in [docs/TESTING.md](../TESTING.md), "Launch screen".
+Design version: 1.0.0, direction B · Reach. Proposed 2026-11-18 for release 1.0.0; accepted by the owner the same day with all eight recommendations of section 11 (option B, built on A). Built for 1.0.0; the Simulator results of section 9 are in [docs/TESTING.md](../TESTING.md), "Launch screen". Section 13, "Large text and the plate", was proposed 2026-11-18 after the build and is not yet accepted or built.
 
 For the implementer of release 1.0.0. The drawings are in [launch.html](launch.html); each figure named below is `screens/launch-<name>.html` with a PNG beside it. The mark's artwork is [launch-mark.svg](launch-mark.svg). Tokens are in [tokens.md](tokens.md), the rest of the build in [BUILD-SPEC.md](BUILD-SPEC.md).
 
@@ -319,3 +319,66 @@ Stated here so that no wording, test or release note depends on them until they 
 - what iOS shows before the Lock Screen camera's first frame;
 - how Smart Invert treats the launch image;
 - whether an update shows the old launch screen once.
+
+## 13. Large text and the plate
+
+Proposed 2026-11-18, after the build. Not yet accepted; nothing here is built. Decisions are in 13.4.
+
+### 13.1 The finding
+
+At accessibility text sizes the camera uses the scrolling layout (BUILD-SPEC.md 3.12). Section 6.3 lets the plate lie over that layout's rows, as figure `pair-largest` draws it. On iPad at the largest text size the plate covers most of the title of the Ultra Wide lens row, and the contrast audit of `testFirstStartAtTheLargestTextSizeAndRightToLeft` then fails on that row (docs/TESTING.md, "UI tests and accessibility audits"). Which row is under the plate depends on the window's height and the text size, so the finding comes and goes.
+
+The plate is doing what section 6.3 says. The fault is in the design: a control that is drawn and can be pressed has its name covered. Making the plate only as wide as the words (`StartWordsWidth`) removed the band across the window, not the overlap.
+
+### 13.2 The rule
+
+**While the indicator is shown, nothing is drawn under its plate.** The mark, the words and the plate do not move or change: the mark's center stays the window's center, which the hand-off depends on (sections 5 and 7). The scrolling layout gives way instead.
+
+1. **The scrolling content waits.** In the scrolling layout, while `model.isFirstStart`, everything that scrolls (format status, pills, warnings, the picture's frame, the mode card and every row) is laid out but not drawn, takes no touches and is hidden from VoiceOver. When the first start ends it appears with `NopeMotion.fade`, in the same animation that removes the indicator. The pinned row (Last Photo, shutter, Q) is drawn from the start, as in the other layouts, so the shutter and Settings (through Q) are in reach during a slow start.
+2. **The words give way to the pinned row.** If the plate's bottom edge (the window's center, plus 40 pt, plus the height of the wrapped words, plus `NopeSpace.m`) would come within `NopeSpace.s` of the pinned row's top edge, the words and the plate are left out and the mark is shown alone, as in the `.starting` state. This is decided from the layout, once per size of the window, and not from a list of devices. It is for short windows: a small iPhone, a short Stage Manager or Split View window, a language whose words wrap to more lines.
+
+What follows:
+
+- The first frames in the scrolling layout are the launch screen, then the pinned row and the words, then the camera. Rules 4 and 5 of section 7 hold: nothing is drawn and then removed, and only text and controls appear.
+- The plate is over black in every layout again, so it cannot be seen, and the result no longer depends on the window's height.
+- VoiceOver is unchanged: one element, "Starting the camera…", with or without the words, and no announcement. The rows are read once they are drawn.
+- A warning that applies during the first start is shown when the first start ends. A camera that fails or is paused ends the first start, so its message is never held back (section 6.3, "When").
+- The stacked and column layouts are unchanged. So are Night Mode, right to left, the Lock Screen camera and every string.
+
+No figure is added. If this section is accepted, the right half of figure `pair-largest` is redrawn without the rows (status line, picture frame and rows gone; the pinned row, the mark and the words stay), and its caption, the "Largest text sizes" rows of sections 4 and 7 and the plate's sentence in section 6.3 are brought in line.
+
+Considered and not chosen:
+
+| Alternative | Why not |
+| --- | --- |
+| Leave out the words and the plate at every accessibility size | The mark alone would then lie over a row's title with nothing behind it, and the people who chose large text would be the ones without the words. |
+| Move the words above the mark | They would cover the picture's frame or the status line instead, and the plate would still reach the rows under the mark. |
+| Move the indicator clear of the rows | The mark would leave the window's center and the hand-off from the launch image would show a jump. |
+| Hide only the rows the plate touches | Depends on the window's height, which is what made the finding come and go; rows would appear in two steps. |
+| Hold back the controls in every layout | Changes the accepted hand-off of section 7 (the controls appear around the mark) where nothing is covered. |
+
+### 13.3 Build and checks
+
+| File | Change |
+| --- | --- |
+| `Sources/NopeUI/CameraReadyView.swift` (`scrolling`) | The scrolling content is not drawn, takes no touches and is hidden from VoiceOver while `showsStartIndicator` is set; it fades in when it clears. The pinned row is unchanged. |
+| `Sources/NopeUI/StartIndicator.swift` | The words and the plate are left out when part 2 of the rule applies. The room under the mark's center is given by `CameraScreen`, which knows the pinned row's top edge; without it the indicator behaves as today. |
+| `App/NopeAppUITests/LaunchHandOffUITests.swift` | Below. |
+| `docs/TESTING.md`, [launch.html](launch.html), `screens/launch-pair-largest` | The open finding is closed; the figure and its caption are redrawn. |
+
+AC:
+
+- At every accessibility text size, in every window of section 9, no control that is drawn intersects the plate while the indicator is shown, and the mark's frame is the same as at the default size.
+- In the scrolling layout during the first start, the lens rows do not exist for a UI test or for VoiceOver; Take Photo and Quick Menu exist, are whole and can be pressed. When the session runs, the rows exist and the indicator is gone.
+- In a window too short for the words, the indicator has no words and no plate, and its label is still "Starting the camera…".
+- `testFirstStartAtTheLargestTextSizeAndRightToLeft` passes its audit on iPhone and iPad with no finding set aside, in portrait and landscape on iPad.
+- No string is added or changed.
+
+Tests: `testFirstStartAtTheLargestTextSizeAndRightToLeft` also asserts the second point above, before and after the slow start is released. `testFirstStartKeepsTheControlsWhole` runs at the largest text size as well. One new test for the short window, where the UI tests can make one (an iPad window at its smallest size, or the 4.7-inch iPhone with a launch language whose words wrap to three lines); otherwise the fit rule is a unit test of the layout's arithmetic and the short window is a check by hand, recorded in docs/TESTING.md.
+
+### 13.4 Decisions for the owner
+
+| | Decision | Recommendation |
+| --- | --- | --- |
+| 9 | In the scrolling layout, what waits for the first start to end | Everything that scrolls; the pinned row is drawn from the start. The result is the same in every window height. The alternative is to hold back only the rows under the picture and keep the status line and warnings, as figure `pair-largest` has them; it keeps one line of status on screen for the length of the start, and wrapped warnings in a short window can still reach the plate. |
+| 10 | Where the words do not fit above the pinned row | Leave out the words and the plate; the mark alone, VoiceOver unchanged. The alternative, a smaller or single-line text, would not follow the text size. |
