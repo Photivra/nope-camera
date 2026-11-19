@@ -4,8 +4,13 @@ import XCTest
 /// Settings switch, Show Processed Marker (issue #80; BUILD-SPEC.md, 3.2), each with an accessibility audit at the default and largest text
 /// sizes, in the dark setting, in night mode and in right-to-left layout.
 extension NopeAppUITests {
-    /// The first sentence of the processing note.
-    private static let notePhone = "The phone's camera processes this file before nope. receives it."
+    /// The first sentence of the processing note, which names the iPad on iPad.
+    @MainActor
+    private var notePhone: String {
+        deviceText(
+            "The phone's camera processes this file before nope. receives it.",
+            iPad: "The iPad's camera processes this file before nope. receives it.")
+    }
 
     /// The format status's VoiceOver value on the simulated lenses without RAW.
     private static let processedValue = "Processed: no RAW on this lens, HEIF"
@@ -28,7 +33,7 @@ extension NopeAppUITests {
         XCTAssertTrue(chip.waitForExistence(timeout: 15), file: file, line: line)
         chip.tap()
         XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 5), file: file, line: line)
-        let note = element(app, containing: Self.notePhone)
+        let note = element(app, containing: notePhone)
         swipeUntilHittable(app, note)
         XCTAssertTrue(note.exists, file: file, line: line)
     }

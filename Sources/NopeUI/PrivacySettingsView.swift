@@ -207,7 +207,7 @@ struct PrivacySettingsView: View {
                 .accessibilityIdentifier(SettingsID.detailsAlwaysSaved.rawValue)
         } footer: {
             Text(
-                "A photo can't be opened or shown correctly without these. None of them identify you or link your photos.",
+                "A photo can't be opened or shown correctly without these. They describe the camera's sensor and color, not you.",
                 tableName: "Honesty", bundle: .module, comment: "Explains why the locked details are always saved. Must not claim more than the English.")
         }
     }
@@ -259,15 +259,15 @@ struct PrivacySettingsView: View {
         case .dateAndTime: LocalizedStringResource("Off: Photos sorts it by the date it was saved instead.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the date costs. Photos is the system photo library app.")
         case .subSecondTime: LocalizedStringResource("Off: nothing visible changes.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off a metadata item costs: nothing the person can see.")
         case .timeZone: LocalizedStringResource("Off: the photo's local time can't be converted to other time zones.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the time zone costs.")
-        case .cameraMakeAndModel: LocalizedStringResource("Off: apps can't show which device took it.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the camera model costs.")
-        case .lensMakeAndModel: LocalizedStringResource("Off: apps can't show which lens took it.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the lens model costs.")
+        case .cameraMakeAndModel: LocalizedStringResource("Off: the file doesn't name the device.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the camera model costs.")
+        case .lensMakeAndModel: LocalizedStringResource("Off: the file doesn't name the lens.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the lens model costs.")
         case .exactCameraModel: LocalizedStringResource("Off: some RAW editors can't choose their color profile for this camera and use the file's own color data instead. The DNG standard requires this item, so nope. writes a generic value instead.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the exact model costs. RAW and DNG are file format names. Keep \"nope.\" unchanged.")
-        case .lensCorrections: LocalizedStringResource("Off: editors can't automatically correct this lens's distortion and vignetting. The pixels are never corrected either way.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off lens correction instructions costs.")
+        case .lensCorrections: LocalizedStringResource("Off: editors can't automatically correct this lens's distortion and vignetting. The RAW's pixels are never corrected either way.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off lens correction instructions costs.")
         case .exposureSettings: LocalizedStringResource("Shutter speed, ISO, aperture and focal length. Off: you can't see later how the photo was taken.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What the exposure settings are, and what turning them off costs.")
         case .systemVersion: LocalizedStringResource("Off: nothing visible changes.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off a metadata item costs: nothing the person can see.")
         case .makerNotes: LocalizedStringResource("Hold the time since the device restarted and IDs for each photo, which can link your photos. Off: nothing visible changes.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What maker notes contain, and what turning them off costs.")
         case .nameAndCopyright: LocalizedStringResource("Off: nothing is lost. Only written if you enter them.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the name and copyright costs.")
-        case .appNameAndVersion: LocalizedStringResource("Off: apps can't show what made the file.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the app name costs.")
+        case .appNameAndVersion: LocalizedStringResource("Off: the file doesn't name the app that made it.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the app name costs.")
         }
     }
 

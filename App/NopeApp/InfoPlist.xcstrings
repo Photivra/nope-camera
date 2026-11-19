@@ -26,13 +26,13 @@
       }
     },
     "NSLocationWhenInUseUsageDescription" : {
-      "comment" : "Location permission prompt, shown only when the person turns Location on in nope.'s settings. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English.",
+      "comment" : "Location permission prompt, shown only when the person turns Location on in nope.'s settings. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English. \"nope. never sends\": iOS itself may contact Apple to find the position. Draft for the Honesty review.",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "nope. adds where each photo was taken, only while Location is on in nope.'s settings. Your location is never sent anywhere."
+            "value" : "nope. adds where each photo was taken, only while Location is on in nope.'s settings. nope. never sends your location anywhere."
           }
         }
       }

@@ -45,8 +45,8 @@ struct AboutScreen: View {
                 }
                 .settingsRow(.license)
                 Text(
-                    "nope. is free software: you can redistribute it and modify it under the terms of this license.", bundle: .module,
-                    comment: "Plain summary of the GPL. Keep \"nope.\" unchanged.")
+                    "Photivra Nope Camera is free software: you can redistribute it and modify it under the terms of this license.", bundle: .module,
+                    comment: "Plain summary of the GPL on the About screen. Keep \"Photivra Nope Camera\" unchanged.")
                     .foregroundStyle(CameraStyle.secondaryText)
             } header: {
                 Text("License", bundle: .module, comment: "Title of the screen showing the full license text.")
@@ -76,8 +76,8 @@ struct AboutScreen: View {
                 Text("Source Code", bundle: .module, comment: "Section header for where to find the app's source code.")
             } footer: {
                 Text(
-                    "Opens in your browser. nope. itself makes no network connections.", bundle: .module,
-                    comment: "Footer under the source code link. Keep \"nope.\" unchanged.")
+                    "Opens in your browser. Photivra Nope Camera itself makes no network connections.", bundle: .module,
+                    comment: "Footer under the source code link on the About screen. Keep \"Photivra Nope Camera\" unchanged.")
             }
         }
         .navigationTitle(Text(SettingsText.about))

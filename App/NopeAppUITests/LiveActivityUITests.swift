@@ -66,7 +66,7 @@ extension NopeAppUITests {
         }
         XCTAssertTrue(toggle.exists, "Settings offers the Live Activity where the device shows them")
         XCTAssertEqual(toggle.value as? String, "0", "off by default")
-        XCTAssertTrue(element(app, containing: "Counts only; nothing is sent.").exists)
+        XCTAssertTrue(element(app, containing: "Counts only; nope. sends nothing.").exists)
         toggle.switches.firstMatch.tap()
         XCTAssertEqual(toggle.value as? String, "1")
         // Dynamic Type is checked at the largest size by the Settings audits

@@ -308,7 +308,7 @@ public struct SettingsScreen: View {
                 isOn: Binding(get: { settings.signsPhotos }, set: { settings.setSignsPhotos($0) }),
                 title: Text(SettingsText.signEachPhoto),
                 explanation: Text(
-                    "Lets anyone check that the photo hasn't changed since nope. saved it. A signed photo shows that it was taken with nope., and which version.",
+                    "Lets anyone check that the photo hasn't changed since it was signed. The signature names nope. and its version as the maker. It is not proof: anyone could make a file that says the same.",
                     tableName: "Honesty", bundle: .module,
                     comment: "Explains the signing switch. Keep \"nope.\" unchanged. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo; it names the app and its version."))
             .settingsRow(.signEachPhoto)
@@ -412,7 +412,7 @@ public struct SettingsScreen: View {
                     isOn: Binding(get: { settings.showsLiveActivity }, set: { settings.setShowsLiveActivity($0) }),
                     title: Text(SettingsText.liveActivity),
                     explanation: Text(
-                        "Shows a series' progress on the Lock Screen and in the Dynamic Island when you leave nope. Counts only; nothing is sent.",
+                        "Shows a series' progress on the Lock Screen and in the Dynamic Island when you leave nope. Counts only; nope. sends nothing.",
                         tableName: "Honesty", bundle: .module,
                         comment: "Explains the Live Activity switch. Privacy wording: the Live Activity shows only counts and status, and nothing is sent. Keep \"nope.\" unchanged. Lock Screen and Dynamic Island are names of iOS features: use their names in the language's iOS. Must not claim more than the English."))
                 .settingsRow(.liveActivity)

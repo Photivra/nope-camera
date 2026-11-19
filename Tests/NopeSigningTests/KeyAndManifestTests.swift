@@ -42,7 +42,7 @@ struct ManifestTests {
             instanceID: UUID(uuidString: "00000000-0000-4000-8000-000000000001")!)
         #expect(
             manifest.json()
-                == #"{"assertions":[{"data":{"actions":[{"action":"c2pa.created","description":"Captured by Photivra Nope Camera as a single frame of RAW sensor data, with as little processing as the phone allows.","digitalSourceType":"http://cv.iptc.org/newscodes/digitalsourcetype/digitalCapture"}]},"label":"c2pa.actions.v2"}],"claim_generator_info":[{"name":"Photivra Nope Camera","version":"1.2.3"}],"claim_version":2,"format":"image/x-adobe-dng","instance_id":"xmp:iid:00000000-0000-4000-8000-000000000001"}"#
+                == #"{"assertions":[{"data":{"actions":[{"action":"c2pa.created","description":"Captured by Photivra Nope Camera as a single frame of RAW sensor data, with as little processing as the device allows.","digitalSourceType":"http://cv.iptc.org/newscodes/digitalsourcetype/digitalCapture"}]},"label":"c2pa.actions.v2"}],"claim_generator_info":[{"name":"Photivra Nope Camera","version":"1.2.3"}],"claim_version":2,"format":"image/x-adobe-dng","instance_id":"xmp:iid:00000000-0000-4000-8000-000000000001"}"#
         )
     }
 
@@ -55,16 +55,16 @@ struct ManifestTests {
     @Test func descriptionsClaimNoMoreThanIsTrue() {
         #expect(
             ContentCredentialsManifest.description(of: .singleFrameRAW)
-                == "Captured by Photivra Nope Camera as a single frame of RAW sensor data, with as little processing as the phone allows.")
+                == "Captured by Photivra Nope Camera as a single frame of RAW sensor data, with as little processing as the device allows.")
         for file in [SignableFile.developedHEIF, .developedJPEG] {
             #expect(
                 ContentCredentialsManifest.description(of: file)
-                    == "Developed by Photivra Nope Camera on the phone from a single frame of RAW sensor data.")
+                    == "Developed by Photivra Nope Camera on the device from a single frame of RAW sensor data.")
         }
         for file in [SignableFile.deviceProcessedHEIF, .deviceProcessedJPEG] {
             #expect(
                 ContentCredentialsManifest.description(of: file)
-                    == "Captured by Photivra Nope Camera and processed by the phone's camera, because this lens can't save RAW.")
+                    == "Captured by Photivra Nope Camera and processed by the device's camera, because this lens can't save RAW.")
         }
         for file in SignableFile.allCases {
             #expect(!ContentCredentialsManifest.description(of: file).localizedCaseInsensitiveContains("zero processing"))

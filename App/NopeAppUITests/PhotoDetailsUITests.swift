@@ -166,7 +166,7 @@ extension NopeAppUITests {
         openPhotoDetails(app)
         let summary = app.descendants(matching: .any)["PhotoDetails.summary"]
         XCTAssertTrue(summary.waitForExistence(timeout: 5))
-        XCTAssertTrue(summary.label.contains("Processed by the phone's camera: this lens can't save RAW"), summary.label)
+        XCTAssertTrue(summary.label.contains(deviceText("Processed by the phone's camera: this lens can't save RAW", iPad: "Processed by the iPad's camera: this lens can't save RAW")), summary.label)
         try audit(app, checksDynamicType: false, checksContrast: !isPad)
         XCTAssertTrue(scrollDetails(app, to: element(app, containing: "Distortion correction")))
         XCTAssertTrue(scrollDetails(app, to: element(app, containing: "nope. didn't change this file's picture.")))

@@ -232,7 +232,7 @@ extension NopeAppUITests {
         try audit(app)
         openFormatSheet(app)
         XCTAssertTrue(element(app, containing: "This lens can't save unprocessed RAW").exists)
-        XCTAssertTrue(element(app, containing: "What the Phone Does on This Lens").exists)
+        XCTAssertTrue(element(app, containing: deviceText("What the Phone Does on This Lens", iPad: "What the iPad Does on This Lens")).exists)
         XCTAssertTrue(element(app, containing: "processes this file before nope. receives it").exists)
         XCTAssertTrue(element(app, containing: "this lens lets apps turn it off, and nope. does").exists)
         XCTAssertTrue(element(app, containing: "What nope. Does").exists)

@@ -79,7 +79,7 @@ struct PresetsScreen: View {
             } footer: {
                 VStack(alignment: .leading, spacing: NopeSpace.xs) {
                     Text("A preset holds every setting: photos, privacy, camera, and the lens, exposure and drive mode. A preset that includes Location still asks for location access.", bundle: .module, comment: "Explains what a settings preset contains. Location is the name of the privacy switch.")
-                    Text("Presets are kept on this device only.", tableName: "Honesty", bundle: .module, comment: "Privacy note under the settings presets. Must not claim more than the English.")
+                    Text("nope. doesn't sync or send presets. Your device backups include them, like other app settings.", tableName: "Honesty", bundle: .module, comment: "Privacy note under the settings presets. Must not claim more than the English.")
                 }
             }
         }

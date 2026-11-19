@@ -84,9 +84,9 @@ public struct MetadataSettings: Equatable, Codable, Sendable {
     public private(set) var enabledItems: Set<MetadataItem>
 
     /// Whether each photo is signed with Content Credentials. Outside the master switch; off by
-    /// default (owner decision, issue #80): a signed photo shows that it was taken with the app
-    /// and which version (the manifest's claim generator, `docs/PRIVACY.md`, "Content
-    /// Credentials"), so signing is the person's choice. A stored value is kept as saved.
+    /// default (owner decision, issue #80): a signed photo names the app and its version as its
+    /// maker (the manifest's claim generator, `docs/PRIVACY.md`, "Content Credentials"), so
+    /// signing is the person's choice. A stored value is kept as saved.
     public var signsPhotos: Bool
 
     /// The name written as the photo's artist when ``MetadataItem/nameAndCopyright`` is on.
