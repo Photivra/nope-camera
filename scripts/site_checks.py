@@ -321,9 +321,10 @@ class Checks:
         privacy = self.pages.get("/privacy/")
         if privacy:
             text = " ".join(privacy[1].text)
-            if not self.preview:
-                if re.search(r"\[[^\]]*\]", text) or "DRAFT" in text:
-                    self.fail("truth", "/privacy/: a [bracketed] item or DRAFT on the policy page")
+            markers = re.search(r"\[[^\]]*\]", text) or re.search(r"\bdraft\b", text, re.I)
+            if markers and not self.preview:
+                self.fail("truth", "/privacy/: a [bracketed] item or the word draft on the policy page")
+            if not markers:
                 values = re.findall(r'<dt[^>]*>App version</dt><dd[^>]*>([^<]*)</dd>', privacy[0].read_text())
                 if values != [version]:
                     self.fail("truth", f"/privacy/: the policy's app version {values} isn't the app's ({version})")

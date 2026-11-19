@@ -14,17 +14,29 @@ The pages say nothing the repository doesn't (section 13):
 - the app version is MARKETING_VERSION in Config/Base.xcconfig, and the release date is its
   CHANGELOG.md entry.
 
-The build refuses to publish a policy that still has a [bracketed] item or the word "DRAFT", or
-whose "Last updated" date is older than its last change. --preview skips those two rules for a
-local look at the pages only: it marks the output as not for publishing, and
-scripts/check-site.sh fails on that mark unless it is run with --preview too. The workflow that
-publishes never passes it.
+The build refuses to publish a policy that still has a [bracketed] item or the word "draft" (in
+any case). --preview skips that rule, and, while such markers remain, the policy's app version
+and date rules, which can't hold before the policy is filled in. Every other rule runs in
+--preview too, so a pull request finds what would stop the publishing build: the "Last updated"
+dates of the content files and of a finished policy, the policy's app version once it has no
+markers, and the listing's accessibility sentence (below).
+
+"Last updated" dates are UTC days. Each must be a real YYYY-MM-DD date, not after today (UTC),
+and not more than one day older than the newest change to the text it dates, taken from git in
+UTC. The one day covers a pull request merged on the UTC day after its date was written.
+
+The App Store description may name VoiceOver, Voice Control or text sizes only once
+store/accessibility-status.json records a manual pass on an iPhone (docs/store/README.md, C11).
+
+--preview marks the output as not for publishing, and scripts/check-site.sh fails on that mark
+unless it is run with --preview too. The workflow that publishes never passes it.
 """
 import argparse
 import datetime
 import hashlib
 import html
 import json
+import os
 import pathlib
 import re
 import shutil
@@ -134,8 +146,15 @@ def description_txt():
 # Git dates, for the staleness rule ("Last updated" is never older than the text)
 
 
+def utc_today():
+    return datetime.datetime.now(datetime.timezone.utc).date()
+
+
 def last_change(path, extract=lambda text: text):
-    """The date of the newest change to `extract(file)`, today for an uncommitted change."""
+    """The UTC day of the newest change to `extract(file)`, today (UTC) for an uncommitted change.
+
+    Commit dates are read in UTC: GitHub's squash merges commit at the merge time, and the
+    committer's own time zone must not move the day."""
     def at(rev):
         result = subprocess.run(["git", "show", f"{rev}:{path}"], cwd=ROOT, capture_output=True, text=True)
         return extract(result.stdout) if result.returncode == 0 else None
@@ -147,25 +166,42 @@ def last_change(path, extract=lambda text: text):
         fail("the \"Last updated\" check needs the full git history (fetch-depth: 0)")
     current = extract((ROOT / path).read_text(encoding="utf-8"))
     if at("HEAD") != current:
-        return datetime.datetime.now(datetime.timezone.utc).date()
+        return utc_today()
     log = subprocess.run(
-        ["git", "log", "--format=%H %cs", "--follow", "--", path], cwd=ROOT, capture_output=True, text=True, check=True
+        ["git", "log", "--date=short-local", "--format=%H %cd", "--follow", "--", path], cwd=ROOT,
+        capture_output=True, text=True, check=True, env={**os.environ, "TZ": "UTC"},
     ).stdout.split("\n")
     for line in filter(None, log):
         sha, day = line.split()
         if at(sha) != at(f"{sha}^"):
             return datetime.date.fromisoformat(day)
-    return datetime.datetime.now(datetime.timezone.utc).date()
+    return utc_today()
+
+
+# A "Last updated" date may be this much older than the newest change: a pull request merged on
+# the UTC day after its date was written still passes.
+LAST_UPDATED_TOLERANCE = datetime.timedelta(days=1)
+
+
+def iso_date(label, field, value):
+    """A real date written YYYY-MM-DD (fromisoformat alone also takes forms like 20261119)."""
+    if not isinstance(value, str) or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value):
+        fail(f'{label}: "{field}" must be a date written YYYY-MM-DD, not {value!r}')
+    try:
+        return datetime.date.fromisoformat(value)
+    except ValueError:
+        fail(f'{label}: "{field}" must be a real date written YYYY-MM-DD, not {value!r}')
 
 
 def check_last_updated(label, stated, changes):
-    try:
-        stated_date = datetime.date.fromisoformat(stated)
-    except ValueError:
-        fail(f'{label}: "Last updated" must be a date written YYYY-MM-DD, not {stated!r}')
+    stated_date = iso_date(label, "Last updated", stated)
+    today = utc_today()
+    if stated_date > today:
+        fail(f'{label}: "Last updated" is {stated_date}, after today ({today}, UTC). Write the UTC day of the change')
     newest = max(changes)
-    if stated_date < newest:
-        fail(f'{label}: "Last updated" is {stated_date}, but its text changed on {newest}; update the date')
+    if stated_date < newest - LAST_UPDATED_TOLERANCE:
+        fail(f'{label}: "Last updated" is {stated_date}, but its text last changed on {newest} (UTC, from git). '
+             f'Write "Last updated" {newest}: the UTC day the change is committed or merged; one day earlier is accepted')
     return stated_date
 
 
@@ -248,13 +284,13 @@ def policy_body(text):
 
 
 def policy_markers(text):
-    """The items that stop publication: [brackets] that aren't links, and "DRAFT"."""
+    """The items that stop publication: [brackets] that aren't links, and "draft" in any case."""
     markers = []
     for number, line in enumerate(text.splitlines(), 1):
         for match in re.finditer(r"\[[^\]\n]*\](?!\()", line):
             markers.append(f"line {number}: {match.group(0)}")
-        if "DRAFT" in line:
-            markers.append(f"line {number}: DRAFT")
+        for match in re.finditer(r"\bdraft\b", line, re.I):
+            markers.append(f"line {number}: {match.group(0)}")
     return markers
 
 
@@ -269,9 +305,12 @@ def build_policy(path, version, preview):
         fail(f'{path}: no line "Effective date: …. Last updated: …. App version: …."')
     effective, updated, policy_version = (value.strip() for value in dates.groups())
     body = body[:dates.start()] + body[dates.end():]
-    if not preview:
+    # With markers left (only possible in --preview) the version and dates are still placeholders.
+    if not markers:
         if policy_version != version:
-            fail(f"{path}: the policy's app version ({policy_version}) isn't the app's ({version})")
+            fail(f"{path}: the policy's app version ({policy_version}) isn't the app's ({version}). "
+                 'Each release changes the policy\'s "App version" and "Last updated" (docs/RELEASING.md)')
+        iso_date(path, "Effective date", effective)
         check_last_updated(path, updated, [last_change(path, policy_body)])
     blocks = markdown_blocks(body, path)
     if not blocks or blocks[0][:2] != ("h", 1):
@@ -315,13 +354,17 @@ def content(name):
 
 
 def check_claims(node, source, where="$"):
-    """Every text ({"md": ...}) names the claims it relies on (docs/store/README.md, C1 to C12)."""
+    """Every text ({"md": ...}) names the claims it relies on (docs/store/README.md, C1 to C12),
+    or ["none"] for a text that states no fact about the app. An empty list isn't an answer."""
     if isinstance(node, dict):
         if "md" in node:
             claims = node.get("claims")
-            if not isinstance(claims, list):
-                fail(f'{source}: {where} has no "claims" list (an empty list for a sentence with no claim about the app)')
-            unknown = [c for c in claims if c not in CLAIM_IDS]
+            if not isinstance(claims, list) or not claims:
+                fail(f'{source}: {where} has no "claims" list, or an empty one. Name its claim ids (C1 to C12), '
+                     'or ["none"] for a text that states no fact about the app')
+            if "none" in claims and len(claims) > 1:
+                fail(f'{source}: {where} names "none" with claim ids {claims}')
+            unknown = [c for c in claims if c not in CLAIM_IDS and c != "none"]
             if unknown:
                 fail(f"{source}: {where} names unknown claims {unknown}")
         for key, value in node.items():
@@ -479,10 +522,11 @@ def build(out, preview):
     accessibility = content("accessibility")
     notfound = content("404")
 
+    check_listing_accessibility()
     pages["/"] = page_home(home, config, version, available, badge)
     pages["/privacy/"] = page_privacy(privacy, config, version, preview)
-    pages["/support/"] = page_support(support, version, preview)
-    pages["/accessibility/"] = page_accessibility(accessibility, version, preview)
+    pages["/support/"] = page_support(support, version)
+    pages["/accessibility/"] = page_accessibility(accessibility, version)
     pages["/404.html"] = page_404(notfound)
 
     # The CSS, with the fonts' hashed names.
@@ -542,7 +586,7 @@ def build(out, preview):
     write_security_txt(out, base, config, released)
     if preview:
         (out / PREVIEW_MARK).write_text(
-            "Built with --preview: the policy's publication rules were skipped. Not for publishing.\n", encoding="utf-8")
+            "Built with --preview: the policy's draft-marker rule was skipped. Not for publishing.\n", encoding="utf-8")
     return {"version": version, "commit": sha, "released": str(released), "available": available, "preview": preview}
 
 
@@ -684,12 +728,11 @@ def page_privacy(privacy, config, version, preview):
     return {"title": plain(privacy["title"]), "description": plain(privacy["description"]), "main": main}
 
 
-def page_support(support, version, preview):
+def page_support(support, version):
     source = "site/content/support.json"
     t = texts(support, source)
     check_readme_phrases([support["text"]["tested"]], source)
-    if not preview:
-        check_last_updated(source, support["lastUpdated"], [last_change(source)])
+    check_last_updated(source, support["lastUpdated"], [last_change(source)])
     requirements = readme_section("Requirements")
     paragraphs = [p.strip() for p in re.split(r"\n\s*\n", requirements) if p.strip()]
     intro = paragraphs[0]
@@ -715,16 +758,50 @@ def page_support(support, version, preview):
     return {"title": plain(support["title"]), "description": plain(support["description"]), "main": main}
 
 
+def accessibility_status():
+    """store/accessibility-status.json's devices, each manualPass null or a dated pass on a named device."""
+    source = "store/accessibility-status.json"
+    devices = load_json(source).get("devices")
+    if not isinstance(devices, dict):
+        fail(f'{source}: no "devices" object')
+    for device, entry in devices.items():
+        manual = entry.get("manualPass") if isinstance(entry, dict) else None
+        if manual is None:
+            continue
+        if not isinstance(manual, dict) or not isinstance(manual.get("device"), str) or not manual["device"].strip():
+            fail(f'{source}: {device}\'s manualPass needs {{"date": "YYYY-MM-DD", "device": "the model"}}, '
+                 "or null until the pass is done")
+        passed = iso_date(source, f"{device} manualPass date", manual.get("date"))
+        if passed > utc_today():
+            fail(f"{source}: {device}'s manualPass date {passed} is after today ({utc_today()}, UTC)")
+    return devices
+
+
+# The listing's accessibility sentence names these; it may only once an iPhone pass is recorded.
+LISTING_ACCESSIBILITY = re.compile(r"VoiceOver|Voice Control|Switch Control|Full Keyboard Access|text sizes?|"
+                                   r"larger text|Dynamic Type", re.I)
+
+
+def check_listing_accessibility():
+    """The App Store description names accessibility features only after the iPhone manual pass
+    (docs/store/README.md, C11; store/accessibility-status.json)."""
+    source = "store/metadata/en-US/description.txt"
+    named = sorted({m.group(0) for m in LISTING_ACCESSIBILITY.finditer(read(source))})
+    iphone = accessibility_status().get("iPhone") or {}
+    if named and not iphone.get("manualPass"):
+        fail(f"{source} names {', '.join(named)}, but store/accessibility-status.json records no manual pass "
+             "on an iPhone. Remove that sentence from description.txt, or record the pass")
+
+
 ANA_FEATURES = ["VoiceOver", "Voice Control", "Larger Text", "Dark Interface", "Differentiate Without Color Alone",
                 "Sufficient Contrast", "Reduced Motion", "Captions", "Audio Descriptions"]
 
 
-def page_accessibility(page, version, preview):
+def page_accessibility(page, version):
     source = "site/content/accessibility.json"
     t = texts(page, source)
-    status = load_json("store/accessibility-status.json")["devices"]
-    if not preview:
-        check_last_updated(source, page["lastUpdated"], [last_change(source), last_change("store/accessibility-status.json")])
+    status = accessibility_status()
+    check_last_updated(source, page["lastUpdated"], [last_change(source), last_change("store/accessibility-status.json")])
     rows = [(t["automatedLabel"], t["automatedValue"])]
     labels = {"iPhone": "By hand on an iPhone", "iPad": "By hand on an iPad", "Apple Watch": "On an Apple Watch"}
     declared_html = []
@@ -741,10 +818,6 @@ def page_accessibility(page, version, preview):
             fail(f"store/accessibility-status.json: {device} declares features without a manual pass")
         if manual:
             any_pass = True
-            try:
-                datetime.date.fromisoformat(manual["date"])
-            except (KeyError, TypeError, ValueError):
-                fail(f"store/accessibility-status.json: {device}'s manualPass needs a YYYY-MM-DD date and a device")
             value = f"Done on an {manual['device']}, {manual['date']}"
         else:
             value = "Not checked on a real watch" if device == "Apple Watch" else "Not yet done"
@@ -850,7 +923,7 @@ def write_security_txt(out, base, config, released):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--out", default=str(ROOT / "_site"), help="output directory (default: _site)")
-    parser.add_argument("--preview", action="store_true", help="skip the policy's publication rules; not for publishing")
+    parser.add_argument("--preview", action="store_true", help="skip the policy's draft-marker rule (and its version and date rules while markers remain); not for publishing")
     args = parser.parse_args()
     try:
         info = build(pathlib.Path(args.out).resolve(), args.preview)

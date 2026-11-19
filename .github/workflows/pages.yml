@@ -4,9 +4,14 @@ name: site
 # (docs/design/nope-site.md, section 14; docs/RELEASING.md, "The website").
 # - A release tag (vX.Y.Z, no pre-release tags) and a run by hand build, check and publish.
 #   Publishing reaches users, so each publication is the maintainer's act (AGENTS.md, rule 5).
+#   A run by hand publishes only from main or a release branch (release-* or release/*); from
+#   any other branch it fails before building. The github-pages environment's deployment rule
+#   allows the same refs (docs/RELEASING.md, setup step 4).
 # - A pull request that touches the site or one of its sources builds and checks with
-#   --preview (the policy's publication rules skipped) and never publishes; its build is
-#   uploaded as an artifact to open locally. Nothing unreleased is published anywhere.
+#   --preview and never publishes; its build is uploaded as an artifact to open locally.
+#   --preview skips only the policy's draft markers, and its version and date rules while those
+#   markers remain; every other rule, including the "Last updated" rules, runs as in a
+#   publishing build. Nothing unreleased is published anywhere.
 # Every check runs on the runner against 127.0.0.1; the only network use is installing the pinned
 # tools. Actions are pinned by commit SHA.
 
@@ -22,7 +27,7 @@ on:
       - "scripts/check-site.sh"
       - "scripts/test-check-site.sh"
       - "scripts/test_check_site.py"
-      - "docs/store/privacy-policy-draft.md"
+      - "docs/store/privacy-policy*.md"
       - "docs/store/accessibility-label.md"
       - "docs/store/README.md"
       - "docs/design/tokens.md"
@@ -30,6 +35,7 @@ on:
       - "store/accessibility-status.json"
       - "Sources/NopeUI/AccessibilitySettingsView.swift"
       - "Config/Base.xcconfig"
+      - "CHANGELOG.md"
       - "README.md"
       - "NOTICE"
       - ".github/workflows/pages.yml"
@@ -51,6 +57,15 @@ jobs:
     outputs:
       domain: ${{ steps.domain.outputs.domain }}
     steps:
+      - name: A run by hand publishes only from main or a release branch
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          case "$REF" in
+            refs/heads/main|refs/heads/release-*|refs/heads/release/*) echo "Publishing from $REF" ;;
+            *) echo "::error::A run by hand publishes only from main or a release branch (release-* or release/*), not from $REF."; exit 1 ;;
+          esac
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # The "Last updated" checks read the history of the policy and content files.
@@ -68,7 +83,7 @@ jobs:
       - name: Build and check the site
         env:
           MODE: ${{ github.event_name == 'pull_request' && '--preview' || '' }}
-        run: scripts/check-site.sh $MODE
+        run: scripts/check-site.sh ${MODE:+"$MODE"}
       - name: The domain the deploy job must find
         id: domain
         run: echo "domain=$(python3 -c 'import json; print(json.load(open("site/site.json"))["domain"])')" >> "$GITHUB_OUTPUT"
@@ -88,10 +103,20 @@ jobs:
       contents: read
     steps:
       - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          # The licenses in site/package-lock.json today (THIRD_PARTY.md). A dependency under any
+          # other license fails the pull request until it is reviewed (AGENTS.md, "Third-party
+          # licenses").
+          allow-licenses: MIT, ISC, BSD-2-Clause, BSD-3-Clause, 0BSD, Apache-2.0, MPL-2.0, BlueOak-1.0.0
 
   deploy:
     name: site deploy
-    if: github.event_name != 'pull_request'
+    # An allowlist: a release tag, or a run by hand from main or a release branch. Any other event
+    # or ref, including a trigger added later, never deploys.
+    if: >-
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' ||
+      startsWith(github.ref, 'refs/heads/release-') || startsWith(github.ref, 'refs/heads/release/')))
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10

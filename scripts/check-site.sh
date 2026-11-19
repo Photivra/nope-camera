@@ -5,9 +5,10 @@
 #
 #   scripts/check-site.sh [--preview] [--static-only] [--no-build] [--out DIR]
 #
-#   --preview      build and check with the policy's publication rules skipped (a [bracketed]
-#                  item, "DRAFT", the policy's version and "Last updated" dates). For a local look
-#                  and for pull requests only; a publishing run never uses it.
+#   --preview      build and check with the policy's draft markers allowed (a [bracketed] item,
+#                  "draft"), and its version and dates unchecked while those markers remain.
+#                  Every other rule runs. For a local look and for pull requests only; a
+#                  publishing run never uses it.
 #   --static-only  only the standard-library checks (scripts/site_checks.py): no Chrome or Java.
 #   --no-build     check an existing build instead of building first.
 #

@@ -22,7 +22,11 @@ COPY = [
     "docs/store/README.md", "docs/design/tokens.md", "store/metadata/en-US", "store/accessibility-status.json",
     "Config/Base.xcconfig", "CHANGELOG.md", "README.md", "NOTICE", "Sources/NopeUI/AccessibilitySettingsView.swift",
 ]
+# The build reads every date in UTC, so the tests do too.
 TODAY = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
+# The test tree's first commit is dated before every "Last updated" in the repository, so the
+# staleness rules pass on the unchanged files whatever day the tests run.
+TREE_DATE = "2026-01-01T12:00:00+0000"
 failures = []
 passed = 0
 
@@ -31,9 +35,12 @@ def run(cmd, cwd, env=None):
     return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, env=env)
 
 
-def git(tree, *args):
-    result = run(["git", *args], tree, env={**os.environ, "GIT_AUTHOR_NAME": "test", "GIT_AUTHOR_EMAIL": "test@example.invalid",
-                                           "GIT_COMMITTER_NAME": "test", "GIT_COMMITTER_EMAIL": "test@example.invalid"})
+def git(tree, *args, date=None):
+    env = {**os.environ, "GIT_AUTHOR_NAME": "test", "GIT_AUTHOR_EMAIL": "test@example.invalid",
+           "GIT_COMMITTER_NAME": "test", "GIT_COMMITTER_EMAIL": "test@example.invalid"}
+    if date:
+        env.update(GIT_AUTHOR_DATE=date, GIT_COMMITTER_DATE=date)
+    result = run(["git", *args], tree, env=env)
     if result.returncode != 0:
         sys.exit(f"git {' '.join(args)} failed: {result.stderr}")
 
@@ -50,7 +57,7 @@ def make_tree(base):
     (tree / "site/node_modules").symlink_to(ROOT / "site/node_modules")
     git(tree, "init", "-q")
     git(tree, "add", "-A")
-    git(tree, "commit", "-q", "-m", "test tree")
+    git(tree, "commit", "-q", "-m", "test tree", date=TREE_DATE)
     return tree
 
 
@@ -60,6 +67,15 @@ def edit(tree, path, old, new, count=1):
     if old not in text:
         sys.exit(f"test setup: {old!r} not in {path}")
     file.write_text(text.replace(old, new, count), encoding="utf-8")
+
+
+def set_last_updated(tree, path, day):
+    """Sets a content file's lastUpdated by pattern, whatever date it holds now."""
+    file = tree / path
+    text, count = re.subn(r'"lastUpdated": "[^"]*"', f'"lastUpdated": "{day}"', file.read_text(encoding="utf-8"), count=1)
+    if count != 1:
+        sys.exit(f"test setup: no lastUpdated in {path}")
+    file.write_text(text, encoding="utf-8")
 
 
 def expect(name, result, ok, needle=None):
@@ -184,14 +200,21 @@ def build_cases(base):
     cases = [
         ("unknown Markdown", "docs/store/privacy-policy-draft.md", "## Children\n", "## Children\n\n| a | b |\n", "doesn't know"),
         ("single asterisk", "docs/store/privacy-policy-draft.md", "## Children\n", "## Children\n\nSome *word*.\n", "doesn't know"),
-        ("no claims", "site/content/support.json", "\"h1\": {\"md\": \"Support\", \"claims\": []}", "\"h1\": {\"md\": \"Support\"}", "no \"claims\""),
-        ("unknown claim", "site/content/support.json", "\"h1\": {\"md\": \"Support\", \"claims\": []}", "\"h1\": {\"md\": \"Support\", \"claims\": [\"C99\"]}", "unknown claims"),
+        ("no claims", "site/content/support.json", "\"h1\": {\"md\": \"Support\", \"claims\": [\"none\"]}", "\"h1\": {\"md\": \"Support\"}", "no \"claims\""),
+        ("empty claims", "site/content/support.json", "\"h1\": {\"md\": \"Support\", \"claims\": [\"none\"]}", "\"h1\": {\"md\": \"Support\", \"claims\": []}", "or an empty one"),
+        ("none with claims", "site/content/support.json", "\"h1\": {\"md\": \"Support\", \"claims\": [\"none\"]}", "\"h1\": {\"md\": \"Support\", \"claims\": [\"none\", \"C1\"]}", "names \"none\" with"),
+        ("unknown claim", "site/content/support.json", "\"h1\": {\"md\": \"Support\", \"claims\": [\"none\"]}", "\"h1\": {\"md\": \"Support\", \"claims\": [\"C99\"]}", "unknown claims"),
         ("new listing group", "store/metadata/en-US/description.txt", "FOR EVERYONE", "FOR ALL", "no sentence-case name"),
         ("README devices", "README.md", "iPhone 11 and later", "iPhone 12 and later", "relies on README.md"),
         ("app string", "site/content/accessibility.json", "take a photo.\", \"claims\": [\"C11\"]", "take a picture.\", \"claims\": [\"C11\"]", "isn't a string of"),
         ("app heading", "site/content/accessibility.json", "\"appHeading\": \"Feedback\"", "\"appHeading\": \"Responses\"", "isn't a string of"),
         ("evidence", "docs/store/accessibility-label.md", "| Captions | Not applicable |", "| Captions | Yes |", "no longer says"),
         ("declared without pass", "store/accessibility-status.json", "\"declared\": []", "\"declared\": [\"VoiceOver\"]", "without a manual pass"),
+        ("listing accessibility without a pass", "store/metadata/en-US/description.txt", "• The volume buttons work as a shutter.",
+         "• Designed to work with VoiceOver, Voice Control and the largest text sizes. The volume buttons work as a shutter.",
+         "records no manual pass on an iPhone"),
+        ("manual pass without a device", "store/accessibility-status.json", "\"manualPass\": null", "\"manualPass\": {\"date\": \"2026-11-19\"}", "needs {\"date\""),
+        ("manual pass date", "store/accessibility-status.json", "\"manualPass\": null", "\"manualPass\": {\"date\": \"19 November\", \"device\": \"iPhone 16 Pro Max\"}", "YYYY-MM-DD"),
         ("unknown feature", "store/accessibility-status.json", "\"manualPass\": null,\n      \"declared\": []",
          "\"manualPass\": {\"date\": \"2026-11-19\", \"device\": \"iPhone 16 Pro Max\"},\n      \"declared\": [\"Talking\"]", "unknown features"),
         ("badge file", "site/site.json", "\"appStoreId\": null,\n  \"available\": false", "\"appStoreId\": 123,\n  \"available\": true", "badge file"),
@@ -209,16 +232,76 @@ def build_cases(base):
         expect(name, result, False, needle)
 
     tree, out = fresh("support-stale")
-    edit(tree, "site/content/support.json", "\"lastUpdated\": \"2026-11-19\"", "\"lastUpdated\": \"2026-01-01\"")
-    git(tree, "commit", "-q", "-am", "an old date")
+    set_last_updated(tree, "site/content/support.json", "2026-01-01")
+    git(tree, "commit", "-q", "-am", "an old date", date=TREE_DATE)
     edit(tree, "site/content/support.json", "\"md\": \"Support\"", "\"md\": \"Support \"")
+    expect("support last updated, in preview too", build(tree, out), False, "site/content/support.json: \"Last updated\"")
     tree_policy_done(tree)
     expect("support last updated", build(tree, out, preview=False), False, "site/content/support.json: \"Last updated\"")
 
+    # "Last updated" dates: UTC days, one day of tolerance, a real date, never after today.
+    def dated_change(name, written, committed):
+        tree, out = fresh(name)
+        set_last_updated(tree, "site/content/support.json", written)
+        edit(tree, "site/content/support.json", "\"md\": \"Support\"", "\"md\": \"Support \"")
+        git(tree, "commit", "-q", "-am", "a dated change", date=committed)
+        return build(tree, out)
+
+    # 20:00 on 2026-10-20 at UTC-5 is 01:00 on 2026-10-21 in UTC: a local reading would accept
+    # 2026-10-19 (one day before the 20th); the UTC reading doesn't (two days before the 21st).
+    expect("last updated: the UTC day", dated_change("utc-day", "2026-10-21", "2026-10-20T20:00:00-0500"), True)
+    expect("last updated: one day earlier is accepted", dated_change("one-day", "2026-10-20", "2026-10-20T20:00:00-0500"), True)
+    expect("last updated: two days earlier in UTC", dated_change("two-days", "2026-10-19", "2026-10-20T20:00:00-0500"), False,
+           "Write \"Last updated\" 2026-10-21")
+    tree, out = fresh("future-date")
+    set_last_updated(tree, "site/content/support.json", "2099-01-01")
+    expect("last updated: a future date", build(tree, out), False, "after today")
+    tree, out = fresh("bad-date")
+    set_last_updated(tree, "site/content/accessibility.json", "2026-11-31")
+    expect("last updated: not a real date", build(tree, out), False, "real date")
+    tree, out = fresh("compact-date")
+    set_last_updated(tree, "site/content/accessibility.json", "20261119")
+    expect("last updated: not YYYY-MM-DD", build(tree, out), False, "YYYY-MM-DD")
+
+    # The policy: lowercase "draft" is a marker; a finished policy's rules run in preview too.
+    tree, out = fresh("draft-lowercase")
+    tree_policy_done(tree)
+    edit(tree, "docs/store/privacy-policy-draft.md", "## Children\n", "## Children\n\nThis is a draft.\n")
+    expect("policy: draft in lowercase", build(tree, out, preview=False), False, "line ")
+    tree, out = fresh("effective-date")
+    tree_policy_done(tree)
+    edit(tree, "docs/store/privacy-policy-draft.md", f"Effective date: {TODAY}.", "Effective date: TBD soon.")
+    expect("policy: effective date", build(tree, out, preview=False), False, "\"Effective date\" must be a date")
+    tree, out = fresh("policy-future")
+    tree_policy_done(tree)
+    edit(tree, "docs/store/privacy-policy-draft.md", f"Last updated: {TODAY}.", "Last updated: 2099-01-01.")
+    expect("policy: future last updated", build(tree, out, preview=False), False, "after today")
+    tree, out = fresh("policy-version-preview")
+    tree_policy_done(tree)
+    edit(tree, "Config/Base.xcconfig", "MARKETING_VERSION = 1.0.0", "MARKETING_VERSION = 1.0.1")
+    edit(tree, "CHANGELOG.md", "## [Unreleased]\n", "## [Unreleased]\n\n## [1.0.1] - 2026-11-19\n")
+    expect("policy: app version, in preview once finished", build(tree, out), False, "isn't the app's (1.0.1)")
+    tree, out = fresh("policy-markers-preview")
+    edit(tree, "Config/Base.xcconfig", "MARKETING_VERSION = 1.0.0", "MARKETING_VERSION = 1.0.1")
+    edit(tree, "CHANGELOG.md", "## [Unreleased]\n", "## [Unreleased]\n\n## [1.0.1] - 2026-11-19\n")
+    expect("policy: version and dates skipped in preview while markers remain", build(tree, out), True)
+
+    tree, out = fresh("ipad-pass-only")
+    status_file = tree / "store/accessibility-status.json"
+    status = json.loads(status_file.read_text())
+    status["devices"]["iPad"]["manualPass"] = {"date": "2026-11-19", "device": "iPad Air (5th generation)"}
+    status_file.write_text(json.dumps(status, indent=2))
+    edit(tree, "store/metadata/en-US/description.txt", "• The volume buttons work as a shutter.",
+         "• Works with VoiceOver. The volume buttons work as a shutter.")
+    expect("listing accessibility, iPad pass only", build(tree, out), False, "records no manual pass on an iPhone")
+
     tree, out = fresh("passes")
+    tree_policy_done(tree)
     edit(tree, "store/accessibility-status.json", "\"manualPass\": null,\n      \"declared\": []",
          "\"manualPass\": {\"date\": \"2026-11-19\", \"device\": \"iPhone 16 Pro Max\"},\n      \"declared\": [\"VoiceOver\", \"Larger Text\"]")
-    expect("a recorded pass builds", build(tree, out), True)
+    edit(tree, "store/metadata/en-US/description.txt", "• The volume buttons work as a shutter.",
+         "• Designed to work with VoiceOver, Voice Control and the largest text sizes. The volume buttons work as a shutter.")
+    expect("a recorded pass builds, with the listing's accessibility sentence", build(tree, out, preview=False), True)
     page = (out / "accessibility/index.html").read_text()
     if "Declared on the App Store for iPhone: VoiceOver, Larger Text." not in page or "Done on an iPhone 16 Pro Max, 2026-11-19" not in page:
         failures.append("a recorded pass: the page doesn't show the declared features and the pass")

@@ -1,5 +1,5 @@
 {
-  "about": "Site-only sentences of the landing page (docs/design/nope-site.md, section 4). Every text has \"claims\": the claim ids of docs/store/README.md (C1 to C12) that the sentence relies on, or an empty list for a sentence that states no fact about the app. The App Store statements are not here: they are read from store/metadata/en-US/description.txt.",
+  "about": "Site-only sentences of the landing page (docs/design/nope-site.md, section 4). Every text has \"claims\": the claim ids of docs/store/README.md (C1 to C12) that the sentence relies on, or [\"none\"] for a sentence that states no fact about the app (an empty list fails the build). Whether a sentence states a fact is a human review, as with the listing. The App Store statements are not here: they are read from store/metadata/en-US/description.txt.",
   "title": {"md": "Photivra Nope Camera: RAW photos, no tracking", "claims": ["C1", "C4"]},
   "description": {"md": "Photivra Nope Camera takes photos with as little processing as the camera allows, can sign each one, and keeps nothing that tracks you. For iPhone and iPad. Free and open source.", "claims": ["C1", "C3", "C4", "C9", "C12"]},
   "groups": {
@@ -10,29 +10,29 @@
     "FOR EVERYONE": "For everyone"
   },
   "text": {
-    "fullName": {"md": "Photivra Nope Camera", "claims": []},
+    "fullName": {"md": "Photivra Nope Camera", "claims": ["none"]},
     "tagline": {"md": "Processing? Nope. Tracking? Nope. Network? Nope.", "claims": ["C1", "C4"]},
     "badgeLine": {"md": "For iPhone and iPad. Free and open source.", "claims": ["C12"]},
-    "notYetTitle": {"md": "Not on the App Store yet.", "claims": []},
+    "notYetTitle": {"md": "Not on the App Store yet.", "claims": ["none"]},
     "notYet": {"md": "This page will link to the App Store when Photivra Nope Camera is available there. The [source code](https://github.com/Photivra/nope-camera) is public now.", "claims": ["C12"]},
-    "badgeLabel": {"md": "Download Photivra Nope Camera on the App Store", "claims": []},
-    "whatHeading": {"md": "What it does, and what it doesn’t", "claims": []},
-    "whatIntro": {"md": "The same statements as the App Store description, word for word.", "claims": []},
-    "siteHeading": {"md": "This site keeps the same rules", "claims": []},
-    "site1": {"md": "No cookies. No analytics. No JavaScript. Every file on these pages comes from nope.photivra.com, and nothing is loaded from another site.", "claims": []},
-    "site2": {"md": "The site is hosted on GitHub Pages. Like any web host, GitHub receives your IP address when you load a page, and it logs that address for security. GitHub’s [privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement) covers it.", "claims": []},
-    "site3": {"md": "Check it yourself: your browser’s network inspector shows every request a page makes, and the site’s files are in the [public repository](https://github.com/Photivra/nope-camera).", "claims": []},
-    "needHeading": {"md": "What you need", "claims": []},
-    "devicesHeading": {"md": "Devices", "claims": []},
-    "deviceList": {"md": "[The full device list](/support/#devices)", "claims": []},
-    "openHeading": {"md": "Open source", "claims": []},
+    "badgeLabel": {"md": "Download Photivra Nope Camera on the App Store", "claims": ["none"]},
+    "whatHeading": {"md": "What it does, and what it doesn’t", "claims": ["none"]},
+    "whatIntro": {"md": "The same statements as the App Store description, word for word.", "claims": ["none"]},
+    "siteHeading": {"md": "This site keeps the same rules", "claims": ["none"]},
+    "site1": {"md": "No cookies. No analytics. No JavaScript. Every file on these pages comes from nope.photivra.com, and nothing is loaded from another site.", "claims": ["none"]},
+    "site2": {"md": "The site is hosted on GitHub Pages. Like any web host, GitHub receives your IP address when you load a page, and it logs that address for security. GitHub’s [privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement) covers it.", "claims": ["none"]},
+    "site3": {"md": "Check it yourself: your browser’s network inspector shows every request a page makes, and the site’s files are in the [public repository](https://github.com/Photivra/nope-camera).", "claims": ["none"]},
+    "needHeading": {"md": "What you need", "claims": ["none"]},
+    "devicesHeading": {"md": "Devices", "claims": ["none"]},
+    "deviceList": {"md": "[The full device list](/support/#devices)", "claims": ["none"]},
+    "openHeading": {"md": "Open source", "claims": ["none"]},
     "openCheck": {"md": "Anyone can read the code to check these statements.", "claims": ["C12"]},
-    "openLink": {"md": "[github.com/Photivra/nope-camera](https://github.com/Photivra/nope-camera)", "claims": []}
+    "openLink": {"md": "[github.com/Photivra/nope-camera](https://github.com/Photivra/nope-camera)", "claims": ["none"]}
   },
   "devices": [
-    {"md": "iPhone 11 or later, or iPhone SE (2nd generation) or later, with iOS 26 or later.", "claims": [], "readme": ["iPhone 11 and later", "iPhone SE (2nd generation) and later", "iOS and iPadOS 26"]},
-    {"md": "iPad models that run iPadOS 26 or later.", "claims": [], "readme": ["**iPad:**", "iOS and iPadOS 26"]},
-    {"md": "The Apple Watch app is a remote shutter. It takes no photos itself.", "claims": [], "readme": ["The watch app is a remote shutter; it takes no photos itself."]},
-    {"md": "English only in version 1.0.0.", "claims": [], "readme": ["Version 1.0.0 is in English only."]}
+    {"md": "iPhone 11 or later, or iPhone SE (2nd generation) or later, with iOS 26 or later.", "claims": ["none"], "readme": ["iPhone 11 and later", "iPhone SE (2nd generation) and later", "iOS and iPadOS 26"]},
+    {"md": "iPad models that run iPadOS 26 or later.", "claims": ["none"], "readme": ["**iPad:**", "iOS and iPadOS 26"]},
+    {"md": "The Apple Watch app is a remote shutter. It takes no photos itself.", "claims": ["none"], "readme": ["The watch app is a remote shutter; it takes no photos itself."]},
+    {"md": "English only in version 1.0.0.", "claims": ["none"], "readme": ["Version 1.0.0 is in English only."]}
   ]
 }

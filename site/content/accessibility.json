@@ -1,25 +1,25 @@
 {
   "about": "Site-only sentences of the accessibility page (docs/design/nope-site.md, 7.1). \"claims\" as in home.json. The status table comes from store/accessibility-status.json. Each statement under appStatements must be a string of the app's Accessibility screen (source) or be backed by the quoted evidence in its source file; held lists the screen's statements kept off the page, with the reason, until the reason no longer holds. lastUpdated is checked against the last change to this file and to the status file.",
   "lastUpdated": "2026-11-19",
-  "title": {"md": "Accessibility · Photivra Nope Camera", "claims": []},
-  "description": {"md": "What Photivra Nope Camera has for VoiceOver, Voice Control, Switch Control, a keyboard and large text, what has been checked, and how to report a problem.", "claims": []},
+  "title": {"md": "Accessibility · Photivra Nope Camera", "claims": ["none"]},
+  "description": {"md": "What Photivra Nope Camera has for VoiceOver, Voice Control, Switch Control, a keyboard and large text, what has been checked, and how to report a problem.", "claims": ["none"]},
   "text": {
-    "h1": {"md": "Accessibility", "claims": []},
-    "intro": {"md": "This page says what Photivra Nope Camera has for people who use VoiceOver, Voice Control, Switch Control, a keyboard or large text, what has been checked and what hasn’t, and how to report a problem.", "claims": []},
-    "checkedHeading": {"md": "What has been checked", "claims": []},
-    "automatedLabel": {"md": "Automated audits", "claims": []},
-    "automatedValue": {"md": "Run in Apple’s Simulator", "claims": []},
-    "automated": {"md": "The project’s tests run Apple’s automated accessibility audit on the camera, Settings, the Last Photo viewer and What’s in This Photo, in Apple’s Simulator. An automated audit can’t show that a person can do everything with an assistive technology.", "claims": []},
-    "noPass": {"md": "A full pass by hand with VoiceOver, Voice Control, Switch Control and the largest text size has not yet been done on an iPhone or an iPad. The Apple Watch app has run only in the Simulator. Until a pass is done on a device, the app’s App Store page declares no accessibility features for that device, and this page doesn’t say the app works with them.", "claims": []},
-    "hasHeading": {"md": "What the app has", "claims": []},
-    "hasIntro": {"md": "These are the statements of the app’s own Accessibility screen, in Settings.", "claims": []},
-    "reportHeading": {"md": "Report a problem", "claims": []},
-    "report": {"md": "If something in the app or on this site doesn’t work for you, tell us. It’s handled as a bug.", "claims": []},
-    "reportIssue": {"md": "[Open an issue on GitHub](https://github.com/Photivra/nope-camera/issues). Issues are public and need a free GitHub account.", "claims": []},
-    "reportEmail": {"md": "Write to [hello@photivra.com](mailto:hello@photivra.com). Your message and your email address are forwarded to us by Cloudflare Email Routing and stored by our email provider. We use them only to answer you, and delete messages after 1 year, or sooner if you ask.", "claims": []},
-    "reportInclude": {"md": "It helps to say which assistive technology or setting you use, your device and its iOS or iPadOS version, and the screen where the problem is.", "claims": []},
-    "siteHeading": {"md": "This site", "claims": []},
-    "site": {"md": "These pages are built to meet the Web Content Accessibility Guidelines (WCAG) 2.2 at level AA. They use no JavaScript and no motion, follow your light or dark setting and your text size, and can be read at 320 pixels wide and at 400% zoom without scrolling sideways. Every page is run through an automated accessibility check before it is published. That is a target and a check, not a statement of conformance: if a page doesn’t work for you, report it in the same way.", "claims": []}
+    "h1": {"md": "Accessibility", "claims": ["none"]},
+    "intro": {"md": "This page says what Photivra Nope Camera has for people who use VoiceOver, Voice Control, Switch Control, a keyboard or large text, what has been checked and what hasn’t, and how to report a problem.", "claims": ["none"]},
+    "checkedHeading": {"md": "What has been checked", "claims": ["none"]},
+    "automatedLabel": {"md": "Automated audits", "claims": ["none"]},
+    "automatedValue": {"md": "Run in Apple’s Simulator", "claims": ["none"]},
+    "automated": {"md": "The project’s tests run Apple’s automated accessibility audit on the camera, Settings, the Last Photo viewer and What’s in This Photo, in Apple’s Simulator. An automated audit can’t show that a person can do everything with an assistive technology.", "claims": ["none"]},
+    "noPass": {"md": "A full pass by hand with VoiceOver, Voice Control, Switch Control and the largest text size has not yet been done on an iPhone or an iPad. The Apple Watch app has run only in the Simulator. Until a pass is done on a device, the app’s App Store page declares no accessibility features for that device, and this page doesn’t say the app works with them.", "claims": ["none"]},
+    "hasHeading": {"md": "What the app has", "claims": ["none"]},
+    "hasIntro": {"md": "These are the statements of the app’s own Accessibility screen, in Settings.", "claims": ["none"]},
+    "reportHeading": {"md": "Report a problem", "claims": ["none"]},
+    "report": {"md": "If something in the app or on this site doesn’t work for you, tell us. It’s handled as a bug.", "claims": ["none"]},
+    "reportIssue": {"md": "[Open an issue on GitHub](https://github.com/Photivra/nope-camera/issues). Issues are public and need a free GitHub account.", "claims": ["none"]},
+    "reportEmail": {"md": "Write to [hello@photivra.com](mailto:hello@photivra.com). Your message and your email address are forwarded to us by Cloudflare Email Routing and stored by our email provider. We use them only to answer you, and delete messages after 1 year, or sooner if you ask.", "claims": ["none"]},
+    "reportInclude": {"md": "It helps to say which assistive technology or setting you use, your device and its iOS or iPadOS version, and the screen where the problem is.", "claims": ["none"]},
+    "siteHeading": {"md": "This site", "claims": ["none"]},
+    "site": {"md": "These pages are built to meet the Web Content Accessibility Guidelines (WCAG) 2.2 at level AA. They use no JavaScript and no motion, follow your light or dark setting and your text size, and can be read at 320 pixels wide and at 400% zoom without scrolling sideways. Every page is run through an automated accessibility check before it is published. That is a target and a check, not a statement of conformance: if a page doesn’t work for you, report it in the same way.", "claims": ["none"]}
   },
   "appStatements": [
     {
@@ -28,7 +28,7 @@
       "appHeading": "Taking Photos",
       "items": [
         {"md": "The volume buttons, and the Camera Control on iPhones that have one, take a photo.", "claims": ["C11"]},
-        {"md": "With a hardware keyboard, the Space bar takes a photo.", "claims": []}
+        {"md": "With a hardware keyboard, the Space bar takes a photo.", "claims": ["none"]}
       ]
     },
     {
@@ -36,7 +36,7 @@
       "source": "Sources/NopeUI/AccessibilitySettingsView.swift",
       "appHeading": "Self-Timer and Burst",
       "items": [
-        {"md": "Timer, above the shutter, sets a self-timer of 3 or 10 seconds. Burst is beside it: hold the shutter for a burst, or use Start Burst so nothing has to be held. VoiceOver says each second of the countdown.", "claims": []}
+        {"md": "Timer, above the shutter, sets a self-timer of 3 or 10 seconds. Burst is beside it: hold the shutter for a burst, or use Start Burst so nothing has to be held. VoiceOver says each second of the countdown.", "claims": ["none"]}
       ]
     },
     {
@@ -44,14 +44,14 @@
       "source": "Sources/NopeUI/AccessibilitySettingsView.swift",
       "appHeading": "Feedback",
       "items": [
-        {"md": "VoiceOver says when each photo is saved and signed, or what went wrong.", "claims": []}
+        {"md": "VoiceOver says when each photo is saved and signed, or what went wrong.", "claims": ["none"]}
       ]
     },
     {
       "heading": "Sound and video",
       "source": "docs/store/accessibility-label.md",
       "items": [
-        {"md": "The app has no audio or video content, so captions and audio descriptions don’t apply.", "claims": [], "evidence": ["| Captions | Not applicable |", "| Audio Descriptions | Not applicable |"]}
+        {"md": "The app has no audio or video content, so captions and audio descriptions don’t apply.", "claims": ["none"], "evidence": ["| Captions | Not applicable |", "| Audio Descriptions | Not applicable |"]}
       ]
     }
   ],

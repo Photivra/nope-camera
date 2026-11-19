@@ -55,7 +55,7 @@ Credentials signing, the settings screens (formats and Privacy), the Honesty scr
 Photo viewer and What's in This Photo are merged and tested in the Simulator, **but the release
 build is not yet checked on a device**, and the Honesty and privacy wording still needs fluent
 human review. The last photo's details are on What's in This Photo, not on the Honesty screen.
-The "Site" column lists the pages of nope.photivra.com that rely on each claim; the site's content files (`site/content/`) name the claim id of every sentence that states a fact about the app, and its build fails on a sentence without one (`docs/design/nope-site.md`, section 13). **Every claim below must be shipped and verified, on a device where the table says so, before
+The "Site" column lists the pages of nope.photivra.com that rely on each claim; every text in the site's content files (`site/content/`) names the claim ids it relies on, or `"none"` for a text that states no fact about the app, and the build fails on a text with no claims list or an empty one (`docs/design/nope-site.md`, section 13). Whether `"none"` is right for a sentence is a human review, like the listing itself. **Every claim below must be shipped and verified, on a device where the table says so, before
 the listing is submitted; remove any sentence whose feature isn't in the release.**
 
 | # | Claim in the description | Depends on | Verified by | Site |
@@ -70,7 +70,7 @@ the listing is submitted; remove any sentence whose feature isn't in the release
 | C8 | Add-only Photos access; can't see existing photos | Add-only saving (merged; device check pending) | Audit check 16 | `/` (the description, word for word); `/support/` |
 | C9 | Signing off by default; when it's on, every photo is signed with a new key, signatures can't link photos, and a signature names the app and its version as the maker, which is not proof (each file certifies its own key, so anyone could make a file that says the same) | Signing off by default (issue #80); `NopeSigning` with C2PA (merged; device check of Secure Enclave signing pending) | Audit check 10; unit tests (`MetadataSettingsTests`) | `/` (the description, word for word); `/support/` |
 | C10 | What's in This Photo lists the last photo's details; the Honesty screen says what the device may still do and what no app can remove | What's in This Photo, opened from the last photo (merged); Honesty screen in Settings (merged: what the app never does, what iOS may still do, what no app can remove) | UI tests; human review of `Honesty.xcstrings` | `/` (the description, word for word) |
-| C11 | Designed to work with VoiceOver, Voice Control and the largest text sizes (a design aim, not a declared Accessibility Nutrition Label feature until the manual pass is done); volume buttons as a shutter | Volume and Camera Control shutter (merged); every 1.0 screen passing audits and the manual pass (not done) | `accessibility-label.md` | `/` (the description, word for word); `/support/`; `/accessibility/` |
+| C11 | The volume buttons work as a shutter. The listing names no accessibility feature (VoiceOver, Voice Control, text sizes) until the manual pass on an iPhone is recorded in `store/accessibility-status.json`: the site's build refuses a description that does (owner decision, 2026-11-19) | Volume and Camera Control shutter (merged); for any accessibility sentence, every 1.0 screen passing audits and the manual pass (not done) | `accessibility-label.md`; `store/accessibility-status.json` | `/` (the description, word for word); `/support/`; `/accessibility/` |
 | C12 | Free and open source under GPL-3.0 | True today | `LICENSE` | `/` (the description, word for word); every page |
 
 The description deliberately leaves out features planned for 1.0 that are harder to verify or
@@ -95,8 +95,7 @@ passes the checks in the last column; until then each row stays **pending**.
 
 Claims C1 to C12 don't change with these issues, with two notes: C4 and C5 must be rechecked
 on the build that includes #82 (App Intents run on the device; Siri itself is Apple's, as the
-Honesty screen and the privacy policy already say). C11 is rechecked in Spanish at the largest
-text sizes when #87 ships.
+Honesty screen and the privacy policy already say). C11 is rechecked in Spanish when #87 ships.
 
 ## App Review notes (draft)
 

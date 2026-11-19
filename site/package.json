@@ -7,11 +7,16 @@
     "node": ">=24"
   },
   "devDependencies": {
+    "@sentry/node": "file:./stubs/sentry-node",
     "@tailwindcss/cli": "4.3.4",
     "axe-core": "4.14.0",
+    "chrome-launcher": "1.2.3",
     "lighthouse": "13.6.0",
     "puppeteer-core": "25.16.0",
     "tailwindcss": "4.3.4",
     "vnu-jar": "26.11.4"
+  },
+  "overrides": {
+    "@sentry/node": "$@sentry/node"
   }
 }

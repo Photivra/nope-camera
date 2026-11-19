@@ -1,0 +1,9 @@
+{
+  "name": "@sentry/node",
+  "version": "0.0.0-stub",
+  "private": true,
+  "description": "An empty stand-in for @sentry/node so Lighthouse's error-reporting SDK is not installed. Lighthouse imports @sentry/node only when error reporting is turned on, which the site's checks never do (THIRD_PARTY.md).",
+  "license": "GPL-3.0-only",
+  "main": "index.js",
+  "type": "commonjs"
+}

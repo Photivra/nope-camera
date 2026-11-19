@@ -37,7 +37,14 @@ search tags, truth rules and size budgets), the Nu HTML Checker (needs Java 11 o
 to use another one), a page load with axe-core in headless Chrome for every page in both themes at
 1280 and 320 pixels (`site/checks/browser-checks.mjs`), and Lighthouse on the mobile profile with
 the floors of the design, section 14.3 (`site/checks/lighthouse.mjs`). Everything runs against
-`127.0.0.1`. Without `--preview` the build also refuses an unfinished policy.
+`127.0.0.1`. Without `--preview` the build also refuses an unfinished policy; `--preview` skips only
+that rule, and the policy's version and dates while it is unfinished (`docs/RELEASING.md`).
+
+The `site build and checks` job is path-filtered, so it isn't a required status check: a pull
+request that touches none of its paths never runs it and would wait for it forever. A change to a
+string of `Sources/NopeUI/AccessibilitySettingsView.swift` runs it too, and fails it when a
+sentence of the accessibility page is no longer one of that screen's strings, until
+`site/content/accessibility.json` is updated to match.
 
 Lighthouse's `robots-txt` audit is skipped: Lighthouse fetches `robots.txt` from inside the page,
 and the site's Content-Security-Policy (`default-src 'none'`) blocks that fetch, so the audit
