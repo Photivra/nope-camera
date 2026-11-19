@@ -114,13 +114,14 @@ extension NopeAppUITests {
         // sizes are partially unsupported" or "Text clipped" wherever it is drawn (beside the
         // switch, or on its own line above it, where it shows whole in the screenshots), and it
         // grows at every text size, which testAssistantAccessTitleGrowsAtEveryTextSize measures.
-        // Those two findings on that title are set aside; every other finding fails, contrast
-        // on iPhone included.
+        // Those two findings on that title are set aside, and on iPad the same two on the
+        // switch's explanation, an owner-approved exception (isApprovedAuditException,
+        // docs/TESTING.md); every other finding fails, contrast on iPhone included.
         var findings: [String] = []
         let types: XCUIAccessibilityAuditType = isPad ? XCUIAccessibilityAuditType.all.subtracting(.contrast) : .all
         try app.performCompleteAccessibilityAudit(for: types) { issue in
             let isTitle = issue.element?.label == "Assistant Access" && [.dynamicType, .textClipped].contains(issue.auditType)
-            if !isTitle { findings.append("\(issue.compactDescription): \(issue.element?.label ?? "no element") \(issue.element?.frame ?? .zero)") }
+            if !isTitle, !self.isApprovedAuditException(issue) { findings.append("\(issue.compactDescription): \(issue.element?.label ?? "no element") \(issue.element?.frame ?? .zero)") }
             return true
         }
         XCTAssertEqual(findings, [])

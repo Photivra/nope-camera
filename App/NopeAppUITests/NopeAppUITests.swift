@@ -626,6 +626,7 @@ final class NopeAppUITests: XCTestCase {
                 // (docs/TESTING.md).
                 || (!checksContrast && issue.auditType == .dynamicType && issue.element == nil)
                 || Self.isOpenIPadFinding(issue)
+                || self.isApprovedAuditException(issue)
                 || Self.isMeasuredDynamicTypeFinding(issue)
                 || Self.isTextCutByAPopover(issue, in: app)
                 || Self.isEnlargedPastTheLowerEdge(issue, of: scrollFrame)
@@ -800,6 +801,35 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     static func isTextCutByAPopover(_ issue: XCUIAccessibilityAuditIssue, in app: XCUIApplication) -> Bool {
         issue.auditType == .elementDetection && issue.element == nil && app.popovers.firstMatch.exists
+    }
+
+    /// Whether an issue is one of the two audit findings the owner set aside for 1.0.0, each on
+    /// one text, in one test, on iPad only (docs/TESTING.md, "UI tests and accessibility
+    /// audits"). The recordings show both texts whole; they are checked by hand on an iPad.
+    ///
+    /// - "Text clipped" on "Pinching to switch lenses is optional. The lens buttons do the
+    ///   same." (identifier `settings.accessibility.pinchOptional`) in
+    ///   `testNightModeSettingsScreensPassAccessibilityAudits`.
+    /// - "Text clipped" and "Dynamic Type font sizes are partially unsupported" on the Assistant
+    ///   Access switch's explanation ("Lets Siri, Shortcuts…"; the switch's row,
+    ///   `settings.assistantAccess.switch`, combines it) in
+    ///   `testAssistantAccessPageAtTheLargestTextSize`.
+    ///
+    /// Every other finding on these screens, and every finding on these texts elsewhere, still
+    /// fails.
+    @MainActor
+    func isApprovedAuditException(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
+        guard UIDevice.current.userInterfaceIdiom == .pad, let element = issue.element else { return false }
+        if name.contains("testNightModeSettingsScreensPassAccessibilityAudits") {
+            return issue.auditType == .textClipped
+                && (element.identifier == "settings.accessibility.pinchOptional"
+                    || element.label.hasPrefix("Pinching to switch lenses is optional."))
+        }
+        if name.contains("testAssistantAccessPageAtTheLargestTextSize") {
+            return [.textClipped, .dynamicType].contains(issue.auditType)
+                && (element.identifier == "settings.assistantAccess.switch" || element.label.contains("Lets Siri, Shortcuts"))
+        }
+        return false
     }
 
     /// Whether an issue is the open iPad finding on the lens buttons' "No RAW" caption: the audit

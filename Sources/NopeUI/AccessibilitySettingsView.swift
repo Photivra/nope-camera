@@ -39,6 +39,8 @@ struct AccessibilitySettingsView: View {
                         Text(
                             "Pinching to switch lenses is optional. The lens buttons do the same.", bundle: .module,
                             comment: "Accessibility screen: the pinch on the camera picture that switches rear lenses is never the only way; the lens buttons do the same."))
+                    // Named for the UI tests' one approved audit exception (docs/TESTING.md).
+                    .accessibilityIdentifier("settings.accessibility.pinchOptional")
                 }
             } header: {
                 Text("Taking Photos", bundle: .module, comment: "Accessibility screen section header: the ways to take a photo besides the on-screen shutter.")
