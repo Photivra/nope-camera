@@ -87,7 +87,7 @@ struct AboutScreen: View {
 
     /// The form.
     var body: some View {
-        Form {
+        NopeForm {
             Section {
                 LabeledContent {
                     Text(verbatim: Self.version(from: Bundle.main.infoDictionary ?? [:]))
