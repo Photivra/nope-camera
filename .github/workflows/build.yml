@@ -293,7 +293,6 @@ jobs:
         run: >
           scripts/run-ui-test-shard.sh "${{ matrix.shard }}" "iPad Air 11-inch (M4)" products ui-tests-ipad.xcresult
           -skip-testing:NopeAppUITests/NopeAppUITests/testSourceCodeIsAnHTTPSLink
-          -skip-testing:NopeAppUITests/NopeAppUITests/testPrivacyPolicyIsAnHTTPSLink
       - name: Upload the per-test results
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

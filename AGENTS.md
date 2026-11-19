@@ -29,7 +29,7 @@ files track the user. The full design is in issue #1.
    - Signing is the person's choice and off by default. When it is on, every photo is signed,
      with a fresh key per photo, and a photo that could not be signed says so.
    - Nothing in the app or its files can track the user.
-   - User-facing wording never claims more than is true. Say "as little processing as your phone
+   - User-facing wording never claims more than is true. Say "as little processing as the camera
      allows", never "zero processing".
 4. **No network, no analytics.**
    - The app makes no network calls of any kind: no server, remote configuration, update check,
