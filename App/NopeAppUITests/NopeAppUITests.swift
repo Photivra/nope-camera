@@ -2383,7 +2383,9 @@ final class NopeAppUITests: XCTestCase {
             for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "label BEGINSWITH 'Photo 2 of 3.'"), object: photo)],
             timeout: 5) == .completed)
         let details = app.buttons["Photo Details"]
-        XCTAssertTrue(details.waitForExistence(timeout: 5))
+        // As for the last photo's context menu: on the CI runner Photo Details took longer than
+        // 5 seconds to appear.
+        XCTAssertTrue(details.waitForExistence(timeout: 15))
         details.tap()
         XCTAssertTrue(app.navigationBars["What's in This Photo"].waitForExistence(timeout: 5))
         // The sheet opens on the frame shown, and its Photo row steps through the bracket's
