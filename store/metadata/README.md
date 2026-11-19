@@ -1,7 +1,7 @@
 # App Store listing text
 
 One folder per App Store locale, one file per App Store Connect field (`name.txt`,
-`subtitle.txt`, `promotional_text.txt`, `description.txt`, `keywords.txt`), in the layout
+`subtitle.txt`, `promotional_text.txt`, `description.txt`, `keywords.txt`, `copyright.txt`), in the layout
 fastlane `deliver` reads. The files hold only the field text, so this page records their review
 status.
 

@@ -130,7 +130,7 @@ Test. Draft, for the maintainer to review.
   Guideline 5.1.1(i)); it opens in the browser.
 - **Support URL:** required: `https://nope.photivra.com/support/`, a page the maintainer publishes
   on the same site as the privacy policy.
-- **Copyright:** the copyright holder named in `NOTICE`.
+- **Copyright:** "2026 Shackelford Creative, LLC" (`store/metadata/en-US/copyright.txt`), the copyright holder named in `NOTICE`.
 - **Category:** Photo & Video.
 - **Age rating:** the questionnaire answers are all "None" for an app with no user-generated
   content shown, no web access and no purchases (to confirm in App Store Connect).
