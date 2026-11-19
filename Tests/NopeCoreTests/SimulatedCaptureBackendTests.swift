@@ -73,6 +73,27 @@ struct SimulatedCaptureBackendTests {
         #expect(SimulatedPreviewSource().devicePoint(forViewfinderPoint: point) == point)
     }
 
+    @Test func aSequenceOfReadingsIsSentInOrderOneAfterAnother() async {
+        let readings = [0.5, 0.2, 0].map {
+            ExposureReading(
+                iso: 100, exposureDuration: 0.01, exposureOffset: 0, lensPosition: $0, aperture: 1.8, whiteBalance: nil,
+                isAdjustingFocus: $0 > 0)
+        }
+        let backend = SimulatedCaptureBackend(permission: .authorized, readingSequence: readings, readingInterval: 0.01)
+        let start = ContinuousClock.now
+        await backend.setExposureReadingsEnabled(true)
+        var received: [ExposureReading] = []
+        for await reading in backend.exposureReadings {
+            received.append(reading)
+            if received.count == readings.count { break }
+        }
+        #expect(received == readings)
+        // Spaced out, not sent at once.
+        #expect(ContinuousClock.now - start >= .milliseconds(30))
+        // Turning readings off sends nothing.
+        await SimulatedCaptureBackend(permission: .authorized, readingSequence: readings).setExposureReadingsEnabled(false)
+    }
+
     @Test func manualControlsAreAcceptedAndBracketsReturnOnePhotoPerFrame() async throws {
         let lens = Lens(id: "wide", kind: .wide, bayerRAWFormat: "bgg4", photoDimensions: [PhotoDimensions(width: 8, height: 6)])
         let backend = SimulatedCaptureBackend(permission: .authorized)

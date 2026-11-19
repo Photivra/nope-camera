@@ -82,6 +82,15 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
     /// How many times ``reading`` is sent when readings are turned on.
     public let readingCount: Int
 
+    /// The readings sent in order when readings are turned on, in place of ``reading``; empty to
+    /// send ``reading``. A scene that changes, such as a lens sweeping into its nearest focus.
+    public let readingSequence: [ExposureReading]
+
+    /// The time between two readings sent, in seconds: 0 sends them all at once; more sends
+    /// them as a camera does, one after another (``ExposureReading`` arrive at most four a
+    /// second on a device).
+    public let readingInterval: Double
+
     /// Feeds ``exposureReadings``.
     private let readingsContinuation: AsyncStream<ExposureReading>.Continuation
 
@@ -111,6 +120,8 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
     ///     ``placeholderReading``.
     ///   - readingCount: How many times to report it when readings turn on, for example enough
     ///     for the close-up suggestion. Defaults to 1.
+    ///   - readingSequence: Readings to report in order instead, or none. Defaults to none.
+    ///   - readingInterval: Seconds between two readings; 0, the default, sends them at once.
     ///   - torchAvailable: Whether the system allows the torch. Defaults to `true`.
     ///   - comparisonError: The error taking the comparison shot's second photo throws, or
     ///     `nil` to succeed.
@@ -126,6 +137,8 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
         eventsAfterStart: [CaptureEvent] = [],
         reading: ExposureReading = placeholderReading,
         readingCount: Int = 1,
+        readingSequence: [ExposureReading] = [],
+        readingInterval: Double = 0,
         torchAvailable: Bool = true,
         comparisonError: CaptureError? = nil,
         captureSeconds: Double = 0,
@@ -136,6 +149,8 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
         self.captureSeconds = captureSeconds
         self.reading = reading
         self.readingCount = readingCount
+        self.readingSequence = readingSequence
+        self.readingInterval = readingInterval
         self.permission = permission
         self.permissionAfterRequest = permissionAfterRequest ?? permission
         self.capabilities = capabilities
@@ -230,12 +245,29 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
     /// - Parameter controls: Ignored.
     public func applyControls(_ controls: DeviceControls) async throws(CaptureError) {}
 
-    /// Sends ``reading``, ``readingCount`` times, when readings are turned on.
+    /// The readings sent when readings are turned on: ``readingSequence``, or ``reading``
+    /// ``readingCount`` times.
+    var readingsToSend: [ExposureReading] {
+        readingSequence.isEmpty ? Array(repeating: reading, count: max(readingCount, 0)) : readingSequence
+    }
+
+    /// Sends ``readingsToSend`` when readings are turned on: at once, or one every
+    /// ``readingInterval`` seconds without holding up the caller.
     ///
     /// - Parameter enabled: Whether readings are on.
     public func setExposureReadingsEnabled(_ enabled: Bool) async {
         guard enabled else { return }
-        for _ in 0..<max(readingCount, 0) { readingsContinuation.yield(reading) }
+        let readings = readingsToSend
+        guard readingInterval > 0 else {
+            for reading in readings { readingsContinuation.yield(reading) }
+            return
+        }
+        Task { [readingsContinuation, readingInterval] in
+            for reading in readings {
+                try? await Task.sleep(for: .seconds(readingInterval))
+                readingsContinuation.yield(reading)
+            }
+        }
     }
 
     /// Returns one placeholder photo per frame, in the order asked for, with the frame's ISO and

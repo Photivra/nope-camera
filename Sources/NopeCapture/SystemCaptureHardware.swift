@@ -414,7 +414,11 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
             // Read with this camera attached: the list is "for the current capture session
             // configuration" (`AVCapturePhotoOutput.supportedFlashModes`).
             flashModes: device.hasFlash ? photoOutput.supportedFlashModes.compactMap(FlashMode.init) : [],
-            hasTorch: device.hasTorch && device.isTorchModeSupported(.on)
+            hasTorch: device.hasTorch && device.isTorchModeSupported(.on),
+            minimumFocusDistance: device.minimumFocusDistance,
+            // Read with this camera attached, as the flash modes: the photo output answers for
+            // its current configuration. A device check confirms it per lens (docs/TESTING.md, S1).
+            reportsStabilization: photoOutput.isLensStabilizationDuringBracketedCaptureSupported
         )
     }
 
@@ -731,23 +735,44 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     /// Observes the attached camera while readings are on, and stops observing otherwise. Call
     /// only on `queue`.
     ///
-    /// The exposure offset changes as the meter updates, and the lens position as the lens
-    /// moves; either triggers a reading of every value, sent at most four times a second
-    /// (``ReadingThrottle``). Nothing is observed while readings are off.
+    /// The exposure offset changes as the meter updates, the lens position as the lens moves,
+    /// and whether autofocus is searching as it starts and stops; any of them triggers a reading
+    /// of every value, sent at most four times a second (``ReadingThrottle``). A change held
+    /// back by the throttle schedules one more reading at the end of the interval, so the last
+    /// values are sent once things settle. Nothing is observed while readings are off.
     private func observeReadings() {
         readingObservations.forEach { $0.invalidate() }
         readingObservations = []
+        // A new throttle: a reading scheduled for the camera observed before is not sent.
+        throttle.withLock { $0 = ReadingThrottle() }
         guard readingsEnabled, let device = currentInput?.device else { return }
-        let send: @Sendable (AVCaptureDevice) -> Void = { [throttle, readingsContinuation, live] device in
-            let now = ProcessInfo.processInfo.systemUptime
-            guard throttle.withLock({ $0.shouldSend(at: now) }) else { return }
+        let send: @Sendable (AVCaptureDevice) -> Void = { [readingsContinuation, live] device in
             readingsContinuation.yield(Self.reading(of: device))
             // The live camera readout is built from the same observations, not a second set.
             live.readingDidArrive(from: device)
         }
+        let changed: @Sendable (AVCaptureDevice) -> Void = { [weak self, throttle, queue] device in
+            switch throttle.withLock({ $0.decide(at: ProcessInfo.processInfo.systemUptime) }) {
+            case .send:
+                send(device)
+            case .later(let delay, let ticket):
+                // On `queue`, where the attached camera is read: its values then are sent.
+                queue.asyncAfter(deadline: .now() + delay) { [weak self] in
+                    guard throttle.withLock({ $0.sendsLater(ticket, at: ProcessInfo.processInfo.systemUptime) }),
+                        let device = self?.currentInput?.device
+                    else { return }
+                    send(device)
+                }
+            case .drop:
+                break
+            }
+        }
         readingObservations = [
-            device.observe(\.exposureTargetOffset, options: [.initial]) { device, _ in send(device) },
-            device.observe(\.lensPosition) { device, _ in send(device) },
+            device.observe(\.exposureTargetOffset, options: [.initial]) { device, _ in changed(device) },
+            device.observe(\.lensPosition) { device, _ in changed(device) },
+            // Key-value observable (AVCaptureDevice, `isAdjustingFocus`): the start and end of a
+            // search arrive even while the lens position and meter hold still.
+            device.observe(\.isAdjustingFocus) { device, _ in changed(device) },
         ]
     }
 

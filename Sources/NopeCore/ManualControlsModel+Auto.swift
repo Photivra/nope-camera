@@ -157,7 +157,7 @@ extension ManualControlsModel {
             closeUpDetector = CloseUpDetector()
             suggestsCloseUpLens = false
         } else {
-            suggestsCloseUpLens = closeUpDetector.record(reading)
+            suggestsCloseUpLens = closeUpDetector.record(reading, at: now())
         }
         if !isEnabled {
             await setLongestAutoShutter(
@@ -219,25 +219,24 @@ extension ManualControlsModel {
         updateSteadyHint()
     }
 
-    /// Decides whether to show "Hold it steady or use a tripod".
+    /// Decides whether to show "Hold it steady or use a tripod."
+    /// (docs/design/device-feedback-1.0.md, section 4):
     ///
-    /// - Full auto: when the fast shutter limit had to be lifted past the handheld rule, after a
-    ///   reading in full auto.
-    /// - Manual controls: when the person's shutter, or the camera's while it is Auto, is slower
-    ///   than the handheld rule. The app changes nothing; it only says so.
+    /// - Manual controls: never. The Shutter readout shows the speed in use, and the person has
+    ///   chosen to decide.
+    /// - Full auto: while the fast shutter limit is lifted and the camera's shutter is slower
+    ///   than the lens's steady limit (``AutoShutter/steadyLimit(for:)``). It turns off only at a
+    ///   reading half a stop faster than the limit (``AutoShutter/returnMargin``), and between
+    ///   the two it keeps its state. While the limit holds, the shutter is never slower than the
+    ///   handheld rule, so the hint can't show.
     func updateSteadyHint() {
-        guard let lens else {
+        guard !isEnabled, let lens, let reading = lastReading, longestAutoShutter == nil,
+            let limit = AutoShutter.steadyLimit(for: lens)
+        else {
             showsSteadyHint = false
             return
         }
-        if isEnabled {
-            let shutter = settings.shutter ?? lastReading?.exposureDuration
-            showsSteadyHint = shutter.map { AutoShutter.risksBlur($0, on: lens) } ?? false
-        } else {
-            showsSteadyHint =
-                lastReading != nil && longestAutoShutter == nil && lens.isoRange != nil
-                && AutoShutter.handheldLimit(for: lens) != nil
-        }
+        showsSteadyHint = AutoShutter.showsSteadyHint(shutter: reading.exposureDuration, limit: limit, isShown: showsSteadyHint)
     }
 
     /// Sends the settings and aids to the camera. If it refuses, nothing is kept from the

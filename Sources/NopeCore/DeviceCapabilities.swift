@@ -42,6 +42,14 @@ public struct DeviceCapabilities: Equatable, Sendable {
         lenses.first { $0.kind == .wide } ?? lenses.first
     }
 
+    /// The rear ultra wide lens when it can autofocus, the lens the close-up hint and the
+    /// Honesty entry Lenses Never Switch on Their Own suggest for a close subject
+    /// (docs/design/device-feedback-1.0.md, section 3). `nil` on a device without one, or whose
+    /// ultra wide lens has fixed focus: suggesting it there might not help.
+    public var closeUpFocusLens: Lens? {
+        lenses.first { $0.kind == .ultraWide && $0.manualControls.supportsAutoFocus }
+    }
+
     /// Returns the lens with an identifier.
     ///
     /// - Parameter id: A ``Lens/id``.

@@ -201,7 +201,7 @@ public final class CameraModel {
         self.saver = saver
         self.now = now
         manual = ManualControlsModel(
-            backend: backend as? any ManualCaptureBackend, sleep: sleep, currentDate: currentDate)
+            backend: backend as? any ManualCaptureBackend, sleep: sleep, currentDate: currentDate, now: now)
         drive = DriveModel(sleep: sleep, now: now)
         deviceStatus = DeviceStatus(reader: deviceStatusReader)
         live = LiveViewModel(backend: backend as? any LiveViewBackend)
@@ -363,14 +363,23 @@ public final class CameraModel {
     }
 
     /// The lens to suggest when the subject seems closer than the selected lens can focus: the
-    /// ultra wide lens, from the wide or a telephoto lens, while
-    /// ``ManualControlsModel/suggestsCloseUpLens`` is true. `nil` otherwise. An interface offers
-    /// a button to switch; the app never switches on its own (issue #51).
+    /// ultra wide lens that can autofocus (``DeviceCapabilities/closeUpFocusLens``), from the
+    /// wide or a telephoto lens, while ``ManualControlsModel/suggestsCloseUpLens`` is true. `nil`
+    /// otherwise. An interface offers a button to switch; the app never switches on its own
+    /// (issue #51).
+    ///
+    /// When both lenses report their closest focus distance (``Lens/minimumFocusDistance``),
+    /// the ultra wide lens is offered only if it focuses closer, so the advice can help. When
+    /// either doesn't report one, it is still offered: whether the reported distances can be
+    /// relied on is device check C2 (docs/TESTING.md).
     public var closeUpLens: Lens? {
-        guard manual.suggestsCloseUpLens, let kind = selectedLens?.kind, kind == .wide || kind == .telephoto else {
+        guard manual.suggestsCloseUpLens, let selected = selectedLens, selected.kind == .wide || selected.kind == .telephoto,
+            let ultraWide = capabilities?.closeUpFocusLens
+        else { return nil }
+        if let closest = ultraWide.minimumFocusDistance, let current = selected.minimumFocusDistance, closest >= current {
             return nil
         }
-        return capabilities?.lenses.first { $0.kind == .ultraWide }
+        return ultraWide
     }
 
     /// Handles an aid that works in full auto too.
