@@ -208,7 +208,7 @@ struct WatchTests {
         let otherRequests: [ShortcutOutcome] = [
             .lensUnavailable, .lensSelected(.wide), .lightOn, .lightOff, .noLight, .lightUnavailable,
             .intervalStarted, .intervalBlockedByAstro, .intervalNotShorterThanTime, .intervalStopped, .noIntervalRunning,
-            .bracketUnavailable, .focusRangeSet(.closeUp),
+            .bracketUnavailable, .focusBracketBlockedByAstro, .savedSome(saved: 1, total: 3), .focusRangeSet(.closeUp),
             .focusRangeUnavailable, .photoSizeSet, .noPhotoSizeChoice, .presetUnavailable,
             .presetApplied(PresetApplyResult(choice: .factoryDefaults, name: nil, isApplied: true, notices: [])),
         ]

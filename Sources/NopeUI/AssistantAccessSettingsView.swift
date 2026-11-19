@@ -169,42 +169,40 @@ struct AssistantAccessSwitch: View {
 
 /// The Assistant Access hint and cards on the camera (`docs/design/assistant-access.md`,
 /// section 10; figures `assistant-camera-notice`, `assistant-camera-refused`, `assistant-tip`):
-/// after an action an assistant ran, "Siri or Shortcuts" and the sentence the assistant got;
-/// after a refusal, how many were refused, with Settings and Close; once after five confirmed
-/// requests, the tip. Nothing where the app has no session (the Lock Screen camera).
+/// after an action an assistant ran, "Siri or Shortcuts" and the sentence the assistant got,
+/// with Close; after a refusal, how many were refused, with Settings and Close; once after five
+/// confirmed requests, the tip. Nothing where the app has no session (the Lock Screen camera).
+///
+/// No message here leaves on a timer (docs/design/ACCESSIBILITY.md): the hint stays until the
+/// next action on the camera (`CameraModel.actionCount`) or Close, so a person using
+/// VoiceOver, Switch Control or the largest text size has as long as they need (third review of
+/// 1.0.0, S7).
 struct AssistantHints: View {
+    /// The camera model, whose actions close the hint.
+    let model: CameraModel
+
     /// What assistants did since the app opened.
     @Environment(\.assistantSession) private var session
 
     /// Opens Settings at a page.
     @Environment(\.openSettingsAt) private var openSettingsAt
 
-    /// Whether VoiceOver is on, which keeps the hint up longer.
-    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverIsOn
-
     /// Creates the hints; they read the session from the environment.
-    init() {}
-
-    /// How long the hint stays, in seconds: as long as the other passing camera messages, and
-    /// longer with VoiceOver, so it is announced before it goes. A product choice, not a
-    /// platform value.
     ///
-    /// - Parameter voiceOverIsOn: Whether VoiceOver is on.
-    /// - Returns: The time in seconds.
-    static func hintSeconds(voiceOverIsOn: Bool) -> Double {
-        voiceOverIsOn ? 12 : 6
+    /// - Parameter model: The camera model.
+    init(model: CameraModel) {
+        self.model = model
     }
 
     /// The hint and cards that apply.
     var body: some View {
         if let session {
             if let notice = session.notice {
-                AssistantNoticeHint(sentence: notice.sentence)
+                AssistantNoticeHint(sentence: notice.sentence, close: { session.clearNotice(notice.id) })
                     .id(notice.id)
-                    .task(id: notice.id) {
-                        try? await Task.sleep(for: .seconds(Self.hintSeconds(voiceOverIsOn: voiceOverIsOn)))
-                        session.clearNotice(notice.id)
-                    }
+                    // The next action closes it. The assistant's own action came before the
+                    // notice, so it isn't counted.
+                    .onChange(of: model.actionCount) { session.clearNotice(notice.id) }
             }
             if session.showsRefusalCard {
                 AssistantCard(
@@ -231,35 +229,56 @@ struct AssistantHints: View {
     }
 }
 
-/// "Siri or Shortcuts" over the sentence an assistant got, announced after any capture result.
+/// "Siri or Shortcuts" over the sentence an assistant got, announced after any capture result,
+/// with a Close button.
 struct AssistantNoticeHint: View {
     /// The sentence.
     let sentence: String
 
+    /// Closes the hint.
+    let close: () -> Void
+
     /// Creates the hint.
     ///
-    /// - Parameter sentence: The sentence the assistant got.
-    init(sentence: String) {
+    /// - Parameters:
+    ///   - sentence: The sentence the assistant got.
+    ///   - close: Closes the hint.
+    init(sentence: String, close: @escaping () -> Void) {
         self.sentence = sentence
+        self.close = close
     }
 
     /// The hint.
     var body: some View {
-        VStack(spacing: NopeSpace.xxs) {
-            Text(AssistantAccessText.hintCaption)
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(CameraStyle.secondaryText)
-            Text(verbatim: sentence)
-                .font(NopeFont.status)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+        HStack(spacing: NopeSpace.xs) {
+            VStack(spacing: NopeSpace.xxs) {
+                Text(AssistantAccessText.hintCaption)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(CameraStyle.secondaryText)
+                Text(verbatim: sentence)
+                    .font(NopeFont.status)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("assistant.notice")
+            Button(action: close) {
+                Label {
+                    Text("Assistant card: Close", tableName: "Honesty", bundle: .module, comment: "Button that closes nope.'s Assistant Access card, tip or hint on the camera.")
+                } icon: {
+                    Image(systemName: "xmark")
+                }
+                .labelStyle(.iconOnly)
+            }
+            .buttonStyle(NopeIconButtonStyle())
+            .accessibilityIdentifier("assistant.notice.close")
         }
         .foregroundStyle(NopeColor.label)
-        .padding(.horizontal, NopeSpace.s)
+        .padding(.leading, NopeSpace.s)
+        .padding(.trailing, NopeSpace.xs)
         .padding(.vertical, NopeSpace.xs)
         .nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.small))
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("assistant.notice")
+        .accessibilityElement(children: .contain)
         .onAppear {
             // Queued behind a capture result's announcement rather than interrupting it.
             var announcement = AttributedString(AssistantAccessText.spokenHint(sentence))
@@ -314,7 +333,7 @@ struct AssistantCard: View {
             }
             Button(action: close) {
                 Label {
-                    Text("Assistant card: Close", tableName: "Honesty", bundle: .module, comment: "Button that closes nope.'s Assistant Access card or tip on the camera.")
+                    Text("Assistant card: Close", tableName: "Honesty", bundle: .module, comment: "Button that closes nope.'s Assistant Access card, tip or hint on the camera.")
                 } icon: {
                     Image(systemName: "xmark")
                 }

@@ -512,7 +512,7 @@
       "comment" : "Explanation of the Location On chip on the camera: new photos include their location. Details in Each Photo is the name of nope.'s own settings page; use its translation. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
-    "No contrast curve, and no noise reduction, sharpening or local tone mapping." : {
+    "No contrast curve. nope. turns off noise reduction, sharpening and local tone mapping." : {
       "comment" : "In the photo details, under a copy developed with the Flat look: what the look does. The same claims as the processing note. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
@@ -537,11 +537,15 @@
       "extractionState" : "manual"
     },
     "No Preview" : {
-      "comment" : "Title in the Last Photo viewer of the camera opened from the Lock Screen: it makes no previews, so only the photo's small thumbnail is shown. Honesty wording: must not claim more than the English. Draft for the Honesty review.",
+      "comment" : "Title in the Last Photo viewer when the photo shown has no preview, so only its small thumbnail is shown: in the camera opened from the Lock Screen, which makes no previews, or when nope. couldn't make one. Honesty wording: must not claim more than the English. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "No RAW" : {
       "comment" : "Under a lens button: this lens can't save RAW. RAW is a file format name.",
+      "extractionState" : "manual"
+    },
+    "nope. asks to add photos, never to read them. With that permission, iOS doesn't let nope. see or change what is in your library. The small pictures nope. shows of the photos you just took are kept in memory only, until nope. closes. So each time nope. opens, the Last Photo spot starts with a button that opens the Photos app." : {
+      "comment" : "Claim 29 in docs/research/privacy-claims.md (PHAccessLevel.addOnly); docs/PRIVACY.md, \"Last photo and its details\"; docs/design/device-feedback-1.0.md, section 1. Last Photo is the name of the spot beside the shutter; Photos and iOS are Apple's names. Keep \"nope.\" unchanged. Must not claim more than the English. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "nope. contains no analytics, crash-reporting or advertising code, and collects no data." : {
@@ -550,6 +554,10 @@
     },
     "nope. contains no networking code and makes no network connections." : {
       "comment" : "Claim 1 in docs/research/privacy-claims.md. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
+    "nope. couldn't make a preview of this photo. The photo is saved in Photos." : {
+      "comment" : "Sentence under No Preview in the Last Photo viewer when nope. couldn't make a screen-size preview of the saved photo (the file couldn't be read for one), so only its small thumbnail is shown. Photos is the system photo library app. Keep \"nope.\" unchanged, lowercase with its period. Honesty wording: must not claim more than the English. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "nope. didn't change this file's picture." : {
@@ -620,11 +628,11 @@
       "comment" : "In the photo details: the RAW file holds no lens correction instructions.",
       "extractionState" : "manual"
     },
-    "Nothing more to this lens's file. HEIF and JPEG copies that nope. develops from a RAW get the Flat look: no contrast curve, and no noise reduction, sharpening or local tone mapping." : {
+    "Nothing more to this lens's file. HEIF and JPEG copies that nope. develops from a RAW get the Flat look: no contrast curve. For them, nope. turns off noise reduction, sharpening and local tone mapping." : {
       "comment" : "Processing note of a lens that can't save RAW, while the HEIF and JPEG look is Flat: nope. adds no processing to this lens's file, and what it does to copies developed from a RAW. HEIF, JPEG and RAW are file format names; Flat is the name of the look in Settings, use its translation. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
-    "Nothing more to this lens's file. HEIF and JPEG copies that nope. develops from a RAW get the Standard look: one overall tone curve, and no noise reduction, sharpening or local tone mapping." : {
+    "Nothing more to this lens's file. HEIF and JPEG copies that nope. develops from a RAW get the Standard look: one overall tone curve. For them, nope. turns off noise reduction, sharpening and local tone mapping." : {
       "comment" : "Processing note of a lens that can't save RAW, while the HEIF and JPEG look is Standard: nope. adds no processing to this lens's file, and what it does to copies developed from a RAW. HEIF, JPEG and RAW are file format names; Standard is the name of the look in Settings, use its translation. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
@@ -709,12 +717,12 @@
       "comment" : "Explains the master switch. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
-    "One overall tone curve, and no noise reduction, sharpening or local tone mapping." : {
-      "comment" : "In the photo details, under a copy developed with the Standard look: what the look does. The same claims as the processing note. Draft wording for the Honesty review.",
-      "extractionState" : "manual"
-    },
     "One overall tone curve, so the photo looks normal." : {
       "comment" : "Explains the Standard look: a single global tone curve, nothing local. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
+    "One overall tone curve. nope. turns off noise reduction, sharpening and local tone mapping." : {
+      "comment" : "In the photo details, under a copy developed with the Standard look: what the look does. The same claims as the processing note. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
     "One photo: the RAW with its %@" : {
@@ -1387,8 +1395,16 @@
       }
     },
     "Assistant card: Close" : {
-      "comment" : "Button that closes nope.'s Assistant Access card or tip on the camera.",
-      "extractionState" : "manual"
+      "comment" : "Button that closes nope.'s Assistant Access card, tip or hint on the camera.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        }
+      }
     },
     "Changes run without asking. nope. asks before an action that takes photos." : {
       "comment" : "Explains the Only Before a Photo choice of Ask First on nope.'s Assistant Access page. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.",
@@ -1496,10 +1512,6 @@
     },
     "Your Photo Library Is Never Read" : {
       "comment" : "Honesty heading: the app can only add photos to the photo library, never see what is in it. Draft for the Honesty review.",
-      "extractionState" : "manual"
-    },
-    "nope. asks only for permission to add photos. With that permission, iOS doesn't let nope. see or change what is in your library. The small pictures nope. shows of the photos you just took are kept in memory only, until nope. closes. So each time nope. opens, the Last Photo spot starts with a button that opens the Photos app." : {
-      "comment" : "Claim 29 in docs/research/privacy-claims.md (PHAccessLevel.addOnly); docs/PRIVACY.md, \"Last photo and its details\"; docs/design/device-feedback-1.0.md, section 1. Last Photo is the name of the spot beside the shutter; Photos and iOS are Apple's names. Keep \"nope.\" unchanged. Must not claim more than the English. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "Lenses Never Switch on Their Own" : {

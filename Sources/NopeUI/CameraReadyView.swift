@@ -463,6 +463,9 @@ struct CameraReadyView: View {
             // Q's list takes the scrolling content's place while it is open (BUILD-SPEC.md, 3.6).
             if showsControls, showsQuickMenu {
                 QuickMenuList(context: context, isPresented: $showsQuickMenu, openSettings: openSettings)
+                    // Q opened during a slow first start: the indicator shows the mark alone, so
+                    // its words and plate never lie over Q's rows (LAUNCH-SCREEN.md, 13.2, part 3).
+                    .preference(key: QuickMenuListIsOpen.self, value: true)
             } else {
                 scrollingContent
                     // During the camera's first start everything that scrolls waits: laid out,

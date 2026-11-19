@@ -271,14 +271,42 @@ struct SessionPhotosTests {
         #expect(!model.isViewerOpen)
         #expect(model.sessionPhotos.photos.count == 1)
         #expect(model.sessionPhotos.newest?.preview == nil)
-        // A photo saved while in the background (Siri, a series) keeps no preview.
+        #expect(model.sessionPhotos.newest?.previewWasReleased == true)
+        // A photo saved while in the background (Siri, a series) keeps no preview: it was
+        // made and released at once.
         await model.send(.capture)
         #expect(model.sessionPhotos.photos.count == 2)
         #expect(model.sessionPhotos.previewBytes == 0)
+        #expect(model.sessionPhotos.newest?.previewWasReleased == true)
         // Back in the foreground, new photos have previews again.
         await model.send(.setInForeground(true))
         await model.send(.capture)
         #expect(model.sessionPhotos.newest?.preview != nil)
+        #expect(model.sessionPhotos.newest?.previewWasReleased == false)
+    }
+
+    @Test func aPreviewThatWasNeverMadeIsNotCalledReleased() async {
+        // No preview was made (here, no previewer), in the foreground or not (third review of
+        // 1.0.0, L8): the viewer must not say one was released.
+        let model = CameraModel(
+            backend: ScriptedBackend(capabilities: CameraModelTests.oneLens), saver: Self.saver(previewer: nil), sleep: { _ in })
+        await model.send(.start)
+        await model.send(.setInForeground(true))
+        await model.send(.capture)
+        await model.send(.setInForeground(false))
+        await model.send(.capture)
+        #expect(model.sessionPhotos.photos.map(\.previewWasReleased) == [false, false])
+        // A list release keeps a released record released, and marks a made preview released.
+        let list = Self.list()
+        list.add(Self.saved(), lens: nil, takenAt: Self.noon, preview: Self.preview(bytes: 1))
+        list.add(Self.saved(), lens: nil, takenAt: Self.noon, preview: nil, previewWasReleased: true)
+        list.add(Self.saved(), lens: nil, takenAt: Self.noon, preview: nil)
+        list.releasePreviews()
+        #expect(list.photos.map(\.previewWasReleased) == [true, true, false])
+        let limited = Self.list(count: 10, previews: 1)
+        limited.add(Self.saved(), lens: nil, takenAt: Self.noon, preview: Self.preview(bytes: 1))
+        limited.add(Self.saved(), lens: nil, takenAt: Self.noon, preview: Self.preview(bytes: 1))
+        #expect(limited.photos.map(\.previewWasReleased) == [true, false])
     }
 
     @Test func lowMemoryReleasesThePreviews() async {

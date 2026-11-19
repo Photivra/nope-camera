@@ -16,12 +16,12 @@ import NopeCore
 struct TakeBracketIntent: AppIntent {
     /// The action's name in the Shortcuts app.
     static let title = LocalizedStringResource(
-        "Take Bracket", comment: "The name of nope.'s action that takes an exposure bracket: several separate photos at different exposures, in the Shortcuts app.")
+        "Take Bracket", comment: "The name of nope.'s action that takes a bracket: several separate photos at different exposures or focus positions, in the Shortcuts app.")
 
     /// What the action does, in the Shortcuts app.
     static let description = IntentDescription(
         LocalizedStringResource(
-            "Opens nope. and takes separate photos at different exposures, once. Your bracket setting doesn't change. Needs Assistant Access, in nope. › Settings › Privacy.",
+            "Opens nope. and takes separate photos at different exposures or focus positions, once. Your bracket setting doesn't change. Needs Assistant Access, in nope. › Settings › Privacy.",
             comment: "Describes nope.'s Take Bracket action in the Shortcuts app. Keep \"nope.\" unchanged."))
 
     /// Runs in the background first, so a refused or cancelled request never opens the app;

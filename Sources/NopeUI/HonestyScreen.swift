@@ -90,7 +90,7 @@ struct HonestyScreen: View {
             HonestyStatement(
                 title: Text("Your Photo Library Is Never Read", tableName: "Honesty", bundle: .module, comment: "Honesty heading: the app can only add photos to the photo library, never see what is in it. Draft for the Honesty review."),
                 text: Text(
-                    "nope. asks only for permission to add photos. With that permission, iOS doesn't let nope. see or change what is in your library. The small pictures nope. shows of the photos you just took are kept in memory only, until nope. closes. So each time nope. opens, the Last Photo spot starts with a button that opens the Photos app.",
+                    "nope. asks to add photos, never to read them. With that permission, iOS doesn't let nope. see or change what is in your library. The small pictures nope. shows of the photos you just took are kept in memory only, until nope. closes. So each time nope. opens, the Last Photo spot starts with a button that opens the Photos app.",
                     tableName: "Honesty", bundle: .module,
                     comment: "Claim 29 in docs/research/privacy-claims.md (PHAccessLevel.addOnly); docs/PRIVACY.md, \"Last photo and its details\"; docs/design/device-feedback-1.0.md, section 1. Last Photo is the name of the spot beside the shutter; Photos and iOS are Apple's names. Keep \"nope.\" unchanged. Must not claim more than the English. Draft for the Honesty review."))
             HonestyStatement(

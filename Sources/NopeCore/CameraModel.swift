@@ -126,6 +126,12 @@ public final class CameraModel {
     /// so Keep Screen On counts from the latest one (issue #97). Only its changes matter.
     public private(set) var activityCount = 0
 
+    /// Counts the person's actions only (``CameraIntent/isActivity``), not the photos saved: a
+    /// series' photos are not an action. An interface watches it to close what stays "until the
+    /// next action", such as the hint after an assistant's action (docs/design/assistant-access.md,
+    /// section 10). Only its changes matter.
+    public private(set) var actionCount = 0
+
     /// The photos the latest press of the shutter saved, in the order saved: one photo, or a
     /// bracket's, burst's or astro run's frames. It also holds the frames saved before a
     /// bracket, burst or run stopped on an error, which ``captureStatus`` then reports only as
@@ -261,7 +267,10 @@ public final class CameraModel {
     /// it to Photos (which may show the add-only Photos prompt), or applies the drive mode
     /// (``pressShutter()``).
     public func send(_ intent: CameraIntent) async {
-        if intent.isActivity { activityCount += 1 }
+        if intent.isActivity {
+            activityCount += 1
+            actionCount += 1
+        }
         switch intent {
         case .start:
             await resolve(await backend.currentPermission())
@@ -532,11 +541,17 @@ public final class CameraModel {
     /// ``CaptureError/bracketNotReady``. A bracket never becomes a single photo, and with a
     /// bracket on no photo fires the flash (``shutterUsesFlash``).
     ///
-    /// - Parameter onceBracket: A bracket to take this time only, through the same bracket path
-    ///   as the shutter's, without changing ``ManualControlsModel/bracket`` (a Siri or
-    ///   Shortcuts request, issue #62); `nil` for the shutter's usual photo. The caller checks
-    ///   first that ``ManualControlsModel/bracketFrames(once:)`` can plan it.
-    func capture(onceBracket: BracketSettings? = nil) async {
+    /// - Parameters:
+    ///   - onceBracket: A bracket to take this time only, through the same bracket path as the
+    ///     shutter's, without changing ``ManualControlsModel/bracket`` (a Siri or Shortcuts
+    ///     request, issue #62); `nil` for the shutter's usual photo. The caller checks first that
+    ///     ``ManualControlsModel/bracketFrames(once:)`` can plan it.
+    ///   - appliesBracketInApp: Whether the exposure bracket on in the manual controls applies
+    ///     when `onceBracket` is `nil`: `true` for the shutter and the Apple Watch, `false` for
+    ///     Siri and Shortcuts' Take Photo, which always takes one photo
+    ///     (``PhotoShortcut/appliesBracketInApp``). The flash stays off while a bracket is on
+    ///     either way, as the flash control is hidden then.
+    func capture(onceBracket: BracketSettings? = nil, appliesBracketInApp: Bool = true) async {
         guard canCapture, let lens = selectedLens else { return }
         deviceStatus.refresh()
         lastPressPhotos = []
@@ -545,7 +560,7 @@ public final class CameraModel {
         var plan = saver?.plan(for: settings.metadata) ?? MetadataPlan(settings: settings.metadata)
         plan.location = location?.location(isOn: settings.metadata.isOn(.location))
         plan.mirrorsHorizontally = lens.kind == .front && settings.mirrorsFrontCamera
-        let bracket = onceBracket ?? (manual.intervalProgress == nil ? manual.bracket : nil)
+        let bracket = onceBracket ?? (manual.intervalProgress == nil && appliesBracketInApp ? manual.bracket : nil)
         // The flash is hidden while a bracket is on (issue #92), so no photo fires it then.
         let usesFlash = bracket == nil && manual.bracket == nil
         let request = CaptureRequest(lens: lens, metadata: plan, flashMode: usesFlash ? light.flashModeForCapture : .off)
@@ -727,6 +742,8 @@ public final class CameraModel {
     func keepInSession(_ result: (saved: SavedPhoto, preview: PhotoPreview?), lens: Lens, takenAt: Date) {
         lastPressPhotos.append(result.saved)
         activityCount += 1
-        sessionPhotos.add(result.saved, lens: lens, takenAt: takenAt, preview: isInForeground ? result.preview : nil)
+        sessionPhotos.add(
+            result.saved, lens: lens, takenAt: takenAt, preview: isInForeground ? result.preview : nil,
+            previewWasReleased: !isInForeground && result.preview != nil)
     }
 }

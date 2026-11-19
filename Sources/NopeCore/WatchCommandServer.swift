@@ -144,7 +144,9 @@ public final class WatchCommandServer {
             if let refusal = WatchResult(refusing: model.watchStatus) { return refusal }
             undeliveredResult = nil
             undeliveredUnsignedReason = nil
-            let photo = PhotoShortcut(delaySeconds: delay.seconds)
+            // The watch's shutter takes what the phone's drive strip says, so an exposure bracket on
+            // in the manual controls applies (docs/design/BRACKETING.md, section 6).
+            let photo = PhotoShortcut(delaySeconds: delay.seconds, appliesBracketInApp: true)
             Task {
                 let result = WatchResult(await inbox.submit(.takePhoto(photo)))
                 // Read from the capture status the request ended with. Should another photo

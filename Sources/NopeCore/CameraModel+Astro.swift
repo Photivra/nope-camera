@@ -248,7 +248,10 @@ extension CameraModel {
     func setInForeground(_ isInForeground: Bool) {
         self.isInForeground = isInForeground
         guard !isInForeground else { return }
-        guard astro.isOn else {
+        // A running focus bracket's countdown to continue is never an astro start delay, also
+        // with the helper on: cancelling it only pauses the bracket again, and no astro run
+        // starts beside it (third review of 1.0.0, S3).
+        guard astro.isOn, !bracketing.isRunning else {
             // The camera stops in the background, so the self-timer can't take its photo.
             drive.countdown.cancel()
             return

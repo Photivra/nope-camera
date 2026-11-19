@@ -48,6 +48,10 @@ public struct CameraScreen<Viewfinder: View>: View {
     /// presentation changes (night mode on iPad, a fold on the iPhone Duo).
     @State private var settingsNavigation = SettingsNavigation()
 
+    /// Whether Q's list is open in the scrolling layout, where it takes the place of the
+    /// scrolling content under the first start's indicator (``QuickMenuListIsOpen``).
+    @State private var quickMenuListIsOpen = false
+
     /// Makes the live viewfinder for the model's preview source.
     private let viewfinder: (any CameraPreviewSource) -> Viewfinder
 
@@ -103,9 +107,11 @@ public struct CameraScreen<Viewfinder: View>: View {
         // arrives, then a fade (docs/design/LAUNCH-SCREEN.md, 6.3). Inside night mode's style, so
         // it is red from the first frame. In the scrolling layout it is told where the pinned row
         // starts, so its words never come near the shutter (13.2).
+        // While Q's list is open there, the mark is shown alone (13.2, part 3).
+        .onPreferenceChange(QuickMenuListIsOpen.self) { quickMenuListIsOpen = $0 }
         .overlayPreferenceValue(PinnedRowTop.self) { pinnedRowTop in
             if model.isFirstStart {
-                StartIndicator(showsWords: isReady, pinnedRowTop: pinnedRowTop)
+                StartIndicator(showsWords: isReady && !quickMenuListIsOpen, pinnedRowTop: pinnedRowTop)
                     .transition(.opacity)
             }
         }

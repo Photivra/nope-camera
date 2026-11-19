@@ -336,6 +336,7 @@ The plate is doing what section 6.3 says. The fault is in the design: a control 
 
 1. **The scrolling content waits.** In the scrolling layout, while `model.isFirstStart`, everything that scrolls (format status, pills, warnings, the picture's frame, the mode card and every row) is laid out but not drawn, takes no touches and is hidden from VoiceOver. When the first start ends it appears with `NopeMotion.fade`, in the same animation that removes the indicator. The pinned row (Last Photo, shutter, Q) is drawn from the start, as in the other layouts, so the shutter and Settings (through Q) are in reach during a slow start.
 2. **The words give way to the pinned row.** If the plate's bottom edge (the window's center, plus 40 pt, plus the height of the wrapped words, plus `NopeSpace.m`) would come within `NopeSpace.s` of the pinned row's top edge, the words and the plate are left out and the mark is shown alone, as in the `.starting` state. This is decided from the layout, once per size of the window, and not from a list of devices. It is for short windows: a small iPhone, a short Stage Manager or Split View window, a language whose words wrap to more lines.
+3. **The words give way to Q.** Q's list takes the scrolling content's place while it is open (BUILD-SPEC.md, 3.6), so a person who opens Q during a slow start would have its rows under the plate. While Q's list is open, the words and the plate are left out and the mark is shown alone, as in part 2; they come back when Q closes, if the start is still slow. VoiceOver is unchanged: one element, "Starting the camera…". Q's rows are drawn and take touches as usual. Added after the third code review of 1.0.0 (owner decision: the mark alone while Q is open).
 
 What follows:
 
@@ -362,7 +363,7 @@ Considered and not chosen:
 | File | Change |
 | --- | --- |
 | `Sources/NopeUI/CameraReadyView.swift` (`scrolling`) | The scrolling content is not drawn, takes no touches and is hidden from VoiceOver while `showsStartIndicator` is set; it fades in when it clears. The pinned row is unchanged. |
-| `Sources/NopeUI/StartIndicator.swift` | The words and the plate are left out when part 2 of the rule applies. The room under the mark's center is given by `CameraScreen`, which knows the pinned row's top edge; without it the indicator behaves as today. |
+| `Sources/NopeUI/StartIndicator.swift` | The words and the plate are left out when part 2 of the rule applies. The room under the mark's center is given by `CameraScreen`, which knows the pinned row's top edge; without it the indicator behaves as today. For part 3, `CameraReadyView` reports Q's open list (`QuickMenuListIsOpen`) and `CameraScreen` shows the indicator without its words while it is open. |
 | `App/NopeAppUITests/LaunchHandOffUITests.swift` | Below. |
 | `docs/TESTING.md`, [launch.html](launch.html), `screens/launch-pair-largest` | The open finding is closed; the figure and its caption are redrawn. |
 
@@ -371,6 +372,7 @@ AC:
 - At every accessibility text size, in every window of section 9, no control that is drawn intersects the plate while the indicator is shown, and the mark's frame is the same as at the default size.
 - In the scrolling layout during the first start, the lens rows do not exist for a UI test or for VoiceOver; Take Photo and Quick Menu exist, are whole and can be pressed. When the session runs, the rows exist and the indicator is gone.
 - In a window too short for the words, the indicator has no words and no plate, and its label is still "Starting the camera…".
+- With Q opened during the first start in the scrolling layout, the indicator has no words and no plate, its label is still "Starting the camera…", and Q's rows exist and can be pressed.
 - `testFirstStartAtTheLargestTextSizeAndRightToLeft` passes its audit on iPhone and iPad with no finding set aside, in portrait and landscape on iPad.
 - No string is added or changed.
 

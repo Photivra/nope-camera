@@ -74,9 +74,11 @@ extension CameraModel {
     /// Takes the photos for a request: waits for the camera, switches the lens if asked, then
     /// takes them at once or after the self-timer.
     ///
-    /// The request's count decides what is taken, whatever the drive mode: one photo (a bracket
-    /// that is on in the manual controls still applies, as it does to the shutter), or a burst
-    /// of exactly that many frames through the burst's own loop (`takeBurst(frames:)`).
+    /// The request's count decides what is taken, whatever the drive mode: one photo, or a
+    /// burst of exactly that many frames through the burst's own loop (`takeBurst(frames:)`).
+    /// An exposure bracket on in the manual controls applies to the one photo only where the
+    /// request says so (``PhotoShortcut/appliesBracketInApp``: the Apple Watch); Siri and
+    /// Shortcuts' Take Photo always takes one photo, and Take Bracket takes brackets.
     ///
     /// - Parameters:
     ///   - photo: The request's delay, lens and count.
@@ -86,12 +88,15 @@ extension CameraModel {
         if let problem = await prepareCamera(lensKind: photo.lensKind, inbox: inbox) { return problem }
         guard canCapture, !isRunningSeries else { return .busy }
         let before = captureStatus
+        // How many photos were planned, for an answer after a part-way failure: the burst's
+        // count, or the frames of the app's bracket when it applied.
+        let planned = { photo.count > 1 ? photo.count : (self.failedBracket?.total ?? 1) }
         if photo.delaySeconds == 0 {
-            await takeShortcutPhotos(count: photo.count)
-            return outcome(of: captureStatus)
+            await takeShortcutPhotos(photo)
+            return outcome(of: captureStatus, planned: planned())
         }
-        startTimer(seconds: photo.delaySeconds) { [weak self] in await self?.takeShortcutPhotos(count: photo.count) }
-        return await outcomeAfterCountdown(since: before, inbox: inbox)
+        startTimer(seconds: photo.delaySeconds) { [weak self] in await self?.takeShortcutPhotos(photo) }
+        return await outcomeAfterCountdown(since: before, inbox: inbox, planned: planned)
     }
 
     /// Waits for the camera and switches to the lens a request asks for, if any, unless the
@@ -119,24 +124,28 @@ extension CameraModel {
     /// - Parameters:
     ///   - before: The capture status before the countdown started.
     ///   - inbox: The inbox, for its waits.
+    ///   - planned: How many photos were planned, read once they are taken, for the answer
+    ///     after a part-way failure.
     /// - Returns: How it ended: cancelled, the camera stopped, or the photos' outcome.
-    private func outcomeAfterCountdown(since before: CaptureStatus, inbox: ShortcutInbox) async -> ShortcutOutcome {
+    private func outcomeAfterCountdown(
+        since before: CaptureStatus, inbox: ShortcutInbox, planned: () -> Int = { 1 }
+    ) async -> ShortcutOutcome {
         _ = await inbox.wait { !self.drive.countdown.isRunning }
         guard isTakingPhoto || captureStatus != before else {
             return sessionStatus.canCapture ? .cancelled : .cameraUnavailable(.notRunning)
         }
         _ = await inbox.wait { !self.isTakingPhoto }
-        return outcome(of: captureStatus)
+        return outcome(of: captureStatus, planned: planned())
     }
 
-    /// Takes one photo or a burst of `count` frames at once.
+    /// Takes a request's one photo or its burst of `count` frames at once.
     ///
-    /// - Parameter count: How many photos.
-    private func takeShortcutPhotos(count: Int) async {
-        if count == 1 {
-            await capture()
+    /// - Parameter photo: The request.
+    private func takeShortcutPhotos(_ photo: PhotoShortcut) async {
+        if photo.count == 1 {
+            await capture(appliesBracketInApp: photo.appliesBracketInApp)
         } else {
-            await takeBurst(frames: count)
+            await takeBurst(frames: photo.count)
         }
     }
 
@@ -164,17 +173,24 @@ extension CameraModel {
         guard await inbox.wait(timeoutSeconds: Self.bracketReadingTimeoutSeconds, until: { self.manual.bracketFrames(once: bracket) != nil })
         else { return .cameraUnavailable(.notRunning) }
         let before = captureStatus
+        let planned = { self.failedBracket?.total ?? bracket.frameCount }
         if request.delaySeconds == 0 {
             await capture(onceBracket: bracket)
-            return outcome(of: captureStatus)
+            return outcome(of: captureStatus, planned: planned())
         }
         startTimer(seconds: request.delaySeconds) { [weak self] in await self?.capture(onceBracket: bracket) }
-        return await outcomeAfterCountdown(since: before, inbox: inbox)
+        return await outcomeAfterCountdown(since: before, inbox: inbox, planned: planned)
     }
 
     /// Takes one focus bracket for a request, at once or after the self-timer, through the same
     /// path as the shutter (``takeFocusBracket(_:)``), with the request's frames and range. The
-    /// focus bracket set in the app stays as it is.
+    /// focus bracket set in the app stays as it is. Refused while the astro helper is on
+    /// (``ShortcutOutcome/focusBracketBlockedByAstro``), where the app treats a focus bracket as
+    /// off and the shutter belongs to the astro run.
+    ///
+    /// The answer comes from the bracket this request began, never from an earlier one: a
+    /// countdown that was cancelled, or a bracket that didn't begin, answers as such, with no
+    /// photos saved.
     ///
     /// - Parameters:
     ///   - request: The request's frames, range and delay.
@@ -183,24 +199,31 @@ extension CameraModel {
     private func takeFocusBracket(_ request: BracketShortcut, inbox: ShortcutInbox) async -> ShortcutOutcome {
         guard canFocusBracket else { return .focusBracketUnavailable }
         guard canCapture, !isRunningSeries else { return .busy }
+        guard !astro.isOn else { return .focusBracketBlockedByAstro }
         let asSet = bracketing.focus.with(frameCount: request.focusFrameCount)
         let settings = request.focusRange == .wholeRange ? asSet.with(nearest: 0, farthest: 1) : asSet
         let before = captureStatus
+        let runsBefore = bracketing.runCount
         if request.delaySeconds == 0 {
-            await takeFocusBracket(settings)
+            // Checked above that it can be taken, so only a missing save pipeline stops it here,
+            // and the capture status says so.
+            guard await takeFocusBracket(settings) else { return outcome(of: captureStatus) }
         } else {
             startTimer(seconds: request.delaySeconds) { [weak self] in await self?.takeFocusBracket(settings) }
             let counted = await outcomeAfterCountdown(since: before, inbox: inbox)
-            guard bracketing.lastRun != nil else { return counted }
+            // Cancelled, or not begun at zero: the countdown's own answer.
+            guard bracketing.runCount != runsBefore else { return counted }
         }
         return focusBracketOutcome
     }
 
-    /// The outcome of the last focus bracket: stopped with its count when it ended early, as
-    /// its capture status says otherwise.
+    /// The outcome of the focus bracket a request just took: stopped with its count when it
+    /// ended early, how many were saved when it failed part-way, or as its capture status says
+    /// otherwise.
     private var focusBracketOutcome: ShortcutOutcome {
-        if let run = bracketing.lastRun, !run.isFinished, run.end != .failed {
-            return .focusBracketStopped(saved: run.saved, total: run.total)
+        if let run = bracketing.lastRun, !run.isFinished {
+            if run.end != .failed { return .focusBracketStopped(saved: run.saved, total: run.total) }
+            if run.saved > 0 { return .savedSome(saved: run.saved, total: run.total) }
         }
         return outcome(of: captureStatus)
     }
@@ -345,6 +368,20 @@ extension CameraModel {
         case .ready: sessionStatus == .stopped || sessionStatus == .starting
         default: false
         }
+    }
+
+    /// The outcome a capture status reports, with the photos saved before a part-way failure
+    /// (``lastPressPhotos``): a bracket or burst that saved some of its photos and then failed
+    /// answers how many of how many were saved, and Photos Saved is that number (third review
+    /// of 1.0.0, question 6).
+    ///
+    /// - Parameters:
+    ///   - status: The status after the photos.
+    ///   - planned: How many photos were planned.
+    /// - Returns: The outcome.
+    func outcome(of status: CaptureStatus, planned: Int) -> ShortcutOutcome {
+        guard case .failed = status, !lastPressPhotos.isEmpty else { return outcome(of: status) }
+        return .savedSome(saved: lastPressPhotos.count, total: max(planned, lastPressPhotos.count))
     }
 
     /// The outcome a capture status reports.

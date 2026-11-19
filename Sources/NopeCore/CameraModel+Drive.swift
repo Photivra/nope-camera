@@ -71,17 +71,32 @@ extension CameraModel {
         return deviceStatus.storageWarning(bytesPerPhoto: PhotoSizeEstimate.bytes(for: lens, settings: saveSettings))
     }
 
-    /// What the shutter does: stops a running countdown, burst or interval series, or else
-    /// applies the drive mode: one photo, the self-timer, a burst or an interval series. While
-    /// the astro helper is on, it starts or stops an astro run instead (``AstroModel``).
+    /// What the shutter does: stops a running countdown, burst, focus bracket or interval
+    /// series, or else applies the drive mode: one photo, the self-timer, a burst, a focus
+    /// bracket or an interval series. While the astro helper is on, it starts or stops an astro
+    /// run instead (``AstroModel``). While any series runs, the shutter stops it, in every drive
+    /// mode and with either type of bracket on.
     func pressShutter() async {
+        // A running focus bracket first, also one a Siri or Shortcuts request started: the
+        // shutter stops it after the current frame, also while it is paused or counts down to
+        // continue, whatever else is on (third review of 1.0.0, S3).
+        if bracketing.isRunning {
+            await pressFocusBracketShutter()
+            return
+        }
         if astro.isOn {
             pressAstroShutter()
             return
         }
-        // The focus bracket: the shutter starts it, cancels its countdown, and stops it after
-        // the current frame, also while it is paused or counts down to continue.
-        if bracketing.isRunning || isFocusBracketOn {
+        // A series started from Interval Settings, Siri or this mode: the shutter stops it, as
+        // it stops a burst, also with a focus bracket on, which would otherwise start beside it
+        // (third review of 1.0.0, S1).
+        if manual.intervalProgress != nil {
+            await send(.manual(.stopInterval))
+            return
+        }
+        // The focus bracket: the shutter starts it, or cancels its start delay.
+        if isFocusBracketOn {
             await pressFocusBracketShutter()
             return
         }
@@ -91,12 +106,6 @@ extension CameraModel {
         }
         if drive.burstProgress != nil {
             drive.requestBurstStop()
-            return
-        }
-        // A series started from Pro Tools, Siri or this mode: the shutter stops it, as it stops
-        // a burst.
-        if manual.intervalProgress != nil {
-            await send(.manual(.stopInterval))
             return
         }
         switch drive.mode {

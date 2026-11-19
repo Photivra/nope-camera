@@ -70,12 +70,12 @@ struct ProcessingNote: View {
         switch look {
         case .standard:
             Text(
-                "Nothing more to this lens's file. HEIF and JPEG copies that nope. develops from a RAW get the Standard look: one overall tone curve, and no noise reduction, sharpening or local tone mapping.",
+                "Nothing more to this lens's file. HEIF and JPEG copies that nope. develops from a RAW get the Standard look: one overall tone curve. For them, nope. turns off noise reduction, sharpening and local tone mapping.",
                 tableName: "Honesty", bundle: .module,
                 comment: "Processing note of a lens that can't save RAW, while the HEIF and JPEG look is Standard: nope. adds no processing to this lens's file, and what it does to copies developed from a RAW. HEIF, JPEG and RAW are file format names; Standard is the name of the look in Settings, use its translation. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.")
         case .flat:
             Text(
-                "Nothing more to this lens's file. HEIF and JPEG copies that nope. develops from a RAW get the Flat look: no contrast curve, and no noise reduction, sharpening or local tone mapping.",
+                "Nothing more to this lens's file. HEIF and JPEG copies that nope. develops from a RAW get the Flat look: no contrast curve. For them, nope. turns off noise reduction, sharpening and local tone mapping.",
                 tableName: "Honesty", bundle: .module,
                 comment: "Processing note of a lens that can't save RAW, while the HEIF and JPEG look is Flat: nope. adds no processing to this lens's file, and what it does to copies developed from a RAW. HEIF, JPEG and RAW are file format names; Flat is the name of the look in Settings, use its translation. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.")
         }

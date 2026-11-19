@@ -384,6 +384,11 @@ public final class BracketModel {
     /// Whether the person asked the running bracket to stop.
     private(set) var isStopRequested = false
 
+    /// How many focus brackets have begun since the model was made, so a Siri or Shortcuts
+    /// request can tell whether a bracket it asked for began, and never answers from an earlier
+    /// one's ``lastRun`` (third review of 1.0.0, S2).
+    private(set) var runCount = 0
+
     /// Creates the model: Exposure, the standard focus bracket, off.
     init() {}
 
@@ -431,6 +436,7 @@ public final class BracketModel {
     ///
     /// - Parameter settings: The bracket being taken.
     func beginRun(_ settings: FocusBracketSettings) {
+        runCount += 1
         isStopRequested = false
         lastRun = nil
         running = settings

@@ -122,6 +122,14 @@ enum ShortcutDialog {
             LocalizedStringResource(
                 "The focus bracket stopped: \(saved) of \(total) photos saved.",
                 comment: "Siri's answer when a focus bracket ended before its last frame. The first number is the photos saved, the second the frames asked for.")
+        case .focusBracketBlockedByAstro:
+            LocalizedStringResource(
+                "Astro is on. Turn it off to take a focus bracket.",
+                comment: "Siri's answer when a focus bracket was asked for while nope.'s night sky helper is on; nothing was taken. Astro is the helper's name on the camera.")
+        case .savedSome(let saved, let total):
+            LocalizedStringResource(
+                "\(saved) of \(total) photos saved. nope. shows why the others weren't.",
+                comment: "Siri's answer when a bracket, burst or focus bracket saved some of its photos and then failed. The first number is the photos saved, the second the photos planned. Keep \"nope.\" unchanged.")
         case .presetApplied(let result):
             presetMessage(for: result)
         case .presetUnavailable:

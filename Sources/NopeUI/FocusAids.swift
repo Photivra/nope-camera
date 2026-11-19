@@ -589,7 +589,7 @@ struct CameraHints: View {
         }
         ComparisonHint(model: model)
         // What an assistant did (issue #82).
-        AssistantHints()
+        AssistantHints(model: model)
     }
 }
 

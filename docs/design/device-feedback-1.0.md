@@ -48,9 +48,9 @@ Not proposed: keeping a small picture on the device between sessions, or asking 
 | Photos | Second Voice Control name | Localizable |
 | Opens the Photos app. | The button's hint | Localizable |
 | Your Photo Library Is Never Read | Honesty heading, under What nope. Never Does, after No Data Collected | Honesty |
-| nope. asks only for permission to add photos. With that permission, iOS doesn't let nope. see or change what is in your library. The small pictures nope. shows of the photos you just took are kept in memory only, until nope. closes. So each time nope. opens, the Last Photo spot starts with a button that opens the Photos app. | Honesty statement | Honesty |
+| nope. asks to add photos, never to read them. With that permission, iOS doesn't let nope. see or change what is in your library. The small pictures nope. shows of the photos you just took are kept in memory only, until nope. closes. So each time nope. opens, the Last Photo spot starts with a button that opens the Photos app. | Honesty statement | Honesty |
 
-For the Honesty review: "see or change" must match Apple's description of add-only access, cited as a new claim in `docs/research/privacy-claims.md` (`PHAccessLevel.addOnly`). "In memory only" repeats PRIVACY.md and must change with it if that ever changes. The statement says nothing about files kept for Try Again after a failed save; it must not be widened to "keeps no copy" without checking that path.
+For the Honesty review: the first sentence was "nope. asks only for permission to add photos."; it is narrowed for 1.0.0, because the app also asks for the camera and, if turned on, location. "see or change" must match Apple's description of add-only access, cited as a new claim in `docs/research/privacy-claims.md` (`PHAccessLevel.addOnly`). "In memory only" repeats PRIVACY.md and must change with it if that ever changes. The statement says nothing about files kept for Try Again after a failed save; it must not be widened to "keeps no copy" without checking that path.
 
 ### Accessibility
 

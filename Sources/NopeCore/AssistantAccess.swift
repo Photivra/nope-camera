@@ -464,7 +464,7 @@ extension ShortcutOutcome {
         switch self {
         case .saved: 1
         case .savedSeveral(let count, _): count
-        case .focusBracketStopped(let saved, _): saved
+        case .focusBracketStopped(let saved, _), .savedSome(let saved, _): saved
         default: 0
         }
     }

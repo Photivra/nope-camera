@@ -188,6 +188,35 @@ extension NopeAppUITests {
         app.terminate()
     }
 
+    /// Q opened during a slow first start in the scrolling layout: the indicator is the mark
+    /// alone, with no words or plate over Q's rows, and its label is unchanged; the words come
+    /// back when Q closes (LAUNCH-SCREEN.md, 13.2, part 3).
+    @MainActor
+    func testQuickMenuDuringTheFirstStartShowsTheMarkAlone() throws {
+        let app = launchSlowStart(Self.largestTextSize)
+        settle()
+        let indicator = startIndicator(app)
+        let withWords = indicator.frame.height
+        // The mark alone is its square and the padding; the words add at least a line.
+        XCTAssertGreaterThan(withWords, 120, "the words aren't shown before Q opens: \(indicator.frame)")
+        app.buttons["Quick Menu"].tap()
+        settle()
+        XCTAssertTrue(indicator.exists, "the first start ended during the test")
+        XCTAssertEqual(indicator.label, "Starting the camera…")
+        XCTAssertLessThan(indicator.frame.height, withWords - 40, "the words show over Q: \(indicator.frame)")
+        XCTAssertTrue(app.descendants(matching: .any)["quickMenu"].waitForExistence(timeout: 5), "Q's list isn't there")
+        let done = app.buttons["quick.done"]
+        XCTAssertTrue(done.exists, "Q's list has no Done")
+        XCTAssertTrue(done.isHittable, "Q's list can't be pressed")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "First start, Q open, largest text"
+        add(shot)
+        try auditScrollingScreen(app)
+        done.tap()
+        settle()
+        XCTAssertEqual(indicator.frame.height, withWords, accuracy: 1, "the words didn't come back when Q closed")
+    }
+
     /// When the camera runs the indicator fades and the picture stays black in the light
     /// appearance; it doesn't come back after the app goes to the background and returns, or
     /// after a lens change, when the spinner is used as before.

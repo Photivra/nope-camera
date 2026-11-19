@@ -429,6 +429,27 @@ struct AutoControlsModelTests {
         #expect(CameraModel(backend: ScriptedManualBackend(lenses: [Fixtures.wide])).closeUpLens == nil)
     }
 
+    @Test func noSuggestionWhileTheAppHoldsTheLens() async {
+        // Setting Nearest Focus at 0, or a focus bracket's first frames: the app holds the lens
+        // near itself, so a near position and a search are no sign of a subject too close
+        // (third review of 1.0.0, S4).
+        let clock = ManualClock()
+        let (model, _) = await makeModel(lenses: [Fixtures.wide, Fixtures.ultraWide], clock: clock)
+        await recordTooClose(model, clock: clock)
+        #expect(model.manual.suggestsCloseUpLens)
+        model.manual.holdsControls = true
+        await recordTooClose(model, clock: clock)
+        #expect(!model.manual.suggestsCloseUpLens)
+        #expect(model.closeUpLens == nil)
+        // Given back, the detector starts again from nothing: one reading proves nothing.
+        model.manual.holdsControls = false
+        clock.advance(by: .milliseconds(250))
+        await model.manual.record(Fixtures.reading(lensPosition: 0, adjusting: true))
+        #expect(!model.manual.suggestsCloseUpLens)
+        await recordTooClose(model, clock: clock)
+        #expect(model.manual.suggestsCloseUpLens)
+    }
+
     @Test func theUltraWideIsSuggestedOnlyWhereItCanHelp() async {
         // A fixed-focus ultra wide is never suggested.
         let fixedFocusUltraWide = Lens(

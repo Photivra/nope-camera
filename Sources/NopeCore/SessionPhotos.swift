@@ -27,6 +27,11 @@ public struct SessionPhoto: Identifiable, Equatable, Sendable {
     /// shows its fallback with ``SavedPhoto/thumbnail``.
     public internal(set) var preview: PhotoPreview?
 
+    /// Whether a preview was made and then released (by ``SessionPhotos``, or at once because
+    /// the app had left the foreground), as opposed to never made. A viewer says which, so it
+    /// never says a preview was released when none could be made (third review of 1.0.0, L8).
+    public internal(set) var previewWasReleased: Bool
+
     /// Creates a record.
     ///
     /// - Parameters:
@@ -35,12 +40,16 @@ public struct SessionPhoto: Identifiable, Equatable, Sendable {
     ///   - lens: The lens, or `nil`.
     ///   - takenAt: When the shutter took it.
     ///   - preview: The compressed preview, or `nil`.
-    public init(id: Int, photo: SavedPhoto, lens: Lens?, takenAt: Date, preview: PhotoPreview?) {
+    ///   - previewWasReleased: Whether a preview was made and released, so `preview` is `nil`.
+    public init(
+        id: Int, photo: SavedPhoto, lens: Lens?, takenAt: Date, preview: PhotoPreview?, previewWasReleased: Bool = false
+    ) {
         self.id = id
         self.photo = photo
         self.lens = lens
         self.takenAt = takenAt
         self.preview = preview
+        self.previewWasReleased = previewWasReleased
     }
 
     /// Whether the preview has fewer pixels than the saved photo, so a viewer zoomed in says it
@@ -183,13 +192,19 @@ public final class SessionPhotos {
     ///   - lens: The lens it was taken with.
     ///   - takenAt: When the shutter took it.
     ///   - preview: Its compressed preview, or `nil`.
-    func add(_ photo: SavedPhoto, lens: Lens?, takenAt: Date, preview: PhotoPreview?) {
+    ///   - previewWasReleased: Whether a preview was made and released before it was added
+    ///     (the app had left the foreground), so `preview` is `nil`.
+    func add(_ photo: SavedPhoto, lens: Lens?, takenAt: Date, preview: PhotoPreview?, previewWasReleased: Bool = false) {
         var kept = photos
-        kept.append(SessionPhoto(id: nextID, photo: photo, lens: lens, takenAt: takenAt, preview: preview))
+        kept.append(
+            SessionPhoto(
+                id: nextID, photo: photo, lens: lens, takenAt: takenAt, preview: preview,
+                previewWasReleased: previewWasReleased))
         nextID += 1
         kept.removeFirst(max(0, kept.count - countLimit))
         for index in kept.indices.dropLast(previewLimit) where kept[index].preview != nil {
             kept[index].preview = nil
+            kept[index].previewWasReleased = true
         }
         // One assignment, so an observer sees one change.
         photos = kept
@@ -199,7 +214,9 @@ public final class SessionPhotos {
     func releasePreviews() {
         guard photos.contains(where: { $0.preview != nil }) else { return }
         photos = photos.map {
-            SessionPhoto(id: $0.id, photo: $0.photo, lens: $0.lens, takenAt: $0.takenAt, preview: nil)
+            SessionPhoto(
+                id: $0.id, photo: $0.photo, lens: $0.lens, takenAt: $0.takenAt, preview: nil,
+                previewWasReleased: $0.previewWasReleased || $0.preview != nil)
         }
     }
 }

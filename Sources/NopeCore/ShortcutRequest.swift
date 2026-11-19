@@ -81,11 +81,18 @@ public struct PhotoShortcut: Equatable, Sendable {
     /// The kind of lens to use, or `nil` for the lens already selected.
     public let lensKind: Lens.Kind?
 
-    /// How many photos, from 1 to ``DriveModel/maximumBurstFrames``. One takes a single photo
-    /// (an exposure bracket that is on in the manual controls still applies, as it does to the
-    /// shutter); more takes a burst of exactly that many frames with the burst's own loop, each
-    /// frame its own photo.
+    /// How many photos, from 1 to ``DriveModel/maximumBurstFrames``. One takes a single photo;
+    /// more takes a burst of exactly that many frames with the burst's own loop, each frame its
+    /// own photo.
     public let count: Int
+
+    /// Whether an exposure bracket that is on in the manual controls applies to a single photo,
+    /// as it does to the shutter: `true` for the Apple Watch's shutter, which takes what the
+    /// phone's drive strip says (docs/design/BRACKETING.md, section 6); `false` for Siri and
+    /// Shortcuts, whose Take Photo always takes one photo, so the question and the answer
+    /// match what was taken (third review of 1.0.0, question 7). Take Bracket is the action
+    /// for a bracket.
+    public let appliesBracketInApp: Bool
 
     /// Creates a request.
     ///
@@ -95,10 +102,13 @@ public struct PhotoShortcut: Equatable, Sendable {
     ///   - lensKind: The kind of lens, or `nil` for the lens already selected.
     ///   - count: How many photos. Values below 1 become 1, and values above
     ///     ``DriveModel/maximumBurstFrames`` become ``DriveModel/maximumBurstFrames``.
-    public init(delaySeconds: Int = 0, lensKind: Lens.Kind? = nil, count: Int = 1) {
+    ///   - appliesBracketInApp: Whether an exposure bracket on in the manual controls applies
+    ///     to a single photo (the Apple Watch), or not (Siri and Shortcuts, the default).
+    public init(delaySeconds: Int = 0, lensKind: Lens.Kind? = nil, count: Int = 1, appliesBracketInApp: Bool = false) {
         self.delaySeconds = min(max(delaySeconds, 0), Self.maximumDelaySeconds)
         self.lensKind = lensKind
         self.count = min(max(count, 1), DriveModel.maximumBurstFrames)
+        self.appliesBracketInApp = appliesBracketInApp
     }
 
     /// Creates a request from a preset delay and an optional custom one, as the "Take Photo"
@@ -389,6 +399,16 @@ public enum ShortcutOutcome: Equatable, Sendable {
     /// A focus bracket stopped before its last frame (stopped, storage, battery or the camera).
     /// Say how many photos were saved, of how many.
     case focusBracketStopped(saved: Int, total: Int)
+
+    /// The astro helper is on, so no focus bracket was taken. Say so, and that turning Astro off
+    /// allows one. While the helper is on the app treats a focus bracket as off, and the shutter
+    /// belongs to the astro run.
+    case focusBracketBlockedByAstro
+
+    /// A bracket, burst or focus bracket saved some of its photos and then failed. `saved` is
+    /// how many were saved, `total` how many were planned. Say how many of how many were saved,
+    /// and that the app shows why the others weren't.
+    case savedSome(saved: Int, total: Int)
 
     /// The camera can't take a photo now. Say why, from the reason.
     case cameraUnavailable(CameraUnavailability)

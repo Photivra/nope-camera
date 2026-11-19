@@ -402,6 +402,8 @@ struct KeepScreenOnTests {
         await model.send(.capture)
         await waitUntil { model.activityCount == 3 }
         #expect(model.activityCount == 3, "the shutter and the saved photo")
+        // Actions alone, for what stays until the next action: the saved photo isn't one.
+        #expect(model.actionCount == 2)
     }
 
     @Test func whichIntentsAreActivity() {

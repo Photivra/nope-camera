@@ -503,9 +503,9 @@ struct ProcessingSection: View {
     @ViewBuilder static func look(of processing: PhotoDetails.Processing) -> some View {
         switch processing {
         case .developed(.standard):
-            Text("One overall tone curve, and no noise reduction, sharpening or local tone mapping.", tableName: "Honesty", bundle: .module, comment: "In the photo details, under a copy developed with the Standard look: what the look does. The same claims as the processing note. Draft wording for the Honesty review.")
+            Text("One overall tone curve. nope. turns off noise reduction, sharpening and local tone mapping.", tableName: "Honesty", bundle: .module, comment: "In the photo details, under a copy developed with the Standard look: what the look does. The same claims as the processing note. Draft wording for the Honesty review.")
         case .developed(.flat):
-            Text("No contrast curve, and no noise reduction, sharpening or local tone mapping.", tableName: "Honesty", bundle: .module, comment: "In the photo details, under a copy developed with the Flat look: what the look does. The same claims as the processing note. Draft wording for the Honesty review.")
+            Text("No contrast curve. nope. turns off noise reduction, sharpening and local tone mapping.", tableName: "Honesty", bundle: .module, comment: "In the photo details, under a copy developed with the Flat look: what the look does. The same claims as the processing note. Draft wording for the Honesty review.")
         case .none, .byDevice:
             EmptyView()
         }

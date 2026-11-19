@@ -198,8 +198,9 @@ enum PhotoViewerFacts {
         if let lens = photo.lens { sentences.append(LensName.string(for: lens.kind) + ".") }
         sentences.append(time(photo.takenAt) + ".")
         if photo.preview == nil {
-            sentences.append(PhotoViewerText.noPreviewTitle(makesPreviews: makesPreviews) + ".")
-            sentences.append(PhotoViewerText.noPreviewSentence(makesPreviews: makesPreviews))
+            let released = photo.previewWasReleased
+            sentences.append(PhotoViewerText.noPreviewTitle(makesPreviews: makesPreviews, wasReleased: released) + ".")
+            sentences.append(PhotoViewerText.noPreviewSentence(makesPreviews: makesPreviews, wasReleased: released))
         } else if isZoomed {
             sentences.append(PhotoViewerText.zoomedIn)
             if photo.previewIsSmallerThanPhoto { sentences.append(PhotoViewerText.previewHint) }
@@ -412,11 +413,20 @@ enum PhotoViewerText {
             comment: "Sentence under Preview Not Kept in the Last Photo viewer. Photos is the system photo library app. Keep \"nope.\" unchanged, lowercase with its period. Honesty wording: must not claim more than the English. Draft for the Honesty review.")
     }
 
-    /// "No Preview", the title in the Lock Screen camera's viewer, which makes no previews.
-    static var lockScreenNoPreviewTitle: String {
+    /// "No Preview", the title in the Lock Screen camera's viewer, which makes no previews, and
+    /// in the app's viewer for a photo whose preview couldn't be made.
+    static var noPreviewTitle: String {
         String(
             localized: "No Preview", table: "Honesty", bundle: .module,
-            comment: "Title in the Last Photo viewer of the camera opened from the Lock Screen: it makes no previews, so only the photo's small thumbnail is shown. Honesty wording: must not claim more than the English. Draft for the Honesty review.")
+            comment: "Title in the Last Photo viewer when the photo shown has no preview, so only its small thumbnail is shown: in the camera opened from the Lock Screen, which makes no previews, or when nope. couldn't make one. Honesty wording: must not claim more than the English. Draft for the Honesty review.")
+    }
+
+    /// "nope. couldn't make a preview of this photo. The photo is saved in Photos."
+    static var previewNotMadeSentence: String {
+        String(
+            localized: "nope. couldn't make a preview of this photo. The photo is saved in Photos.",
+            table: "Honesty", bundle: .module,
+            comment: "Sentence under No Preview in the Last Photo viewer when nope. couldn't make a screen-size preview of the saved photo (the file couldn't be read for one), so only its small thumbnail is shown. Photos is the system photo library app. Keep \"nope.\" unchanged, lowercase with its period. Honesty wording: must not claim more than the English. Draft for the Honesty review.")
     }
 
     /// "On the Lock Screen, nope. doesn't make previews. The photo is saved in Photos."
@@ -428,19 +438,26 @@ enum PhotoViewerText {
     }
 
     /// The title for a photo without a preview: ``previewNotKeptTitle`` where previews are made
-    /// and this one was released, ``lockScreenNoPreviewTitle`` where none are made.
+    /// and this one was released, ``noPreviewTitle`` where none are made or this one couldn't be.
     ///
-    /// - Parameter makesPreviews: Whether this process makes previews.
-    static func noPreviewTitle(makesPreviews: Bool) -> String {
-        makesPreviews ? previewNotKeptTitle : lockScreenNoPreviewTitle
+    /// - Parameters:
+    ///   - makesPreviews: Whether this process makes previews.
+    ///   - wasReleased: Whether this photo's preview was made and released
+    ///     (`SessionPhoto.previewWasReleased`).
+    static func noPreviewTitle(makesPreviews: Bool, wasReleased: Bool) -> String {
+        makesPreviews && wasReleased ? previewNotKeptTitle : noPreviewTitle
     }
 
-    /// The sentence for a photo without a preview: ``previewNotKeptSentence`` where previews are
-    /// made and this one was released, ``lockScreenNoPreviewSentence`` where none are made.
+    /// The sentence for a photo without a preview: ``lockScreenNoPreviewSentence`` where none
+    /// are made, ``previewNotKeptSentence`` where this one was released, and
+    /// ``previewNotMadeSentence`` where it couldn't be made.
     ///
-    /// - Parameter makesPreviews: Whether this process makes previews.
-    static func noPreviewSentence(makesPreviews: Bool) -> String {
-        makesPreviews ? previewNotKeptSentence : lockScreenNoPreviewSentence
+    /// - Parameters:
+    ///   - makesPreviews: Whether this process makes previews.
+    ///   - wasReleased: Whether this photo's preview was made and released.
+    static func noPreviewSentence(makesPreviews: Bool, wasReleased: Bool) -> String {
+        guard makesPreviews else { return lockScreenNoPreviewSentence }
+        return wasReleased ? previewNotKeptSentence : previewNotMadeSentence
     }
 
     /// "Processed", the word of the format status for a lens without RAW (``FormatChip``).
@@ -1314,7 +1331,9 @@ struct PhotoViewerPage: View {
                         .onTapGesture(perform: toggleControls)
                 }
             } else {
-                PhotoViewerFallback(thumbnail: photo.photo.thumbnail, makesPreviews: makesPreviews)
+                PhotoViewerFallback(
+                    thumbnail: photo.photo.thumbnail, makesPreviews: makesPreviews,
+                    wasReleased: photo.previewWasReleased)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .contentShape(.rect)
                     .onTapGesture(perform: toggleControls)
@@ -1382,15 +1401,21 @@ struct PhotoViewerFallback: View {
     /// Whether this process makes previews (`SessionPhotos.makesPreviews`).
     let makesPreviews: Bool
 
+    /// Whether the photo's preview was made and released (`SessionPhoto.previewWasReleased`).
+    let wasReleased: Bool
+
     /// Creates the fallback.
     ///
     /// - Parameters:
     ///   - thumbnail: The saved photo's thumbnail, or `nil`.
     ///   - makesPreviews: Whether this process makes previews: `false` in the Lock Screen
     ///     camera.
-    init(thumbnail: PhotoThumbnail?, makesPreviews: Bool = true) {
+    ///   - wasReleased: Whether the photo's preview was made and released, rather than never
+    ///     made.
+    init(thumbnail: PhotoThumbnail?, makesPreviews: Bool = true, wasReleased: Bool = true) {
         self.thumbnail = thumbnail
         self.makesPreviews = makesPreviews
+        self.wasReleased = wasReleased
     }
 
     /// The fallback.
@@ -1398,10 +1423,10 @@ struct PhotoViewerFallback: View {
         VStack(spacing: NopeSpace.m) {
             picture
             VStack(spacing: NopeSpace.xs) {
-                Text(verbatim: PhotoViewerText.noPreviewTitle(makesPreviews: makesPreviews))
+                Text(verbatim: PhotoViewerText.noPreviewTitle(makesPreviews: makesPreviews, wasReleased: wasReleased))
                     .font(.headline)
                     .foregroundStyle(NopeColor.label)
-                Text(verbatim: PhotoViewerText.noPreviewSentence(makesPreviews: makesPreviews))
+                Text(verbatim: PhotoViewerText.noPreviewSentence(makesPreviews: makesPreviews, wasReleased: wasReleased))
                     .font(.subheadline)
                     .foregroundStyle(CameraColor(NopeColor.labelSecondary))
             }

@@ -914,6 +914,140 @@ struct CameraModelFocusBracketTests {
         model.drive.countdown.cancel()
         #expect(await task.value == .cancelled)
     }
+
+    // MARK: - Third review of 1.0.0
+
+    @Test(arguments: [false, true])
+    func theShutterStopsAnIntervalSeriesWithTheFocusBracketOn(hardware: Bool) async {
+        // S1: a series started from Interval Settings or Siri leaves the focus bracket on; the
+        // shutter stops the series and starts no focus bracket.
+        let (model, backend) = await makeModel(sleep: { _ in try await Task.sleep(for: .seconds(60)) })
+        #expect(model.isFocusBracketOn)
+        await model.send(.manual(.setInterval(IntervalSettings(interval: 60, count: 3))))
+        await model.send(.manual(.startInterval))
+        await waitUntil { model.manual.intervalProgress?.taken == 1 }
+        if hardware {
+            await model.send(.drive(.hardwareButton(.pressed)))
+            await model.send(.drive(.hardwareButton(.released)))
+        } else {
+            await model.send(.capture)
+        }
+        #expect(model.manual.intervalProgress == nil)
+        #expect(model.bracketing.progress == nil)
+        #expect(model.bracketing.lastRun == nil, "no focus bracket was taken")
+        #expect(!model.drive.countdown.isRunning)
+        #expect(await backend.captures == 1)
+    }
+
+    @Test func takeBracketWithTypeFocusIsRefusedWhileAstroIsOn() async {
+        // S3: refused, as Start Interval Shooting is; nothing is taken.
+        let (model, backend) = await makeModel(turnOn: false)
+        await model.send(.astro(.setOn(true)))
+        #expect(model.astro.isOn)
+        let inbox = ShortcutInbox(sleep: ShortcutTests.neverTimesOut)
+        let request = BracketShortcut(type: .focus, focusFrameCount: 3, frameCount: 3, step: 1)
+        let outcome = await model.perform(.takeBracket(request), inbox: inbox, settings: nil, presets: nil)
+        #expect(outcome == .focusBracketBlockedByAstro)
+        #expect(outcome.photosSaved == 0)
+        #expect(await backend.captures == 0)
+        #expect(model.bracketing.lastRun == nil)
+        #expect(WatchResult(ShortcutOutcome.focusBracketBlockedByAstro) == .notSaved)
+    }
+
+    @Test func aRunningFocusBracketIsStoppedByTheShutterAndStartsNoAstroRun() async {
+        // S3: should a focus bracket run while the helper is on, the shutter stops it, and
+        // leaving the app during its countdown to continue starts no astro run beside it.
+        let ticker = Ticker()
+        let (model, backend) = await makeModel(frames: 3, sleep: { seconds in
+            if seconds >= 1 { await ticker.sleep() }
+        })
+        await model.send(.bracket(.setFocusStartDelay(.threeSeconds)))
+        await model.send(.bracket(.useWholeRange))
+        await backend.setOnCapture { count in
+            if count == 1 { await model.send(.setInForeground(false)) }
+            return nil
+        }
+        await model.send(.capture)
+        for _ in 0..<3 {
+            await waitForTicker(ticker)
+            await ticker.tick()
+        }
+        await waitUntil { model.bracketing.progress?.isPaused == true }
+        model.astro.setOn(true)
+        // Back in the app: the countdown to continue runs; leaving again only pauses it again.
+        await model.send(.setInForeground(true))
+        await waitUntil { model.drive.countdown.isRunning }
+        await model.send(.setInForeground(false))
+        #expect(!model.drive.countdown.isRunning)
+        #expect(!model.astro.isRunning)
+        #expect(model.astro.lastRun == nil)
+        await waitUntil { model.bracketing.progress?.isPaused == true }
+        await model.send(.setInForeground(true))
+        await waitUntil { model.drive.countdown.isRunning }
+        // The shutter reaches the focus bracket, not the astro helper.
+        await model.send(.capture)
+        await waitUntil { model.bracketing.lastRun != nil }
+        #expect(model.bracketing.lastRun?.end == .stopped)
+        #expect(model.bracketing.lastRun?.saved == 1)
+        #expect(!model.astro.isRunning)
+        #expect(model.astro.lastRun == nil)
+        #expect(await backend.captures == 1)
+    }
+
+    @Test func takeBracketWithTypeFocusNeverAnswersFromAnEarlierRun() async {
+        // S2: an earlier run stopped at 2 of 5, then a request whose countdown is cancelled. Only
+        // the countdown's one-second steps wait; the frames' short settle doesn't.
+        let (model, backend) = await makeModel(frames: 5, sleep: { seconds in
+            if seconds >= 1 { try await Task.sleep(for: .seconds(60)) }
+        })
+        await backend.setOnCapture { count in
+            if count == 2 { await model.send(.bracket(.stop)) }
+            return nil
+        }
+        await model.send(.capture)
+        #expect(model.bracketing.lastRun?.saved == 2)
+        await backend.setOnCapture { _ in nil }
+        let delayed = BracketShortcut(type: .focus, focusFrameCount: 3, frameCount: 3, step: 1, delaySeconds: 3)
+        let inbox = ShortcutInbox(sleep: ShortcutTests.neverTimesOut)
+        let task = Task { await model.perform(.takeBracket(delayed), inbox: inbox, settings: nil, presets: nil) }
+        await waitUntil { model.drive.countdown.isRunning }
+        model.drive.countdown.cancel()
+        let outcome = await task.value
+        #expect(outcome == .cancelled)
+        #expect(outcome.photosSaved == 0)
+        #expect(await backend.captures == 2)
+    }
+
+    @Test func takeBracketWithTypeFocusWithNoPipelineAnswersSo() async {
+        // S2: with no save pipeline nothing begins, at once or after the countdown, and an
+        // earlier run's result is never the answer.
+        let (model, backend) = await makeModel(saver: nil, turnOn: false)
+        model.bracketing.endRun(
+            FocusBracketResult(end: .stopped, saved: 4, total: 10, offPlan: 0, focusAfter: .returned(0.5)))
+        let inbox = ShortcutInbox(sleep: ShortcutTests.neverTimesOut)
+        let now = BracketShortcut(type: .focus, focusFrameCount: 3, frameCount: 3, step: 1)
+        let atOnce = await model.perform(.takeBracket(now), inbox: inbox, settings: nil, presets: nil)
+        #expect(atOnce == .notSaved(.savingUnavailable))
+        #expect(atOnce.photosSaved == 0)
+        model.captureStatus = .idle
+        let delayed = BracketShortcut(type: .focus, focusFrameCount: 3, frameCount: 3, step: 1, delaySeconds: 3)
+        let afterDelay = await model.perform(.takeBracket(delayed), inbox: inbox, settings: nil, presets: nil)
+        #expect(afterDelay == .notSaved(.savingUnavailable))
+        #expect(afterDelay.photosSaved == 0)
+        #expect(await backend.captures == 0)
+    }
+
+    @Test func takeBracketWithTypeFocusThatFailsPartWayGivesTheSavedCount() async {
+        // Question 6: 2 of 5 saved, then a frame fails.
+        let (model, backend) = await makeModel(turnOn: false)
+        await backend.setOnCapture { count in count == 3 ? .captureFailed : nil }
+        let inbox = ShortcutInbox(sleep: ShortcutTests.neverTimesOut)
+        let request = BracketShortcut(type: .focus, focusFrameCount: 5, frameCount: 3, step: 1)
+        let outcome = await model.perform(.takeBracket(request), inbox: inbox, settings: nil, presets: nil)
+        #expect(outcome == .savedSome(saved: 2, total: 5))
+        #expect(outcome.photosSaved == 2)
+        #expect(WatchResult(ShortcutOutcome.savedSome(saved: 2, total: 5)) == .notSaved)
+    }
 }
 
 /// What a test sees about the model while a frame is taken.

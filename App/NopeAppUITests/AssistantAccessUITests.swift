@@ -288,6 +288,32 @@ extension NopeAppUITests {
         XCTAssertEqual(line.label, "Switch Lens. Asked, allowed.")
     }
 
+    /// The hint never leaves on a timer (ACCESSIBILITY.md; third review of 1.0.0, S7): it is
+    /// still there after longer than the old 12 seconds, Close closes it, and on a second launch
+    /// the next action on the camera closes it.
+    @MainActor
+    func testTheHintStaysUntilCloseOrTheNextAction() throws {
+        let app = launchAssistantRequests("lens-ultraWide", Self.assistantOnEveryAction)
+        let notice = app.descendants(matching: .any).matching(identifier: "assistant.notice").firstMatch
+        XCTAssertTrue(notice.waitForExistence(timeout: 30))
+        _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Longer than the old timer")], timeout: 14)
+        XCTAssertTrue(notice.exists, "the hint left on a timer")
+        let close = app.buttons["assistant.notice.close"]
+        XCTAssertTrue(close.exists)
+        XCTAssertEqual(close.label, "Close")
+        close.tap()
+        XCTAssertTrue(notice.waitForNonExistence(timeout: 5), "Close didn't close the hint")
+        app.terminate()
+
+        let again = launchAssistantRequests("lens-ultraWide", Self.assistantOnEveryAction)
+        let hint = again.descendants(matching: .any).matching(identifier: "assistant.notice").firstMatch
+        XCTAssertTrue(hint.waitForExistence(timeout: 30))
+        let wide = again.buttons["Wide"]
+        XCTAssertTrue(wide.waitForExistence(timeout: 5))
+        wide.tap()
+        XCTAssertTrue(hint.waitForNonExistence(timeout: 5), "the next action didn't close the hint")
+    }
+
     @MainActor
     func testWithNeverAnActionRunsWithoutAsking() throws {
         let app = launchAssistantRequests("lens-ultraWide", Self.assistantOnNever)

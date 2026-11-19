@@ -152,8 +152,11 @@ extension ManualControlsModel {
         }
         lastReading = reading
         guard let lens else { return }
-        if closeUpDismissed || settings.focus != nil || focusTarget?.isLocked == true {
-            // Manual focus or a lock is the person's choice; nothing to suggest.
+        if closeUpDismissed || settings.focus != nil || focusTarget?.isLocked == true || holdsControls {
+            // Manual focus or a lock is the person's choice; nothing to suggest. So is a lens the
+            // app itself holds near (an end of the focus range being set, a focus bracket's
+            // frames): a near position or a move then is no sign of a subject too close to
+            // focus (third review of 1.0.0, S4).
             closeUpDetector = CloseUpDetector()
             suggestsCloseUpLens = false
         } else {

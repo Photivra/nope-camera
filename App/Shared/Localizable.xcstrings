@@ -1,8 +1,16 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%lld of %lld photos saved. nope. shows why the others weren't." : {
+      "comment" : "Siri's answer when a bracket, burst or focus bracket saved some of its photos and then failed. The first number is the photos saved, the second the photos planned. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
+    },
     "As Set in nope." : {
       "comment" : "A choice of the Range setting of nope.'s Take Bracket action: the focus range set in the app. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
+    },
+    "Astro is on. Turn it off to take a focus bracket." : {
+      "comment" : "Siri's answer when a focus bracket was asked for while nope.'s night sky helper is on; nothing was taken. Astro is the helper's name on the camera.",
       "extractionState" : "manual"
     },
     "Brightest First" : {
@@ -427,7 +435,7 @@
       "extractionState" : "manual"
     },
     "Take Bracket" : {
-      "comment" : "The name of nope.'s action that takes an exposure bracket: several separate photos at different exposures, in the Shortcuts app."
+      "comment" : "The name of nope.'s action that takes a bracket: several separate photos at different exposures or focus positions, in the Shortcuts app."
     },
     "Take Photo" : {
       "comment" : "The name of nope.'s action that takes a photo, in the Shortcuts app and Siri."
@@ -679,7 +687,7 @@
       "comment" : "Describes nope.'s Take Photo action in the Shortcuts app. Keep \"nope.\" unchanged.",
       "extractionState" : "manual"
     },
-    "Opens nope. and takes separate photos at different exposures, once. Your bracket setting doesn't change. Needs Assistant Access, in nope. › Settings › Privacy." : {
+    "Opens nope. and takes separate photos at different exposures or focus positions, once. Your bracket setting doesn't change. Needs Assistant Access, in nope. › Settings › Privacy." : {
       "comment" : "Describes nope.'s Take Bracket action in the Shortcuts app. Keep \"nope.\" unchanged.",
       "extractionState" : "manual"
     },

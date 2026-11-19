@@ -285,6 +285,7 @@
 1 2 NopeAppUITests/testProcessedMarkerSwitchHidesOnlyTheMarker 76e 73e
 2 2 NopeAppUITests/testQuickButtonOpensMenuAndSettings 48e 48e
 1 2 NopeAppUITests/testQuickControlsTrayOpensAndCloses 29 30
+6 3 NopeAppUITests/testQuickMenuDuringTheFirstStartShowsTheMarkAlone 50e 44e
 4 3 NopeAppUITests/testQuickMenuLargestText 71e 71e
 6 2 NopeAppUITests/testQuickMenuLongLanguage 229e 229e
 4 1 NopeAppUITests/testQuickMenuMenuTile 62e 62e
@@ -344,6 +345,7 @@
 2 5 NopeAppUITests/testTheCloseUpSwitchIsDisabledDuringTheCountdown 54e 50e
 3 2 NopeAppUITests/testTheFocusSquareAndLockFadeAfterATap 54e 28e
 4 3 NopeAppUITests/testTheFocusSquareStaysWithAssistiveTechnology 58e 59e
+5 2 NopeAppUITests/testTheHintStaysUntilCloseOrTheNextAction 60e 62e
 6 3 NopeAppUITests/testTheLargestLiveActivityRowIsNoTallerThanBefore 16e 16e
 6 1 NopeAppUITests/testTheLiveActivityStopButtonIsACapsuleTarget 45e 45e
 4 4 NopeAppUITests/testTheRefusalCardClosesUntilTheNextRefusal 16e 26e
@@ -380,6 +382,7 @@
 1 5 OverlayUITests/testFlatLevelSaysItPointsDown 13 11
 4 4 OverlayUITests/testGridAndLevelFromTheQuickControls 52 49
 2 4 OverlayUITests/testGridOnlyAndLevelOnly 26 33
+3 4 OverlayUITests/testGridStyleTextGrowsAtEveryTextSize 540e 402e
 6 2 OverlayUITests/testHistogramAndReadoutShowWithTheManualControls 30 21
 5 2 OverlayUITests/testHistogramIsNeverShownInFullAuto 16 14
 1 4 OverlayUITests/testLiveAidsAtTheLargestTextSizeAndRightToLeft 43 46

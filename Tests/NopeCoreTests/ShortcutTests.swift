@@ -64,6 +64,11 @@ struct ShortcutTests {
         #expect(model.outcome(of: .failed(.saveFailed)) == .notSaved(.saveFailed))
         #expect(model.outcome(of: .idle) == .notSaved(.notRunning))
         #expect(model.outcome(of: .capturing) == .notSaved(.notRunning))
+        // Nothing saved before the failure: not saved, whatever was planned.
+        #expect(model.outcome(of: .failed(.saveFailed), planned: 3) == .notSaved(.saveFailed))
+        #expect(model.outcome(of: .saved(Self.photo(.signed)), planned: 1) == .saved(isSigned: true))
+        #expect(ShortcutOutcome.savedSome(saved: 2, total: 5).photosSaved == 2)
+        #expect(ShortcutOutcome.focusBracketBlockedByAstro.photosSaved == 0)
     }
 
     // MARK: - Taking photos
@@ -626,6 +631,70 @@ struct ShortcutTests {
         await tick(ticker)
         #expect(await request.value == .savedSeveral(count: 3, allSigned: false))
         #expect(await backend.brackets.count == 1)
+    }
+
+    // MARK: - Third review of 1.0.0
+
+    @Test func takePhotoTakesOnePhotoWithABracketOnInTheApp() async {
+        // Question 7: Siri and Shortcuts' Take Photo always takes one photo; Take Bracket takes
+        // brackets. The person's bracket stays on.
+        let (model, backend) = await makeBracketModel(enabled: true)
+        await model.send(.manual(.setBracket(.standard)))
+        let outcome = await run(.takePhoto(PhotoShortcut()), on: model)
+        #expect(outcome == .saved(isSigned: false))
+        #expect(outcome.photosSaved == 1)
+        #expect(await backend.brackets.isEmpty)
+        #expect(await backend.captureCount == 1)
+        #expect(model.manual.bracket == .standard)
+        #expect(!PhotoShortcut().appliesBracketInApp)
+        // The shutter still takes the bracket.
+        await model.send(.capture)
+        #expect(await backend.brackets.count == 1)
+    }
+
+    @Test func theWatchsPhotoTakesTheBracketOnInTheApp() async {
+        // The watch's shutter takes what the phone's drive strip says (BRACKETING.md, 6).
+        let (model, backend) = await makeBracketModel(enabled: true)
+        await model.send(.manual(.setBracket(.standard)))
+        let outcome = await run(.takePhoto(PhotoShortcut(appliesBracketInApp: true)), on: model)
+        #expect(outcome == .savedSeveral(count: 3, allSigned: false))
+        #expect(await backend.brackets.count == 1)
+    }
+
+    /// A started manual-capable camera with a reading, whose library fails after two photos.
+    func makeFailingModel(enabled: Bool = false) async -> (CameraModel, ScriptedManualBackend) {
+        let backend = ScriptedManualBackend(lenses: [ManualFixtures.wide])
+        let library = FakeLibrary(error: .saveFailed, failsAfter: 2)
+        let model = CameraModel(backend: backend, saver: CameraModelTests.saver(library: library), sleep: { _ in })
+        await model.send(.start)
+        if enabled { await model.send(.manual(.setEnabled(true))) }
+        await model.manual.record(ManualFixtures.reading)
+        return (model, backend)
+    }
+
+    @Test func aBurstThatFailsPartWayGivesTheSavedCount() async {
+        // Question 6: "2 of 5 photos saved", and Photos Saved is 2.
+        let (model, _) = await makeFailingModel()
+        let outcome = await run(.takePhoto(PhotoShortcut(count: 5)), on: model)
+        #expect(outcome == .savedSome(saved: 2, total: 5))
+        #expect(outcome.photosSaved == 2)
+        #expect(model.lastPressPhotos.count == 2)
+    }
+
+    @Test func aBracketThatFailsPartWayGivesTheSavedCount() async {
+        let (model, _) = await makeFailingModel()
+        let outcome = await run(.takeBracket(BracketShortcut(frameCount: 5, step: 1)), on: model)
+        #expect(outcome == .savedSome(saved: 2, total: 5))
+        #expect(outcome.photosSaved == 2)
+        // After a countdown, too.
+        let (delayed, _) = await makeFailingModel()
+        let afterDelay = await run(.takeBracket(BracketShortcut(frameCount: 3, step: 1, delaySeconds: 1)), on: delayed)
+        #expect(afterDelay == .savedSome(saved: 2, total: 3))
+        // The watch's photo with the app's bracket on.
+        let (watch, _) = await makeFailingModel(enabled: true)
+        await watch.send(.manual(.setBracket(BracketSettings(frameCount: 5, step: 1))))
+        let fromTheWatch = await run(.takePhoto(PhotoShortcut(appliesBracketInApp: true)), on: watch)
+        #expect(fromTheWatch == .savedSome(saved: 2, total: 5))
     }
 
     @Test func aBracketRequestIsBusyDuringACountdownAndChecksTheLens() async {

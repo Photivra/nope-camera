@@ -162,7 +162,8 @@ extension VerticalAlignment {
 /// ``NopeMaterial/solid`` that can't be seen on the black picture. While it shows, nothing is drawn
 /// under the plate: the scrolling layout waits to draw its scrolling content (LAUNCH-SCREEN.md,
 /// 13.2), and where the plate would come within ``NopeSpace/s`` of the pinned row, the words and
-/// the plate are left out and the mark is shown alone (``wordsFit(plateExtent:roomBelowCenter:)``).
+/// the plate are left out and the mark is shown alone (``wordsFit(plateExtent:roomBelowCenter:)``),
+/// as they are while Q's list is open there (``QuickMenuListIsOpen``).
 /// Before the camera state is known there are no words and no plate: that frame is the launch
 /// screen again. It turns with
 /// ``SwiftUICore/EnvironmentValues/cameraUprightRotation`` about the mark's center, so it is
@@ -367,6 +368,27 @@ struct StartWordsWidth: Layout {
         subviews.first?.place(
             at: CGPoint(x: bounds.midX, y: bounds.midY), anchor: .center,
             proposal: ProposedViewSize(width: bounds.width, height: bounds.height))
+    }
+}
+
+/// Whether Q's list is open in the scrolling layout, where it takes the place of the scrolling
+/// content, so ``CameraScreen`` shows the first start's mark without its words and plate while
+/// it is open (LAUNCH-SCREEN.md, 13.2, part 3). `false` when it is closed and in the other
+/// layouts.
+struct QuickMenuListIsOpen: PreferenceKey {
+    /// Creates the key. It holds no state.
+    init() {}
+
+    /// Closed.
+    static let defaultValue = false
+
+    /// Open when any view reports it open; there is at most one list.
+    ///
+    /// - Parameters:
+    ///   - value: The value so far.
+    ///   - nextValue: The next view's value.
+    static func reduce(value: inout Bool, nextValue: () -> Bool) {
+        value = value || nextValue()
     }
 }
 

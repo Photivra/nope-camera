@@ -18,8 +18,12 @@ struct PhotoViewerTests {
         SavedPhoto(formats: processed ? [.heif] : [.raw, .heif], isProcessedFallback: processed, signature: signature, metadata: [:])
     }
 
-    static func photo(_ id: Int, lens: Lens? = wide, preview: PhotoPreview? = preview, saved: SavedPhoto = saved()) -> SessionPhoto {
-        SessionPhoto(id: id, photo: saved, lens: lens, takenAt: Date(timeIntervalSince1970: 0), preview: preview)
+    static func photo(
+        _ id: Int, lens: Lens? = wide, preview: PhotoPreview? = preview, saved: SavedPhoto = saved(), released: Bool = false
+    ) -> SessionPhoto {
+        SessionPhoto(
+            id: id, photo: saved, lens: lens, takenAt: Date(timeIntervalSince1970: 0), preview: preview,
+            previewWasReleased: released)
     }
 
     @Test func signatureFollowsTheThumbnailBadge() {
@@ -63,9 +67,19 @@ struct PhotoViewerTests {
         #expect(
             PhotoViewerFacts.spokenValue(of: processed, isZoomed: false)
                 == "Processed: no RAW on this lens, HEIF. Saved. Not signed: signing is off in Settings. \(time).")
-        let released = Self.photo(1, preview: nil)
+        let released = Self.photo(1, preview: nil, released: true)
         #expect(PhotoViewerFacts.spokenValue(of: released, isZoomed: true).hasSuffix(
             "Preview Not Kept. nope. keeps previews in memory only and has released this one. The photo is saved in Photos."))
+    }
+
+    @Test func aPreviewThatCouldNotBeMadeIsNotCalledReleased() {
+        // ImageIO couldn't make a preview: nothing was released (third review of 1.0.0, L8).
+        let photo = Self.photo(1, preview: nil)
+        let value = PhotoViewerFacts.spokenValue(of: photo, isZoomed: false)
+        #expect(value.hasSuffix("No Preview. nope. couldn't make a preview of this photo. The photo is saved in Photos."))
+        #expect(!value.contains("released"))
+        #expect(PhotoViewerText.noPreviewTitle(makesPreviews: true, wasReleased: false) == "No Preview")
+        #expect(PhotoViewerText.noPreviewSentence(makesPreviews: true, wasReleased: false) == PhotoViewerText.previewNotMadeSentence)
     }
 
     @Test func theLockScreenCameraSaysItMakesNoPreviews() {
@@ -74,11 +88,13 @@ struct PhotoViewerTests {
         let value = PhotoViewerFacts.spokenValue(of: photo, isZoomed: false, makesPreviews: false)
         #expect(value.hasSuffix("No Preview. On the Lock Screen, nope. doesn't make previews. The photo is saved in Photos."))
         #expect(!value.contains("released"))
-        #expect(PhotoViewerText.noPreviewTitle(makesPreviews: false) == "No Preview")
-        #expect(PhotoViewerText.noPreviewTitle(makesPreviews: true) == "Preview Not Kept")
-        #expect(PhotoViewerText.noPreviewSentence(makesPreviews: true) == PhotoViewerText.previewNotKeptSentence)
+        #expect(PhotoViewerText.noPreviewTitle(makesPreviews: false, wasReleased: false) == "No Preview")
+        #expect(PhotoViewerText.noPreviewTitle(makesPreviews: false, wasReleased: true) == "No Preview")
+        #expect(PhotoViewerText.noPreviewTitle(makesPreviews: true, wasReleased: true) == "Preview Not Kept")
         #expect(
-            PhotoViewerText.noPreviewSentence(makesPreviews: false)
+            PhotoViewerText.noPreviewSentence(makesPreviews: true, wasReleased: true) == PhotoViewerText.previewNotKeptSentence)
+        #expect(
+            PhotoViewerText.noPreviewSentence(makesPreviews: false, wasReleased: false)
                 == "On the Lock Screen, nope. doesn't make previews. The photo is saved in Photos.")
     }
 
