@@ -39,7 +39,7 @@ struct SeriesLiveActivity: Widget {
                         SeriesActivityDetails(content: content)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         if content.canStop {
-                            SeriesStopButton(isNightMode: content.isNightMode)
+                            SeriesStopButton(isNightMode: content.isNightMode, kind: content.kind)
                         }
                     }
                     .foregroundStyle(color)

@@ -787,8 +787,80 @@ struct CameraModelFocusBracketTests {
         paused.phase = .paused
         #expect(paused.statusLine == .framesPaused(taken: 1, total: 3))
         paused.phase = .stopped
-        #expect(paused.statusLine == .stoppedPhotosSaved(1))
-        #expect(!running.canStop)
+        // As the card says it (docs/design/device-feedback-1.0.md, section 6).
+        #expect(paused.statusLine == .bracketStopped(saved: 1, total: 3))
+        // Stop is offered during the start delay and while frames are taken, not once it ended.
+        #expect(running.canStop)
+        for phase: LiveActivityContent.Phase in [.countingDown, .paused] {
+            #expect(LiveActivityContent(kind: .focusBracket, phase: phase, total: 3).canStop, "\(phase)")
+        }
+        for phase: LiveActivityContent.Phase in [.saving, .savingPaused, .finished, .stopped, .failed] {
+            #expect(!LiveActivityContent(kind: .focusBracket, phase: phase, total: 3).canStop, "\(phase)")
+        }
+    }
+
+    @Test func theLiveActivityStopStopsTheStartDelay() async {
+        let ticker = Ticker()
+        let (model, backend) = await makeModel(sleep: { seconds in
+            if seconds >= 1 { await ticker.sleep() }
+        })
+        await model.send(.bracket(.setFocusStartDelay(.threeSeconds)))
+        await model.send(.capture)
+        let content = model.liveActivityContent(continuing: nil, isInForeground: true, now: Date())
+        #expect(content?.kind == .focusBracket)
+        #expect(content?.phase == .countingDown)
+        #expect(content?.total == 3)
+        #expect(content?.canStop == true)
+        let presenter = FakeLiveActivities()
+        let coordinator = LiveActivityCoordinator(presenter: presenter, backgroundTime: FakeBackgroundTime(), now: { Date() })
+        coordinator.isEnabled = true
+        coordinator.apply(model)
+        #expect(coordinator.shown?.kind == .focusBracket)
+        await coordinator.stopSeries(model)
+        #expect(!model.drive.countdown.isRunning)
+        #expect(presenter.ends.last?.content.statusLine == .bracketStopped(saved: 0, total: 3))
+        #expect(coordinator.shown == nil)
+        #expect(await backend.captures == 0)
+    }
+
+    @Test func theLiveActivityStopStopsAfterTheCurrentFrame() async {
+        let (model, backend) = await makeModel(frames: 3)
+        let presenter = FakeLiveActivities()
+        let coordinator = LiveActivityCoordinator(presenter: presenter, backgroundTime: FakeBackgroundTime(), now: { Date() })
+        coordinator.isEnabled = true
+        await backend.setOnCapture { count in
+            if count == 1 {
+                await coordinator.apply(model)
+                await coordinator.stopSeries(model)
+            }
+            return nil
+        }
+        await model.send(.capture)
+        // The frame being taken is kept; no more are taken.
+        #expect(model.bracketing.lastRun?.saved == 1)
+        #expect(model.bracketing.lastRun?.isFinished == false)
+        #expect(presenter.ends.count == 1)
+        #expect(coordinator.shown == nil)
+    }
+
+    @Test func theLiveActivityStopLeavesAnotherCountdownAlone() async {
+        // Stop on an interval or astro activity doesn't cancel a countdown: only a focus
+        // bracket's own activity sends the bracket's stop.
+        let ticker = Ticker()
+        let (model, _) = await makeModel(sleep: { seconds in
+            if seconds >= 1 { await ticker.sleep() }
+        }, turnOn: false)
+        await model.send(.drive(.setMode(.timer(.threeSeconds))))
+        await model.send(.capture)
+        #expect(model.drive.countdown.isRunning)
+        let coordinator = LiveActivityCoordinator(
+            presenter: FakeLiveActivities(), backgroundTime: FakeBackgroundTime(), now: { Date() })
+        coordinator.isEnabled = true
+        coordinator.apply(model)
+        #expect(coordinator.shown?.kind == .timer)
+        await coordinator.stopSeries(model)
+        #expect(model.drive.countdown.isRunning)
+        model.drive.countdown.cancel()
     }
 
     @Test func takeBracketWithTypeFocusTakesOneFocusBracket() async {

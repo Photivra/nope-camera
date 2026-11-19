@@ -122,13 +122,16 @@ public final class LiveActivityCoordinator {
         }
     }
 
-    /// Stops the interval series or astro run from the activity's Stop button, and ends the
+    /// Stops the interval series, astro run or focus bracket from the activity's Stop button, and ends the
     /// activity at once, with every photo already taken saved.
     ///
     /// - Parameter model: The camera model.
     public func stopSeries(_ model: CameraModel) async {
         await model.send(.manual(.stopInterval))
         await model.send(.astro(.stop))
+        // A focus bracket stops after its current frame, or before its first; sent only for its
+        // own activity, since the same intent also cancels a countdown.
+        if shown?.kind == .focusBracket { await model.send(.bracket(.stop)) }
         guard let shown else { return }
         presenter.end(model.liveActivityOutcome(after: shown), dismissal: .immediate)
         self.shown = nil

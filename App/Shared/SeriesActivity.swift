@@ -19,7 +19,7 @@ struct SeriesActivityAttributes: ActivityAttributes {
     typealias ContentState = LiveActivityContent
 }
 
-/// Stops the interval series or astro run from the Live Activity's Stop button.
+/// Stops the interval series, astro run or focus bracket from the Live Activity's Stop button.
 ///
 /// A `LiveActivityIntent` runs in the app's process, not the widget extension's (App Intents,
 /// `LiveActivityIntent`), so the app's ``SeriesActivityActions/stop`` does the work; it holds no
@@ -28,13 +28,13 @@ struct StopSeriesIntent: LiveActivityIntent {
     /// The action's name.
     static let title = LocalizedStringResource(
         "Stop Series",
-        comment: "The name of the action behind the Stop button on nope.'s Live Activity: stops interval shooting or the night sky helper's frames. Keep \"nope.\" unchanged if it appears.")
+        comment: "The name of the action behind the Stop button on nope.'s Live Activity: stops interval shooting, the night sky helper's frames or a focus bracket. Keep \"nope.\" unchanged if it appears.")
 
     /// What the action does.
     static let description = IntentDescription(
         LocalizedStringResource(
-            "Stops nope.'s interval shooting or astro frames. Every photo already taken is saved.",
-            comment: "Describes the action behind the Stop button on nope.'s Live Activity. Keep \"nope.\" unchanged."))
+            "Stops nope.'s interval shooting, astro frames or focus bracket. Every photo already taken is saved.",
+            comment: "Describes the action behind the Stop button on nope.'s Live Activity. Keep \"nope.\" unchanged. Draft for the Honesty review."))
 
     /// Not listed in the Shortcuts app.
     static let isDiscoverable = false
@@ -176,6 +176,8 @@ enum SeriesActivityText {
             Text("Stopped: \(taken) of \(total) photos taken", comment: "Live Activity: interval shooting was stopped early. Both numbers are counts of photos.")
         case .photosSaved(let saved):
             Text("Photos saved: \(saved)", comment: "Live Activity: a burst, the night sky helper or the self-timer finished. The number is how many photos were saved.")
+        case .bracketStopped(let saved, let total):
+            Text("Bracket stopped: \(saved) of \(total) photos saved", comment: "Live Activity: a focus bracket was stopped before its last frame, as the camera's card says it. Both numbers are counts of photos; the second is how many the bracket was to take.")
         case .stoppedPhotosSaved(let saved):
             Text("Stopped. Photos saved: \(saved)", comment: "Live Activity: a burst or the night sky helper stopped early, for example because the camera stopped. The number is how many photos were saved.")
         case .noPhotoTaken:
@@ -221,11 +223,17 @@ enum SeriesActivityText {
     }
 }
 
-/// The Stop button, shown while an interval series runs or is paused: a capsule, filled with the
-/// tile gray, or black with the red outline in night mode (docs/design/system.html).
+/// The Stop button, shown while an interval series, astro run or focus bracket runs or is
+/// paused, and during a focus bracket's start delay: a capsule, filled with the tile gray, or
+/// black with the red outline in night mode (docs/design/system.html). The visible word is
+/// always "Stop"; for a focus bracket VoiceOver names it "Stop Bracket", as the camera's card
+/// does (docs/design/device-feedback-1.0.md, section 6).
 struct SeriesStopButton: View {
     /// Whether the activity is in night mode.
     var isNightMode = false
+
+    /// What runs, for the VoiceOver name.
+    var kind: LiveActivityContent.Kind = .interval
 
     /// The button, which runs ``StopSeriesIntent`` in the app.
     var body: some View {
@@ -240,8 +248,16 @@ struct SeriesStopButton: View {
         // Its own width: beside the status lines, which take the row's priority, the capsule was
         // squeezed to its symbol and the word was cut.
         .fixedSize()
+        .accessibilityLabel(accessibilityName)
         .accessibilityHint(
             Text("Every photo already taken is saved.", comment: "VoiceOver hint of the Stop button on nope.'s Live Activity."))
+    }
+
+    /// "Stop Bracket" for a focus bracket, as on the camera's card; otherwise "Stop".
+    private var accessibilityName: Text {
+        kind == .focusBracket
+            ? Text("Stop Bracket", comment: "VoiceOver name of the Stop button on nope.'s Live Activity while a focus bracket runs: stops after the current frame; every photo taken is kept. The same name as the button on the camera's focus bracket card.")
+            : Text("Stop", comment: "Button on nope.'s Live Activity that stops interval shooting or the night sky helper's frames. Every photo already taken is saved.")
     }
 }
 
@@ -347,7 +363,7 @@ struct SeriesActivityLockScreenView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .layoutPriority(1)
             if content.canStop {
-                SeriesStopButton(isNightMode: content.isNightMode)
+                SeriesStopButton(isNightMode: content.isNightMode, kind: content.kind)
             }
         }
         .padding(NopeSpace.m)
