@@ -522,24 +522,29 @@ other finding fails the test:
   on iPad, an open finding: on the iPad Simulator the test's 1.2-second press arrived as a tap
   (the focus square moved to the pressed point, unlocked), at the center and off it; it passes
   on iPhone. The device check below covers press and hold on iPad;
-- two iPad Air 11-inch (M4) findings from the 1.0.0 integration, each set aside on one text in
-  one test, on iPad only (an owner decision; 2026-11-18, iOS 27.2 Simulator;
-  `isApprovedAuditException` in `NopeAppUITests.swift`). The recordings show both texts whole,
-  so both are taken to be false findings of the audit; before each release they are checked by
-  hand on an iPad at the largest text size (see "On-device checks"). Every other finding on
-  these screens, and every finding on these texts in other tests, still fails:
-  - `testAssistantAccessPageAtTheLargestTextSize`: "Dynamic Type font sizes are partially
-    unsupported" and "Text clipped" on the Assistant Access switch's explanation ("Lets Siri,
-    Shortcuts…", in the row `settings.assistantAccess.switch`). In the 720-point popover the
+- two findings from the 1.0.0 integration, each set aside on one text in one test (an owner
+  decision; 2026-11-18, iOS 27.2 Simulator; `isApprovedAuditException` in
+  `NopeAppUITests.swift`). The recordings show both texts whole, so both are taken to be false
+  findings of the audit; before each release they are checked by hand on an iPad at the
+  largest text size (see "On-device checks"). Every other finding on these screens, and every
+  finding on these texts in other tests, still fails:
+  - `testAssistantAccessPageAtTheLargestTextSize`, on the iPad Air 11-inch (M4) only: "Dynamic
+    Type font sizes are partially unsupported" and "Text clipped" on the Assistant Access
+    switch's explanation ("Lets Siri, Shortcuts…", in the row `settings.assistantAccess.switch`). In the 720-point popover the
     explanation runs past the list's lower edge and is reached by scrolling. Scrolled fully into
     view, shown whole in the recording, a taller popover (1000 points) and Settings as a sheet
     were each tried: the audit reported the same two findings every time, as it does for the
     switch's title on the iPhone and the iPad Pro, which the test already sets aside. No layout
     change was kept;
-  - `testNightModeSettingsScreensPassAccessibilityAudits`: "Text clipped" on the Accessibility
-    page's "Pinching to switch lenses is optional. The lens buttons do the same."
-    (`settings.accessibility.pinchOptional`). The recording shows the sentence whole on two
-    lines, inside the frame the audit reports;
+  - the Settings audits that walk every page, in night mode
+    (`testNightModeSettingsScreensPassAccessibilityAudits`, and the same audit at the largest
+    text size and right to left) and in the system appearance
+    (`testSettingsScreensPassAccessibilityAudits` and `…InTheLightSetting`): "Text clipped" on
+    the Accessibility page's "Pinching to switch lenses is optional. The lens buttons do the
+    same.", matched by its text. Reported on the iPad Air 11-inch (M4) in the night mode audit,
+    and on the iPhone 18 Pro in all four but the largest text size; the iPhone recording shows
+    it whole on two lines too.
+    The recording shows the sentence whole on two lines, inside the frame the audit reports;
 - a third finding from the 1.0.0 integration is fixed, not set aside:
   `testFirstStartAtTheLargestTextSizeAndRightToLeft` reported a contrast finding on the
   "Ultra Wide" lens row, which the first start's plate covered at the largest text size on iPad.

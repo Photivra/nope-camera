@@ -374,6 +374,9 @@ struct StartWordsWidth: Layout {
 /// global coordinates, so ``CameraScreen`` can tell ``StartIndicator`` how much room there is
 /// under the mark (LAUNCH-SCREEN.md, 13.2). `nil` in the other layouts.
 struct PinnedRowTop: PreferenceKey {
+    /// Creates the key. It holds no state.
+    init() {}
+
     /// No pinned row.
     static let defaultValue: CGFloat? = nil
 

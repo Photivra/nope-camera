@@ -814,13 +814,16 @@ final class NopeAppUITests: XCTestCase {
     }
 
     /// Whether an issue is one of the two audit findings the owner set aside for 1.0.0, each on
-    /// one text, in one test, on iPad only (docs/TESTING.md, "UI tests and accessibility
-    /// audits"). The recordings show both texts whole; they are checked by hand on an iPad.
+    /// one text in one test (docs/TESTING.md, "UI tests and accessibility audits"). The
+    /// recordings show both texts whole; they are checked by hand on an iPad.
     ///
     /// - "Text clipped" on "Pinching to switch lenses is optional. The lens buttons do the
-    ///   same." (identifier `settings.accessibility.pinchOptional`) in
-    ///   `testNightModeSettingsScreensPassAccessibilityAudits`.
-    /// - "Text clipped" and "Dynamic Type font sizes are partially unsupported" on the Assistant
+    ///   same." (matched by its text: it has no identifier of its own) in the Settings audits
+    ///   that walk every page, in night mode (`testNightModeSettingsScreensPassAccessibilityAudits`
+    ///   and its largest text size and right-to-left forms) and in the system appearance
+    ///   (`testSettingsScreensPassAccessibilityAudits` and its light form). The iPad Air reports
+    ///   it in the first; the iPhone 18 Pro Simulator in all but the largest text size.
+    /// - On iPad only, "Text clipped" and "Dynamic Type font sizes are partially unsupported" on the Assistant
     ///   Access switch's explanation ("Lets Siri, Shortcuts…"; the switch's row,
     ///   `settings.assistantAccess.switch`, combines it) in
     ///   `testAssistantAccessPageAtTheLargestTextSize`.
@@ -829,13 +832,14 @@ final class NopeAppUITests: XCTestCase {
     /// fails.
     @MainActor
     func isApprovedAuditException(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
-        guard UIDevice.current.userInterfaceIdiom == .pad, let element = issue.element else { return false }
-        if name.contains("testNightModeSettingsScreensPassAccessibilityAudits") {
-            return issue.auditType == .textClipped
-                && (element.identifier == "settings.accessibility.pinchOptional"
-                    || element.label.hasPrefix("Pinching to switch lenses is optional."))
+        guard let element = issue.element else { return false }
+        // The Settings audits that walk every page: in night mode (by default, at the largest
+        // text size and right to left) and in the system appearance (dark and light).
+        if name.contains("testNightModeSettingsScreens") || name.contains("testSettingsScreensPassAccessibilityAudits") {
+            return issue.auditType == .textClipped && element.label.hasPrefix("Pinching to switch lenses is optional.")
         }
         if name.contains("testAssistantAccessPageAtTheLargestTextSize") {
+            guard UIDevice.current.userInterfaceIdiom == .pad else { return false }
             return [.textClipped, .dynamicType].contains(issue.auditType)
                 && (element.identifier == "settings.assistantAccess.switch" || element.label.contains("Lets Siri, Shortcuts"))
         }

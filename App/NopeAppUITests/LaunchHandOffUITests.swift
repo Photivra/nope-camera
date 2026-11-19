@@ -98,8 +98,12 @@ extension NopeAppUITests {
     /// intersects the indicator.
     @MainActor
     func assertScrollingContentWaits(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssertFalse(app.buttons["Ultra Wide"].exists, "a lens row exists during the first start", file: file, line: line)
-        XCTAssertFalse(app.buttons["Wide"].exists, "a lens row exists during the first start", file: file, line: line)
+        for lens in ["Ultra Wide", "Wide"] {
+            let row = app.buttons[lens]
+            XCTAssertFalse(
+                row.exists, "a lens row exists during the first start: \(row.exists ? row.debugDescription : "")", file: file,
+                line: line)
+        }
         let window = app.windows.firstMatch.frame
         let indicator = startIndicator(app).frame
         for name in ["Take Photo", "Quick Menu"] {

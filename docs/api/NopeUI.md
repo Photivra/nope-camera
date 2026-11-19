@@ -17231,6 +17231,52 @@ static var scopeNote: Text { get }
 
 Where the setting is used, a line of its own under the explanation.
 
+## `PinnedRowTop`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+struct PinnedRowTop
+```
+
+The top edge of the scrolling layout's pinned row (Last Photo, shutter, Q) in the window, in
+global coordinates, so ``CameraScreen`` can tell ``StartIndicator`` how much room there is
+under the mark (LAUNCH-SCREEN.md, 13.2). `nil` in the other layouts.
+
+## `PinnedRowTop/defaultValue`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+static let defaultValue: CGFloat?
+```
+
+No pinned row.
+
+## `PinnedRowTop/init()`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+init()
+```
+
+Creates the key. It holds no state.
+
+## `PinnedRowTop/reduce(value:nextValue:)`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+static func reduce(value: inout CGFloat?, nextValue: () -> CGFloat?)
+```
+
+The first pinned row's top edge reported; there is at most one.
+
+- Parameters:
+  - value: The value so far.
+  - nextValue: The next view's value.
+
 ## `PresetNameScreen`
 
 internal, declared in `Sources/NopeUI/PresetsScreen.swift`
@@ -23416,9 +23462,12 @@ The mark is ``NopeSize/startMark`` square with its center at the center of the w
 the safe area or the picture, where the launch screen draws its image
 (`UIImageRespectsSafeAreaInsets` off). While the camera is ready and starting, "Starting the
 camera…" is centered under it, its top edge ``wordsTop`` under the mark's center, on a plate of
-``NopeMaterial/solid`` that can't be seen on the black picture and keeps the words readable over
-the scrolling layout's rows. Before the camera state is known there are no words and no plate:
-that frame is the launch screen again. It turns with
+``NopeMaterial/solid`` that can't be seen on the black picture. While it shows, nothing is drawn
+under the plate: the scrolling layout waits to draw its scrolling content (LAUNCH-SCREEN.md,
+13.2), and where the plate would come within ``NopeSpace/s`` of the pinned row, the words and
+the plate are left out and the mark is shown alone (``wordsFit(plateExtent:roomBelowCenter:)``).
+Before the camera state is known there are no words and no plate: that frame is the launch
+screen again. It turns with
 ``SwiftUICore/EnvironmentValues/cameraUprightRotation`` about the mark's center, so it is
 upright on an iPhone held sideways, as the launch screen was. It takes no touches, and
 VoiceOver reads it as one element, "Starting the camera…".
@@ -23433,17 +23482,62 @@ internal, declared in `Sources/NopeUI/StartIndicator.swift`
 
 The mark at the window's center, with the words under it.
 
-## `StartIndicator/init(showsWords:)`
+## `StartIndicator/init(showsWords:pinnedRowTop:)`
 
 internal, declared in `Sources/NopeUI/StartIndicator.swift`
 
 ```swift
-@MainActor init(showsWords: Bool)
+@MainActor init(showsWords: Bool, pinnedRowTop: CGFloat? = nil)
 ```
 
 Creates the indicator.
 
-- Parameter showsWords: Whether "Starting the camera…" is shown under the mark.
+- Parameters:
+  - showsWords: Whether "Starting the camera…" is shown under the mark.
+  - pinnedRowTop: The top edge of the pinned row in the window (global coordinates), in
+    points, or `nil` where there is no pinned row under the indicator.
+
+## `StartIndicator/pinnedRowTop`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+@MainActor let pinnedRowTop: CGFloat?
+```
+
+The top edge of the scrolling layout's pinned row in the window (global coordinates), in
+points, or `nil` in the other layouts, where nothing is drawn under the plate.
+
+## `StartIndicator/plateBottom(wordsHeight:)`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+@MainActor static func plateBottom(wordsHeight: CGFloat) -> CGFloat
+```
+
+How far below the mark's center the plate reaches, in points, upright: ``wordsTop``, the
+words' height and ``NopeSpace/m`` of padding.
+
+- Parameter wordsHeight: The height of the wrapped words, in points.
+- Returns: The distance from the mark's center to the plate's bottom edge.
+
+## `StartIndicator/plateExtent(wordsSize:isSideways:)`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+@MainActor static func plateExtent(wordsSize: CGSize, isSideways: Bool) -> CGFloat
+```
+
+How far below the window's center the plate reaches on screen, in points: its upright
+bottom (``plateBottom(wordsHeight:)``), or half its width when it is turned a quarter turn
+on an iPhone held sideways.
+
+- Parameters:
+  - wordsSize: The size of the wrapped words, in points.
+  - isSideways: Whether the indicator is turned a quarter turn.
+- Returns: The plate's extent below the window's center.
 
 ## `StartIndicator/showsWords`
 
@@ -23455,6 +23549,24 @@ internal, declared in `Sources/NopeUI/StartIndicator.swift`
 
 Whether the words are shown under the mark: while the camera is ready and its session
 starts, not before the camera state is known.
+
+## `StartIndicator/wordsFit(plateExtent:roomBelowCenter:)`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+@MainActor static func wordsFit(plateExtent: CGFloat, roomBelowCenter: CGFloat?) -> Bool
+```
+
+Whether the words and their plate fit above the pinned row (LAUNCH-SCREEN.md, 13.2, part
+2): the plate's bottom edge must stay at least ``NopeSpace/s`` above the row's top edge.
+
+- Parameters:
+  - plateExtent: How far below the window's center the plate reaches, in points
+    (``plateExtent(wordsSize:isSideways:)``).
+  - roomBelowCenter: How far below the window's center the pinned row's top edge is, in
+    points, or `nil` where there is no pinned row, when they always fit.
+- Returns: `true` when the words and the plate are shown.
 
 ## `StartIndicator/wordsTop`
 

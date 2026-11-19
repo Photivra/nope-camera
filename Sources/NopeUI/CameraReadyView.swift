@@ -490,6 +490,9 @@ struct CameraReadyView: View {
     private var scrollingContent: some View {
         ScrollView {
             scrollingStack
+                // Hidden here too, inside the scroll view: hidden only outside it, the rows were
+                // still found by UI tests during the first start (LAUNCH-SCREEN.md, 13.2).
+                .accessibilityHidden(showsStartIndicator)
         }
         .hardScrollEdges()
         // The viewfinder is drawn outside the scroll view (CameraScreen); this keeps it inside.
