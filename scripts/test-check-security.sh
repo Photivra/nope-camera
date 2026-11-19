@@ -76,8 +76,71 @@ expect fail "Debug tool whose #if DEBUG block isn't closed" "$d"
 d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nimport SwiftUI\n  #if os(iOS)\nenum A {}\n  #elseif os(watchOS)\nenum B {}\n  #else\nenum C {}\n  #endif\n#endif\n' >"$d/App/DebugTools/Tool.swift"
 expect pass "Debug tool with nested conditions inside #if DEBUG" "$d"
 
+# Debug tool bypasses: a directive followed by a comment or a parenthesis, and directives
+# hidden in a block comment or a multi-line string. Each compiles `Leak` into Release.
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nenum A {}\n#else//x\nenum Leak {}\n#endif\n' >"$d/App/DebugTools/Tool.swift"
+expect fail "Debug tool with #else followed by a line comment" "$d"
+
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nenum A {}\n#else/**/\nenum Leak {}\n#endif\n' >"$d/App/DebugTools/Tool.swift"
+expect fail "Debug tool with #else followed by a block comment" "$d"
+
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nenum A {}\n#elseif(!DEBUG)\nenum Leak {}\n#endif\n' >"$d/App/DebugTools/Tool.swift"
+expect fail "Debug tool with #elseif( in the #if DEBUG block" "$d"
+
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\n/*\n#if X\n*/\nenum A {}\n#else\nenum Leak {}\n/*\n#endif\n*/\n#endif\n' >"$d/App/DebugTools/Tool.swift"
+expect fail "Debug tool with directives inside block comments" "$d"
+
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nlet s = """\n#if X\n"""\n#else\nenum Leak {}\nlet t = """\n#endif\n"""\n#endif\n' >"$d/App/DebugTools/Tool.swift"
+expect fail "Debug tool with directives inside multi-line strings" "$d"
+
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nenum A {}\n  #if os(iOS)\nenum B {}\n  #endif // os\n#endif // DEBUG\n' >"$d/App/DebugTools/Tool.swift"
+expect pass "Debug tool with #if( and #endif followed by comments" "$d"
+
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nenum A {}\n' >"$d/App/DebugTools/Tool.swift"
+out=$("$check" "$d" 2>&1 || true); rm -rf "$d"
+if [[ $(grep -c 'not closed' <<<"$out") == 1 ]]; then echo "ok   unclosed block reported once"; else echo "FAIL unclosed block reported once"; failures=$((failures + 1)); fi
+
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nenum A {}\n#else\nenum Leak {}\n#endif\n' >"$d/App/DebugTools/Tool.swift"
+out=$("$check" "$d" 2>&1 || true); rm -rf "$d"
+if grep -q '#else in the' <<<"$out" && ! grep -q 'not closed' <<<"$out"; then echo "ok   a stop at a line adds no end-of-file message"; else echo "FAIL a stop at a line adds no end-of-file message"; failures=$((failures + 1)); fi
+
+# Debug launch arguments: 16 bytes or more, so the Release binary search can find them.
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nlet a = "-NopeArmDebugRun"\n#endif\n' >"$d/App/DebugTools/Tool.swift"
+expect pass "a 16-byte launch argument" "$d"
+
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nlet a = "-NopeProbeFront"\n#endif\n' >"$d/App/DebugTools/Tool.swift"
+expect fail "a 15-byte launch argument" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'let ok = args.contains("-NopeSimulatedPhone") || args.contains("-NopeTagCheck")\n' >"$d/App/A.swift"
+expect fail "a short launch argument outside DebugTools, after a long one" "$d"
+
+d=$(new_tree); mkdir -p "$d/AppUITests"; printf 'app.launchArguments = ["-NopeShort"]\n' >"$d/AppUITests/T.swift"
+expect pass "launch arguments in tests aren't checked" "$d"
+
 d=$(new_tree); mkdir -p "$d/App"; printf 'import StoreKit\n' >"$d/App/A.swift"
 expect fail "StoreKit import is banned" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'import  StoreKit\n' >"$d/App/A.swift"
+expect fail "StoreKit import with two spaces is banned" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'import struct StoreKit.SKOverlay\n' >"$d/App/A.swift"
+expect fail "import struct from StoreKit is banned" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'import class StoreKit.SKStoreProductViewController\n' >"$d/App/A.swift"
+expect fail "import class from StoreKit is banned" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf '@preconcurrency import StoreKit\n' >"$d/App/A.swift"
+expect fail "@preconcurrency StoreKit import is banned" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'let a: RequestReviewAction? = nil\n' >"$d/App/A.swift"
+expect fail "RequestReviewAction is banned" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf '#import <StoreKit/StoreKit.h>\n' >"$d/App/A.m"
+expect fail "the StoreKit Objective-C header is banned" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf '#if canImport(StoreKit)\nenum A {}\n#endif\n' >"$d/App/A.swift"
+expect fail "canImport(StoreKit) is banned" "$d"
+
 
 d=$(new_tree); mkdir -p "$d/App"; printf '@Environment(\\.requestReview) private var requestReview\n' >"$d/App/A.swift"
 expect fail "requestReview is banned" "$d"

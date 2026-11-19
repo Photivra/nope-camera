@@ -99,18 +99,22 @@ archive (`Products/Applications/NopeApp.app`).
 
 - **Run:**
   - `strings -a NopeApp.app/NopeApp | grep -iE 'BEGIN (EC |RSA )?PRIVATE KEY|api[_-]?key|secret|token|password|/Users/|http://|https://'`
-  - `strings -a <binary> | grep -E -- '-Nope[A-Z]|NopeSimulated|NopeTagCheck|NopeCameraProbe|NopeArmDebugRun'`
+  - `strings -a <binary> | grep -E -- '-Nope[A-Z]|NopeSimulated|NopeTagCheckRun|NopeCameraProbe|NopeArmDebugRun'`
     on each of the four binaries: `NopeApp.app/NopeApp`,
     `Extensions/NopeCaptureExtension.appex/NopeCaptureExtension`,
     `PlugIns/NopeControls.appex/NopeControls` and `Watch/NopeWatch.app/NopeWatch`, each of
-    which must exist. No hits: Debug-only tools must not be in Release (the UI-test scenarios,
-    the simulated viewfinder still `-NopeSimulatedViewfinderImage`, the test App Store ID
-    `-NopeSimulatedAppStoreID`, the watch app's `-NopeSimulatedPhone` and the galleries among
-    them; `-Nope[A-Z]` matches every `-Nope…` launch argument, and the settings argument
-    domain `-NopeSettings.<key>` isn't a string in the binary). CI runs the same search on every
-    Release build ("No Debug-only tools in the Release app") and fails if a binary is missing,
-    and `scripts/check-security.sh` checks that every file in `App/NopeApp/DebugTools/` is one
-    `#if DEBUG` block with no `#else`, `#elseif` or code outside it.
+    which must exist and not be empty (`[[ -s ]]`). No hits: Debug-only tools must not be in
+    Release (the UI-test scenarios, the simulated viewfinder still
+    `-NopeSimulatedViewfinderImage`, the test App Store ID `-NopeSimulatedAppStoreID`, the watch
+    app's `-NopeSimulatedPhone` and the galleries among them; `-Nope[A-Z]` matches every `-Nope…` launch argument, and the settings argument
+    domain `-NopeSettings.<key>` isn't a string in the binary). Optimized Swift keeps a string
+    literal of 15 UTF-8 bytes or fewer inside the instructions, where `strings` can't see it, so
+    `scripts/check-security.sh` fails on any `"-Nope…"` literal in app code shorter than 16
+    bytes; that is what makes the search cover every argument. CI runs the same search on every
+    Release build ("No Debug-only tools in the Release app") and fails if a binary is missing or
+    empty, and `scripts/check-security.sh` checks that every file in `App/NopeApp/DebugTools/` is
+    one `#if DEBUG` block with no `#else`, `#elseif`, code outside it, block comment or
+    multi-line string.
   - `nm -u NopeApp.app/NopeApp` and the same on every binary in `NopeApp.app/Frameworks/`,
     then search the undefined symbols for networking:
     `grep -E 'URLSession|NSURLConnection|nw_|CFSocket|CFStream|socket$|_connect$|getaddrinfo|SecTrust'`.

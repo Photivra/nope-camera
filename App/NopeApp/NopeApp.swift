@@ -100,7 +100,7 @@ struct NopeApp: App {
     var body: some Scene {
         WindowGroup {
             #if DEBUG
-            // Debug builds only: `-NopeTagCheck`, `-NopeCameraProbe` or an armed run replace the
+            // Debug builds only: `-NopeTagCheckRun`, `-NopeCameraProbe` or an armed run replace the
             // camera screen (docs/TESTING.md, "Tag check"). Release builds don't contain them.
             switch DebugRunLaunch.decision {
             case .perform(.tagCheck):

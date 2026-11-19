@@ -179,9 +179,9 @@ final class ProbePipeline: @unchecked Sendable {
     /// The longest wait for the photo, in seconds.
     static let captureTimeoutSeconds = 10.0
 
-    /// `-NopeProbeFront`: use the front wide camera instead of the default camera.
+    /// `-NopeProbeFrontCamera`: use the front wide camera instead of the default camera.
     static var usesFrontCamera: Bool {
-        ProcessInfo.processInfo.arguments.contains("-NopeProbeFront")
+        ProcessInfo.processInfo.arguments.contains("-NopeProbeFrontCamera")
     }
 
     /// `-NopeProbeNoVideoOutput`: leave out the video data output, as the camera screen does,

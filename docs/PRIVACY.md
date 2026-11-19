@@ -179,7 +179,7 @@ for any user-facing claim comes from
   photos) and, for a failed save to Photos or a settings hand-off, the error's domain and code
   and the resource types, marked private; never photo data or metadata. Debug builds include the
   tag check (below), which writes test captures to the app's container only when launched with
-  `-NopeTagCheck`; it isn't compiled into Release builds. The `-NopeCameraProbe` diagnostic
+  `-NopeTagCheckRun`; it isn't compiled into Release builds. The `-NopeCameraProbe` diagnostic
   also saves one live video frame as a JPEG, to check exposure (see [`TESTING.md`](TESTING.md),
   "Black frames").
 
@@ -404,7 +404,7 @@ geometric distortion correction off where the camera allows it; and zoom 1.0.
 
 The metadata plan below is confirmed by dumping every tag from real files captured on a device.
 
-- **Capture:** a debug-only mode (`-NopeTagCheck`, Debug builds only) captures, with each
+- **Capture:** a debug-only mode (`-NopeTagCheckRun`, Debug builds only) captures, with each
   physical camera, a Bayer RAW DNG and a processed HEIF through the app's own capture backend,
   so the files carry exactly what the app's captures carry: `.speed` prioritization, no ProRAW,
   zoom 1.0, no deferred delivery, constant color or distortion correction, and no location

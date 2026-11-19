@@ -1812,7 +1812,7 @@ can only be checked on hardware. On each device available (record the model and 
   off; the first photo says "Saved. Not signed: signing is off in Settings." and Photos gets one
   DNG; Factory Defaults returns to the same values. Installing over an earlier build keeps the
   formats, signing and Focus on Faces the person had stored.
-- **Which lenses have no Bayer RAW:** run the Debug tag check (`-NopeTagCheck`, "Tag check"
+- **Which lenses have no Bayer RAW:** run the Debug tag check (`-NopeTagCheckRun`, "Tag check"
   below) and record, for each physical camera, whether it gives Bayer RAW.
 - **Marker and note:** on each lens without Bayer RAW (for example an iPad's cameras, or a
   front camera without RAW), "Processed: No RAW on This Lens" shows before the first photo and
@@ -2326,7 +2326,7 @@ least-processing value.
 The code is in `App/NopeApp/DebugTools/` (`TagCheckScreen.swift`, `TagCheckRunner.swift`,
 `TagCheckReport.swift`), wrapped in `#if DEBUG`. It is compiled only in the Debug
 configuration, and Release builds contain none of it. It runs only when the app is launched
-with the `-NopeTagCheck` launch argument, or from an armed run (below).
+with the `-NopeTagCheckRun` launch argument, or from an armed run (below).
 
 The tag check drives the app's own capture backend (`AVFoundationCaptureBackend`) through the
 `CaptureBackend` API only, the same instance the camera screen would use. It creates no capture
@@ -2381,11 +2381,11 @@ frames").
 2. Install a Debug build. Open the app normally from the Home Screen once and check that the
    viewfinder shows the scene.
 3. Launch the tag check. In Xcode: Product › Scheme › Edit Scheme › Run, keep the Build
-   Configuration at Debug, add `-NopeTagCheck` to "Arguments Passed On Launch", and run. From the
+   Configuration at Debug, add `-NopeTagCheckRun` to "Arguments Passed On Launch", and run. From the
    command line:
    ```sh
    xcrun devicectl device process launch --device <device-id> --terminate-existing \
-     com.photivra.nope.dev -- -NopeTagCheck
+     com.photivra.nope.dev -- -NopeTagCheckRun
    ```
    Arguments after the bundle ID must follow `--`; without it `devicectl` parses `-Nope...` as
    its own options and does not launch the app.
@@ -2496,13 +2496,13 @@ the camera picture is blanked gives blank frames whatever the pipeline, and prov
   the app and scene activation state, authorization, `isInterrupted`, every interruption or
   runtime-error notification, `isSuspended`, multitasking camera access, the exposure state,
   the photo's `{Exif}`, the decoded luminance and the raw luma-plane bytes of the frame.
-  `-NopeProbeNoVideoOutput` leaves out the video data output; `-NopeProbeFront` uses the front
+  `-NopeProbeNoVideoOutput` leaves out the video data output; `-NopeProbeFrontCamera` uses the front
   camera.
 - `-NopeArmDebugRun tagcheck` (or `probe`) only stores the run and shows a message. The next
   launch from the Home Screen performs it once and clears it.
 
 Pass every argument after `--`, for example
-`xcrun devicectl device process launch --device <device-id> --terminate-existing com.photivra.nope.dev -- -NopeCameraProbe -NopeProbeFront`.
+`xcrun devicectl device process launch --device <device-id> --terminate-existing com.photivra.nope.dev -- -NopeCameraProbe -NopeProbeFrontCamera`.
 
 ### The tag dumper
 

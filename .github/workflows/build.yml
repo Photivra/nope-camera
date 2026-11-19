@@ -110,15 +110,17 @@ jobs:
           # The launch arguments of the UI-test scenarios, the simulated viewfinder still and App
           # Store ID, the simulated phone of the watch app, the galleries, the tag check, the
           # camera probe and debug runs exist only in Debug builds (`#if DEBUG`). `-Nope[A-Z]`
-          # covers every `-Nope…` argument; the settings argument domain (`-NopeSettings.<key>`)
-          # isn't a string in the binary. A missing binary, or `strings` failing, fails the step.
+          # covers every `-Nope…` argument: scripts/check-security.sh keeps each one at least 16
+          # bytes, since optimized Swift keeps a shorter literal out of the string section where
+          # `strings` looks. The settings argument domain (`-NopeSettings.<key>`) isn't a string in
+          # the binary. A missing or empty binary, or `strings` failing, fails the step.
           for binary in "$app/nope" \
                         "$app/Extensions/NopeCaptureExtension.appex/NopeCaptureExtension" \
                         "$app/PlugIns/NopeControls.appex/NopeControls" \
                         "$app/Watch/NopeWatch.app/NopeWatch"; do
-            [[ -f "$binary" ]] || { echo "missing $binary"; exit 1; }
+            [[ -s "$binary" ]] || { echo "missing or empty $binary"; exit 1; }
             text=$(strings -a "$binary")
-            if grep -E -- '-Nope[A-Z]|NopeSimulated|NopeTagCheck|NopeCameraProbe|NopeArmDebugRun' <<<"$text"; then
+            if grep -E -- '-Nope[A-Z]|NopeSimulated|NopeTagCheckRun|NopeCameraProbe|NopeArmDebugRun' <<<"$text"; then
               echo "Debug-only tool strings in $binary"; exit 1
             fi
           done
