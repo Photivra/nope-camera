@@ -1,7 +1,8 @@
 # Privacy policy: Photivra Nope Camera (DRAFT)
 
 > **DRAFT, needs human review. Not published.** The maintainer reviews, completes and publishes
-> this policy on the Photivra website. It describes the planned 1.0 app; before publishing,
+> this policy at `https://nope.photivra.com/privacy/`, the address the app's About screen and the
+> store listing link to. It describes the planned 1.0 app; before publishing,
 > check every statement against the release build and `docs/SECURITY_AUDIT.md`, and remove any
 > that the release doesn't support. Wording follows `docs/PRIVACY.md` and
 > `docs/research/privacy-claims.md`. Items in [brackets] are for the maintainer to fill in.

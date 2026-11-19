@@ -254,7 +254,7 @@ AGENTS.md rule 4.
     `CFNetwork`, `WebKit` and analytics SDK names in app code).
   - `grep -rnE 'import (Network|WebKit|SafariServices)|URLSession|NWConnection|URLRequest|openURL|UIApplication\.shared\.open|Link\(' Sources App`:
     the only allowed hits are the two links on the About screen that open in the browser, the
-    privacy policy (`https://photivra.com/nope/privacy/`) and the source code
+    privacy policy (`https://nope.photivra.com/privacy/`) and the source code
     (`AboutScreen.privacyPolicyURL` and `sourceURL`), which hand the URL to the system and don't
     fetch anything in the app; and the Photos app's `photos-redirect://` address, which opens
     Photos and reads nothing.

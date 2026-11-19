@@ -1072,7 +1072,7 @@ final class NopeAppUITests: XCTestCase {
             swipes += 1
         }
         XCTAssertTrue(link.exists)
-        XCTAssertEqual(link.value as? String, "https://photivra.com/nope/privacy/")
+        XCTAssertEqual(link.value as? String, "https://nope.photivra.com/privacy/")
         XCTAssertEqual(link.label, "Privacy Policy")
     }
 

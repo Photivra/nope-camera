@@ -158,7 +158,7 @@ for any user-facing claim comes from
   manifest declares no tracking, no tracking domains and no collected data; it declares
   `UserDefaults` (`CA92.1`) because the shared `NopeCore` code linked into it contains the
   iPhone app's settings code, which the watch app never runs.
-- **Links:** two, on the About screen: the privacy policy (`https://photivra.com/nope/privacy/`)
+- **Links:** two, on the About screen: the privacy policy (`https://nope.photivra.com/privacy/`)
   and the source code. Each hands its `https` address to the system when tapped and opens in the
   browser; the app has no web view and fetches nothing.
 - **Entitlements:** the app and the controls extension each have one, the App Group

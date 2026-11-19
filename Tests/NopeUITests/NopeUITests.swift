@@ -59,7 +59,7 @@ struct AboutScreenTests {
 
     @Test func privacyPolicyLinkIsHTTPS() {
         #expect(AboutScreen.privacyPolicyURL.scheme == "https")
-        #expect(AboutScreen.privacyPolicyURL.absoluteString == "https://photivra.com/nope/privacy/")
+        #expect(AboutScreen.privacyPolicyURL.absoluteString == "https://nope.photivra.com/privacy/")
     }
 
     @Test func noticeCarriesTheDNGNotice() {

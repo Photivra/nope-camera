@@ -125,10 +125,11 @@ Test. Draft, for the maintainer to review.
 ## Other App Store Connect fields (maintainer)
 
 - **Privacy policy URL:** required even with no data collected:
-  `https://photivra.com/nope/privacy/`, the page the maintainer publishes from
+  `https://nope.photivra.com/privacy/`, the page the maintainer publishes from
   `privacy-policy-draft.md`. The app's About screen links to the same address (App Review
   Guideline 5.1.1(i)); it opens in the browser.
-- **Support URL:** required; for example the repository's issues page.
+- **Support URL:** required: `https://nope.photivra.com/support/`, a page the maintainer publishes
+  on the same site as the privacy policy.
 - **Copyright:** the copyright holder named in `NOTICE`.
 - **Category:** Photo & Video.
 - **Age rating:** the questionnaire answers are all "None" for an app with no user-generated

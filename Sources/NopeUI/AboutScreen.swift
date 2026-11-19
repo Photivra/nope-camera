@@ -18,7 +18,7 @@ struct AboutScreen: View {
     static let sourceURL = URL(string: sourceAddress)!
 
     /// The address of the privacy policy (`docs/store/privacy-policy-draft.md`).
-    static let privacyPolicyAddress = "https://photivra.com/nope/privacy/"
+    static let privacyPolicyAddress = "https://nope.photivra.com/privacy/"
 
     /// The privacy policy address as a URL, opened by the system browser when tapped.
     static let privacyPolicyURL = URL(string: privacyPolicyAddress)!
