@@ -7,7 +7,9 @@ viewer and the details also at the largest text size, and settings right to left
 assistive-technology pass has been done, and the five items added to 1.0.0 on 2026-11-18 are built but
 not device-checked; the Spanish translation (#87) moved to the backlog (see "Items added to 1.0.0"). This page lists the answer the project aims for at 1.0 and the evidence each
 answer needs. Declare a feature in App Store Connect only when every item in its evidence column
-is done for that device.
+is done for that device. Record each manual pass and each declared feature in
+[`store/accessibility-status.json`](../../store/accessibility-status.json) too: the site's accessibility page
+reads it, and its build fails if the page would name a feature the file doesn't hold.
 
 ## Apple's rule
 

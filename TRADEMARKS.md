@@ -21,6 +21,10 @@ The following files are not covered by the GNU General Public License. All right
 
 - `App/NopeApp/AppIcon.icon/` and `App/NopeWatch/AppIcon.icon/`: the app icon (the "n." in the photo frame), including its layer files (`Assets/frame.svg`, `Assets/n.svg`, `Assets/period.svg`) and `icon.json`.
 - The icon drawings in `docs/design/icon.html`.
-- *(the logo and wordmark will be listed here when they're added)*
+- `site/assets/wordmark.svg`: the "nope." wordmark, letters converted to outlines from Inter Bold (Inter itself is under the SIL Open Font License 1.1; THIRD_PARTY.md).
+- The site's copies of the app icon: `site/assets/icon.svg`, `site/assets/apple-touch-icon.png`, `site/assets/favicon.ico`, and the social image `site/assets/social.png`.
+- *(the logo will be listed here when it's added)*
+
+The App Store badge, once added as `site/assets/app-store-badge.svg`, is Apple's artwork, used under Apple's terms; it is not covered by the GNU General Public License and is not ours to license.
 
 To ask about other uses, open an issue.

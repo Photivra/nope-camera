@@ -504,7 +504,7 @@ site/
   package-lock.json
 scripts/build-site.py  builds _site/ (Python standard library only)
 scripts/check-site.sh  the checks of 14.3; scripts/test-check-site.sh tests them
-.github/workflows/site.yml
+.github/workflows/pages.yml
 ```
 
 `_site/` and `site/node_modules/` are not committed. The build script follows the repository's existing Python scripts and adds no Python dependency: it converts the policy's small set of Markdown (headings, paragraphs, lists, bold, links, code), fills the templates, writes the sitemap, `robots.txt` and the manifest, resizes images, hashes asset names and runs the Tailwind CLI.
@@ -540,7 +540,7 @@ All run on the built `_site/`, on the runner, against a local server on `127.0.0
 
 ### 14.4 The workflow
 
-`.github/workflows/site.yml`, GitHub-hosted runners, every action pinned by commit SHA, as the repository's other workflows are.
+`.github/workflows/pages.yml`, GitHub-hosted runners, every action pinned by commit SHA, as the repository's other workflows are.
 
 - **Runs on:** a pushed release tag (`v` and three numbers, so pre-release tags don't publish); by hand (`workflow_dispatch`, with the ref to build); and on pull requests that touch `site/`, the policy, the listing text, the README or the site scripts, where it builds and checks but doesn't deploy.
 - **Build job** (`contents: read` only): check out; install Node at a pinned version; `npm ci --ignore-scripts` in `site/`; `scripts/build-site.py`; `scripts/test-check-site.sh`; `scripts/check-site.sh` and the other checks of 14.3; upload `_site/` as the Pages artifact.

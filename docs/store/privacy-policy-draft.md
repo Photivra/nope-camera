@@ -12,11 +12,10 @@
 
 # Photivra Nope Camera privacy policy
 
-Effective date: [date]. App version: [1.0.0].
+Effective date: [date]. Last updated: [date]. App version: [1.0.0].
 
 This policy covers the Photivra Nope Camera app for iPhone and iPad, and its Apple Watch app, published by
-[LLC legal name]. It doesn't cover the Photivra website or other Photivra products,
-which have their own policies.
+[LLC legal name]. It doesn't cover photivra.com or other Photivra products, which have their own policies.
 
 ## The short version
 
@@ -132,6 +131,10 @@ Every camera sensor leaves a faint, unique noise pattern. With enough of your ph
 tools can match them to the same camera. No app can fully remove it. And anything visible in a
 photo stays in it.
 
+## This website
+
+This policy is published at nope.photivra.com. The site uses no cookies, no analytics and no JavaScript, and loads nothing from other sites. It is hosted on GitHub Pages: when you load a page, GitHub receives your IP address and logs it for security, under [GitHub's privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement).
+
 ## Children
 
 The app collects no data from anyone, including children.
@@ -149,8 +152,6 @@ the code to check these statements: [https://github.com/Photivra/nope-camera](ht
 
 ## Contact
 
-Questions about this policy: open an issue in the GitHub repository,
-[github.com/Photivra/nope-camera/issues](https://github.com/Photivra/nope-camera/issues). Issues
-are public, so please don't include personal information. To report a security problem
-privately, use the repository's private vulnerability reporting (Security › Report a
-vulnerability). There is no contact email.
+Questions about this policy: write to [hello@photivra.com](mailto:hello@photivra.com), or open an issue in the GitHub repository, [github.com/Photivra/nope-camera/issues](https://github.com/Photivra/nope-camera/issues). Issues are public, so please don't include personal information. To report a security problem privately, use the repository's private vulnerability reporting (Security › Report a vulnerability).
+
+The app never sends email, and it collects nothing. If you choose to write to us by email, your message and your email address are forwarded to us by Cloudflare Email Routing and stored by our email provider. We use them only to reply to you. We delete messages after 1 year, and you can ask us to delete yours sooner.

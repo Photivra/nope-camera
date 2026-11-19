@@ -36,6 +36,9 @@ The rules for contributors and coding agents are in AGENTS.md. Read it before ch
 - [docs/design/SETTINGS-PLAN.md](docs/design/SETTINGS-PLAN.md): the Settings review and its twelve decisions, accepted 2026-11-17; the record behind the Settings structure and the device coverage
 - [docs/design/nope-site.md](docs/design/nope-site.md): the public site design, accepted 2026-11-19 for release 1.0.0: nope.photivra.com on GitHub Pages (landing page, privacy policy, support, accessibility), with no cookies, analytics, JavaScript or external requests; draft copy, tokens, accessibility, search, performance budgets, the build and its checks, publishing steps and the decisions
 - [docs/design/layouts.html](docs/design/layouts.html): the rule that gives each window its layout, and which screens are drawn for iPhone, iPad, iPhone Duo and Apple Watch
+- [docs/RELEASING.md](docs/RELEASING.md): what the maintainer does to release, including the one-time setup and publication of the public site
+- [site/site.json](site/site.json): the public site, https://nope.photivra.com/ (privacy policy, support, accessibility), built from `site/` by `scripts/build-site.py` and checked by `scripts/check-site.sh`
+- [store/accessibility-status.json](store/accessibility-status.json): the manual accessibility pass and the declared Accessibility Nutrition Labels, per device; the source for the site's accessibility page
 - [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md): threat model, every pre-release security check with how to run it and pass criteria, and the sign-off checklist
 
 ## Store and privacy policy (drafts, need human review)

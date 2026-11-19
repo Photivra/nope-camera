@@ -20,6 +20,34 @@ scripts/test-check-launch-screen.sh && scripts/check-launch-screen.sh   # add a 
 `check-security.sh` reads tracked files only (`git ls-files`), so stage new files before running
 it.
 
+## The website
+
+The public site (`docs/design/nope-site.md`) has its own build and checks, separate from the app's
+CI: the `site` workflow (`.github/workflows/pages.yml`) runs them on pull requests that touch the
+site or its sources, and before every publication.
+
+```sh
+(cd site && npm ci --ignore-scripts)   # once: the pinned Tailwind CLI and check tools
+scripts/test-check-site.sh             # each build rule and check, with a passing and a failing case
+scripts/check-site.sh --preview        # build, then every check; --static-only skips Chrome and Java
+```
+
+`check-site.sh` builds `_site/`, then runs `scripts/site_checks.py` (the site's promises, links,
+search tags, truth rules and size budgets), the Nu HTML Checker (needs Java 11 or later; set `JAVA`
+to use another one), a page load with axe-core in headless Chrome for every page in both themes at
+1280 and 320 pixels (`site/checks/browser-checks.mjs`), and Lighthouse on the mobile profile with
+the floors of the design, section 14.3 (`site/checks/lighthouse.mjs`). Everything runs against
+`127.0.0.1`. Without `--preview` the build also refuses an unfinished policy.
+
+Lighthouse's `robots-txt` audit is skipped: Lighthouse fetches `robots.txt` from inside the page,
+and the site's Content-Security-Policy (`default-src 'none'`) blocks that fetch, so the audit
+reports a CSP violation rather than anything about the file. `site_checks.py` checks the file's
+lines instead.
+
+**Manual pass of the site** (design, section 9: VoiceOver in Safari on iPhone and on a Mac,
+keyboard only, 200% and 400% zoom, 320 px wide, both themes, print preview at Letter and A4):
+not yet done. Record the date, devices and result here.
+
 ## Unit tests and coverage
 
 The logic modules are tested with Swift Testing, against fakes of the hardware protocols:

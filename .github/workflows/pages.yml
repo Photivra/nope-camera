@@ -1,0 +1,120 @@
+name: site
+
+# Builds, checks and publishes the public site, nope.photivra.com, from site/ to GitHub Pages
+# (docs/design/nope-site.md, section 14; docs/RELEASING.md, "The website").
+# - A release tag (vX.Y.Z, no pre-release tags) and a run by hand build, check and publish.
+#   Publishing reaches users, so each publication is the maintainer's act (AGENTS.md, rule 5).
+# - A pull request that touches the site or one of its sources builds and checks with
+#   --preview (the policy's publication rules skipped) and never publishes; its build is
+#   uploaded as an artifact to open locally. Nothing unreleased is published anywhere.
+# Every check runs on the runner against 127.0.0.1; the only network use is installing the pinned
+# tools. Actions are pinned by commit SHA.
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "site/**"
+      - "scripts/build-site.py"
+      - "scripts/site_checks.py"
+      - "scripts/check-site.sh"
+      - "scripts/test-check-site.sh"
+      - "scripts/test_check_site.py"
+      - "docs/store/privacy-policy-draft.md"
+      - "docs/store/accessibility-label.md"
+      - "docs/store/README.md"
+      - "docs/design/tokens.md"
+      - "store/metadata/en-US/**"
+      - "store/accessibility-status.json"
+      - "Sources/NopeUI/AccessibilitySettingsView.swift"
+      - "Config/Base.xcconfig"
+      - "README.md"
+      - "NOTICE"
+      - ".github/workflows/pages.yml"
+
+permissions: {}
+
+# One publication at a time; a running publication is never cancelled.
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('site-pr-{0}', github.ref) || 'site-publish' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: site build and checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      domain: ${{ steps.domain.outputs.domain }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The "Last updated" checks read the history of the policy and content files.
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: site/.nvmrc
+          package-manager-cache: false
+      - name: Install the pinned site tools (no install scripts)
+        working-directory: site
+        run: npm ci --ignore-scripts
+      - name: Test the site checks
+        run: scripts/test-check-site.sh
+      - name: Build and check the site
+        env:
+          MODE: ${{ github.event_name == 'pull_request' && '--preview' || '' }}
+        run: scripts/check-site.sh $MODE
+      - name: The domain the deploy job must find
+        id: domain
+        run: echo "domain=$(python3 -c 'import json; print(json.load(open("site/site.json"))["domain"])')" >> "$GITHUB_OUTPUT"
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+          # /.well-known/security.txt is a hidden directory.
+          include-hidden-files: true
+
+  dependency-review:
+    name: site dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+
+  deploy:
+    name: site deploy
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Read the Pages settings
+        id: pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - name: The Pages address is the site's domain
+        env:
+          BASE_URL: ${{ steps.pages.outputs.base_url }}
+          DOMAIN: ${{ needs.build.outputs.domain }}
+        run: |
+          if [ "${BASE_URL%/}" != "https://${DOMAIN}" ]; then
+            echo "::error::The Pages address is '${BASE_URL}', not https://${DOMAIN}/. Set the custom domain and Enforce HTTPS in the repository's Pages settings (docs/RELEASING.md)."
+            exit 1
+          fi
+          echo "Pages address: ${BASE_URL}"
+      - name: Publish
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

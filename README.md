@@ -22,6 +22,10 @@ Version 1.0.0 is in English only. Spanish is in the backlog (#87). The interface
 
 **Translators wanted.** Translations and native-speaker reviews are welcome for later releases, including a review of the Spanish drafts (issue #93). See [Translations](CONTRIBUTING.md#translations) in CONTRIBUTING.md and the [help wanted issue](https://github.com/Photivra/nope-camera/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22+translations).
 
+## Website
+
+The public site, [nope.photivra.com](https://nope.photivra.com/), holds the privacy policy, support and accessibility pages for people who use the app. It is built from `site/` with no JavaScript, cookies or analytics, and its words come from the files in this repository: the policy from [`docs/store/privacy-policy-draft.md`](docs/store/privacy-policy-draft.md), the statements from the App Store description, and the device list from "Requirements" above. To change it, edit those files or `site/`, then run `scripts/check-site.sh --preview` (it needs `npm ci --ignore-scripts` in `site/` once). The design is [`docs/design/nope-site.md`](docs/design/nope-site.md); publishing is the maintainer's and is described in [`docs/RELEASING.md`](docs/RELEASING.md).
+
 ## License
 
 The source code is licensed under the GNU General Public License, version 3 only (GPL-3.0-only); see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE).

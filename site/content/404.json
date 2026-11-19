@@ -1,0 +1,8 @@
+{
+  "about": "The not-found page (docs/design/nope-site.md, 7.2).",
+  "title": {"md": "Page not found · Photivra Nope Camera", "claims": []},
+  "text": {
+    "h1": {"md": "Page not found", "claims": []},
+    "intro": {"md": "There is no page at this address. The site has four pages:", "claims": []}
+  }
+}
