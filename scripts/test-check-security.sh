@@ -49,6 +49,15 @@ expect pass "print is allowed in tests" "$d"
 d=$(new_tree); mkdir -p "$d/android"; printf '<uses-permission android:name="android.permission.INTERNET"/>\n' >"$d/android/AndroidManifest.xml"
 expect fail "Android INTERNET permission is banned" "$d"
 
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nimport SwiftUI\nenum Tool {}\n#endif\n' >"$d/App/DebugTools/Tool.swift"
+expect pass "Debug tool wrapped in #if DEBUG" "$d"
+
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf 'import SwiftUI\nenum Tool {}\n' >"$d/App/DebugTools/Tool.swift"
+expect fail "Debug tool without #if DEBUG" "$d"
+
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nenum Tool {}\n#endif\nenum Leak {}\n' >"$d/App/DebugTools/Tool.swift"
+expect fail "Debug tool with code after #endif" "$d"
+
 d=$(new_tree); mkdir -p "$d/App"; printf 'let p: UnsafeRawPointer? = nil\n' >"$d/App/B.swift"
 expect fail "Unsafe pointer outside the allowlist" "$d"
 

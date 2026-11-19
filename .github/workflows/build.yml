@@ -102,6 +102,16 @@ jobs:
             "$app/Extensions/NopeCaptureExtension.appex/NopeCaptureExtension" \
             "$app/PlugIns/NopeControls.appex/NopeControls" \
             "$app/Watch/NopeWatch.app/NopeWatch"
+      - name: No Debug-only tools in the Release app (docs/SECURITY_AUDIT.md, check 3)
+        run: |
+          app=DerivedData-app/Build/Products/Release-iphoneos/nope.app
+          # The launch arguments of the UI-test scenarios, the simulated viewfinder still, the tag
+          # check, the camera probe and debug runs exist only in Debug builds (`#if DEBUG`).
+          for binary in "$app/nope" "$app/Extensions/NopeCaptureExtension.appex/NopeCaptureExtension"; do
+            if strings -a "$binary" | grep -E 'NopeSimulated|NopeTagCheck|NopeCameraProbe|NopeArmDebugRun'; then
+              echo "Debug-only tool strings in $binary"; exit 1
+            fi
+          done
       - name: A normal build fetches the published library (SwiftPM verifies the pinned checksum)
         env:
           NOPE_C2PA_LIB_FROM_SOURCE: ""

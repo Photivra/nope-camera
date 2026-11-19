@@ -37,9 +37,13 @@ Privacy Report (Settings › Privacy & Security). It lists every domain an app c
 last 7 days, starting from when you turn it on. The app should list none. iOS itself, for example
 iCloud Photos, makes its own connections.
 
-Two links in the app, on the About screen, open in your web browser when you tap them: the
-source code and this policy. The app doesn't fetch them; your browser does, under its own
-privacy settings.
+Three links in the app, on the About screen, leave the app when you tap them: the source code
+and this policy open in your web browser, and Rate or Review opens the App Store's page for
+rating or reviewing the app. The app doesn't fetch them; your browser or the App Store does,
+under its own privacy settings. The app never asks you for a rating and doesn't record whether
+you tapped a link. Ratings and reviews you write in the App Store are public. [Rate or Review
+appears once the app's App Store ID is set; remove this sentence's mention of it if the
+published release doesn't show it.]
 
 The Apple Watch app sends only your commands, such as the shutter and the delay, to the app on
 your iPhone, and gets back only short status, such as "Saved and signed". No photos or photo

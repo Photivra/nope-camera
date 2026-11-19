@@ -241,6 +241,8 @@ struct NopeApp: App {
         .overlay(alignment: .center) { SimulatedShortcut.ResultView() }
         // UI tests only: `-NopeSimulatedPinchLabelSeconds <seconds>` keeps a pinch's lens label up.
         .environment(\.lensPinchLabelSeconds, SimulatedPinch.labelSeconds)
+        // UI tests only: `-NopeSimulatedAppStoreID <digits>` shows the Rate or Review row on About.
+        .modifier(SimulatedAppStore.Override())
         #endif
         // The battery and Low Power Mode warnings follow the system's change notifications;
         // nothing polls (AGENTS.md, "Battery").

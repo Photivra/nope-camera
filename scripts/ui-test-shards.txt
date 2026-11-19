@@ -294,6 +294,11 @@
 2 1 NopeAppUITests/testQuickMenuTiles 75e 75e
 4 4 NopeAppUITests/testQuickMenuTogglesStayOpen 55e 55e
 1 2 NopeAppUITests/testQuickMenuWithManualControls 39e 39e
+2 1 NopeAppUITests/testRateOrReviewAtTheLargestTextSize 268e 268e
+4 5 NopeAppUITests/testRateOrReviewInNightModeIsAllRed 100e 100e
+1 3 NopeAppUITests/testRateOrReviewIsALinkLastOnAbout 92e 92e
+1 3 NopeAppUITests/testRateOrReviewIsHiddenWithoutAnAppStoreID 82e 82e
+6 2 NopeAppUITests/testRateOrReviewRightToLeft 90e 90e
 3 3 NopeAppUITests/testRedViewfinderAlwaysShown 48e 48e
 6 2 NopeAppUITests/testRedViewfinderOption 15 19
 2 1 NopeAppUITests/testRefusedLightIsExplainedAndCanBeCleared 28 32
@@ -319,6 +324,7 @@
 4 4 NopeAppUITests/testSettingsSearchFindsKeepScreenOn 60e 58e
 5 5 NopeAppUITests/testSettingsSearchFindsLevelByTap 38e 40e
 3 3 NopeAppUITests/testSettingsSearchFindsLocationByKeyword 41e 41e
+5 5 NopeAppUITests/testSettingsSearchFindsRateOrReview 84e 84e
 4 2 NopeAppUITests/testSettingsSearchNoResults 38e 38e
 4 5 NopeAppUITests/testSettingsSearchPointsToCamera 44e 45e
 6 2 NopeAppUITests/testShowProcessedMarkerSwitch 121e 121e
@@ -376,6 +382,7 @@
 3 5 NopeAppUITests/testViewfinderFillsThePictureRightToLeft 19 17
 5 3 NopeAppUITests/testViewfinderFollowsThePictureInTheScrollingLayout 24 25
 3 4 NopeAppUITests/testViewfinderStaysInsideTheScrollingLayout 30 28
+4 2 NopeAppUITests/testViewfinderStillReplacesTheSimulatedPicture 42e 42e
 2 5 NopeAppUITests/testWarningChips 98e 100e
 4 4 NopeAppUITests/testWarningsAtTheLargestTextSizeAndRightToLeft 30 36
 1 5 NopeAppUITests/testWithNeverAnActionRunsWithoutAsking 58e 42e

@@ -56,6 +56,7 @@ None is built yet. Each adds evidence to the table above before any feature is d
 | #90 Focus bracketing | Part of task 2 when used. Its card and Bracket Settings follow `docs/design/BRACKETING.md`, section 6 | UI tests with audits (largest text, right to left, Night Mode); VoiceOver announces each frame and the end of the series |
 | #95 Pinch to switch lenses | No change: a gesture only, with no VoiceOver action, and the lens buttons stay the accessible route for task 3. Pinch is off at the largest text sizes | A UI test that task 3 is done with the lens buttons with Pinch set to Off; Voice Control names the lens buttons |
 | #97 Keep the screen on | No change to the answers. A new switch on a Settings page (task 4) | UI tests with audits for the row; the row is found by Settings search; VoiceOver reads its footer |
+| Rate or Review row (`docs/store/STORE-PAGE-PLAN.md`, section 12) | No change to the answers. One link at the end of About (part of settings), shown once the app has an App Store ID; it opens the App Store, which is outside the app's declared features | UI tests with audits (`RateOrReviewUITests.swift`): default and largest text sizes, right to left, night mode (all red), search; on iPad the same tests. Its VoiceOver hint and Voice Control name in the manual pass |
 
 ## Accessibility URL
 

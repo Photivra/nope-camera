@@ -4,6 +4,7 @@
 #   Unsafe pointer APIs outside allowlisted files.
 # - Dependency, entitlement and privacy manifest allowlists.
 # - Assistant entry points (issue #82): listed, gated, no indexing, links or schemas.
+# - Debug tools: every Swift file in a DebugTools folder is wrapped in #if DEBUG.
 # Run from the repository root. Optional first argument: a directory to check instead.
 set -euo pipefail
 
@@ -96,6 +97,18 @@ while IFS= read -r f; do
       grep -q 'authenticationPolicy.*\.requiresAuthentication' <<<"$body" || report "$name in $f doesn't require an unlocked device (authenticationPolicy)"
     fi
   done < <(grep -nE "^[[:space:]]*(public |private |fileprivate |internal )?(final )?(struct|class|enum|actor)[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*:[^{]*\b($entry_protocols)\b" "$f" || true)
+done < <(files)
+
+# 7. Debug tools (UI-test scenarios, the simulated viewfinder still, the tag check): every Swift
+#    file in a DebugTools folder starts with `#if DEBUG` and ends with `#endif`, so none of it is
+#    compiled into Release. CI also checks the Release binary for their launch arguments.
+while IFS= read -r f; do
+  [[ "$f" == */DebugTools/*.swift && -f "$f" ]] || continue
+  first=$(grep -vE '^[[:space:]]*$' "$f" | head -n 1)
+  last=$(grep -vE '^[[:space:]]*$' "$f" | tail -n 1)
+  if [[ "$first" != "#if DEBUG" || "$last" != "#endif" ]]; then
+    report "$f is a Debug tool but isn't wrapped in #if DEBUG ... #endif"
+  fi
 done < <(files)
 
 if [[ $fail -ne 0 ]]; then exit 1; fi

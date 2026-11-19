@@ -15,7 +15,13 @@ scripts/test-check-coverage.sh
 scripts/test-dump-tags.sh   # macOS only: the tag dumper's TIFF walker
 scripts/test-check-file-compat.sh
 scripts/test-check-launch-screen.sh && scripts/check-launch-screen.sh   # add a built .app to check its Info.plist
+scripts/test-check-app-store-id.sh
 ```
+
+Before a release build, also run `scripts/check-app-store-id.sh`: it fails while
+`AboutScreen.appStoreID` is `nil`, so a release can't go out without its Rate or Review row by
+accident. It isn't run on pull requests, because the id exists only once the app's App Store
+Connect record does (`docs/SECURITY_AUDIT.md`, check 7).
 
 `check-security.sh` reads tracked files only (`git ls-files`), so stage new files before running
 it.
@@ -585,6 +591,8 @@ each test checks, with `performAccessibilityAudit()` in every state:
 | `noRAW` | A device without RAW (wide and front, no Bayer RAW): the "Processed" marker ("Processed: no RAW on this lens, HEIF" for VoiceOver) and the HEIF fallback in the viewfinder description, portrait and landscape, default and largest text sizes; Space takes a photo |
 | `multitasking` | iPad Split View, Slide Over or Stage Manager: "The camera works only when nope. fills the screen.", shutter disabled |
 | `-NopeSimulatedViewfinder white` or `yellow` | The camera with a photo, the manual readout and an open dial over a pure white and a pure yellow picture |
+| `-NopeSimulatedViewfinderImage <path>` | The simulated picture is the still at that path on the Mac (HEIF, JPEG or PNG), shown whole on black, for store screenshots taken on the Simulator (`SimulatedViewfinderImage.swift`; `ViewfinderStillUITests.swift` checks a white still replaces the gray). Only the picture changes: the histogram, focus peaking and zebras still measure the simulated frame, so screenshots with those overlays on don't describe the still. Use only a photo taken with the app and saved unedited |
+| `-NopeSimulatedAppStoreID <digits>` | An App Store ID, so About shows its Rate or Review row (`RateOrReviewUITests.swift`): a link with its App Store header and footer, last on the page; found by search ("stars", "feedback"); audited at the default and largest text sizes, right to left and in night mode (no non-red pixel). Without it the row and its search entry are absent, as in a build with no id. The link is never tapped: the Simulator has no App Store |
 | `metadataRejected` | Every file carries a simulated future system tag: "Not saved: nope. couldn't confirm that the photo holds only the details you chose."; also at the largest accessibility text size |
 | `photosDenied` | Adding to Photos isn't allowed: the "isn't allowed to add photos" banner with Open Settings |
 | `signingFails` | The signer fails: the photo is saved unsigned, the last-photo slot and the "Not Signed" chip say "Saved. Not signed: the signature couldn't be created.", shutter still enabled; also right-to-left, with the bottom row mirrored |
@@ -736,17 +744,17 @@ finding. With the deployment target at
 
 ### UI test shards
 
-By the listed times the UI suite takes about 499 minutes of test time on the iPhone Simulator
-and 521 on the iPad Simulator on the GitHub macOS runner (about twice as long as on a recent
+By the listed times the UI suite takes about 512 minutes of test time on the iPhone Simulator
+and 534 on the iPad Simulator on the GitHub macOS runner (about twice as long as on a recent
 Mac, so CI limits are sized from runner times, never from local ones). About four fifths of
 those times are estimates (`e`, twice a local time), so the runner is expected to measure
 less. CI runs it in six iPhone shards and five iPad shards, each its own job:
 
 | Job | Tests (listed times) | With about 7 minutes of setup | Limit |
 |---|---|---|---|
-| `ui-tests 1/6` … `6/6` | 81 to 90 minutes each | 88 to 97 minutes | 130 minutes |
-| `ui-tests-ipad 1/5` … `5/5` | 103 to 109 minutes each | 110 to 116 minutes | 160 minutes |
-| `ui-tests 1/6 (iOS 26)` | 81 minutes | 98 minutes, with the runtime download | 140 minutes |
+| `ui-tests 1/6` … `6/6` | 84 to 90 minutes each | 91 to 97 minutes | 130 minutes |
+| `ui-tests-ipad 1/5` … `5/5` | 106 to 109 minutes each | 113 to 116 minutes | 160 minutes |
+| `ui-tests 1/6 (iOS 26)` | 84 minutes | 101 minutes, with the runtime download | 140 minutes |
 | `ui-tests-watch` | 2 minutes | 13 minutes, with its build | 45 minutes |
 | `ui-tests-watch (watchOS 26)` | 2 minutes | 23 minutes, with the runtime download | 70 minutes, with room for the runtime wait |
 
@@ -1437,6 +1445,13 @@ version in the section named, or list it in the changelog as not yet checked:
   S1 to S5 (the stabilization signal and the 2-stop allowance, both provisional), and F1 to F7
   (the fade, Voice Control's "Tap Lock" in time, Full Keyboard Access focus through
   `@FocusState`).
+- **Rate or Review** (once `AboutScreen.appStoreID` is set): tapping the row on About opens the
+  App Store at the app's write-review page on an iPhone and an iPad, and the app stays as it
+  was. The `?action=write-review` form is unverified until it can be opened for a live app, so
+  check it after the first release; on a TestFlight build, note only that the App Store opens
+  (it doesn't take reviews for a TestFlight build). With App Privacy Report on, the tap adds no
+  domain under the app (`docs/SECURITY_AUDIT.md`, check 8). From the Lock Screen camera, if About
+  is offered there, the link needs the device unlocked first, as the other two do.
 - **Opening Photos**: the `photos-redirect://` address, which Apple doesn't document, now has two
   entry points, the viewer's Open in Photos and the camera's Open Photos (P1 under "Device
   feedback for 1.0.0"). Record that each opens the Photos app; the app ignores the result of the

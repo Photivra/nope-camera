@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+- Rate or Review on the About screen (`docs/store/STORE-PAGE-PLAN.md`, section 12): the last section, App Store, has one link, Rate or Review, that hands the App Store's write-review address (`https://apps.apple.com/app/id<App Store ID>?action=write-review`) to the system when tapped, with the footer "Opens the App Store. Ratings and reviews there are public." and the VoiceOver hint "Opens the App Store." The app shows no rating prompt, uses no StoreKit review request and stores nothing about the row. The row and its search entry (rate, review, rating, feedback, App Store, stars) are shown only once `AboutScreen.appStoreID` is set; it is `nil` until the app's App Store record exists, and `scripts/check-app-store-id.sh`, run before a release build, fails while it is. `NopeUI`: `EnvironmentValues.appStoreID`, `SettingsID.rateOrReview`. Debug builds: `-NopeSimulatedAppStoreID <digits>` for the UI tests (`RateOrReviewUITests.swift`). The privacy documents, the privacy policy draft and the App Review notes now list three links.
+- Debug builds: `-NopeSimulatedViewfinderImage <path>` shows a still photo as the Simulator's viewfinder picture, for store screenshots (`docs/store/STORE-PAGE-PLAN.md`, section 5.2, option B). `scripts/check-security.sh` now checks that every file in `App/NopeApp/DebugTools/` is wrapped in `#if DEBUG`, and CI checks the Release app's binaries for Debug-only launch arguments.
+
 ## [1.0.0] - 2026-11-18
 
 Languages: 1.0.0 ships in English only (issue #86); Spanish (es, with es-419 overrides) is in the backlog (#87). Entries below that say "eleven languages" describe draft translations that were later removed (#86).

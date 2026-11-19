@@ -21,6 +21,25 @@ address to the system, which opens it in the browser. The app itself makes no ne
 request and has no web view (AGENTS.md, "Prevention first"). App Review Guideline 5.1.1(i)
 asks for the privacy policy to be reachable within the app.
 
+The last section, App Store, has one link, Rate or Review, that hands the App Store's
+write-review address to the system, which opens the App Store. It is a plain link the person
+taps: the app never asks for a rating, uses no StoreKit review request, and stores nothing
+about whether the row was tapped (`docs/store/STORE-PAGE-PLAN.md`, section 12). The section
+shows only once ``appStoreID`` is set, so no dead link ships.
+
+## `AboutScreen/appStoreID`
+
+internal, declared in `Sources/NopeUI/AboutScreen.swift`
+
+```swift
+nonisolated static let appStoreID: String?
+```
+
+The app's numeric App Store ID ("Apple ID" in App Store Connect, App Information), or
+`nil` until the app's App Store record exists. It is not secret. While it is `nil` the
+Rate or Review row is hidden, and `scripts/check-app-store-id.sh`, run before each release,
+fails.
+
 ## `AboutScreen/body`
 
 internal, declared in `Sources/NopeUI/AboutScreen.swift`
@@ -71,6 +90,56 @@ internal, declared in `Sources/NopeUI/AboutScreen.swift`
 ```
 
 The privacy policy address as a URL, opened by the system browser when tapped.
+
+## `AboutScreen/rateAddress`
+
+internal, declared in `Sources/NopeUI/AboutScreen.swift`
+
+```swift
+@MainActor static var rateAddress: String? { get }
+```
+
+The write-review address for ``appStoreID``, or `nil` while it isn't set.
+
+## `AboutScreen/rateAddress(appStoreID:)`
+
+internal, declared in `Sources/NopeUI/AboutScreen.swift`
+
+```swift
+@MainActor static func rateAddress(appStoreID: String?) -> String?
+```
+
+The App Store's write-review address for an App Store ID:
+`https://apps.apple.com/app/id<ID>?action=write-review`.
+
+The `action=write-review` form is not verified until it can be opened for a live app; it
+is a device check after the first release (`docs/TESTING.md`).
+
+- Parameter appStoreID: The numeric App Store ID, or `nil`.
+- Returns: The address, or `nil` without an id or for one that isn't all ASCII digits.
+
+## `AboutScreen/rateURL`
+
+internal, declared in `Sources/NopeUI/AboutScreen.swift`
+
+```swift
+@MainActor static var rateURL: URL? { get }
+```
+
+The write-review URL for ``appStoreID``, or `nil` while it isn't set.
+
+## `AboutScreen/rateURL(appStoreID:)`
+
+internal, declared in `Sources/NopeUI/AboutScreen.swift`
+
+```swift
+@MainActor static func rateURL(appStoreID: String?) -> URL?
+```
+
+The write-review address as a URL, opened by the system when tapped.
+
+- Parameter appStoreID: The numeric App Store ID, or `nil`.
+- Returns: The URL, or `nil` when ``rateAddress(appStoreID:)`` is `nil`.
 
 ## `AboutScreen/sourceAddress`
 
@@ -5832,6 +5901,20 @@ internal, declared in `Sources/NopeUI/DriveStrip.swift`
 ```
 
 The space on each side of the label, in points, in the strip.
+
+## `EnvironmentValues/appStoreID`
+
+public, declared in `Sources/NopeUI/AboutScreen.swift`
+
+```swift
+var appStoreID: String? { get set }
+```
+
+The app's numeric App Store ID, from which the About screen builds its Rate or Review
+link, or `nil` while there is none, which hides the row and its search entry
+(`docs/store/STORE-PAGE-PLAN.md`, section 12). ``AboutScreen/appStoreID`` by default; the
+app's UI tests set one in Debug builds (`-NopeSimulatedAppStoreID`), because the
+repository has no id until the app's App Store record exists.
 
 ## `EnvironmentValues/assistantSession`
 
@@ -21455,6 +21538,17 @@ case privacy
 
 The Privacy group: what each photo says.
 
+## `SettingsID/rateOrReview`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case rateOrReview
+```
+
+The Rate or Review link, last on About and Licenses, shown only once the app has an App
+Store ID (`docs/store/STORE-PAGE-PLAN.md`, section 12).
+
 ## `SettingsID/redViewfinder`
 
 public, declared in `Sources/NopeUI/SettingsSearch.swift`
@@ -21964,12 +22058,12 @@ var hasPresets: Bool
 
 Whether presets exist (not in the Lock Screen camera).
 
-## `SettingsSearch/Availability/init(hasPresets:offersPhotoSize:hasFrontCamera:offersLocation:offersProcessedMarker:offersLiveActivity:offersAstro:offersKeepScreenOn:offersPinch:offersAssistantAccessPage:)`
+## `SettingsSearch/Availability/init(hasPresets:offersPhotoSize:hasFrontCamera:offersLocation:offersProcessedMarker:offersLiveActivity:offersAstro:offersKeepScreenOn:offersPinch:offersAssistantAccessPage:offersRateOrReview:)`
 
 internal, declared in `Sources/NopeUI/SettingsSearch.swift`
 
 ```swift
-init(hasPresets: Bool = true, offersPhotoSize: Bool = false, hasFrontCamera: Bool = true, offersLocation: Bool = true, offersProcessedMarker: Bool = false, offersLiveActivity: Bool = false, offersAstro: Bool = false, offersKeepScreenOn: Bool = true, offersPinch: Bool = false, offersAssistantAccessPage: Bool = true)
+init(hasPresets: Bool = true, offersPhotoSize: Bool = false, hasFrontCamera: Bool = true, offersLocation: Bool = true, offersProcessedMarker: Bool = false, offersLiveActivity: Bool = false, offersAstro: Bool = false, offersKeepScreenOn: Bool = true, offersPinch: Bool = false, offersAssistantAccessPage: Bool = true, offersRateOrReview: Bool = false)
 ```
 
 Creates the availability.
@@ -21985,6 +22079,7 @@ Creates the availability.
   - offersKeepScreenOn: Whether Keep Screen On is offered.
   - offersPinch: Whether the device has two or more rear lenses, so Pinch applies.
   - offersAssistantAccessPage: Whether the Assistant Access page can be opened.
+  - offersRateOrReview: Whether About shows the Rate or Review link.
 
 ## `SettingsSearch/Availability/offers(_:)`
 
@@ -22082,6 +22177,17 @@ var offersProcessedMarker: Bool
 ```
 
 Whether a lens has no Bayer RAW, so the Processed marker applies.
+
+## `SettingsSearch/Availability/offersRateOrReview`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var offersRateOrReview: Bool
+```
+
+Whether About shows the Rate or Review link: only once the app has an App Store ID
+(``AboutScreen/rateURL(appStoreID:)``).
 
 ## `SettingsSearch/keywords(from:)`
 
@@ -22804,6 +22910,16 @@ static let privacy: LocalizedStringResource
 ```
 
 "Privacy".
+
+## `SettingsText/rateOrReview`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let rateOrReview: LocalizedStringResource
+```
+
+"Rate or Review".
 
 ## `SettingsText/redViewfinder`
 

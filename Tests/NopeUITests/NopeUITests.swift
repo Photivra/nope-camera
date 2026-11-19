@@ -62,6 +62,38 @@ struct AboutScreenTests {
         #expect(AboutScreen.privacyPolicyURL.absoluteString == "https://nope.photivra.com/privacy/")
     }
 
+    /// The Rate or Review address (`docs/store/STORE-PAGE-PLAN.md`, 12.3): `https`, host
+    /// `apps.apple.com`, path `/app/id` and the digits, query `action=write-review`.
+    @Test func rateAddressIsTheWriteReviewPage() throws {
+        let url = try #require(AboutScreen.rateURL(appStoreID: "1234567890"))
+        #expect(url.scheme == "https")
+        #expect(url.host() == "apps.apple.com")
+        #expect(url.path() == "/app/id1234567890")
+        #expect(url.query() == "action=write-review")
+        #expect(AboutScreen.rateAddress(appStoreID: "1234567890") == "https://apps.apple.com/app/id1234567890?action=write-review")
+    }
+
+    /// No id, an empty one or one that isn't all ASCII digits gives no address, so the row and
+    /// its search entry are hidden.
+    @Test(arguments: [nil, "", "12a4", "id123", "１２３", " 123", "123/../x"])
+    func noRateAddressWithoutAValidID(_ appStoreID: String?) {
+        #expect(AboutScreen.rateAddress(appStoreID: appStoreID) == nil)
+        #expect(AboutScreen.rateURL(appStoreID: appStoreID) == nil)
+    }
+
+    /// Until the App Store record exists the repository has no id, and the row is hidden; the
+    /// release check (`scripts/check-app-store-id.sh`) fails until it is set. When the id is set,
+    /// this test checks it gives the address.
+    @Test func theAppsOwnIDGivesAnAddressOrNone() {
+        if let appStoreID = AboutScreen.appStoreID {
+            #expect(AboutScreen.rateAddress == "https://apps.apple.com/app/id\(appStoreID)?action=write-review")
+            #expect(AboutScreen.rateURL != nil)
+        } else {
+            #expect(AboutScreen.rateAddress == nil)
+            #expect(AboutScreen.rateURL == nil)
+        }
+    }
+
     @Test func noticeCarriesTheDNGNotice() {
         #expect(LegalTextView.text(named: "NOTICE").contains(AboutScreen.dngNotice))
     }
