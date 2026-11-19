@@ -689,7 +689,7 @@ enum SettingsText {
         case .honesty:
             LocalizedStringResource("Search keywords: Honesty", defaultValue: "close-up, macro, close, near, blurry, soft, lens", bundle: bundle, comment: "Settings search keywords for the Honesty page, separated by commas. Not shown on screen: the page explains why nope. never changes lenses for a close-up. Keep nope. unchanged if it appears.")
         case .rateOrReview:
-            LocalizedStringResource("Search keywords: Rate or Review", defaultValue: "rate, review, rating, feedback, App Store, stars", bundle: bundle, comment: "Settings search keywords for the Rate or Review link on the About screen, separated by commas. Not shown on screen. App Store is Apple's name: use its name in the language's iOS.")
+            LocalizedStringResource("Search keywords: Rate or Review", defaultValue: "rate, review, rating, feedback, App Store", bundle: bundle, comment: "Settings search keywords for the Rate or Review link on the About screen, separated by commas. Not shown on screen. App Store is Apple's name: use its name in the language's iOS.")
         case .showProcessedMarker:
             LocalizedStringResource("Search keywords: Show Processed Marker", defaultValue: "no RAW, processing", bundle: bundle, comment: "Settings search keywords for Show Processed Marker, separated by commas. Not shown on screen. RAW is a file format name.")
         default:

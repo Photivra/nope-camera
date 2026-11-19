@@ -16,7 +16,7 @@ extension NopeAppUITests {
         try XCTUnwrap(image.pngData()).write(to: still)
         defer { try? FileManager.default.removeItem(at: still) }
 
-        let app = launch("photosDenied", extraArguments: ["-NopeSimulatedViewfinderImage", still.path()])
+        let app = launch("photosDenied", extraArguments: ["-NopeSimulatedViewfinderImage", still.path(percentEncoded: false)])
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
         settle()
         XCTAssertEqual(centerColor(app, of: app.otherElements["Viewfinder"].frame), .white)

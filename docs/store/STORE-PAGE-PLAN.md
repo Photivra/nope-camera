@@ -426,7 +426,7 @@ a link, like the two the About screen has now.
 | Night Mode | Red on black like the rest of About: the row's text takes the same red treatment as the other two link rows, with no system blue. The App Store itself is not red; the footer already says the row leaves the app |
 | iPad | The same row in the same place, in Settings' sheet or column. The App Store opens as the system decides (full screen, or beside the app in a window); the app stays as it was |
 | Lock Screen camera | Only where About is offered there. A link from the locked camera needs the device unlocked first, as for the other two links (to confirm on a device) |
-| Settings search | Found by "rate", "review", "rating", "feedback", "App Store", "stars" |
+| Settings search | Found by "rate", "review", "rating", "feedback", "App Store". Not "stars", which finds Astro (maintainer's decision, 2026-11-19) |
 | Right to left | Leading and trailing as the other rows; nothing to mirror |
 | Strings | "App Store" (header; a name, not translated), "Rate or Review", "Opens the App Store. Ratings and reviews there are public.", "Opens the App Store." (hint), in the string catalog with translator comments. US English |
 

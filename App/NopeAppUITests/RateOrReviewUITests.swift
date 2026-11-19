@@ -53,9 +53,9 @@ extension NopeAppUITests {
         let app = openAbout(Self.testAppStoreID)
         let row = settingsElement(app, Self.rateOrReviewRow)
         XCTAssertTrue(row.exists)
-        // A system Link: a link on iPhone; in the iPad popover XCUITest reports SwiftUI links,
-        // the source code link too, as buttons.
-        XCTAssertTrue([.link, .button].contains(row.elementType), "\(row.elementType.rawValue)")
+        // A link, not a button, on every device and OS: the row adds the link trait and removes
+        // the button trait iOS 26 reports for a `Link` in a `Form`.
+        XCTAssertEqual(row.elementType, .link, "\(row.elementType.rawValue)")
         XCTAssertEqual(row.label, "Rate or Review")
         // No value: the address tells a listener nothing the hint doesn't.
         XCTAssertTrue((row.value as? String ?? "").isEmpty)
@@ -63,15 +63,14 @@ extension NopeAppUITests {
         XCTAssertTrue(element(app, containing: Self.rateOrReviewFooter).exists)
         // Last: below the source code link.
         let source = sourceCodeLink(app)
-        if source.exists {
-            XCTAssertLessThan(source.frame.minY, row.frame.minY)
-        }
+        XCTAssertTrue(source.exists, "the source code link is on screen with the row")
+        XCTAssertLessThan(source.frame.minY, row.frame.minY)
         try audit(app, afterScrolling: true, checksDynamicType: false, checksContrast: !isPad)
     }
 
     @MainActor
     func testSettingsSearchFindsRateOrReview() throws {
-        for word in ["stars", "feedback"] {
+        for word in ["rating", "feedback"] {
             let app = launch("denied", extraArguments: Self.testAppStoreID)
             openSettingsScreen(app)
             searchSettings(app, for: word)
@@ -101,9 +100,15 @@ extension NopeAppUITests {
         let app = openAbout(Self.testAppStoreID + Self.rightToLeft)
         let row = settingsElement(app, Self.rateOrReviewRow)
         XCTAssertTrue(row.exists)
-        // The row's text starts at the trailing side of the left-to-right layout.
-        let list = settingsListFrame(app)
-        XCTAssertGreaterThan(row.frame.maxX, list.midX)
+        // The row's element spans the list in both directions, so the drawn text is checked:
+        // "Rate or Review" is all in the right half of the row, none in the left half.
+        let frame = row.frame
+        let (left, right) = frame.divided(atDistance: frame.width / 2, from: .minXEdge)
+        let paper = CGPoint(x: frame.midX, y: frame.minY + 3)
+        let leftInk = inkPixels(app, in: left, background: paper)
+        let rightInk = inkPixels(app, in: right, background: paper)
+        XCTAssertGreaterThan(rightInk, 0, "no link text in the row's right half")
+        XCTAssertEqual(leftInk, 0, "link text in the row's left half")
         try audit(app, afterScrolling: true, checksDynamicType: false, checksContrast: !isPad)
     }
 

@@ -103,12 +103,22 @@ jobs:
             "$app/PlugIns/NopeControls.appex/NopeControls" \
             "$app/Watch/NopeWatch.app/NopeWatch"
       - name: No Debug-only tools in the Release app (docs/SECURITY_AUDIT.md, check 3)
+        shell: bash
         run: |
+          set -euo pipefail
           app=DerivedData-app/Build/Products/Release-iphoneos/nope.app
-          # The launch arguments of the UI-test scenarios, the simulated viewfinder still, the tag
-          # check, the camera probe and debug runs exist only in Debug builds (`#if DEBUG`).
-          for binary in "$app/nope" "$app/Extensions/NopeCaptureExtension.appex/NopeCaptureExtension"; do
-            if strings -a "$binary" | grep -E 'NopeSimulated|NopeTagCheck|NopeCameraProbe|NopeArmDebugRun'; then
+          # The launch arguments of the UI-test scenarios, the simulated viewfinder still and App
+          # Store ID, the simulated phone of the watch app, the galleries, the tag check, the
+          # camera probe and debug runs exist only in Debug builds (`#if DEBUG`). `-Nope[A-Z]`
+          # covers every `-Nope…` argument; the settings argument domain (`-NopeSettings.<key>`)
+          # isn't a string in the binary. A missing binary, or `strings` failing, fails the step.
+          for binary in "$app/nope" \
+                        "$app/Extensions/NopeCaptureExtension.appex/NopeCaptureExtension" \
+                        "$app/PlugIns/NopeControls.appex/NopeControls" \
+                        "$app/Watch/NopeWatch.app/NopeWatch"; do
+            [[ -f "$binary" ]] || { echo "missing $binary"; exit 1; }
+            text=$(strings -a "$binary")
+            if grep -E -- '-Nope[A-Z]|NopeSimulated|NopeTagCheck|NopeCameraProbe|NopeArmDebugRun' <<<"$text"; then
               echo "Debug-only tool strings in $binary"; exit 1
             fi
           done

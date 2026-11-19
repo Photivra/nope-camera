@@ -58,6 +58,39 @@ expect fail "Debug tool without #if DEBUG" "$d"
 d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nenum Tool {}\n#endif\nenum Leak {}\n' >"$d/App/DebugTools/Tool.swift"
 expect fail "Debug tool with code after #endif" "$d"
 
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nenum A {}\n#else\nenum Leak {}\n#endif\n' >"$d/App/DebugTools/Tool.swift"
+expect fail "Debug tool with #else in the #if DEBUG block" "$d"
+
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nenum A {}\n#elseif !DEBUG\nenum Leak {}\n#endif\n' >"$d/App/DebugTools/Tool.swift"
+expect fail "Debug tool with #elseif in the #if DEBUG block" "$d"
+
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nenum A {}\n#endif\nenum Leak {}\n#if DEBUG\nenum B {}\n#endif\n' >"$d/App/DebugTools/Tool.swift"
+expect fail "Debug tool with code between two #if DEBUG blocks" "$d"
+
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '// A comment\n#if DEBUG\nenum A {}\n#endif\n' >"$d/App/DebugTools/Tool.swift"
+expect fail "Debug tool with a line before #if DEBUG" "$d"
+
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nenum A {}\n' >"$d/App/DebugTools/Tool.swift"
+expect fail "Debug tool whose #if DEBUG block isn't closed" "$d"
+
+d=$(new_tree); mkdir -p "$d/App/DebugTools"; printf '#if DEBUG\nimport SwiftUI\n  #if os(iOS)\nenum A {}\n  #elseif os(watchOS)\nenum B {}\n  #else\nenum C {}\n  #endif\n#endif\n' >"$d/App/DebugTools/Tool.swift"
+expect pass "Debug tool with nested conditions inside #if DEBUG" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'import StoreKit\n' >"$d/App/A.swift"
+expect fail "StoreKit import is banned" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf '@Environment(\\.requestReview) private var requestReview\n' >"$d/App/A.swift"
+expect fail "requestReview is banned" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'SKStoreReviewController.requestReview()\n' >"$d/App/A.swift"
+expect fail "SKStoreReviewController is banned" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf '/// The app uses no StoreKit review request; Rate or Review is a plain link.\nimport SwiftUI\n' >"$d/App/A.swift"
+expect pass "a comment naming StoreKit is allowed" "$d"
+
+d=$(new_tree); mkdir -p "$d/AppTests"; printf 'import StoreKit\n' >"$d/AppTests/T.swift"
+expect pass "StoreKit is allowed in tests" "$d"
+
 d=$(new_tree); mkdir -p "$d/App"; printf 'let p: UnsafeRawPointer? = nil\n' >"$d/App/B.swift"
 expect fail "Unsafe pointer outside the allowlist" "$d"
 

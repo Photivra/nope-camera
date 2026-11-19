@@ -161,8 +161,9 @@ for any user-facing claim comes from
 - **Links:** three, on the About screen: the privacy policy (`https://nope.photivra.com/privacy/`)
   and the source code, which open in the browser, and Rate or Review, which opens the App Store's
   write-review page for the app (`https://apps.apple.com/app/id<App Store ID>?action=write-review`).
-  Rate or Review is shown only once the app's App Store ID is set in the code; until then the
-  About screen has the first two. Each hands its `https` address to the system when tapped; the
+  1.0.0 ships with all three: Rate or Review is shown when `AboutScreen.appStoreID` is set, and
+  `scripts/check-app-store-id.sh`, which fails while it is `nil`, must pass before the release
+  build. Each hands its `https` address to the system when tapped; the
   app has no web view, fetches nothing, never asks for a rating and stores nothing about whether a
   link was tapped. What happens in the browser or the App Store is under their own privacy terms,
   and ratings and reviews written in the App Store are public.

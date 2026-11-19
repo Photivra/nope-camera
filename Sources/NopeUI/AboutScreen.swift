@@ -134,6 +134,11 @@ struct AboutScreen: View {
                 }
                 .accessibilityHint(Text("Opens in your browser.", tableName: "Honesty", bundle: .module, comment: "Footer under the Privacy Policy row on the About screen, and the row's VoiceOver hint: the policy opens in the browser, not in the app. Draft for the Honesty review."))
                 .accessibilityValue(Text(verbatim: Self.privacyPolicyAddress))
+                // A link, not a button, for VoiceOver: the iOS 26.5 Simulator reports a `Link` in
+                // a `Form` as a button unless the button trait is removed; the same on the other
+                // two links (docs/TESTING.md).
+                .accessibilityAddTraits(.isLink)
+                .accessibilityRemoveTraits(.isButton)
             } footer: {
                 Text("Opens in your browser.", tableName: "Honesty", bundle: .module, comment: "Footer under the Privacy Policy row on the About screen, and the row's VoiceOver hint: the policy opens in the browser, not in the app. Draft for the Honesty review.")
             }
@@ -143,6 +148,8 @@ struct AboutScreen: View {
                 }
                 .accessibilityLabel(Text("Source code address", bundle: .module, comment: "VoiceOver name of the web address of the source code."))
                 .accessibilityValue(Text(verbatim: Self.sourceAddress))
+                .accessibilityAddTraits(.isLink)
+                .accessibilityRemoveTraits(.isButton)
             } header: {
                 Text("Source Code", bundle: .module, comment: "Section header for where to find the app's source code.")
             } footer: {
@@ -169,6 +176,8 @@ struct AboutScreen: View {
                 Text(SettingsText.rateOrReview)
             }
             .accessibilityHint(Text("Opens the App Store.", bundle: .module, comment: "VoiceOver hint of the Rate or Review row on the About screen: tapping it leaves the app for the App Store. App Store is Apple's name; use its name in the language's iOS."))
+            .accessibilityAddTraits(.isLink)
+            .accessibilityRemoveTraits(.isButton)
             .settingsRow(.rateOrReview)
         } header: {
             Text("App Store", bundle: .module, comment: "Section header on the About screen above the Rate or Review row. App Store is Apple's name; use its name in the language's iOS.")

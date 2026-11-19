@@ -198,10 +198,12 @@ struct SettingsSearchTests {
     /// (`docs/store/STORE-PAGE-PLAN.md`, 12.1).
     @Test func rateOrReviewIsFoundByItsKeywordsOnlyWithAnID() {
         let withID = SettingsSearch.Availability(offersRateOrReview: true)
-        for word in ["rate", "review", "rating", "feedback", "App Store", "stars"] {
+        for word in ["rate", "review", "rating", "feedback", "App Store"] {
             #expect(SettingsSearch.settings(matching: word, availability: withID).contains(.rateOrReview), "\(word)")
             #expect(!SettingsSearch.settings(matching: word, availability: .init()).contains(.rateOrReview), "\(word)")
         }
+        // "stars" is what people type for Astro, so it doesn't list Rate or Review.
+        #expect(!SettingsSearch.settings(matching: "stars", availability: withID).contains(.rateOrReview))
         #expect(!SettingsSearch.Availability().offers(.rateOrReview))
         #expect(SettingsID.rateOrReview.rawValue == "settings.about.rateOrReview")
         #expect(SettingsID.rateOrReview.page == .about)

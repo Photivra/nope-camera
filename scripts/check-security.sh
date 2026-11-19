@@ -4,7 +4,7 @@
 #   Unsafe pointer APIs outside allowlisted files.
 # - Dependency, entitlement and privacy manifest allowlists.
 # - Assistant entry points (issue #82): listed, gated, no indexing, links or schemas.
-# - Debug tools: every Swift file in a DebugTools folder is wrapped in #if DEBUG.
+# - Debug tools: every Swift file in a DebugTools folder is one #if DEBUG block.
 # Run from the repository root. Optional first argument: a directory to check instead.
 set -euo pipefail
 
@@ -22,7 +22,9 @@ files() {
 
 # 1. Banned code. The Adjust and Segment SDK names are matched as whole words, so camera APIs
 #    such as isAdjustingExposure and semantic segmentation mattes aren't flagged.
-banned='URLSession|NSURLConnection|NWConnection|NWPathMonitor|import Network\b|CFNetwork|CFStream|import WebKit|WKWebView|SFSafariViewController|android\.permission\.INTERNET|java\.net\.|HttpURLConnection|okhttp|retrofit|android\.webkit|Firebase|Crashlytics|Sentry|Amplitude|Mixpanel|\bSegment\b|AppsFlyer|\b(Adjust|AdjustSdk|ADJConfig)\b|GoogleMobileAds|FBSDK|FacebookCore|TelemetryDeck|\bprint\(|\bNSLog\(|\bdebugPrint\('
+#    StoreKit and the system review prompt are banned too: the app never asks for a rating; its
+#    only App Store link is About's Rate or Review (docs/store/STORE-PAGE-PLAN.md, section 12).
+banned='URLSession|NSURLConnection|NWConnection|NWPathMonitor|import Network\b|CFNetwork|CFStream|import WebKit|WKWebView|SFSafariViewController|android\.permission\.INTERNET|java\.net\.|HttpURLConnection|okhttp|retrofit|android\.webkit|Firebase|Crashlytics|Sentry|Amplitude|Mixpanel|\bSegment\b|AppsFlyer|\b(Adjust|AdjustSdk|ADJConfig)\b|GoogleMobileAds|FBSDK|FacebookCore|TelemetryDeck|import StoreKit\b|requestReview|SKStoreReviewController|\bprint\(|\bNSLog\(|\bdebugPrint\('
 while IFS= read -r f; do
   [[ -f "$f" ]] || continue
   if hits=$(grep -nE "$banned" "$f"); then
@@ -100,14 +102,38 @@ while IFS= read -r f; do
 done < <(files)
 
 # 7. Debug tools (UI-test scenarios, the simulated viewfinder still, the tag check): every Swift
-#    file in a DebugTools folder starts with `#if DEBUG` and ends with `#endif`, so none of it is
-#    compiled into Release. CI also checks the Release binary for their launch arguments.
+#    file in a DebugTools folder is one `#if DEBUG` block, so none of it is compiled into Release.
+#    The first non-blank line is `#if DEBUG` and the last is its `#endif`; nothing else is at
+#    depth 0, and the outer block has no `#else` or `#elseif`, whose branch would be compiled into
+#    Release. Conditions nested inside the block are allowed. CI also checks the Release binaries
+#    for their launch arguments.
 while IFS= read -r f; do
   [[ "$f" == */DebugTools/*.swift && -f "$f" ]] || continue
-  first=$(grep -vE '^[[:space:]]*$' "$f" | head -n 1)
-  last=$(grep -vE '^[[:space:]]*$' "$f" | tail -n 1)
-  if [[ "$first" != "#if DEBUG" || "$last" != "#endif" ]]; then
-    report "$f is a Debug tool but isn't wrapped in #if DEBUG ... #endif"
+  if ! problem=$(awk '
+    /^[[:space:]]*$/ { next }
+    {
+      line = $0
+      sub(/^[[:space:]]+/, "", line)
+      sub(/[[:space:]]+$/, "", line)
+      seen++
+      if (seen == 1) {
+        if (line != "#if DEBUG") { print "the first line is not #if DEBUG"; exit 1 }
+        depth = 1; next
+      }
+      if (depth == 0) { print "line " NR " is outside the #if DEBUG block"; exit 1 }
+      if (line ~ /^#if([[:space:]]|$)/) { depth++; next }
+      if (line ~ /^#(else|elseif)([[:space:]]|$)/) {
+        if (depth == 1) { print "line " NR " has " line " in the #if DEBUG block"; exit 1 }
+        next
+      }
+      if (line ~ /^#endif([[:space:]]|$)/) { depth--; next }
+    }
+    END {
+      if (seen == 0) { print "the file is empty"; exit 1 }
+      if (depth != 0) { print "the #if DEBUG block is not closed"; exit 1 }
+    }
+  ' "$f"); then
+    report "$f is a Debug tool but isn't one #if DEBUG ... #endif block: $problem"
   fi
 done < <(files)
 
