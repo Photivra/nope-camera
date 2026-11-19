@@ -143,6 +143,18 @@ struct NopeApp: App {
         #endif
     }
 
+    /// Whether to behave as with VoiceOver or Switch Control on, which the Simulator can't run,
+    /// so the focus square and Lock don't fade: Debug builds only, with
+    /// `-NopeSimulatedAssistiveTechnology`, for the UI tests (docs/design/device-feedback-1.0.md,
+    /// section 5).
+    private static var simulatesAssistiveTechnology: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-NopeSimulatedAssistiveTechnology")
+        #else
+        false
+        #endif
+    }
+
     /// The camera screen with the live viewfinder and the hardware shutter.
     ///
     /// The volume buttons and the Camera Control are the shutter through `onCameraCaptureEvent`
@@ -156,6 +168,7 @@ struct NopeApp: App {
             Viewfinder(source: source)
         }
         .environment(\.cameraUprightRotation, orientation.rotation)
+        .environment(\.simulatesAssistiveTechnology, Self.simulatesAssistiveTechnology)
         // The Assistant Access hints, cards and session list (issue #82). The simulated Lock Screen
         // camera has none, as the capture extension has none.
         .environment(\.assistantSession, Self.simulatesLockScreenCamera ? nil : Self.assistantSession)
@@ -172,10 +185,12 @@ struct NopeApp: App {
                 guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
                 UIApplication.shared.open(url)
             })
-        // The last-photo thumbnail opens the Photos app (issue #36), only when the person taps
-        // it. Add-only access can't read the library, and iOS has no documented way to open
-        // Photos at one asset, so this opens Photos with its `photos-redirect:` URL, which isn't
-        // documented by Apple either (an owner decision; docs/TESTING.md, "On-device checks").
+        // Open in Photos in the Last Photo viewer, and Open Photos in the Last Photo spot before
+        // the first photo (issue #36; docs/design/device-feedback-1.0.md, section 1), open the
+        // Photos app only when the person taps. Add-only access can't read the library, and iOS
+        // has no documented way to open Photos at one asset, so this opens Photos with its
+        // `photos-redirect:` URL, which isn't documented by Apple either (an owner decision;
+        // docs/TESTING.md, "On-device checks"). The Lock Screen camera has neither.
         .environment(
             \.openPhotosApp,
             Self.simulatesLockScreenCamera

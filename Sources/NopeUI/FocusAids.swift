@@ -28,6 +28,53 @@ extension View {
     }
 }
 
+/// When the focus square and Lock show (docs/design/device-feedback-1.0.md, section 5): from a
+/// tap for ``NopeMotion/focusAidLinger``, then they fade together. Where the camera focuses and
+/// exposes doesn't change; only the drawing leaves. A locked square never fades, and nothing
+/// fades while it is held: VoiceOver or Switch Control on, a finger on Lock, Lock with the
+/// keyboard's focus, or the scrolling layout, where touch and hold isn't available.
+struct FocusAidLinger: Equatable {
+    /// When the clock started: at the last tap, the last change of the target, or when what
+    /// held the aids ended. `nil` before any.
+    private(set) var start: ContinuousClock.Instant?
+
+    /// Creates a clock that hasn't started.
+    init() {}
+
+    /// Starts the clock again.
+    ///
+    /// - Parameter time: The time now.
+    mutating func restart(at time: ContinuousClock.Instant) {
+        start = time
+    }
+
+    /// Whether the square and Lock show.
+    ///
+    /// - Parameters:
+    ///   - target: The focus target, or `nil` (nothing to show).
+    ///   - time: The time now.
+    ///   - isHeld: Whether something holds them: VoiceOver or Switch Control on, Lock pressed or
+    ///     focused, or the scrolling layout.
+    /// - Returns: `true` while locked or held, and for ``NopeMotion/focusAidLinger`` after the
+    ///   clock started; `false` without a target.
+    func isShown(target: FocusTarget?, at time: ContinuousClock.Instant, isHeld: Bool) -> Bool {
+        guard let target else { return false }
+        if target.isLocked || isHeld { return true }
+        guard let start else { return true }
+        return time - start < NopeMotion.focusAidLinger
+    }
+
+    /// How long until the aids fade, or `nil` when the clock hasn't started or has run out.
+    ///
+    /// - Parameter time: The time now.
+    /// - Returns: The time left.
+    func remaining(at time: ContinuousClock.Instant) -> Duration? {
+        guard let start else { return nil }
+        let remaining = NopeMotion.focusAidLinger - (time - start)
+        return remaining > .zero ? remaining : nil
+    }
+}
+
 /// The focus square at the tapped point, with the lock button under it (issue #68: "AE/AF lock
 /// (lock pill after tap to focus)"). The square is 2 points white with a dark outline, so it
 /// shows on any scene. It isn't drawn while the magnifier is on, where the whole picture is the
@@ -39,14 +86,26 @@ struct FocusSquareLayer: View {
     /// The camera model.
     let model: CameraModel
 
+    /// Whether the square and Lock show now (``FocusAidLinger``); they fade when it turns
+    /// `false`, and Lock takes no press from then.
+    let isShown: Bool
+
+    /// Called with `true` while Lock is pressed or has the keyboard's focus, which holds the
+    /// fade, and `false` when that ends.
+    let holdChanged: (Bool) -> Void
+
     /// Creates the layer.
     ///
     /// - Parameters:
     ///   - model: The camera model.
     ///   - part: The square or the lock button.
-    init(model: CameraModel, part: Part) {
+    ///   - isShown: Whether the square and Lock show now. Defaults to `true`.
+    ///   - holdChanged: Called when Lock starts or stops holding the fade.
+    init(model: CameraModel, part: Part, isShown: Bool = true, holdChanged: @escaping (Bool) -> Void = { _ in }) {
         self.model = model
         self.part = part
+        self.isShown = isShown
+        self.holdChanged = holdChanged
     }
 
     /// Whether this layer draws the square, which the viewfinder element contains (so VoiceOver
@@ -66,11 +125,13 @@ struct FocusSquareLayer: View {
         switch part {
         case .square:
             GeometryReader { proxy in
-                if let target = model.manual.focusTarget, !model.isMagnifying {
+                if let target = model.manual.focusTarget, !model.isMagnifying, isShown {
                     square
                         .position(x: target.viewfinderPoint.x * proxy.size.width, y: target.viewfinderPoint.y * proxy.size.height)
+                        .transition(.opacity)
                 }
             }
+            .animation(NopeMotion.fade, value: isShown)
             .allowsHitTesting(false)
         case .lockButton:
             lockButton
@@ -80,10 +141,12 @@ struct FocusSquareLayer: View {
     /// The lock button under the square, kept inside the picture.
     private var lockButton: some View {
         GeometryReader { proxy in
-            if let target = model.manual.focusTarget, !model.isMagnifying {
+            // Faded, Lock leaves the view: gone for VoiceOver and the tests, with no press from
+            // the start of the fade (the viewfinder keeps its Lock Focus and Exposure action).
+            if let target = model.manual.focusTarget, !model.isMagnifying, isShown {
                 let x = target.viewfinderPoint.x * proxy.size.width
                 let y = target.viewfinderPoint.y * proxy.size.height
-                FocusLockButton(isLocked: target.isLocked) {
+                FocusLockButton(isLocked: target.isLocked, holdChanged: holdChanged) {
                     let model = model
                     Task {
                         await model.send(.auto(target.isLocked ? .unlockFocusAndExposure : .lockFocusAndExposure(at: nil)))
@@ -94,8 +157,10 @@ struct FocusSquareLayer: View {
                     x: min(max(x, Self.side), max(proxy.size.width - Self.side, Self.side)),
                     y: y + Self.side < proxy.size.height - NopeSize.minTarget
                         ? y + Self.side : max(y - Self.side, NopeSize.minTarget / 2))
+                .transition(.opacity)
             }
         }
+        .animation(NopeMotion.fade, value: isShown)
     }
 
     /// The square: white with a dark edge on both sides.
@@ -113,16 +178,28 @@ struct FocusLockButton: View {
     /// Whether focus and exposure are locked.
     let isLocked: Bool
 
+    /// Called with `true` while the button is pressed or has the keyboard's focus, and `false`
+    /// when neither holds: the fade waits meanwhile.
+    let holdChanged: (Bool) -> Void
+
     /// Locks or unlocks.
     let action: () -> Void
+
+    /// Whether a finger is on the button.
+    @State private var isPressed = false
+
+    /// Whether the button has the keyboard's focus (Full Keyboard Access).
+    @FocusState private var isFocused: Bool
 
     /// Creates the button.
     ///
     /// - Parameters:
     ///   - isLocked: Whether focus and exposure are locked.
+    ///   - holdChanged: Called when the button starts or stops holding the fade.
     ///   - action: Locks or unlocks.
-    init(isLocked: Bool, action: @escaping () -> Void) {
+    init(isLocked: Bool, holdChanged: @escaping (Bool) -> Void = { _ in }, action: @escaping () -> Void) {
         self.isLocked = isLocked
+        self.holdChanged = holdChanged
         self.action = action
     }
 
@@ -139,10 +216,42 @@ struct FocusLockButton: View {
                 Image(systemName: isLocked ? "lock.fill" : "lock.open")
             }
         }
-        .buttonStyle(NopePillStyle(isOnPicture: true))
+        .buttonStyle(PressReportingStyle(base: NopePillStyle(isOnPicture: true), isPressed: $isPressed))
+        .focused($isFocused)
+        .onChange(of: isPressed || isFocused) { _, holds in holdChanged(holds) }
+        // Gone (the scene changed, the lock was released): it holds nothing any more.
+        .onDisappear { holdChanged(false) }
         .accessibilityLabel(isLocked ? FocusText.unlock : FocusText.lock)
         .accessibilityInputLabels(isLocked ? [FocusText.unlock, Text(verbatim: "AE/AF")] : [FocusText.lock])
         .accessibilityShowsLargeContentViewer()
+    }
+}
+
+/// A button style that draws another style and reports whether the button is pressed, for
+/// Lock, whose fade waits while a finger is on it.
+struct PressReportingStyle<Base: ButtonStyle>: ButtonStyle {
+    /// The style that draws the button.
+    let base: Base
+
+    /// Set while the button is pressed.
+    @Binding var isPressed: Bool
+
+    /// Creates the style.
+    ///
+    /// - Parameters:
+    ///   - base: The style that draws the button.
+    ///   - isPressed: Set while the button is pressed.
+    init(base: Base, isPressed: Binding<Bool>) {
+        self.base = base
+        _isPressed = isPressed
+    }
+
+    /// The base style's button, reporting its pressed state.
+    ///
+    /// - Parameter configuration: The button's label and press state.
+    func makeBody(configuration: Configuration) -> some View {
+        base.makeBody(configuration: configuration)
+            .onChange(of: configuration.isPressed, initial: true) { _, pressed in isPressed = pressed }
     }
 }
 
@@ -474,19 +583,114 @@ struct CameraHints: View {
 
     /// The hints that apply, or nothing.
     var body: some View {
-        if model.showsSteadyHint {
-            HintLabel(
-                systemImage: "hand.raised",
-                text: String(
-                    localized: "Hold it steady or use a tripod.", bundle: .module,
-                    comment: "Hint on the camera when the light is too low for a shutter that is safe to hold by hand, or the manual shutter is that slow."))
-        }
+        SteadyHint(isWanted: model.showsSteadyHint)
         if let lens = model.closeUpLens {
             CloseUpSuggestion(model: model, lens: lens)
         }
         ComparisonHint(model: model)
         // What an assistant did (issue #82).
         AssistantHints()
+    }
+}
+
+/// When "Hold it steady or use a tripod." shows and is announced (docs/design/device-feedback-1.0.md,
+/// section 4): while its cause lasts, and at least ``minimumShown`` once shown, so it can be
+/// read; VoiceOver hears it when it appears, and not again within ``announcementGap`` if it
+/// returns. The minimum is the only timer, and it only keeps the hint longer.
+struct SteadyHintTiming: Equatable {
+    /// The shortest time the hint shows once it appears: 2 seconds.
+    static let minimumShown = Duration.seconds(2)
+
+    /// The shortest time between two announcements of the hint: 10 seconds.
+    static let announcementGap = Duration.seconds(10)
+
+    /// When the hint appeared, or `nil` while it isn't shown.
+    private(set) var shownSince: ContinuousClock.Instant?
+
+    /// When the hint was last announced, or `nil` before the first time.
+    private(set) var lastAnnouncement: ContinuousClock.Instant?
+
+    /// Creates the timing of a hint not shown yet.
+    init() {}
+
+    /// Records that the hint appears.
+    ///
+    /// - Parameter time: The time now.
+    /// - Returns: Whether VoiceOver should announce it: the first time, and then only after
+    ///   ``announcementGap`` since the last announcement.
+    mutating func appear(at time: ContinuousClock.Instant) -> Bool {
+        shownSince = time
+        guard lastAnnouncement.map({ time - $0 >= Self.announcementGap }) ?? true else { return false }
+        lastAnnouncement = time
+        return true
+    }
+
+    /// How long the hint must still show once its cause has ended, or `nil` when it may go now.
+    ///
+    /// - Parameter time: The time now.
+    /// - Returns: The time left of ``minimumShown``, or `nil`.
+    func remainingMinimum(at time: ContinuousClock.Instant) -> Duration? {
+        guard let shownSince else { return nil }
+        let remaining = Self.minimumShown - (time - shownSince)
+        return remaining > .zero ? remaining : nil
+    }
+
+    /// Records that the hint left.
+    mutating func disappear() {
+        shownSince = nil
+    }
+}
+
+/// "Hold it steady or use a tripod.": shown while `CameraModel.showsSteadyHint` is `true`, and
+/// at least ``SteadyHintTiming/minimumShown`` once shown; it leaves with ``NopeMotion/fade``.
+struct SteadyHint: View {
+    /// Whether the camera wants the hint now.
+    let isWanted: Bool
+
+    /// Whether the hint shows.
+    @State private var isShown = false
+
+    /// When it appeared and was announced.
+    @State private var timing = SteadyHintTiming()
+
+    /// Creates the hint.
+    ///
+    /// - Parameter isWanted: Whether the camera wants the hint now.
+    init(isWanted: Bool) {
+        self.isWanted = isWanted
+    }
+
+    /// The sentence.
+    private var text: String {
+        String(
+            localized: "Hold it steady or use a tripod.", bundle: .module,
+            comment: "Hint on the camera while Manual Controls are off and the shutter in use is slower than the lens can be held at by hand.")
+    }
+
+    /// The hint, or nothing.
+    var body: some View {
+        Group {
+            if isShown {
+                HintLabel(systemImage: "hand.raised", text: text, announces: false)
+                    .transition(.opacity)
+            }
+        }
+        .animation(NopeMotion.fade, value: isShown)
+        .onChange(of: isWanted, initial: true) { _, wanted in
+            guard wanted, !isShown else { return }
+            isShown = true
+            if timing.appear(at: .now) { AccessibilityNotification.Announcement(text).post() }
+        }
+        // Leaves once the cause has ended and the minimum has passed; nothing runs meanwhile.
+        .task(id: isWanted) {
+            guard !isWanted, isShown else { return }
+            if let remaining = timing.remainingMinimum(at: .now) {
+                try? await Task.sleep(for: remaining)
+                guard !Task.isCancelled, !isWanted else { return }
+            }
+            isShown = false
+            timing.disappear()
+        }
     }
 }
 
@@ -498,14 +702,19 @@ struct HintLabel: View {
     /// The sentence.
     let text: String
 
+    /// Whether the hint announces itself when it appears; `false` when its owner decides.
+    let announces: Bool
+
     /// Creates a hint.
     ///
     /// - Parameters:
     ///   - systemImage: The SF Symbol.
     ///   - text: The sentence.
-    init(systemImage: String, text: String) {
+    ///   - announces: Whether it is announced when it appears. Defaults to `true`.
+    init(systemImage: String, text: String, announces: Bool = true) {
         self.systemImage = systemImage
         self.text = text
+        self.announces = announces
     }
 
     /// The hint.
@@ -522,19 +731,26 @@ struct HintLabel: View {
         .padding(.vertical, NopeSpace.xs)
         .nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.small))
         .accessibilityElement(children: .combine)
-        .onAppear { AccessibilityNotification.Announcement(text).post() }
+        .onAppear {
+            if announces { AccessibilityNotification.Announcement(text).post() }
+        }
     }
 }
 
-/// "The subject may be too close to focus." with a button that switches to the ultra wide lens
-/// and one that dismisses the suggestion. The app never switches by itself. While the lens can't
-/// be changed (``LensBusyState``), only the switch button is disabled.
+/// "The subject may be too close to focus." with About Close-Up Focus, which opens the Honesty
+/// entry Lenses Never Switch on Their Own, a button that dismisses the suggestion and one that
+/// switches to the ultra wide lens (docs/design/device-feedback-1.0.md, section 3). The app
+/// never switches by itself. While the lens can't be changed (``LensBusyState``), only the switch
+/// button is disabled. The buttons wrap under one another when they don't fit beside each other.
 struct CloseUpSuggestion: View {
     /// The camera model.
     let model: CameraModel
 
     /// The lens to suggest.
     let lens: Lens
+
+    /// Opens Settings at an item, or `nil` where Settings can't be opened.
+    @Environment(\.openSettingsAt) private var openSettingsAt
 
     /// Creates the suggestion.
     ///
@@ -553,6 +769,11 @@ struct CloseUpSuggestion: View {
             comment: "Hint on the camera when autofocus can't get close enough. The value is a lens name such as Ultra Wide.")
     }
 
+    /// The name of About Close-Up Focus.
+    static var aboutLabel: Text {
+        Text("About Close-Up Focus", bundle: .module, comment: "Information button on the camera's close-up hint: opens the Honesty entry that explains why nope. never changes lenses for a close-up. Keep nope. unchanged if it appears. Draft for the Honesty review.")
+    }
+
     /// The suggestion.
     var body: some View {
         VStack(alignment: .leading, spacing: NopeSpace.xs) {
@@ -564,24 +785,18 @@ struct CloseUpSuggestion: View {
             }
             .font(NopeFont.status)
             .accessibilityElement(children: .combine)
-            HStack(spacing: NopeSpace.xs) {
-                Button {
-                    let model = model
-                    let id = lens.id
-                    Task { await model.send(.selectLens(id)) }
-                } label: {
-                    Text("Switch to \(LensName.string(for: lens.kind))", bundle: .module, comment: "Button in the close-up hint: switches to the suggested lens. The value is a lens name such as Ultra Wide.")
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: NopeSpace.xs) {
+                    aboutButton
+                    Spacer(minLength: 0)
+                    dismissButton
+                    switchButton
                 }
-                .buttonStyle(NopeCapsuleStyle(isCompact: true, idleFill: .tile))
-                // Disabled while the lens can't be changed; the hint itself stays (issue #96).
-                .lensBusyControl()
-                Button {
-                    let model = model
-                    Task { await model.send(.auto(.dismissCloseUpSuggestion)) }
-                } label: {
-                    Text("Dismiss", bundle: .module, comment: "Button that closes the message about a photo that wasn't taken or saved.")
+                VStack(alignment: .leading, spacing: NopeSpace.xs) {
+                    aboutButton
+                    dismissButton
+                    switchButton
                 }
-                .buttonStyle(NopeCapsuleStyle(isCompact: true, idleFill: .tile))
             }
         }
         .foregroundStyle(NopeColor.label)
@@ -589,6 +804,53 @@ struct CloseUpSuggestion: View {
         .nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.small))
         .accessibilityElement(children: .contain)
         .onAppear { AccessibilityNotification.Announcement(text).post() }
+    }
+
+    /// Opens the Honesty entry, where Settings can be opened. Not disabled while the lens is busy.
+    @ViewBuilder private var aboutButton: some View {
+        if let openSettingsAt {
+            Button {
+                openSettingsAt(.honestyCloseUpFocus)
+            } label: {
+                Image(systemName: "info.circle")
+                    .font(.body.weight(.semibold))
+            }
+            .buttonStyle(NopeIconButtonStyle(idleFill: .tile))
+            .accessibilityLabel(Self.aboutLabel)
+            .accessibilityShowsLargeContentViewer {
+                Label {
+                    Self.aboutLabel
+                } icon: {
+                    Image(systemName: "info.circle")
+                }
+            }
+            .accessibilityIdentifier("aboutCloseUpFocus")
+        }
+    }
+
+    /// Hides the suggestion until the lens changes.
+    private var dismissButton: some View {
+        Button {
+            let model = model
+            Task { await model.send(.auto(.dismissCloseUpSuggestion)) }
+        } label: {
+            Text("Dismiss", bundle: .module, comment: "Button that closes the message about a photo that wasn't taken or saved.")
+        }
+        .buttonStyle(NopeCapsuleStyle(isCompact: true, idleFill: .tile))
+    }
+
+    /// Switches to the suggested lens: the person's choice, never the app's.
+    private var switchButton: some View {
+        Button {
+            let model = model
+            let id = lens.id
+            Task { await model.send(.selectLens(id)) }
+        } label: {
+            Text("Switch to \(LensName.string(for: lens.kind))", bundle: .module, comment: "Button in the close-up hint: switches to the suggested lens. The value is a lens name such as Ultra Wide.")
+        }
+        .buttonStyle(NopeCapsuleStyle(isCompact: true, idleFill: .tile))
+        // Disabled while the lens can't be changed; the hint itself stays (issue #96).
+        .lensBusyControl()
     }
 }
 

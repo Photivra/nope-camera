@@ -1955,7 +1955,8 @@ final class NopeAppUITests: XCTestCase {
         viewfinder(app).tap()
         let lock = app.buttons["Lock Focus and Exposure"]
         XCTAssertTrue(lock.waitForExistence(timeout: 10))
-        try audit(app)
+        // Pressed within the three seconds before Lock fades (docs/design/device-feedback-1.0.md,
+        // section 5); the tapped state's audit is in testTheFocusSquareStaysWithAssistiveTechnology.
         lock.tap()
         let unlock = app.buttons["Unlock Focus and Exposure"]
         XCTAssertTrue(unlock.waitForExistence(timeout: 10))

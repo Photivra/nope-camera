@@ -262,7 +262,7 @@ public struct SettingsScreen: View {
         case .accessibility:
             AccessibilitySettingsView(offersPinch: availability.offersPinch)
         case .honesty:
-            HonestyScreen()
+            HonestyScreen(closeUpLensLabel: DeviceCapabilities(lenses: lenses).closeUpFocusLens.flatMap(LensName.magnificationLabel(for:)))
         case .about:
             AboutScreen()
         }

@@ -1730,7 +1730,7 @@
       "extractionState" : "manual"
     },
     "Hold it steady or use a tripod." : {
-      "comment" : "Hint on the camera when the light is too low for a shutter that is safe to hold by hand, or the manual shutter is that slow.",
+      "comment" : "Hint on the camera while Manual Controls are off and the shutter in use is slower than the lens can be held at by hand.",
       "extractionState" : "manual"
     },
     "Hold the camera steady or use a tripod. Two photos are taken, a moment apart." : {
@@ -3480,6 +3480,46 @@
     "Siri and Shortcuts" : {
       "comment" : "Accessibility screen section header: taking photos with Siri and the Shortcuts app. Siri and Shortcuts are Apple's names.",
       "extractionState" : "manual"
+    },
+    "Open Photos" : {
+      "comment" : "Button in the Last Photo spot beside the shutter, before the first photo since nope. opened: opens the Photos app. Photos is the system photo library app. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Open Photos: second name" : {
+      "comment" : "Second Voice Control name of the Open Photos button beside the shutter. Photos is the system photo library app.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos"
+          }
+        }
+      }
+    },
+    "Opens the Photos app." : {
+      "comment" : "VoiceOver hint of the Open Photos button beside the shutter. Photos is the system photo library app. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "In use" : {
+      "comment" : "VoiceOver value of Use the Whole Range in Bracket Settings while the focus bracket already covers the whole range, 0 to 1.",
+      "extractionState" : "manual"
+    },
+    "About Close-Up Focus" : {
+      "comment" : "Information button on the camera's close-up hint: opens the Honesty entry that explains why nope. never changes lenses for a close-up. Keep nope. unchanged if it appears. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Search keywords: Honesty" : {
+      "comment" : "Settings search keywords for the Honesty page, separated by commas. Not shown on screen: the page explains why nope. never changes lenses for a close-up. Keep nope. unchanged if it appears.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "close-up, macro, close, near, blurry, soft, lens"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

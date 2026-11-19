@@ -609,6 +609,12 @@ enum NopeMotion {
     /// the lens row blink.
     static let busyDimDelay: Duration = .milliseconds(500)
 
+    /// How long the focus square and Lock stay after a tap before they fade: 3 seconds
+    /// (docs/design/device-feedback-1.0.md, section 5). Provisional until device check F1, which
+    /// may set it between 2 and 5 seconds. A locked square never fades, and nothing fades while
+    /// VoiceOver or Switch Control is on (``FocusAidLinger``).
+    static let focusAidLinger: Duration = .seconds(3)
+
     /// The opacity of a custom button while it is pressed: 70%.
     static let pressedOpacity: Double = 0.7
 

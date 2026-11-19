@@ -218,6 +218,15 @@ struct NopeIconButtonStyle: ButtonStyle {
     /// Whether the button is selected.
     let isSelected: Bool
 
+    /// The corner radius of a rounded square, or `nil` for the circle. Open Photos in the Last
+    /// Photo spot is the thumbnail's rounded square (docs/design/device-feedback-1.0.md,
+    /// section 1); every other icon button is round.
+    let cornerRadius: CGFloat?
+
+    /// What the button is filled with when it isn't selected: the control fill on the black
+    /// rows, or the tile fill on a hint over the picture.
+    let idleFill: NopeIdleFill
+
     /// Whether night mode is on.
     @Environment(\.isNightMode) private var isNightMode
 
@@ -230,9 +239,21 @@ struct NopeIconButtonStyle: ButtonStyle {
     ///   - size: The diameter, in points: ``NopeSize/iconButton`` (44) by default, ``NopeSize/quick``
     ///     (52) for Q. The hit target is never smaller than ``NopeSize/minTarget``.
     ///   - isSelected: Whether the button is selected, as Q is while its panel is open.
-    init(size: CGFloat = NopeSize.iconButton, isSelected: Bool = false) {
+    ///   - cornerRadius: The corner radius of a rounded square, or `nil` for the circle.
+    ///   - idleFill: The fill when not selected. Defaults to the control fill.
+    init(
+        size: CGFloat = NopeSize.iconButton, isSelected: Bool = false, cornerRadius: CGFloat? = nil,
+        idleFill: NopeIdleFill = .control
+    ) {
         self.size = size
         self.isSelected = isSelected
+        self.cornerRadius = cornerRadius
+        self.idleFill = idleFill
+    }
+
+    /// The button's shape: a circle is a rounded square with half its side as the radius.
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: cornerRadius ?? size / 2)
     }
 
     /// The styled button.
@@ -240,15 +261,15 @@ struct NopeIconButtonStyle: ButtonStyle {
     /// - Parameter configuration: The button's label and press state.
     func makeBody(configuration: Configuration) -> some View {
         let appearance = NopeControlAppearance.resolve(
-            isSelected: isSelected, idleFill: .control, isDestructive: configuration.role == .destructive,
+            isSelected: isSelected, idleFill: idleFill, isDestructive: configuration.role == .destructive,
             isNightMode: isNightMode, increaseContrast: contrast == .increased)
         configuration.label
             .foregroundStyle(appearance.label)
             .environment(\.nopeSecondaryLabel, appearance.secondaryLabel)
             .frame(width: size, height: size)
-            .modifier(NopeControlBackground(appearance: appearance, shape: Circle()))
+            .modifier(NopeControlBackground(appearance: appearance, shape: shape))
             .nopeHitTarget()
-            .contentShape(.hoverEffect, Circle())
+            .contentShape(.hoverEffect, shape)
             .hoverEffect(.highlight)
             .modifier(NopePressEffect(isPressed: configuration.isPressed))
             .accessibilityShowsLargeContentViewer()

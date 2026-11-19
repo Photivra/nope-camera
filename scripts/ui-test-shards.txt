@@ -6,6 +6,8 @@
 # with the least time; add a new test to the shard with the least time on each device, with
 # twice its local time and an "e".
 2 3 NopeAppUITests/testACancelledQuestionChangesNothing 78e 72e
+2 1 NopeAppUITests/testACloseUpSweepBringsTheHint 20e 28e
+3 1 NopeAppUITests/testAboutCloseUpFocusOpensTheHonestyEntry 52e 51e
 3 2 NopeAppUITests/testAccessibilityFeedbackMentionsTheLevel 240e 268e
 3 2 NopeAppUITests/testAfterAPinchControlsStayAndATapStillFocuses 70e 61e
 1 3 NopeAppUITests/testAnActionThatRanIsShownOnTheCameraAndListed 102e 56e
@@ -164,6 +166,8 @@
 2 1 NopeAppUITests/testFormatsAndPrivacySwitchesFollowTheRules 68 61
 3 1 NopeAppUITests/testFullAutoShowsOnlyTheDefaultControls 25 25
 1 1 NopeAppUITests/testHeatPauseIsExplained 19 24
+3 3 NopeAppUITests/testHonestyEntriesAtTheLargestTextSizeRightToLeftAndInNightMode 182e 149e
+1 1 NopeAppUITests/testHonestyEntriesInBothForms 94e 94e
 1 3 NopeAppUITests/testHonestyScreenSaysTheComparisonPhotoIsNeverSaved 30 30
 3 3 NopeAppUITests/testInterruptionIsExplained 23 37
 1 1 NopeAppUITests/testIntervalCardOpensSettings 43e 43e
@@ -240,6 +244,9 @@
 1 2 NopeAppUITests/testNoPillRepeatsManualControlsOrTheDriveStrip 56e 57e
 2 2 NopeAppUITests/testNotSignedOnlyWhenSigningFailed 51e 52e
 1 2 NopeAppUITests/testOneLongPinchCrossesThreeLenses 34e 48e
+2 3 NopeAppUITests/testOpenPhotosAtTheLargestTextSizeRightToLeftAndInNightMode 78e 79e
+2 1 NopeAppUITests/testOpenPhotosBeforeTheFirstPhoto 52e 55e
+3 1 NopeAppUITests/testOpenPhotosIsNotOfferedWhereItCantBeUsed 62e 64e
 2 1 NopeAppUITests/testPairedWithRAWAppearsOnlyWithAllThreeFormats 43 37
 2 3 NopeAppUITests/testPairedWithRAWAtTheLargestTextSize 33 32
 4 1 NopeAppUITests/testPermissionCaptureAndFallbackPassAccessibilityAudits 57 49
@@ -330,17 +337,24 @@
 2 3 NopeAppUITests/testStorageAndBatteryWarnings 75 71
 4 3 NopeAppUITests/testTapToFocusLocksWithTheButtonAndUnlocksWithThePill 34 32
 4 3 NopeAppUITests/testTappingTheLastPhotoOpensTheViewer 33 42
+4 3 NopeAppUITests/testTheAccessibilityPageExplainsTheFade 78e 73e
 1 3 NopeAppUITests/testTheCardInNightModeAndAtTheLargestTextSize 42e 44e
+1 3 NopeAppUITests/testTheCloseUpHintAtTheLargestTextSize 44e 23e
 2 3 NopeAppUITests/testTheCloseUpSwitchIsDisabledDuringTheCountdown 54e 50e
+2 1 NopeAppUITests/testTheFocusSquareAndLockFadeAfterATap 54e 28e
+1 1 NopeAppUITests/testTheFocusSquareStaysWithAssistiveTechnology 58e 59e
 1 1 NopeAppUITests/testTheLargestLiveActivityRowIsNoTallerThanBefore 16e 16e
 4 3 NopeAppUITests/testTheLiveActivityStopButtonIsACapsuleTarget 45e 45e
 2 1 NopeAppUITests/testTheRefusalCardClosesUntilTheNextRefusal 16e 26e
+2 1 NopeAppUITests/testTheSteadyHintLeavesWithManualControls 46e 46e
 2 3 NopeAppUITests/testTheTipShowsOnceAfterFiveConfirmations 24e 34e
 2 3 NopeAppUITests/testThreePillsAndMore 177e 136e
 3 2 NopeAppUITests/testTimerCardCountsDown 43e 43e
 4 1 NopeAppUITests/testTimerDelayMenu 48e 48e
 2 3 NopeAppUITests/testTooCloseSuggestionCanBeDismissed 17 19
 2 2 NopeAppUITests/testTooCloseSuggestsTheUltraWideAndNeverSwitchesByItself 19 26
+2 2 NopeAppUITests/testUseTheWholeRangeIsSelectedNotDimmed 88e 88e
+1 1 NopeAppUITests/testUseTheWholeRangePassesTheAuditInEveryForm 130e 150e
 2 2 NopeAppUITests/testViewerActions 64e 54e
 1 1 NopeAppUITests/testViewerEscapeAndHardwareShutterClose 74e 2e
 1 1 NopeAppUITests/testViewerFailureWhileOpen 64e 54e

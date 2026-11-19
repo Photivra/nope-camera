@@ -118,8 +118,13 @@ enum SimulatedCameraLaunch {
         case aids
         /// As `aids`, in light too low for a handheld shutter: "Hold it steady or use a tripod".
         case dimLight
-        /// As `aids`, with the wide lens stuck at its nearest focus: the ultra wide suggestion.
+        /// As `aids`, with the wide lens stuck at its nearest focus while autofocus searches, a
+        /// reading every quarter second for three seconds: the ultra wide suggestion.
         case tooClose
+        /// As `aids`, the realistic close-up: autofocus searches while the wide lens sweeps in to
+        /// its nearest position, then the lens rests there and the search has ended
+        /// (docs/design/device-feedback-1.0.md, section 6). The ultra wide suggestion.
+        case closeUpSweep
         /// Access already allowed; the four lenses, but the system refuses the light, as on a
         /// device too hot for it.
         case lightUnavailable
@@ -285,7 +290,9 @@ enum SimulatedCameraLaunch {
         meteringModes: [.center], supportsFocusPoint: true, supportsExposurePoint: true, supportsNearFocusLimit: true)
 
     /// The lenses of the aid scenarios: ultra wide and wide with every aid, and a fixed-focus
-    /// front camera that can only meter a tapped point.
+    /// front camera that can only meter a tapped point. The wide lens reports stabilization and
+    /// the ultra wide doesn't, so the steady hint's two limits are both used
+    /// (docs/design/device-feedback-1.0.md, section 4).
     static let aidLenses: [Lens] = [
         Lens(
             id: "simulated-ultra-wide", kind: .ultraWide, bayerRAWFormat: "rgg4", magnification: 0.5,
@@ -294,7 +301,7 @@ enum SimulatedCameraLaunch {
         Lens(
             id: "simulated-wide", kind: .wide, bayerRAWFormat: "bgg4", magnification: 1, isoRange: 50...6400,
             exposureDurationRange: 0.000_014...1, aperture: .fixed(1.8), manualControls: aidCapabilities,
-            equivalentFocalLength: 24),
+            equivalentFocalLength: 24, reportsStabilization: true),
         Lens(
             id: "simulated-front", kind: .front, bayerRAWFormat: "bgg4", isoRange: 20...2000,
             exposureDurationRange: 0.000_014...0.5, aperture: .fixed(1.9),
@@ -311,6 +318,12 @@ enum SimulatedCameraLaunch {
         iso: 6400, exposureDuration: 1.0 / 48.0, exposureOffset: -2, lensPosition: 0.5, aperture: 1.8,
         whiteBalance: WhiteBalance(temperature: 3200))
 
+    /// The same scene once the limit is lifted: auto exposure slows to 1/8 s, slower than the
+    /// stabilized wide lens's steady limit of 1/12 s.
+    static let dimSlowReading = ExposureReading(
+        iso: 6400, exposureDuration: 1.0 / 8.0, exposureOffset: 0, lensPosition: 0.5, aperture: 1.8,
+        whiteBalance: WhiteBalance(temperature: 3200))
+
     /// A dim scene for the manual lenses: ISO 3200 at 1/4 s.
     static let dimManualReading = ExposureReading(
         iso: 3200, exposureDuration: 0.25, exposureOffset: 0, lensPosition: 0.5, aperture: 1.48,
@@ -320,6 +333,23 @@ enum SimulatedCameraLaunch {
     static let tooCloseReading = ExposureReading(
         iso: 100, exposureDuration: 1.0 / 120.0, exposureOffset: 0, lensPosition: 0, aperture: 1.8,
         whiteBalance: WhiteBalance(temperature: 5200), isAdjustingFocus: true)
+
+    /// The close-up sweep: searching from the middle of the range in to its nearest position in
+    /// five readings, then resting there, not searching, for three seconds.
+    static let closeUpSweepReadings: [ExposureReading] =
+        [0.6, 0.45, 0.3, 0.15, 0.08].map { position in
+            ExposureReading(
+                iso: 100, exposureDuration: 1.0 / 120.0, exposureOffset: 0, lensPosition: position, aperture: 1.8,
+                whiteBalance: WhiteBalance(temperature: 5200), isAdjustingFocus: true)
+        }
+        + Array(
+            repeating: ExposureReading(
+                iso: 100, exposureDuration: 1.0 / 120.0, exposureOffset: 0, lensPosition: 0, aperture: 1.8,
+                whiteBalance: WhiteBalance(temperature: 5200), isAdjustingFocus: false),
+            count: 12)
+
+    /// The time between two simulated readings: a quarter second, the most a device sends.
+    static let readingInterval = 0.25
 
     /// The simulated backend for the scenario in the launch arguments, or `nil` without one.
     static func backend() -> (any CaptureBackend)? {
@@ -366,12 +396,17 @@ enum SimulatedCameraLaunch {
             return SimulatedCaptureBackend(permission: .authorized, capabilities: DeviceCapabilities(lenses: aidLenses))
         case .dimLight:
             return SimulatedCaptureBackend(
-                permission: .authorized, capabilities: DeviceCapabilities(lenses: aidLenses), reading: dimReading)
+                permission: .authorized, capabilities: DeviceCapabilities(lenses: aidLenses),
+                readingSequence: [dimReading, dimSlowReading])
         case .tooClose:
             return SimulatedCaptureBackend(
                 permission: .authorized, capabilities: DeviceCapabilities(lenses: aidLenses), reading: tooCloseReading,
-                // More than the readings in a row the close-up detector needs (eight, two seconds).
-                readingCount: 12)
+                // Three seconds, more than the two the close-up detector needs.
+                readingCount: 12, readingInterval: readingInterval)
+        case .closeUpSweep:
+            return SimulatedCaptureBackend(
+                permission: .authorized, capabilities: DeviceCapabilities(lenses: aidLenses),
+                readingSequence: closeUpSweepReadings, readingInterval: readingInterval)
         case .slowStart:
             return HeldStartBackend(simulated: SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities))
         case .denied:
