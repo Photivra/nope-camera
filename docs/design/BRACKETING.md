@@ -106,7 +106,7 @@ A series of single photos, each at the next focus position, for stacking in othe
 | Option | Choices | At first | Notes |
 | --- | --- | --- | --- |
 | Type | Exposure, Focus | Exposure | A segmented control above the rows of 1.0.0. Focus is dimmed, with one sentence, on a lens whose focus can't be set |
-| Nearest Focus, Farthest Focus | A position from 0 to 1, set on the picture | 0 and 1 | Use the Whole Range sets both back |
+| Nearest Focus, Farthest Focus | A position from 0 to 1, set on the picture | 0 and 1 | Use the Whole Range sets both back. It is never dimmed or disabled: while the whole range is in use it shows a check mark, is selected and has the VoiceOver value "In use" ([device-feedback-1.0.md](device-feedback-1.0.md), section 2) |
 | Frames | 3, 5, 7, 10, 12, 15, 20, 30, 40, 50 | 10 | 50 is the most one burst takes today |
 | Focus Step | Read-only: (farthest − nearest) ÷ (frames − 1) | | Shown to two decimals, with the sentence that it is the lens's own scale and not a distance |
 | Order | Nearest First, Farthest First | Nearest First | |

@@ -609,12 +609,12 @@ let hasTorch: Bool
 Whether the camera has a torch that can be turned on (`hasTorch` and
 `isTorchModeSupported(.on)`).
 
-## `CameraDeviceDescription/init(uniqueID:deviceType:position:isVirtual:rawPixelFormats:supportsHEVC:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:fieldOfViewDegrees:canTurnOffDistortionCorrection:manualControls:flashModes:hasTorch:)`
+## `CameraDeviceDescription/init(uniqueID:deviceType:position:isVirtual:rawPixelFormats:supportsHEVC:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:fieldOfViewDegrees:canTurnOffDistortionCorrection:manualControls:flashModes:hasTorch:minimumFocusDistance:reportsStabilization:)`
 
 internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
 
 ```swift
-init(uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool, rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>, exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int, photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, canTurnOffDistortionCorrection: Bool = false, manualControls: ManualControlSupport = .none, flashModes: [FlashMode] = [], hasTorch: Bool = false)
+init(uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool, rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>, exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int, photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, canTurnOffDistortionCorrection: Bool = false, manualControls: ManualControlSupport = .none, flashModes: [FlashMode] = [], hasTorch: Bool = false, minimumFocusDistance: Int = -1, reportsStabilization: Bool = false)
 ```
 
 Creates a camera description.
@@ -637,6 +637,10 @@ Creates a camera description.
   - manualControls: The camera's answers about manual control. Defaults to none.
   - flashModes: The supported flash modes. Defaults to none.
   - hasTorch: Whether the camera has a torch. Defaults to `false`.
+  - minimumFocusDistance: The minimum focus distance in millimeters, or −1 when unknown.
+    Defaults to −1.
+  - reportsStabilization: Whether the photo output supports lens stabilization with this
+    camera. Defaults to `false`.
 
 ## `CameraDeviceDescription/isVirtual`
 
@@ -679,6 +683,17 @@ let maxBracketedPhotoCount: Int
 
 The most frames in one bracketed capture (`maxBracketedCapturePhotoCount`).
 
+## `CameraDeviceDescription/minimumFocusDistance`
+
+internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
+
+```swift
+let minimumFocusDistance: Int
+```
+
+The camera's `minimumFocusDistance`, in millimeters; −1 or any negative value when the
+camera reports it as unknown.
+
 ## `CameraDeviceDescription/photoDimensions`
 
 internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
@@ -708,6 +723,18 @@ let rawPixelFormats: [RAWPixelFormat]
 ```
 
 The RAW pixel formats the photo output offers with this camera, Apple ProRAW off.
+
+## `CameraDeviceDescription/reportsStabilization`
+
+internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
+
+```swift
+let reportsStabilization: Bool
+```
+
+Whether the photo output supports lens stabilization with this camera attached
+(`isLensStabilizationDuringBracketedCaptureSupported`), the only public signal of lens
+stabilization found (docs/design/device-feedback-1.0.md, section 4).
 
 ## `CameraDeviceDescription/supportsHEVC`
 
@@ -3781,7 +3808,69 @@ struct ReadingThrottle
 ```
 
 Lets through at most one reading per interval, so the camera's readings reach the interface
-at a reduced rate (AGENTS.md, "Battery").
+at a reduced rate (AGENTS.md, "Battery"), and makes sure the last one is not lost.
+
+A reading is triggered by a change the camera reports. When changes stop inside an interval
+(the lens comes to rest at its nearest position, autofocus stops searching), the last change
+would otherwise never be sent, and the close-up hint would judge an old reading
+(docs/design/device-feedback-1.0.md, section 6). So a reading held back schedules one more,
+at the end of the interval, that reads the camera's values then.
+
+## `ReadingThrottle/Decision`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+enum Decision
+```
+
+What to do with a reading.
+
+## `ReadingThrottle/Decision/drop`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+case drop
+```
+
+Hold it back: a later reading is already scheduled.
+
+## `ReadingThrottle/Decision/later(delay:ticket:)`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+case later(delay: Double, ticket: Int)
+```
+
+Hold it back, and call ``sendsLater(_:at:)`` with the ticket after the delay, in
+seconds: a reading of the values then is sent, unless one was sent since.
+
+## `ReadingThrottle/Decision/send`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+case send
+```
+
+Send it now.
+
+## `ReadingThrottle/decide(at:)`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+mutating func decide(at time: Double) -> Decision
+```
+
+What to do with a reading at a time, recorded.
+
+- Parameter time: The time of the reading, in seconds on any steady clock.
+- Returns: ``Decision/send`` for the first reading and for each one at least
+  ``interval`` after the last one sent; otherwise ``Decision/later(delay:ticket:)`` once,
+  then ``Decision/drop`` until that one is due.
 
 ## `ReadingThrottle/init()`
 
@@ -3804,19 +3893,20 @@ static let interval: Double
 The shortest time between two readings, in seconds: four readings a second, enough for
 a meter that a person reads.
 
-## `ReadingThrottle/shouldSend(at:)`
+## `ReadingThrottle/sendsLater(_:at:)`
 
 internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
 
 ```swift
-mutating func shouldSend(at time: Double) -> Bool
+mutating func sendsLater(_ ticket: Int, at time: Double) -> Bool
 ```
 
-Whether a reading at a time should be sent, and records it if so.
+Whether the reading scheduled with a ticket should be sent now, recorded.
 
-- Parameter time: The time of the reading, in seconds on any steady clock.
-- Returns: `true` for the first reading and for each one at least ``interval`` after the
-  last one let through.
+- Parameters:
+  - ticket: The ticket from ``decide(at:)``.
+  - time: The time now, in seconds on the same clock.
+- Returns: `true` when it is still the scheduled one: no reading was sent since.
 
 ## `ResourceStaging`
 

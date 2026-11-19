@@ -71,7 +71,12 @@ for any user-facing claim comes from
   position the lens reported, every frame's planned position and the order; `SavedPhoto.bracket`),
   held in memory with the photo until the app quits and written to no file, so the metadata
   allowlist is unchanged. The app can't
-  reopen older photos (add-only access).
+  reopen older photos (add-only access). So before the first photo since the app opened, the
+  Last Photo spot holds Open Photos, which opens the Photos app (its `photos-redirect:` URL,
+  where the person left it), and only when the person taps; nothing is read from the library
+  and no picture is kept between launches (`docs/design/device-feedback-1.0.md`, section 1; the
+  Honesty entry Your Photo Library Is Never Read). The Lock Screen camera can't open Photos,
+  so its spot stays empty.
 - **Last Photo viewer previews:** for the viewer that shows this session's photos inside the
   app (`docs/design/BUILD-SPEC.md`, 3.14; `PhotoViewer.swift`), each save also makes a screen-size preview from the
   same file as the thumbnail, in memory (`ImageIOPreviewer`, no cache): decoded upright at most

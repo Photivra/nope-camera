@@ -506,6 +506,27 @@ other finding fails the test:
   on iPad, an open finding: on the iPad Simulator the test's 1.2-second press arrived as a tap
   (the focus square moved to the pressed point, unlocked), at the center and off it; it passes
   on iPhone. The device check below covers press and hold on iPad;
+- three iPad Air 11-inch (M4) findings from the 1.0.0 integration, open and not skipped (an
+  owner decision; 2026-11-18, iOS 27.2 Simulator):
+  - `testAssistantAccessPageAtTheLargestTextSize`: "Dynamic Type font sizes are partially
+    unsupported" and "Text clipped" on the Assistant Access switch's explanation ("Lets Siri,
+    Shortcuts…"). In the 720-point popover the explanation runs past the list's lower edge and is
+    reached by scrolling. Scrolled fully into view, shown whole in the recording, a taller
+    popover (1000 points) and Settings as a sheet were each tried: the audit reported the same
+    two findings every time, as it does for the switch's title on the iPhone and the iPad Pro,
+    which the test already sets aside. So it is taken to be the same misreport of the audit; no
+    layout change was kept;
+  - `testNightModeSettingsScreensPassAccessibilityAudits`: "Text clipped" on the Accessibility
+    page's "Pinching to switch lenses is optional. The lens buttons do the same." The recording
+    shows the sentence whole on two lines, inside the frame the audit reports, so it is taken to
+    be a false finding of the audit;
+  - `testFirstStartAtTheLargestTextSizeAndRightToLeft`: a contrast finding on the "Ultra Wide"
+    lens row. At the largest text size on iPad the first start's plate ("Starting the
+    camera…", at the window's center, docs/design/LAUNCH-SCREEN.md, 6.3) lies over the lens rows
+    of the scrolling layout and covers most of that row's title, so the audit measures the plate
+    with the title. It is real as drawn: whether the plate may cover the rows is a design question
+    for LAUNCH-SCREEN.md. Whether a row lies under the plate depends on the layout's height, which
+    is why it came and went before the 1.0.0 merges;
 - on an iPhone held sideways, clipped-text and contrast findings on SwiftUI nodes the audit
   can't tie to an element: it measures turned text in its unturned frame. The same views pass
   every check in portrait; the turned layout is on the manual accessibility pass below;
@@ -1747,28 +1768,98 @@ calls and the assumptions. Do them on every lens of the test iPhone (16 Pro Max)
 - fast shutter: on each lens in bright light the DNG's `ExposureTime` is no slower than
   1/(2 × focal length) (wide about 1/50, ultra wide about 1/26, 5× about 1/240), and no slower
   than 1/500 or 1/1000 with Freeze Motion; in dim light the shutter gets slower than that only
-  when ISO is at the lens's highest, the hint "Hold it steady or use a tripod." appears once, is
-  spoken by VoiceOver, and goes when the light comes back without flickering (the half-stop
-  margin is an assumption to check); the focal lengths computed from the field of view match
+  when ISO is at the lens's highest; the focal lengths computed from the field of view match
   Apple's published ones within a few millimeters;
-- manual controls: a manual shutter slower than the handheld rule shows the hint and is never
-  changed; P mode isn't limited;
-- the hint after a mode change: in dim light with the hint showing, turn Manual Controls on, set
-  a slow shutter, then turn them off; turn Astro on and off; switch lenses; in a bright scene
+- the steady hint, "Hold it steady or use a tripod.": checks S1 to S5 under "Device feedback
+  for 1.0.0" below;
+- manual controls: a manual shutter is never changed, and shows no steady hint; P mode isn't
+  limited;
+- the hint after a mode change: in dim light with the hint showing, turn Manual Controls on (the
+  hint goes and stays away), set a slow shutter, then turn them off; turn Astro on and off; switch lenses; in a bright scene
   the hint must be gone within about a second of each change (the first readings after a slow
   exposure are ignored while their shutter is more than a quarter stop longer than full auto's
   limit, an assumption to check: record the first reported shutters after leaving Astro). While
   Astro is on the hint doesn't show. In a dark scene it comes back from the new readings;
 - Close-Up: a small subject 5 to 15 cm away in front of a busy background focuses with Close-Up
   on and a tap, and the pill turns it off;
-- close-up hint: below the wide lens's minimum focus distance the suggestion to switch to Ultra
-  Wide appears within about two seconds (the thresholds, `lensPosition` ≤ 0.05 for eight readings
-  while autofocus searches, are assumptions to tune), never switches by itself, and Dismiss hides
-  it until the lens changes;
+- close-up hint: check C1 under "Device feedback for 1.0.0" below; it never switches by itself,
+  and Dismiss hides it until the lens changes;
 - the magnifier enlarges the viewfinder around the focus point and the saved photo isn't
   zoomed (its dimensions and field of view are the same);
 - energy: with the camera screen open in full auto, readings arrive at most four a second
   (Instruments), and nothing is observed after leaving the camera screen.
+
+### Device feedback for 1.0.0
+
+The changes of `docs/design/device-feedback-1.0.md` are unit-tested (`CloseUpDetectorTests`,
+`SteadyHintTests`, `AutoValueTests`, `ManualControlSupportTests`, `DeviceFeedbackTests`) and
+UI-tested (`DeviceFeedbackUITests`, `FocusBracketUITests`) against the simulated camera; these
+checks cover the hardware and the provisional values. Checks S1, S2 and F1 gate release 1.0.0:
+the values they set are provisional in the code until then. Record results here, with the
+device and iOS version; record no distance.
+
+The Last Photo spot (section 1):
+
+- **P1** On iPhone 16 Pro Max and an iPad, on the iOS version released with 1.0.0: Open Photos
+  opens the Photos app from the camera, from a cold start and after a relaunch.
+- **P2** What Photos shows when opened this way, so no wording promises more.
+- **P3** Take a photo, quit the app, open it: Open Photos is there; take a photo: the thumbnail
+  replaces it.
+- **P4** The Lock Screen camera before its first photo: the spot is empty and nothing there can
+  be pressed.
+- **P5** iPhone Duo: fold and unfold with Open Photos showing.
+
+Use the Whole Range (section 2):
+
+- **W1** Night mode on an iPad, Bracket Settings as a sheet at its regular width: the check mark
+  and the words are easy to read in a dark room.
+- **W2** VoiceOver reads "Use the Whole Range, button" with another range set, and "Selected,
+  Use the Whole Range, In use, button" with the whole range.
+
+Close-up focus (section 3 and the detector):
+
+- **C1** On 1× and 5×, a subject nearer than the lens can focus brings up the hint, and About
+  Close-Up Focus opens the entry. The detector's thresholds are provisional
+  (`CloseUpDetector`): lens position 0.05 or less, for 2 of the last 2.5 seconds, with a search
+  seen within 4 seconds. Record when the hint comes (or doesn't) for a subject the lens can't
+  focus on and one at its closest focus, and whether readings keep arriving while the lens rests
+  at its nearest position (the reading throttle now sends the last reading once things settle,
+  and `isAdjustingFocus` is observed).
+- **C2** On iPhone 16 Pro Max, 0.6× focuses nearer than 1× and 5×, so "try the Ultra Wide lens"
+  is good advice there. Also record whether each lens reports `minimumFocusDistance` (not −1):
+  where both report it, the hint offers the Ultra Wide lens only if it focuses closer; where one
+  doesn't, it is still offered. No distance is recorded in the app.
+
+"Hold it steady or use a tripod." (section 4):
+
+- **S1** On iPhone 16 Pro Max, an iPad and one iPhone with an unstabilized lens: the value of
+  `AVCapturePhotoOutput.isLensStabilizationDuringBracketedCaptureSupported` with each lens
+  attached (`Lens.reportsStabilization`). If no usable signal is found, the allowance stays at 0
+  for every lens (decision 16).
+- **S2** For each lens of iPhone 16 Pro Max, handheld, a flat target with fine text: ten photos at
+  each shutter from the handheld rule to 3 stops slower, one stop apart, by two people. The
+  allowance for that lens is the slowest step at which at least eight of ten are sharp at 100%.
+  Set `AutoShutter.stabilizationAllowance` (now 2 stops, provisional) from the result.
+- **S3** Walking between a bright and a dim room on each lens: the hint does not flicker (the
+  half-stop `AutoShutter.returnMargin` and the 2-second minimum).
+- **S4** An evening indoors on each lens, Manual Controls off: note when the hint shows, beside
+  the system camera in the same light.
+- **S5** Manual Controls on, Shutter on Auto and set to 1 s: no hint.
+
+The focus square and Lock (section 5):
+
+- **F1** Beside the system camera on iPhone 16 Pro Max: three seconds
+  (`NopeMotion.focusAidLinger`, provisional) is long enough to press Lock with one hand and short
+  enough to be out of the way. Adjust within 2 to 5 seconds.
+- **F2** VoiceOver on: the square and Lock stay; focus on Lock is never lost; the viewfinder's
+  actions work after a tap.
+- **F3** Switch Control with automatic scanning at its slowest: Lock can be reached.
+- **F4** Voice Control: "Tap Lock" in time; "Long press Viewfinder" locks.
+- **F5** iPad with a keyboard: Tab to Lock holds it (read through SwiftUI's focus state, an
+  assumption).
+- **F6** Touch and hold after the fade locks at the held point.
+- **F7** On a tripod with a still subject: after the fade, focus and exposure stay at the tapped
+  point.
 
 ### Astro helper on a device
 
