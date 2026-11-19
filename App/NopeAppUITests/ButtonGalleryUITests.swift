@@ -41,7 +41,7 @@ extension NopeAppUITests {
     private func auditContrastOfEnabledControls(_ app: XCUIApplication) throws {
         settle()
         var issues: [XCUIAccessibilityAuditIssue] = []
-        try app.performAccessibilityAudit(for: .contrast) { issue in
+        try app.performCompleteAccessibilityAudit(for: .contrast) { issue in
             issues.append(issue)
             return true
         }

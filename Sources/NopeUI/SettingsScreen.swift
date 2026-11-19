@@ -196,7 +196,7 @@ public struct SettingsScreen: View {
 
     /// The Settings list.
     private var list: some View {
-        Form {
+        NopeForm {
             if let presets {
                 Section {
                     pageRow(.presets, value: PresetText.savedCount(presets.saved.count))

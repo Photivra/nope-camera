@@ -38,7 +38,7 @@ struct PrivacySettingsView: View {
 
     /// The form.
     var body: some View {
-        Form {
+        NopeForm {
             masterSection
             if location != nil {
                 locationSection

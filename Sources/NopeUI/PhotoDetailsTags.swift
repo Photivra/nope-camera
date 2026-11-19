@@ -73,7 +73,7 @@ struct EveryTagPage: View {
 
     /// The page.
     var body: some View {
-        List {
+        NopeList {
             Section {
                 Text("\(file.entries.count) tags, blocks and properties in this file, as nope. read them back before saving it. Names are the standards' own.", tableName: "Honesty", bundle: .module, comment: "Top of a file's Every Tag page in the photo details: how many metadata items the file holds. Tag, block and property names are not translated. Keep nope. unchanged. Draft wording for the Honesty review.")
                     .font(.footnote)

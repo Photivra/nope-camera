@@ -980,17 +980,22 @@ final class NopeAppUITests: XCTestCase {
     /// is none.
     @MainActor
     func settingsListFrame(_ app: XCUIApplication) -> CGRect {
-        let window = app.windows.firstMatch.frame
+        settingsList(app)?.frame ?? app.windows.firstMatch.frame
+    }
+
+    /// The list under the open screen's navigation bar, as ``settingsListFrame(_:)`` finds it, or
+    /// `nil` when there is none.
+    @MainActor
+    func settingsList(_ app: XCUIApplication) -> XCUIElement? {
         let bar = app.navigationBars.firstMatch
-        guard bar.exists else { return window }
+        guard bar.exists else { return nil }
         let barFrame = bar.frame
         let lists = app.collectionViews.allElementsBoundByIndex
-        let list = lists.first { list in
+        return lists.first { list in
             let frame = list.frame
             return abs(frame.minX - barFrame.minX) < 2 && abs(frame.width - barFrame.width) < 2
                 && frame.maxY > barFrame.maxY
         }
-        return list?.frame ?? window
     }
 
     /// Goes back one screen in the navigation stack.

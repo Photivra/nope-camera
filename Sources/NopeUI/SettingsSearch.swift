@@ -1093,7 +1093,7 @@ struct SettingsSearchResults: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(.background)
         } else {
-            Form {
+            NopeForm {
                 if !pointers.isEmpty {
                     Section {
                         ForEach(pointers) { pointer in

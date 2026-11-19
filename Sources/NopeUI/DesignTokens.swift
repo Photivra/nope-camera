@@ -349,6 +349,13 @@ enum NopeColor {
     /// tokens.md.
     static var nightOutlineUnderMultiply: Color { Color(white: 0.8) }
 
+    /// An 11% gray (`#1C1C1C`), shown as `#1C0000` under the night multiply: the background of
+    /// form and list rows in night mode (``NightModeRowBackground``). The night red is 5.0:1 on
+    /// it. The system's row gray in a sheet, `#2C2C2E`, became `#2C0000`, on which the night red is
+    /// 4.74:1, too close to WCAG 2.2's 4.5:1 for text (1.4.3). In tokens.md under "Night mode
+    /// rows".
+    static var nightRowUnderMultiply: Color { Color(.sRGB, white: 0x1C / 255) }
+
     /// An 8% gray, shown as `#140000` under the night multiply: the fill of an off control in
     /// night mode. The night red is 5.1:1 on it; on ``controlFill`` it would be 4.6:1, which the
     /// 0.3.0 audit reported for small text. Not in tokens.md (design-system.html, `--fill`).

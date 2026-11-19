@@ -363,7 +363,7 @@ struct FormatDetailsSheet: View {
     /// The sheet for a lens without RAW: the summary and the processing note, the one file the
     /// lens saves (read-only), the Show Processed Marker switch, and the row that opens Formats.
     private var processedLensForm: some View {
-        Form {
+        NopeForm {
             Section {
                 summary
             }

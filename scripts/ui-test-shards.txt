@@ -5,6 +5,15 @@
 # "e" is an earlier or estimated time, kept until the runner has measured the test on that
 # device. Balanced per device, longest test first into the shard with the least time; add a new
 # test to the shard with the least time on each device, with twice its local time and an "e".
+2 1 MeasuredContrastTests/testAFrameWithOneColorOrNoPixelsHasNoMeasurement 2e 2e
+2 1 MeasuredContrastTests/testAnImageIsDrawnInSRGB 2e 2e
+2 1 MeasuredContrastTests/testAntiAliasedEdgesCountTowardTheLowerContrast 2e 2e
+2 1 MeasuredContrastTests/testStrayPixelsDontRaiseTheResult 2e 2e
+2 1 MeasuredContrastTests/testTextOnAPlainBackground 2e 2e
+2 1 MeasuredContrastTests/testTheBackgroundIsTheMostCommonColorWhicheverIsLighter 2e 2e
+2 1 MeasuredContrastTests/testTheNightRedOnTheNightRows 2e 2e
+2 1 MeasuredContrastTests/testTheWCAGFormulasFixedPoints 2e 2e
+2 1 MeasuredContrastTests/testTooFewForegroundPixelsHaveNoMeasurement 2e 2e
 4 2 NopeAppUITests/testACancelledQuestionChangesNothing 78e 72e
 1 4 NopeAppUITests/testACloseUpSweepBringsTheHint 20e 28e
 4 3 NopeAppUITests/testAboutCloseUpFocusOpensTheHonestyEntry 52e 51e

@@ -84,9 +84,14 @@ Display P3, BT.2100 PQ and BT.2100 HLG:
   no file was written. ImageIO doesn't make a gain map from one HDR image this way.
 - **ISO HDR request (and an HDR image without a request):** a PQ or HLG HEIF carries
   `Headroom`, `AverageLightLevelNits` and the ICC `CLL` (content light level) key, and a PQ or HLG
-  JPEG carries `Headroom`; the read-back reports each as an unexpected ImageIO key
-  (`MetadataViolation.unexpectedImageIOKey`), so the photo wouldn't be saved. An extended linear
-  Display P3 image is written as an ordinary SDR file with no gain map.
+  JPEG carries `Headroom`. Since 1.0.0 `Headroom` is allowed in a HEIF, by name and whatever its
+  value (`MetadataPlan.heifDerivedImageIOKeys`), because the iOS 26.5 Simulator's reader reports
+  it on every HEIF, SDR ones included. So in a PQ or HLG HEIF the read-back reports
+  `AverageLightLevelNits` and the ICC `CLL` key as unexpected ImageIO keys
+  (`MetadataViolation.unexpectedImageIOKey`), and in a PQ or HLG JPEG it reports `Headroom`;
+  either way the photo wouldn't be saved. Not measured: which keys an HDR HEIF reports on
+  iOS 26.5, where `Headroom` alone no longer stops it. An extended linear Display P3 image is
+  written as an ordinary SDR file with no gain map.
 - **The RAW developer is SDR:** `CoreImageRAWRenderer` renders the DNG to 16-bit Display P3 with
   the RAW filter's default (SDR) range, so there is no HDR rendition to map. Making one needs the
   RAW filter's extended dynamic range output, which is more processing than the app's neutral

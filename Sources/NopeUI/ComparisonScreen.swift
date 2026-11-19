@@ -591,7 +591,7 @@ struct ComparisonDetailsList: View {
 
     /// One section per kind of difference that has entries.
     var body: some View {
-        List {
+        NopeList {
             Section {
                 Text("What each file holds, read on this device. Values are shown on this screen only: nothing is stored or copied.", tableName: "Honesty", bundle: .module, comment: "Introduction of the compare view's Details tab. Must not claim more than the English.")
                     .fixedSize(horizontal: false, vertical: true)

@@ -21,7 +21,7 @@ struct AccessibilitySettingsView: View {
 
     /// The list.
     var body: some View {
-        Form {
+        NopeForm {
             Section {
                 row(
                     systemImage: "button.vertical.left.press",

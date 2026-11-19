@@ -465,7 +465,7 @@ struct BracketSheet: View {
     /// The form.
     var body: some View {
         NavigationStack {
-            Form {
+            NopeForm {
                 typeSection
                 if model.bracketing.type == .focus {
                     FocusBracketSections(model: model) { end in
@@ -679,7 +679,7 @@ struct BracketTypeList: View {
 
     /// The list.
     var body: some View {
-        Form {
+        NopeForm {
             ForEach(BracketType.allCases, id: \.self) { type in
                 Button {
                     selection.wrappedValue = type

@@ -1099,6 +1099,38 @@ of three runs on iPhone, two of two on iPad). When an audit does time out,
 check then took alone, which XCTest's error doesn't say. Why the contrast check doesn't finish
 on that part of the compare details isn't known.
 
+#### Contrast findings set aside by measurement
+
+An owner decision of 2026-11-19, from a code review of 1.0.0. The contrast audit of the
+iOS 26.5 Simulator reported text that screenshots show far above the minimum: the "Guides"
+header of Viewfinder Overlays (`testOverlaySettingsAndProTools`), black on `#EFEFF3`, about
+18:1, reported in every run on iOS 26.5 and in none on iOS 27.2.
+
+The rule: every audit goes through `performCompleteAccessibilityAudit`
+(`UITestSupport.swift`), which, for each contrast finding on an element that exists and lies
+wholly in the window, takes a screenshot of the element's frame and measures its contrast
+(`MeasuredContrast` in `MeasuredContrast.swift`): the frame's most common color is the
+background, and the foreground is the color that at least 0.5% of the frame's pixels reach
+(nine pixels at least); the ratio is the WCAG 2.2 contrast of the two. The finding is set aside
+only when the measured ratio is **7:1 or more**, WCAG 2.2's enhanced level for text (1.4.6). A
+finding measured below 7:1, one on an element that isn't wholly in the window, one with no
+element, and every finding of another type go on to the test's own rules as before, so text that
+is really low in contrast still fails.
+
+Each finding set aside is written to the test log as "Contrast finding set aside", with the
+finding, the element's label, identifier and frame, the measured ratio and the iOS version, and
+the element's screenshot is attached to the test result under the same ratio and version. A
+finding measured and kept is logged as "Contrast finding kept" with its ratio.
+`MeasuredContrastTests` checks the measurement on drawn images: the WCAG formula's fixed points
+(21:1 for white on black, 5.25:1 for the night red on black), the background found by count, and
+that a few stray pixels can't raise the result.
+
+Night mode's form rows are not set aside this way: the night red is 5.0:1 on their
+`#1C0000` (`NopeColor.nightRowUnderMultiply`), below 7:1, so they pass the audit on their own
+or fail. Until 2026-11-19 they were `#2C0000` in sheets (4.74:1), which the iOS 26.5 audit reported
+as "Contrast nearly passed" (`testProcessedMarkerAtTheLargestTextSizeRightToLeftAndNightMode`,
+`testProcessedMarkerOnALensWithoutRAW`).
+
 #### Continue on the first-run screen (open)
 
 In build 44149517211 two tests at the largest text size failed the same way, once each:

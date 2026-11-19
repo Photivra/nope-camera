@@ -1019,7 +1019,9 @@ the setting it opened with until it closes, because a popover whose scheme chang
 kept its glass half in the old appearance, a mid gray behind white text. The brief state before
 the camera state is known is black, like the camera it leads to and the launch screen before it
 (below). Night mode is red on black everywhere: `NightModeStyle` on
-the dark appearance.
+the dark appearance. Settings pages and sheets use `NopeForm` and `NopeList`, the system's `Form`
+and `List` with night mode rows: `#1C0000` rows on a black page, where the night red is 5.0:1
+(docs/design/tokens.md, "Night mode rows").
 
 `ScreenAppearance` holds the rule: `.camera` is always dark, `.system` is the system's scheme,
 and night mode is dark for both; `ScreenAppearance.of(_:)` picks it from the camera state.

@@ -76,7 +76,7 @@ struct PhotoDetailsSheet: View {
     /// The list, with a Done button, covered while the app isn't active.
     var body: some View {
         NavigationStack {
-            List {
+            NopeList {
                 if photos.count > 1 {
                     Picker(selection: $selection) {
                         ForEach(photos.indices, id: \.self) { index in

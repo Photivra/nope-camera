@@ -93,7 +93,7 @@ struct AstroSheet: View {
     /// The form.
     var body: some View {
         NavigationStack {
-            Form {
+            NopeForm {
                 Section {
                     AstroText.honesty
                 }

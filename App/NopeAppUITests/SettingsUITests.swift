@@ -34,24 +34,50 @@ extension NopeAppUITests {
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5), file: file, line: line)
     }
 
-    /// The Settings element with an identifier, scrolled wholly into view: down the list, then
-    /// back up.
+    /// The Settings element with an identifier, scrolled wholly into view: down the list until
+    /// it is found or the list stops moving, then back up the same way.
+    ///
+    /// The search doesn't count drags. At the largest text size the list is many screens long
+    /// (the Pinch row alone is about 1,000 points high), and an audit's text size changes can
+    /// leave it scrolled anywhere, so a fixed number of drags stopped short of rows near the top.
+    /// The list has stopped moving when its first visible row and that row's frame are the same
+    /// before and after a drag (``settingsListPosition(_:)``). ``maximumSettingsDrags`` only
+    /// bounds a list that never reports a position.
     @MainActor @discardableResult
     func settingsElement(_ app: XCUIApplication, _ identifier: String) -> XCUIElement {
         let element = app.descendants(matching: .any).matching(identifier: identifier).firstMatch
-        let frame = settingsListFrame(app)
+        let list = settingsList(app)
+        let frame = list?.frame ?? app.windows.firstMatch.frame
         let origin = app.coordinate(withNormalizedOffset: .zero)
         func point(_ fraction: CGFloat) -> XCUICoordinate {
             origin.withOffset(CGVector(dx: frame.midX, dy: frame.minY + frame.height * fraction))
         }
         for towardEnd in [true, false] {
-            var steps = 0
-            while !(element.exists && element.isHittable && frame.contains(element.frame)) && steps < 15 {
+            var drags = 0
+            var position = settingsListPosition(list)
+            while !(element.exists && element.isHittable && frame.contains(element.frame)) && drags < Self.maximumSettingsDrags {
                 point(towardEnd ? 0.7 : 0.4).press(forDuration: 0.05, thenDragTo: point(towardEnd ? 0.4 : 0.7))
-                steps += 1
+                drags += 1
+                let next = settingsListPosition(list)
+                if let next, next == position { break }
+                position = next
             }
         }
         return element
+    }
+
+    /// The most drags ``settingsElement(_:_:)`` makes in one direction: enough for the longest
+    /// Settings page at the largest text size (each drag moves about 240 points) when the list
+    /// reports no position, and a bound against a list that never stops moving.
+    static let maximumSettingsDrags = 80
+
+    /// Where a list is scrolled to: the identifier, label and frame of its first visible row, read
+    /// in one snapshot. `nil` when there is no list or it can't be read.
+    @MainActor
+    func settingsListPosition(_ list: XCUIElement?) -> String? {
+        guard let list, let snapshot = try? list.snapshot() else { return nil }
+        guard let first = snapshot.children.first(where: { !$0.frame.isEmpty }) else { return nil }
+        return "\(first.identifier)|\(first.label)|\(first.frame)"
     }
 
     /// Types a search into the Settings search field.

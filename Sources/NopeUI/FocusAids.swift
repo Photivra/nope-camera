@@ -937,7 +937,7 @@ struct FastShutterSettingsView: View {
 
     /// The line while Manual Controls are on, the picker and the explanation.
     var body: some View {
-        Form {
+        NopeForm {
             if manualControlsAreOn {
                 Section {
                     // A plain text row, as on HEIF and JPEG Copies: with the info symbol of the

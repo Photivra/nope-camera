@@ -263,8 +263,12 @@ extension NopeAppUITests {
         let card = bracketCard(app)
         XCTAssertTrue(card.waitForExistence(timeout: 5))
         // The scrolling camera can still be settling after the word's tap; try the card again.
+        // After the swipe that brought the word into view the card can sit mostly above the
+        // window, with only its lower strip on screen behind the status bar, where a tap does
+        // nothing; it is scrolled down below the status bar first.
         for _ in 0..<3 where !app.navigationBars["Bracket Settings"].exists {
             scrollUntilHittable(app, card)
+            scrollBelowTheStatusBar(app, card)
             card.tap()
             _ = app.navigationBars["Bracket Settings"].waitForExistence(timeout: 5)
         }
@@ -283,6 +287,31 @@ extension NopeAppUITests {
         closeBracketSettings(app)
         XCTAssertTrue(waitForValue(bracketCard(app), containing: "Focus bracket:"))
         try auditScrollingScreen(app)
+    }
+
+    /// The space at the top of the window that the status bar covers, with a margin: on an
+    /// iPhone with the Dynamic Island the status bar area is about 60 points high.
+    static let statusBarClearance: CGFloat = 70
+
+    /// Scrolls the scrolling camera down, by dragging the element's visible part, until the whole
+    /// element is below the status bar (``statusBarClearance``). An element whose top is already
+    /// there is left as it is.
+    @MainActor
+    func scrollBelowTheStatusBar(_ app: XCUIApplication, _ element: XCUIElement) {
+        let window = app.windows.firstMatch.frame
+        let top = window.minY + Self.statusBarClearance
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        var drags = 0
+        while element.exists && element.frame.minY < top && element.frame.maxY > top && drags < 6 {
+            let frame = element.frame
+            let start = CGPoint(x: frame.midX, y: (top + min(frame.maxY, window.maxY)) / 2)
+            // Slow, with a hold at the end, so the scroll view doesn't keep moving after the drag.
+            let distance = min(top - frame.minY + 20, window.height * 0.4)
+            origin.withOffset(CGVector(dx: start.x, dy: start.y)).press(
+                forDuration: 0.05, thenDragTo: origin.withOffset(CGVector(dx: start.x, dy: start.y + distance)),
+                withVelocity: .slow, thenHoldForDuration: 0.2)
+            drags += 1
+        }
     }
 
     /// Right to left: the card, the dial and Bracket Settings mirror and pass the audit.

@@ -215,7 +215,7 @@ struct IntervalSheet: View {
     /// The form.
     var body: some View {
         NavigationStack {
-            Form {
+            NopeForm {
                 IntervalSection(model: model) { dismiss() }
                 // Done is a row of the form, not a bar button, as in Pro Tools: the audit can't
                 // measure the contrast of the glass bar button.

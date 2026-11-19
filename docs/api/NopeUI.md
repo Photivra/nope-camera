@@ -12073,6 +12073,82 @@ taken or waits for the camera).
 - Parameter now: The current time.
 - Returns: The seconds left, at least 1, or `nil`.
 
+## `NightModeRowBackground`
+
+internal, declared in `Sources/NopeUI/NightModeRows.swift`
+
+```swift
+@MainActor struct NightModeRowBackground
+```
+
+Puts ``NopeColor/nightRowUnderMultiply`` behind each row in night mode, and leaves the
+system's row background outside it. Applied to the sections and rows of ``NopeForm`` and
+``NopeList``.
+
+In a sheet the system draws grouped rows in its elevated dark gray, `#2C2C2E`, which night
+mode's multiply by red (``NightModeStyle``) turns into `#2C0000`. The night red is only
+4.74:1 on that, close to WCAG 2.2's 4.5:1 for text (1.4.3), and the iOS 26.5 accessibility
+audit reported it as "Contrast nearly passed". On `#1C0000` the night red is 5.0:1.
+
+## `NightModeRowBackground/body(content:)`
+
+internal, declared in `Sources/NopeUI/NightModeRows.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The rows, with the night row background in night mode.
+
+- Parameter content: The sections and rows.
+
+## `NightModeRowBackground/init()`
+
+internal, declared in `Sources/NopeUI/NightModeRows.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the modifier. It holds no state.
+
+## `NightModeRows`
+
+internal, declared in `Sources/NopeUI/NightModeRows.swift`
+
+```swift
+@MainActor struct NightModeRows
+```
+
+In night mode, draws a form's or list's page in black (``NopeColor/nightBackground``) behind
+its rows, as the dark appearance outside a sheet does (`#000000` page, `#1C1C1E` rows), so the
+darker rows of ``NightModeRowBackground`` still stand apart from the page. Outside night mode
+the system's page is unchanged.
+
+## `NightModeRows/body(content:)`
+
+internal, declared in `Sources/NopeUI/NightModeRows.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The form or list, on a black page in night mode.
+
+- Parameter content: The form or list.
+
+## `NightModeRows/init()`
+
+internal, declared in `Sources/NopeUI/NightModeRows.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the modifier. It holds no state.
+
 ## `NightModeStyle`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -12885,6 +12961,20 @@ red: `#CC0000`, 3.6:1 on black and 3.5:1 on ``controlFillNight`` (WCAG 2.2, 1.4.
 3:1). ``nightOutline`` would lose its green and blue there and fall to 2.9:1. Not in
 tokens.md.
 
+## `NopeColor/nightRowUnderMultiply`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var nightRowUnderMultiply: Color { get }
+```
+
+An 11% gray (`#1C1C1C`), shown as `#1C0000` under the night multiply: the background of
+form and list rows in night mode (``NightModeRowBackground``). The night red is 5.0:1 on
+it. The system's row gray in a sheet, `#2C2C2E`, became `#2C0000`, on which the night red is
+4.74:1, too close to WCAG 2.2's 4.5:1 for text (1.4.3). In tokens.md under "Night mode
+rows".
+
 ## `NopeColor/peaking`
 
 internal, declared in `Sources/NopeUI/DesignTokens.swift`
@@ -13318,6 +13408,43 @@ static var tileValue: Font { get }
 
 Subheadline, semibold (15 points): tile values.
 
+## `NopeForm`
+
+internal, declared in `Sources/NopeUI/NightModeRows.swift`
+
+```swift
+@MainActor struct NopeForm<Content> where Content : View
+```
+
+A system `Form` whose rows and page keep their night mode contrast: unchanged outside night
+mode; in night mode the rows are ``NopeColor/nightRowUnderMultiply`` (shown as `#1C0000`) on a
+black page (``NightModeRows``).
+
+Use it in place of `Form` for every settings page and sheet, so all of them look the same in
+night mode.
+
+## `NopeForm/body`
+
+internal, declared in `Sources/NopeUI/NightModeRows.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The system form, with the night mode rows.
+
+## `NopeForm/init(content:)`
+
+internal, declared in `Sources/NopeUI/NightModeRows.swift`
+
+```swift
+@MainActor init(@ViewBuilder content: () -> Content)
+```
+
+Creates the form.
+
+- Parameter content: The form's sections and rows.
+
 ## `NopeHaptic`
 
 internal, declared in `Sources/NopeUI/DesignTokens.swift`
@@ -13634,6 +13761,38 @@ case tile
 
 ``NopeMaterial/tile``, or ``NopeColor/controlFillNight`` in night mode: tiles and buttons
 in panels and dials.
+
+## `NopeList`
+
+internal, declared in `Sources/NopeUI/NightModeRows.swift`
+
+```swift
+@MainActor struct NopeList<Content> where Content : View
+```
+
+A system `List` whose rows and page keep their night mode contrast, as ``NopeForm`` does.
+
+## `NopeList/body`
+
+internal, declared in `Sources/NopeUI/NightModeRows.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The system list, with the night mode rows.
+
+## `NopeList/init(content:)`
+
+internal, declared in `Sources/NopeUI/NightModeRows.swift`
+
+```swift
+@MainActor init(@ViewBuilder content: () -> Content)
+```
+
+Creates the list.
+
+- Parameter content: The list's sections and rows.
 
 ## `NopeMaterial`
 

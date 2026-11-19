@@ -38,7 +38,7 @@ struct AssistantAccessSettingsView: View {
 
     /// The page.
     var body: some View {
-        Form {
+        NopeForm {
             if !settings.assistantAccess {
                 Section {
                     // A plain text row, as on Fast Shutter: with the information symbol of the

@@ -27,7 +27,7 @@ struct CopiesSettingsView: View {
 
     /// The form.
     var body: some View {
-        Form {
+        NopeForm {
             if !settings.savesDevelopedFormat {
                 Section {
                     // A plain text row, as the notes on the other pages: with the info symbol

@@ -94,6 +94,8 @@ Forms, sheets, menus and alerts use the system styles unchanged.
 
 Rules: one meaning for each color; never color alone; no yellow; brand color reaches system controls only through `tint`. Night mode keeps the existing `NightModeStyle` (everything multiplied by pure red); `night` and `nightOutline` are for the custom-drawn parts.
 
+**Night mode rows.** In night mode every settings page and sheet (`NopeForm` and `NopeList`) draws its rows in `nightRowUnderMultiply`, `Color(white: 0x1C / 255)`, shown as `#1C0000` under the multiply, on a black page (`#000000`), as the dark appearance does outside a sheet (`#1C1C1E` rows on black). Contrast: the night red `#FF0000` is 5.0:1 on `#1C0000`. The system's sheet rows, `#2C2C2E`, showed as `#2C0000`, 4.74:1, which the iOS 26.5 accessibility audit reported as "Contrast nearly passed"; they are no longer used in night mode. Outside night mode the system's rows and page are unchanged.
+
 ## Materials: `enum NopeMaterial`
 
 | Token | Definition | Use |

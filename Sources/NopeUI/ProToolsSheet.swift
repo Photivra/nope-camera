@@ -37,7 +37,7 @@ struct ProToolsSheet: View {
     /// The form.
     var body: some View {
         NavigationStack {
-            Form {
+            NopeForm {
                 if manual.exposureModes.count > 1 || manual.capabilities.meteringModes.count > 1 {
                     // One group, as drawn (docs/design/screens/manual-pro-tools).
                     Section {

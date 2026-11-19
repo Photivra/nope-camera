@@ -50,7 +50,7 @@ struct PresetsScreen: View {
 
     /// The list.
     var body: some View {
-        List {
+        NopeList {
             if let result = presets.lastResult {
                 resultSection(result)
             }
@@ -337,7 +337,7 @@ struct PresetNameScreen: View {
 
     /// The form.
     var body: some View {
-        Form {
+        NopeForm {
             Section {
                 // A field that grows with its text, so a long name or the largest text size is
                 // never cut off (a one-line field's placeholder failed the clipped-text audit).

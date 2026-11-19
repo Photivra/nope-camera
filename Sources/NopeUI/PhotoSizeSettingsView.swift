@@ -27,7 +27,7 @@ struct PhotoSizeSettingsView: View {
 
     /// The form: one picker per lens, then the explanation.
     var body: some View {
-        Form {
+        NopeForm {
             ForEach(lenses) { lens in
                 Section {
                     Picker(

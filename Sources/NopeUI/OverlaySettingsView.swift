@@ -26,7 +26,7 @@ struct OverlaySettingsView: View {
 
     /// The form.
     var body: some View {
-        Form {
+        NopeForm {
             Section {
                 Toggle(isOn: Binding(get: { options.showsGrid }, set: { settings.setShowsGrid($0) })) {
                     SettingLabel(

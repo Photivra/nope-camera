@@ -40,7 +40,7 @@ struct FormatsSettingsView: View {
 
     /// The list of formats.
     var body: some View {
-        Form {
+        NopeForm {
             if let explanation {
                 explanation
             }
