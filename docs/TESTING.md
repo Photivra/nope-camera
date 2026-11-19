@@ -678,50 +678,71 @@ the local toolchain). Jobs:
 |---|---|
 | `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator (they also write and upload the file compatibility fixtures), the coverage gate |
 | `ui-build` | Builds the app and the UI tests once (`build-for-testing`) and uploads the test run and the apps |
-| `ui-tests 1/4` … `4/4` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
-| `ui-tests-ipad 1/3` … `3/3` | The same tests in three shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
+| `ui-tests 1/6` … `6/6` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
+| `ui-tests-ipad 1/5` … `5/5` | The same tests in five shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
 | `ui-tests`, `ui-tests-ipad` | Pass only when every iPhone (iPad) shard passed; these are the required status checks |
 | `file-compat` | The pinned c2patool and exiftool (`scripts/install-file-validators.sh`) on the fixtures from `unit-tests`; both are required (see "File compatibility") |
 | `ui-tests-watch 1/1` | The Apple Watch app's UI tests with accessibility audits on the Apple Watch Series 12 (46mm) Simulator (`NopeWatch` scheme) |
 | `ui-tests-watch 1/1 (second runner)` | The same, only when the first job's runner was lost before the job ended |
 | `ui-tests-watch` | Passes when the watch tests passed on the first runner or on the second; the required status check |
+| `unit-tests (iOS 26)` | The NopeKit unit tests on an iPhone 17 Pro Simulator with iOS 26.5 (no coverage gate: `unit-tests` has it) |
+| `ui-tests 1/6 (iOS 26)` | The first iPhone UI test shard on the same iOS 26.5 Simulator, from the `ui-build` build, with `scripts/run-ui-test-shard.sh` and `SIMULATOR_OS=26.5` |
+| `ui-tests-watch (watchOS 26)` | The watch UI tests on an Apple Watch Series 11 (46mm) Simulator with watchOS 26.5 |
+| `oldest-os` | Passes when the three iOS and watchOS 26 jobs passed |
 | `docs` | `scripts/check-docs.sh` |
 
 `.github/workflows/repo-checks.yml` (`repo-checks`) runs the quick checks above.
 
-Every job uses the iOS 27.2 and watchOS 27.2 Simulators. The app supports iOS, iPadOS and
-watchOS 26 and 27 (issue #78), but the `xcode-27` image has no iOS 26 or watchOS 26 Simulator
-runtime, and the `macos-26` image, which has them, has no Xcode 27, which the app needs (it
-uses iOS 27 APIs behind `#available(iOS 27, *)` checks). In CI, version 26 is checked at build
-time only: with the deployment target at 26.0, the compiler rejects any API newer than iOS or
-watchOS 26 that isn't behind an `#available` check. Running on version 26 is part of the
-on-device checks below.
+The jobs above the `oldest-os` rows use the iOS 27.2 and watchOS 27.2 Simulators. The app
+supports iOS, iPadOS and watchOS 26 and 27 (issue #78). The `xcode-27` image has no iOS 26 or
+watchOS 26 Simulator runtime, and the `macos-26` image, which has them, has no Xcode 27, which
+the app needs (it uses iOS 27 APIs behind `#available(iOS 27, *)` checks). So the three iOS
+and watchOS 26 jobs run on the `xcode-27` image and first add the runtime they need with
+`scripts/add-simulator-runtime.sh <iOS|watchOS> 26.5 <device type> <name>`: when the runtime
+isn't installed it downloads Apple's with `xcodebuild -downloadPlatform <platform>
+-buildVersion 26.5 -architectureVariant arm64` (once more if that fails), then creates the
+Simulator when it isn't there, and prints its identifier. 26.5 (iOS 23F77, watchOS 23T570) is
+the newest 26.x runtime in Apple's Simulator runtime index as of 2026-11-18; the version is
+`OLDEST_OS` in `build.yml`. The runtimes (8.5 GB for iOS, 4 GB for watchOS) aren't cached:
+they don't fit the repository's cache, so each of those jobs downloads one (about 10 minutes,
+counted in their time limits). The iPhone 17 Pro and Apple Watch Series 11 are used because
+the iPhone 18 Pro and Apple Watch Series 12 Simulators need the 27 runtimes; the watch app runs
+with a simulated phone, so the watch needs no paired iPhone. With the deployment target at
+26.0, the compiler also rejects any API newer than iOS or watchOS 26 that isn't behind an
+`#available` check. Running on a version 26 device is part of the on-device checks below.
 
 ### UI test shards
 
-By the listed times the UI suite takes about 234 minutes of test time on the iPhone Simulator
-and 241 on the iPad Simulator on the GitHub macOS runner (about twice as long as on a recent
-Mac, so CI limits are sized from runner times, never from local ones). CI runs it in four
-iPhone shards and three iPad shards, each its own job:
+By the listed times the UI suite takes about 487 minutes of test time on the iPhone Simulator
+and 512 on the iPad Simulator on the GitHub macOS runner (about twice as long as on a recent
+Mac, so CI limits are sized from runner times, never from local ones). About four fifths of
+those times are estimates (`e`, twice a local time), so the runner is expected to measure
+less. CI runs it in six iPhone shards and five iPad shards, each its own job:
 
 | Job | Tests (listed times) | With about 7 minutes of setup | Limit |
 |---|---|---|---|
-| `ui-tests 1/4` … `4/4` | 59 minutes each | 66 minutes | 100 minutes |
-| `ui-tests-ipad 1/3` … `3/3` | 80 minutes each | 87 minutes | 130 minutes |
+| `ui-tests 1/6` … `6/6` | 81 minutes each | 88 minutes | 130 minutes |
+| `ui-tests-ipad 1/5` … `5/5` | 103 minutes each | 110 minutes | 160 minutes |
+| `ui-tests 1/6 (iOS 26)` | 81 minutes | 98 minutes, with the runtime download | 140 minutes |
 | `ui-tests-watch` | 2 minutes | 13 minutes, with its build | 45 minutes |
+| `ui-tests-watch (watchOS 26)` | 2 minutes | 23 minutes, with the runtime download | 55 minutes |
 
-The 1.0.0 interface added about 75 UI tests, listed with estimates (twice their local time),
-so the listed times are higher than the runner will measure for some of them. With three
-iPhone and two iPad shards those estimates put an iPad shard at 124 of its 130 minutes with
-setup, so 1.0.0 runs a fourth iPhone shard and a third iPad shard; the limits are unchanged.
-The limits leave room for the wait for a runtime remount (up to 12.5 minutes, see "Simulator
+The 1.0.0 merges (device feedback, Honesty, the first start's plate) brought the listed times
+to 122 minutes for each of four iPhone shards and 171 for each of three iPad shards, past the
+limits, so 1.0.0 runs six iPhone and five iPad shards, rebalanced from the listed times, with
+the limits raised to fit them.
+
+Before that, the 1.0.0 interface had added about 75 UI tests, listed with estimates, and with
+three iPhone and two iPad shards an iPad shard came to 124 of its 130 minutes with setup, so a
+fourth iPhone shard and a third iPad shard were added. The limits leave room for the wait for a runtime remount (up to 12.5 minutes, see "Simulator
 runtime disk images on the runner") and for one second run of unfinished tests after an
 infrastructure failure. Until build 44149517211 there were eight shards per device; with fewer,
-larger jobs, 8 jobs per build boot a Simulator instead of 17, and the runner's Simulator
+larger jobs, fewer jobs per build boot a Simulator (12 with the iOS 26 shard, against 17), and the runner's Simulator
 failures start in the minutes after a job's first use of the Simulator.
 
-`scripts/ui-test-shards.txt` lists every UI test with its iPhone shard, its iPad shard and its
-time in seconds on the runner on each device, or, with an `e`, an earlier or estimated time
+`scripts/ui-test-shards.txt` lists every UI test as `<iPhone shard 1-6> <iPad shard 1-5>
+Class/test <seconds>e <seconds>e`: its iPhone shard, its iPad shard and its time in seconds on
+the runner on each device, or, with an `e`, an earlier or estimated time
 (twice the local time for a new test) until the runner has measured it. Each device's shards
 are balanced by its own times (longest test first, into the shard with the least time so
 far). To rebalance, take the times from the per-test result files (see "Flaky tests") or from

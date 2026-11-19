@@ -8,8 +8,9 @@
 #                                               listed test exists, each device's shards are
 #                                               1…n, and build.yml's shard matrices and job
 #                                               names match them
-#   (each line of the list: iPhone shard, iPad shard, Class/test, seconds on the runner on
-#   iPhone and on iPad, each with an "e" when estimated; # starts a comment)
+#   (each line of the list: `<iPhone shard> <iPad shard> Class/test <seconds> <seconds>`, the
+#   shards 1 to 6 on iPhone and 1 to 5 on iPad as build.yml runs them, and the seconds on the
+#   runner on iPhone and on iPad, each with an "e" when estimated; # starts a comment)
 #   scripts/ui-test-shards.sh args <iphone|ipad> <n> [root]
 #                                               the xcodebuild -only-testing arguments of that
 #                                               device's shard n (after the check)

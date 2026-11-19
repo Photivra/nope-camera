@@ -2,8 +2,8 @@
 # Tests for scripts/ui-test-shards.sh, the classification and second-run rules of
 # scripts/ui-test-run-lib.sh, scripts/flaky-tests.sh, scripts/stop-simulator-push.sh,
 # scripts/stop-simulator-background-tasks.sh, scripts/wait-for-simulator-runtimes.sh,
-# scripts/with-timeout.sh and scripts/prepare-simulator.sh: each case builds a small tree, log
-# or stand-in and checks the result.
+# scripts/with-timeout.sh, scripts/prepare-simulator.sh and scripts/add-simulator-runtime.sh:
+# each case builds a small tree, log or stand-in and checks the result.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -452,5 +452,48 @@ case_prepare "preparing boots the Simulator" 0 "Booting Watch (WATCH-1)" ok "$wa
 case_prepare "a Simulator that doesn't finish booting fails the preparation" 1 "Booting Watch" fails "$watch"
 case_prepare "a Simulator that isn't there" 1 "no Other Simulator" ok "platform=watchOS Simulator,name=Other,OS=27.2"
 
+# An older runtime is downloaded only when it isn't installed, and a Simulator is created on it
+# only when there isn't one. Stand-ins for xcrun and xcodebuild keep the runtime's state in a
+# file: the download "installs" it unless told to fail.
+add_runtime="$here/add-simulator-runtime.sh"
+case_runtime_add() { # case_runtime_add "name" "want exit" "want output text" "installed|missing" "download: works|fails" "device: present|absent"
+  local name=$1 want=$2 text=$3 d got status=0
+  d=$(mktemp -d)
+  [[ $4 == installed ]] && touch "$d/installed"
+  [[ $6 == present ]] && touch "$d/device"
+  cat >"$d/xcrun" <<STUB
+#!/usr/bin/env bash
+echo "\$*" >>"$d/calls"
+case "\$*" in
+  *"list runtimes -j")
+    if [[ -e "$d/installed" ]]; then
+      echo '{"runtimes": [{"platform": "iOS", "version": "26.5", "isAvailable": true, "identifier": "com.apple.CoreSimulator.SimRuntime.iOS-26-5"}]}'
+    else echo '{"runtimes": []}'; fi ;;
+  *"list devices available -j")
+    if [[ -e "$d/device" ]]; then echo '{"devices": {"com.apple.CoreSimulator.SimRuntime.iOS-26-5": [{"name": "iPhone 17 Pro", "udid": "OLD-1"}]}}'
+    else echo '{"devices": {}}'; fi ;;
+  *"simctl create"*) touch "$d/device"; echo NEW-1 ;;
+esac
+STUB
+  cat >"$d/xcodebuild" <<STUB
+#!/usr/bin/env bash
+echo "xcodebuild \$*" >>"$d/calls"
+[[ $5 == works ]] && touch "$d/installed"
+[[ $5 == works ]]
+STUB
+  chmod +x "$d/xcrun" "$d/xcodebuild"
+  got=$(PATH="$d:$PATH" GITHUB_OUTPUT= "$add_runtime" iOS 26.5 iPhone-17-Pro "iPhone 17 Pro" 2>&1) || status=$?
+  if [[ $status == "$want" ]] && grep -q "$text" <<<"$got" \
+      && { [[ -z ${CASE_RUNTIME_NEVER:-} ]] || ! grep -q -- "$CASE_RUNTIME_NEVER" "$d/calls"; }; then
+    echo "ok   $name"
+  else
+    echo "FAIL $name (exit $status): $got"; failures=$((failures + 1))
+  fi
+  rm -rf "$d"
+}
+CASE_RUNTIME_NEVER="downloadPlatform" case_runtime_add "an installed runtime isn't downloaded again" 0 "udid=OLD-1" installed works present
+CASE_RUNTIME_NEVER="simctl create" case_runtime_add "an existing Simulator is used" 0 "udid=OLD-1" installed works present
+case_runtime_add "a missing runtime is downloaded and a Simulator created" 0 "udid=NEW-1" missing works absent
+case_runtime_add "a download that fails twice fails the step" 1 "no iOS 26.5 Simulator runtime" missing fails absent
 if [[ $failures -ne 0 ]]; then echo "$failures case(s) failed"; exit 1; fi
 echo "all UI test shard tests passed"
