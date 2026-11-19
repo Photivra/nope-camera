@@ -17,6 +17,12 @@
 # It prints the Simulator's identifier ("udid=…") and in a GitHub Actions step writes it to the
 # step's outputs. The runtime isn't cached between jobs: at 4 to 9 GB it doesn't fit the
 # repository's cache.
+#
+# Its simctl calls are the job's first use of the Simulator, which starts the runner's disk image
+# service, so before the first one it notes the time in the file that
+# scripts/wait-for-simulator-runtimes.sh counts from (SIMULATOR_FIRST_USE_FILE, the same default),
+# unless an earlier step noted it. A simctl call that gives no result within its time limit is
+# tried once more, and then ends the script with a message that says so.
 set -euo pipefail
 
 usage() { echo "usage: $0 <iOS|watchOS> <version> <device type> <device name>" >&2; exit 2; }
@@ -26,15 +32,44 @@ platform=$1 version=$2 device_type=$3 name=$4
 scripts=$(cd "$(dirname "$0")" && pwd)
 limited() { "$scripts/with-timeout.sh" "$@"; }
 
+# The job's first use of simctl (scripts/wait-for-simulator-runtimes.sh counts from it).
+first_use=${SIMULATOR_FIRST_USE_FILE:-${RUNNER_TEMP:-${TMPDIR:-/tmp}}/nope-simulator-first-use}
+if ! [[ -s $first_use && $(cat "$first_use") =~ ^[0-9]+$ ]]; then
+  date +%s >"$first_use" 2>/dev/null || true
+fi
+
+# Runs `xcrun simctl <arguments…>` with a 120-second limit, once more when it fails, and prints
+# its output. When both tries fail it says why and returns 1.
+simctl_query() {
+  local attempt status output
+  for attempt in 1 2; do
+    status=0
+    output=$(limited 120 xcrun simctl "$@") || status=$?
+    if (( status == 0 )); then
+      printf '%s\n' "$output"
+      return 0
+    fi
+    if (( status == 124 )); then
+      echo "simctl $* gave no result within 120 seconds (attempt $attempt)" >&2
+    else
+      echo "simctl $* failed with status $status (attempt $attempt)" >&2
+    fi
+  done
+  echo "error: simctl $* failed twice; the Simulator service may not have started on this runner" >&2
+  return 1
+}
+
 # The identifier of the installed runtime of this platform and version, or nothing.
 runtime() {
-  limited 120 xcrun simctl list runtimes -j | python3 -c '
+  local list
+  list=$(simctl_query list runtimes -j) || return 1
+  python3 -c '
 import json, sys
 platform, version = sys.argv[1], sys.argv[2]
 for runtime in json.load(sys.stdin)["runtimes"]:
     if runtime.get("platform") == platform and runtime.get("version") == version and runtime.get("isAvailable"):
         print(runtime["identifier"]); sys.exit()
-' "$platform" "$version"
+' "$platform" "$version" <<<"$list"
 }
 
 id=$(runtime)
@@ -52,18 +87,20 @@ echo "Runtime: $id"
 
 # The available Simulator of this name on the runtime, or nothing.
 device() {
-  limited 120 xcrun simctl list devices available -j | python3 -c '
+  local list
+  list=$(simctl_query list devices available -j) || return 1
+  python3 -c '
 import json, sys
 name, runtime = sys.argv[1], sys.argv[2]
 for device in json.load(sys.stdin)["devices"].get(runtime, []):
     if device["name"] == name:
         print(device["udid"]); sys.exit()
-' "$name" "$id"
+' "$name" "$id" <<<"$list"
 }
 
 udid=$(device)
 if [[ -z $udid ]]; then
-  udid=$(limited 120 xcrun simctl create "$name" "com.apple.CoreSimulator.SimDeviceType.$device_type" "$id")
+  udid=$(simctl_query create "$name" "com.apple.CoreSimulator.SimDeviceType.$device_type" "$id")
   echo "Created $name ($udid) on $id"
 fi
 echo "udid=$udid"

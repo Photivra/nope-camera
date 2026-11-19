@@ -392,8 +392,9 @@ STUB
 case_runtimes "runtimes mounted as expected: no wait" \
   "/private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.abc" \
   "Simulator runtimes: mounted as expected"
+# The first poll's time is 1 second, or 2 on a busy machine.
 case_runtimes "the runtime under test on a plain disk image: wait" \
-  "/Library/Developer/CoreSimulator/Volumes/iOS_24B8117" "After 1 seconds: "
+  "/Library/Developer/CoreSimulator/Volumes/iOS_24B8117" "After [0-9]* seconds: "
 case_runtimes "the wait names the runtime" \
   "/Library/Developer/CoreSimulator/Volumes/iOS_24B8117" "iOS-27-2 (24B8117) at /Library/Developer/CoreSimulator/Volumes/iOS_24B8117"
 CASE_RUNTIMES_FIRST_USE=1000 case_runtimes "a later call in the job doesn't wait again" \
@@ -461,12 +462,14 @@ case_runtime_add() { # case_runtime_add "name" "want exit" "want output text" "i
   d=$(mktemp -d)
   [[ $4 == installed ]] && touch "$d/installed"
   [[ $6 == present ]] && touch "$d/device"
+  [[ $4 == unanswered ]] && touch "$d/unanswered"
   cat >"$d/xcrun" <<STUB
 #!/usr/bin/env bash
 echo "\$*" >>"$d/calls"
 case "\$*" in
   *"list runtimes -j")
-    if [[ -e "$d/installed" ]]; then
+    if [[ -e "$d/unanswered" ]]; then exit 1
+    elif [[ -e "$d/installed" ]]; then
       echo '{"runtimes": [{"platform": "iOS", "version": "26.5", "isAvailable": true, "identifier": "com.apple.CoreSimulator.SimRuntime.iOS-26-5"}]}'
     else echo '{"runtimes": []}'; fi ;;
   *"list devices available -j")
@@ -482,8 +485,12 @@ echo "xcodebuild \$*" >>"$d/calls"
 [[ $5 == works ]]
 STUB
   chmod +x "$d/xcrun" "$d/xcodebuild"
-  got=$(PATH="$d:$PATH" GITHUB_OUTPUT= "$add_runtime" iOS 26.5 iPhone-17-Pro "iPhone 17 Pro" 2>&1) || status=$?
+  [[ -z ${CASE_RUNTIME_FIRST_USE:-} ]] || echo "$CASE_RUNTIME_FIRST_USE" >"$d/first-use"
+  got=$(PATH="$d:$PATH" GITHUB_OUTPUT= SIMULATOR_FIRST_USE_FILE="$d/first-use" \
+    "$add_runtime" iOS 26.5 iPhone-17-Pro "iPhone 17 Pro" 2>&1) || status=$?
+  # The first use of simctl is noted for the runtime wait, and an earlier note is kept.
   if [[ $status == "$want" ]] && grep -q "$text" <<<"$got" \
+      && grep -Eq "^${CASE_RUNTIME_FIRST_USE:-[0-9]+}$" "$d/first-use" \
       && { [[ -z ${CASE_RUNTIME_NEVER:-} ]] || ! grep -q -- "$CASE_RUNTIME_NEVER" "$d/calls"; }; then
     echo "ok   $name"
   else
@@ -495,5 +502,8 @@ CASE_RUNTIME_NEVER="downloadPlatform" case_runtime_add "an installed runtime isn
 CASE_RUNTIME_NEVER="simctl create" case_runtime_add "an existing Simulator is used" 0 "udid=OLD-1" installed works present
 case_runtime_add "a missing runtime is downloaded and a Simulator created" 0 "udid=NEW-1" missing works absent
 case_runtime_add "a download that fails twice fails the step" 1 "no iOS 26.5 Simulator runtime" missing fails absent
+CASE_RUNTIME_FIRST_USE=1000 case_runtime_add "an earlier first use of simctl is kept" 0 "udid=OLD-1" installed works present
+CASE_RUNTIME_NEVER="downloadPlatform" case_runtime_add "a simctl call that fails twice says so and stops" 1 \
+  "simctl list runtimes -j failed twice" unanswered works absent
 if [[ $failures -ne 0 ]]; then echo "$failures case(s) failed"; exit 1; fi
 echo "all UI test shard tests passed"

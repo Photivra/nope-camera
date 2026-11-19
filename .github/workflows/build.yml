@@ -217,7 +217,7 @@ jobs:
     name: ui-tests ${{ matrix.shard }}/6
     needs: ui-build
     runs-on: xcode-27
-    # About 81 minutes of tests by the listed times (most of them estimates, docs/TESTING.md)
+    # About 81 to 90 minutes of tests by the listed times (most of them estimates, docs/TESTING.md)
     # and 7 of setup; on a runner that has to remount a Simulator runtime first,
     # scripts/wait-for-simulator-runtimes.sh waits up to 12.5 more. The rest is room for one
     # second run of unfinished tests after an infrastructure failure.
@@ -271,13 +271,13 @@ jobs:
       - name: All iPhone shards passed
         run: '[[ "${{ needs.ui-tests-shard.result }}" == success ]]'
 
-  # The source and privacy policy link tests are skipped on iPad: there the source link wasn't
-  # found in the Settings popover (docs/TESTING.md).
+  # The source link test is skipped on iPad: there the source link wasn't found in the Settings
+  # popover (docs/TESTING.md). The privacy policy link test runs on iPad.
   ui-tests-ipad-shard:
     name: ui-tests-ipad ${{ matrix.shard }}/5
     needs: ui-build
     runs-on: xcode-27
-    # About 103 minutes of tests by the listed times (most of them estimates) and 7 of setup, up
+    # About 103 to 109 minutes of tests by the listed times (most of them estimates) and 7 of setup, up
     # to 12.5 more for a runtime remount, and room for one second run of unfinished tests after
     # an infrastructure failure.
     timeout-minutes: 160
@@ -483,7 +483,8 @@ jobs:
     name: unit-tests (iOS 26)
     needs: c2pa-lib
     runs-on: xcode-27
-    # About 10 minutes to download the runtime and 20 of build and tests.
+    # About 10 minutes to download the runtime, up to 12.5 for the runtime wait and 20 of build
+    # and tests.
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -498,6 +499,10 @@ jobs:
       - name: Add the iOS 26 Simulator runtime and an iPhone on it
         id: iphone
         run: scripts/add-simulator-runtime.sh iOS "$OLDEST_OS" "$OLDEST_IPHONE_TYPE" "$OLDEST_IPHONE"
+      # Before the tests boot the Simulator, as in the UI test jobs: a runtime the runner remounts
+      # later would end the Simulator under the tests (docs/TESTING.md).
+      - name: Wait for the Simulator runtimes to settle
+        run: scripts/wait-for-simulator-runtimes.sh
       - name: Build and test NopeKit on iOS 26
         run: >
           xcodebuild test
@@ -559,8 +564,9 @@ jobs:
     name: ui-tests-watch (watchOS 26)
     needs: c2pa-lib
     runs-on: xcode-27
-    # The watch job's 45 minutes, and about 10 to download the runtime.
-    timeout-minutes: 55
+    # The watch job's 45 minutes, about 10 to download the runtime and up to 12.5 for the
+    # runtime wait (scripts/wait-for-simulator-runtimes.sh, through prepare-simulator.sh).
+    timeout-minutes: 70
     env:
       NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
