@@ -272,8 +272,8 @@ struct CameraModelBracketTests {
         await model.send(.manual(.setBracket(.standard)))
         await model.send(.drive(.setMode(.timer(.threeSeconds))))
         await model.send(.capture)
-        while model.drive.countdown.isRunning || model.captureStatus == .capturing || model.captureStatus == .saving {
-            await Task.yield()
+        await waitOrFail("the countdown and the bracket end") {
+            !model.drive.countdown.isRunning && model.captureStatus != .capturing && model.captureStatus != .saving
         }
         #expect(await backend.brackets.count == 1)
     }
@@ -366,7 +366,7 @@ struct CameraModelBracketTests {
         await model.send(.manual(.setBracket(.standard)))
         await model.send(.manual(.setInterval(IntervalSettings(interval: 1, count: 2))))
         await model.send(.manual(.startInterval))
-        while model.manual.intervalProgress != nil { await Task.yield() }
+        await waitOrFail("the series ends") { model.manual.intervalProgress == nil }
         #expect(await backend.captureCount == 2)
         #expect(await backend.brackets.isEmpty)
     }

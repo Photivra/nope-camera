@@ -35,12 +35,12 @@ extension CameraModel {
     }
 
     /// Whether holding the shutter takes a burst (docs/design/BURST.md, 3.1): in Burst mode
-    /// with the astro helper off, while no interval series runs. An interface reports the
-    /// shutter's phases (``DriveIntent/shutter(_:)``) only while this is `true`, and sends
-    /// ``CameraIntent/capture`` otherwise. While a series runs the shutter stops it, in every
-    /// drive mode.
+    /// with the astro helper off, while no interval series or focus bracket runs. An interface
+    /// reports the shutter's phases (``DriveIntent/shutter(_:)``) only while this is `true`, and
+    /// sends ``CameraIntent/capture`` otherwise. While a series runs the shutter stops it, in
+    /// every drive mode; that includes a focus bracket that Take Bracket started in Burst mode.
     public var isBurstShutter: Bool {
-        drive.mode == .burst && !astro.isOn && manual.intervalProgress == nil
+        drive.mode == .burst && !astro.isOn && manual.intervalProgress == nil && !bracketing.isRunning
     }
 
     /// The burst speeds offered on the selected lens: Fast, and Slow unless Fast measured under

@@ -259,7 +259,7 @@ struct LightModelTests {
         let (model, backend) = await Self.running()
         let observing = Task { await model.observeEvents() }
         backend.emit(.interrupted(.inUseElsewhere))
-        while model.sessionStatus != .interrupted(.inUseElsewhere) { await Task.yield() }
+        await waitOrFail("the interruption arrives") { model.sessionStatus == .interrupted(.inUseElsewhere) }
         await model.send(.light(.setTorch(true)))
         #expect(model.light.torch == .pending)
         #expect(await backend.torchRequests.isEmpty)

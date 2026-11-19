@@ -4,8 +4,8 @@ RAW development to HEIF and JPEG with Core Image and the system encoders.
 
 ## Overview
 
-`NopeDevelop` turns the RAW from the sensor into HEIF and JPEG, neutrally: no noise reduction,
-sharpening or local tone mapping, and never the phone's own pipeline. It encodes only with the
+`NopeDevelop` turns the RAW from the sensor into HEIF and JPEG, neutrally: noise reduction,
+sharpening and local tone mapping turned off, and never the phone's own pipeline. It encodes only with the
 system encoders through ImageIO.
 
 ``RAWDeveloper`` renders the DNG with `CoreImageRAWRenderer` and encodes it with the system

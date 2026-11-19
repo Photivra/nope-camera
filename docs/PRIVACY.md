@@ -365,8 +365,8 @@ geometric distortion correction off where the camera allows it; and zoom 1.0.
   captures never have GDC applied, regardless of the value of
   AVCaptureDevice.geometricDistortionCorrectionEnabled" (`AVCaptureDevice.h`). HEIF and JPEG
   copies are developed by the app from the RAW (`DevelopedLook`): one global tone curve
-  (Standard) or none (Flat), with no noise reduction, sharpening, local tone mapping or lens
-  correction. The default is RAW only (issue #80).
+  (Standard) or none (Flat), with noise reduction, sharpening, local tone mapping and lens
+  correction turned off. The default is RAW only (issue #80).
 - **A lens without Bayer RAW (the processed fallback):** the phone's camera makes the HEIF (or
   JPEG, on a lens without HEVC). AVFoundation offers apps no switch for how it turns the sensor
   data into that image (its colors, tone and any noise reduction and sharpening). The app saves
@@ -609,7 +609,8 @@ allow, from the system's metadata. A tag the system adds that isn't listed here 
   "up", no embedded thumbnail, and the person's file options (compression, HEIF bit depth,
   color space; see "Developed file options"). Both looks (`SaveSettings.developedLook`, owner decision
   2026-11-12) demosaic the sensor data and apply the file's white balance and color matrices,
-  with no noise reduction, sharpening, local contrast, local tone mapping or lens correction:
+  with noise reduction, sharpening, local contrast, local tone mapping and lens correction
+  turned off:
   - **Standard** (default): one global tone curve, Core Image's default for the camera, so the
     photo looks like a normal photo.
   - **Flat:** no tone curve; the image stays linear to the scene, and only Display P3's
@@ -697,6 +698,16 @@ image's structure segments; no XMP segment, comments, other `APPn` segments or d
 end of the image. A HEIF may hold only the image (`hvc1` items, or a `grid` of them), its `Exif`
 item, the XMP item when an XMP property above is on, and the image's layout properties; no
 thumbnails (`thmb`) or auxiliary images (`auxl`, such as depth or gain maps).
+
+**ImageIO's own keys.** When the read-back opens a file with ImageIO, it also accepts the keys
+ImageIO derives from the image rather than from a tag in the file
+(`MetadataPlan.derivedImageIOKeys`: `ColorModel`, `Depth`, `PixelWidth`, `PixelHeight`,
+`ProfileName`, `DPIWidth`, `DPIHeight`, `PrimaryImage`, `HasAlpha`, `IsFloat`, `IsIndexed`),
+a JPEG's `{JFIF}` dictionary and, in a HEIF only, the `ContentLightLevelInfo` dictionary and
+the top-level `Headroom` key (`MetadataPlan.heifDerivedImageIOKeys`). The iOS 26.5 Simulator's
+reader reports `Headroom` on every HEIF the app writes, where iOS 27.2 reports
+`ContentLightLevelInfo`; on both, the HEIF block check finds no box, item or property beyond the
+allowed ones. Any other ImageIO key fails the read-back.
 
 ### Device checks
 

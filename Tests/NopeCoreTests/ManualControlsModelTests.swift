@@ -481,7 +481,7 @@ struct ManualControlsModelTests {
 
     /// Waits until the running series has ended.
     func waitForSeries(_ model: CameraModel) async {
-        while model.manual.intervalProgress != nil { await Task.yield() }
+        await waitOrFail("the series ends") { model.manual.intervalProgress == nil }
     }
 
     @Test func intervalTakesEveryPhoto() async {

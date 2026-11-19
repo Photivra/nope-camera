@@ -163,8 +163,9 @@ Display P3: with the Flat look every mid-tone value doubles (no tone curve); wit
 look it doesn't. Run on 2026-11-12 in the iOS 27.2 Simulator with a DNG from the device tag
 check: passed (on macOS 27 the median ratio was 2.01 for Flat and 2.51 for Standard).
 
-The wording "no noise reduction, sharpening or local tone mapping" for the HEIF and JPEG copies
-rests on the RAW decoder settings the renderer sets (`NeutralDevelopment`). Two tests cover them:
+The wording that the app turns off noise reduction, sharpening and local tone mapping for the
+HEIF and JPEG copies rests on the RAW decoder settings the renderer sets (`NeutralDevelopment`).
+Two tests cover them:
 
 - `NeutralDevelopmentTests` (always runs) checks, with a fake decoder, that noise reduction
   (luminance and color), sharpening, detail, moiré reduction, local contrast and local tone
@@ -175,8 +176,8 @@ rests on the RAW decoder settings the renderer sets (`NeutralDevelopment`). Two 
   the iOS 26 and iOS 27 Simulators, since the decoder can differ between versions. Not yet run
   (no DNG on this branch's runs).
 
-What a setting of 0 means is Apple's (`CIRAWFilter.h`); demosaicing itself smooths, and "no noise
-reduction" means none is added. A device check compares one HEIF of a flat gray card with a
+What a setting of 0 means is Apple's (`CIRAWFilter.h`); demosaicing itself smooths, and noise
+reduction turned off means none is added. A device check compares one HEIF of a flat gray card with a
 plain development of the same DNG (still to be done).
 
 ## File compatibility (issue #58)
@@ -1442,6 +1443,14 @@ version in the section named, or list it in the changelog as not yet checked:
   feedback for 1.0.0"). Record that each opens the Photos app; the app ignores the result of the
   call, so if a future iOS stops opening the address, both buttons would do nothing without a
   message.
+
+### Open device check named by the fourth code review of 1.0.0
+
+- **A HEIF copy saves on iOS 26.** The iOS 26.5 Simulator's ImageIO reader reports a top-level
+  `Headroom` key on every HEIF the app writes, which the read-back now allows in a HEIF only
+  (`MetadataPlan.heifDerivedImageIOKeys`, `docs/PRIVACY.md`, "ImageIO's own keys"). On an iPhone
+  with iOS 26, take a photo with RAW + HEIF and with the processed fallback (HEIF), and record
+  that each HEIF saves to Photos and that the read-back reports no other key. Not run.
 
 ### Lock Screen, Control Center, Siri and Shortcuts on a device
 

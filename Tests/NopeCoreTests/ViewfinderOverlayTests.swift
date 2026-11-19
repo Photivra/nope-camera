@@ -203,7 +203,7 @@ struct LevelTests {
         let model = LevelModel()
         let task = Task { await model.run(StreamSource(stream: stream)) }
         continuation.yield(Self.upright(turnedBy: 0))
-        while model.state == nil { await Task.yield() }
+        await waitOrFail("a reading arrives") { model.state != nil }
         #expect(model.state?.isLevel == true)
         continuation.finish()
         await task.value

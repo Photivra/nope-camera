@@ -70,6 +70,13 @@ public struct MetadataPlan: Equatable, Sendable {
         "HasAlpha", "IsFloat", "IsIndexed",
     ]
 
+    /// ImageIO's top-level keys that describe a decoded HEIF and are allowed only in a HEIF.
+    /// `Headroom` is the image's HDR headroom as the reader derives it. The iOS 26.5 Simulator
+    /// reports it on every HEIF the app writes, with no new box in the file (the HEIF block
+    /// check finds none; the content light level box, `heif:property:clli`, is already allowed),
+    /// where iOS 27.2 reports the `ContentLightLevelInfo` dictionary instead.
+    static let heifDerivedImageIOKeys: [String] = ["Headroom"]
+
     /// The JPEG segments every JPEG may have: structure, the EXIF block, the color profile and
     /// ImageIO's empty IPTC record (``JPEGReader/emptyIPTCSegment``).
     static let jpegBlocks: Set<String> = [
@@ -193,6 +200,7 @@ public struct MetadataPlan: Equatable, Sendable {
         var tags = Set(fields.map { MetadataAllowlist.TagID($0.directory, $0.tag) })
         var blocks: Set<String> = []
         var xmp: Set<MetadataAllowlist.XMPName> = []
+        var derivedKeys = Self.derivedImageIOKeys
         var wildcardDictionaries: Set<String> = []
         var textRules: [MetadataAllowlist.TagID: MetadataAllowlist.TextRule] = [
             MetadataAllowlist.TagID(.primary, MetadataField.software.tag): softwareRule,
@@ -223,6 +231,7 @@ public struct MetadataPlan: Equatable, Sendable {
             blocks = Self.heifBlocks
             if signed { blocks.insert(Self.contentCredentialsHEIFBlock) }
             wildcardDictionaries.insert("ContentLightLevelInfo")
+            derivedKeys += Self.heifDerivedImageIOKeys
             if settings.isOn(.dateAndTime) {
                 xmp.formUnion([
                     MetadataAllowlist.XMPName(Self.photoshopNamespace, "DateCreated"),
@@ -234,7 +243,7 @@ public struct MetadataPlan: Equatable, Sendable {
             if !xmp.isEmpty { blocks.insert(Self.heifXMPBlock) }
         }
         if settings.isOn(.makerNotes) { wildcardDictionaries.insert(MetadataField.makerApple) }
-        let imageIOKeys = Set(fields.flatMap(\.imageIOKeys) + Self.derivedImageIOKeys.map { ImageIOKey(nil, $0) })
+        let imageIOKeys = Set(fields.flatMap(\.imageIOKeys) + derivedKeys.map { ImageIOKey(nil, $0) })
         return MetadataAllowlist(
             format: format, tags: tags, wildcardDirectories: [], blocks: blocks,
             xmpProperties: xmp, imageIOKeys: imageIOKeys, wildcardImageIODictionaries: wildcardDictionaries,

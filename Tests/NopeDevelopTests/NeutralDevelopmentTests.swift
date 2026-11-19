@@ -3,8 +3,8 @@ import Testing
 
 @testable import NopeDevelop
 
-/// The decoder settings behind "no noise reduction, sharpening or local tone mapping" for the
-/// HEIF and JPEG copies (issue #1, "Formats"). A fake decoder records what is set; the opt-in
+/// The decoder settings behind "turns off noise reduction, sharpening and local tone mapping"
+/// for the HEIF and JPEG copies (issue #1, "Formats"). A fake decoder records what is set; the opt-in
 /// test with a camera DNG (`ImageIOTests.DevelopedLookTests`) reads the same values back from
 /// Core Image's own filter.
 struct NeutralDevelopmentTests {

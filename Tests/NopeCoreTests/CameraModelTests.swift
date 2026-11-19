@@ -181,12 +181,14 @@ struct CameraModelTests {
 
     @Test func theShutterIsDisabledWhileSaving() async {
         let backend = ScriptedBackend(capabilities: Self.oneLens)
-        let model = await Self.runningModel(backend, saver: Self.saver(library: FakeLibrary(), developer: FakeDeveloper(delay: true)))
+        let gate = DevelopGate()
+        let model = await Self.runningModel(backend, saver: Self.saver(library: FakeLibrary(), developer: FakeDeveloper(gate: gate)))
         let capture = Task { await model.send(.capture) }
-        while model.captureStatus != .saving { await Task.yield() }
+        await waitOrFail("the photo is saving") { model.captureStatus == .saving }
         #expect(!model.canCapture)
         await model.send(.capture)
         #expect(await backend.captureRequests.count == 1)
+        await gate.open()
         await capture.value
     }
 

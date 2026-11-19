@@ -4638,10 +4638,10 @@ public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 ```
 
 Whether holding the shutter takes a burst (docs/design/BURST.md, 3.1): in Burst mode
-with the astro helper off, while no interval series runs. An interface reports the
-shutter's phases (``DriveIntent/shutter(_:)``) only while this is `true`, and sends
-``CameraIntent/capture`` otherwise. While a series runs the shutter stops it, in every
-drive mode.
+with the astro helper off, while no interval series or focus bracket runs. An interface
+reports the shutter's phases (``DriveIntent/shutter(_:)``) only while this is `true`, and
+sends ``CameraIntent/capture`` otherwise. While a series runs the shutter stops it, in
+every drive mode; that includes a focus bracket that Take Bracket started in Burst mode.
 
 ## `CameraModel/isBusyForPresets`
 
@@ -8741,8 +8741,8 @@ How the app develops the HEIF and JPEG it makes from the RAW. The RAW (DNG) itse
 affected.
 
 Both looks demosaic the sensor data and apply the file's own white balance and color
-matrices, with no noise reduction, sharpening, local contrast, local tone mapping or lens
-correction (`docs/PRIVACY.md`, "How each file's metadata is built and checked"; owner
+matrices, with noise reduction, sharpening, local contrast, local tone mapping and lens
+correction turned off (`docs/PRIVACY.md`, "How each file's metadata is built and checked"; owner
 decision, 2026-11-12). They differ only in the tone curve.
 
 ``SaveSettings/developedLook`` holds the choice; a Settings screen shows it as a picker.
@@ -20143,6 +20143,20 @@ static let heifBlocks: Set<String>
 The HEIF boxes, items, properties and references every HEIF may have: the image (one
 `hvc1` item, or a `grid` of them), the EXIF item, the color profile (`colr`) and the
 image's layout. No thumbnails (`thmb`) or auxiliary images (`auxl`).
+
+## `MetadataPlan/heifDerivedImageIOKeys`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let heifDerivedImageIOKeys: [String]
+```
+
+ImageIO's top-level keys that describe a decoded HEIF and are allowed only in a HEIF.
+`Headroom` is the image's HDR headroom as the reader derives it. The iOS 26.5 Simulator
+reports it on every HEIF the app writes, with no new box in the file (the HEIF block
+check finds none; the content light level box, `heif:property:clli`, is already allowed),
+where iOS 27.2 reports the `ContentLightLevelInfo` dictionary instead.
 
 ## `MetadataPlan/heifXMPBlock`
 

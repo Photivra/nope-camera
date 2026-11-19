@@ -62,7 +62,7 @@ the listing is submitted; remove any sentence whose feature isn't in the release
 |---|---|---|---|
 | C1 | On a lens that can save RAW, single-frame Bayer RAW (DNG), never ProRAW or merged frames | Capture core and saving to Photos (merged; device check pending) | Tag check on a device; `docs/PRIVACY.md` |
 | C2 | A lens without unprocessed RAW is labeled before the shot (unless the person turns the marker off) and after it | The "Processed" marker before the shot, on by default and hidden only if the person turns it off, and its processing note (issue #80); the photo's details and, when signed, its manifest after (to confirm) | UI tests (`ProcessedMarkerUITests.swift`); signature check |
-| C3 | Optional HEIF or JPEG developed by the app from the same RAW, with no noise reduction, sharpening or local tone mapping | `NopeDevelop` (merged; device check pending) | Development tests; output review |
+| C3 | Optional HEIF or JPEG developed by the app from the same RAW, with noise reduction, sharpening and local tone mapping turned off | `NopeDevelop` (merged; device check pending) | Development tests; output review |
 | C4 | No networking code, no network connections, no analytics, ads or accounts | Merged; the C2PA library is built without network features and CI checks the library and the linked app for networking code (`scripts/check-no-networking.sh`) | `docs/SECURITY_AUDIT.md` checks 3, 7 and 8 |
 | C5 | App Privacy Report lists no domains for the app | C4 | Audit check 8 on a device, over 7 days |
 | C6 | Optional details removed by default; you choose what each photo keeps | Metadata allowlist and fail-closed read-back (merged; device check pending); the Privacy settings screen where you choose (merged; device check pending) | Audit check 9 |

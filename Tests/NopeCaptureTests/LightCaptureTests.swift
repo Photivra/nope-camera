@@ -4,6 +4,25 @@ import Testing
 
 @testable import NopeCapture
 
+/// Waits until the fake hardware holds the session's configuration: at most 10,000 yields, then
+/// on the clock for up to five seconds more. Fails the test if it never does, so the wait can't
+/// hang the run.
+///
+/// - Parameters:
+///   - hardware: The fake hardware.
+///   - sourceLocation: Where the failure is reported.
+func waitForHeldConfigure(_ hardware: FakeHardware, sourceLocation: SourceLocation = #_sourceLocation) async {
+    for _ in 0..<10_000 {
+        if await hardware.isConfigureHeld { return }
+        await Task.yield()
+    }
+    for _ in 0..<500 {
+        if await hardware.isConfigureHeld { return }
+        try? await Task.sleep(for: .milliseconds(10))
+    }
+    Issue.record("timed out waiting: the configuration is held", sourceLocation: sourceLocation)
+}
+
 /// Builds a camera description with a flash and a torch.
 func cameraWithLight(
     _ id: String, _ position: CameraDeviceDescription.Position = .back, flashModes: [FlashMode] = [.off, .auto, .on]
@@ -111,7 +130,7 @@ struct LightCaptureTests {
         let model = CameraModel(backend: backend)
         let start = Task { await model.send(.start) }
         // The lens is chosen and the session is being configured: no input is attached yet.
-        while await !hardware.isConfigureHeld { await Task.yield() }
+        await waitForHeldConfigure(hardware)
         #expect(model.light.supportsTorch)
         #expect(await !hardware.isInputAttached)
         await model.send(.light(.setTorch(true)))
@@ -135,7 +154,7 @@ struct LightCaptureTests {
             hardware: hardware, authorization: FakeAuthorization(current: .authorized, afterRequest: .authorized))
         let model = CameraModel(backend: backend)
         let start = Task { await model.send(.start) }
-        while await !hardware.isConfigureHeld { await Task.yield() }
+        await waitForHeldConfigure(hardware)
         await model.send(.light(.setTorch(true)))
         #expect(model.light.torch == .pending)
         await hardware.releaseConfigure()

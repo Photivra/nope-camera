@@ -5,8 +5,8 @@ import Testing
 /// Develops clean files for the plan it is given, or throws.
 struct FakeDeveloper: PhotoDeveloping {
     var error: CaptureError?
-    /// Whether to wait a moment first, so a test can see the saving state.
-    var delay = false
+    /// Holds each development until the test opens it, so a test can see the saving state.
+    var gate: DevelopGate?
     /// Records the look of every development.
     var looks = LookRecorder()
 
@@ -14,13 +14,32 @@ struct FakeDeveloper: PhotoDeveloping {
         async throws(CaptureError) -> PhotoFile
     {
         await looks.record(look)
-        if delay { try? await Task.sleep(for: .milliseconds(200)) }
+        if let gate { await gate.wait() }
         if let error { throw error }
         let allowlist = metadata.allowlist(for: format, signed: false)
         switch format {
         case .jpeg: return PhotoFile(format: .jpeg, data: CleanFiles.jpeg(for: allowlist))
         default: return PhotoFile(format: format, data: FakeFiles.heif(for: allowlist))
         }
+    }
+}
+
+/// Holds developments until the test opens it.
+actor DevelopGate {
+    private var isOpen = false
+    private var waiting: [CheckedContinuation<Void, Never>] = []
+
+    /// Returns once the gate is open.
+    func wait() async {
+        if isOpen { return }
+        await withCheckedContinuation { waiting.append($0) }
+    }
+
+    /// Opens the gate and lets every held development go.
+    func open() {
+        isOpen = true
+        for continuation in waiting { continuation.resume() }
+        waiting = []
     }
 }
 

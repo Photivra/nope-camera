@@ -281,6 +281,7 @@ struct BurstTests {
         await model.send(.manual(.startInterval))
         await waitUntil { model.manual.intervalProgress?.taken == 1 }
         #expect(!model.isBurstShutter, "the on-screen shutter sends Capture while a series runs")
+        // A running focus bracket does the same (CameraModelFocusBracketTests, fourth review S1).
         let phase: (ShutterPhase) -> CameraIntent = onScreen ? { .drive(.shutter($0)) } : { .drive(.hardwareButton($0)) }
         await model.send(phase(.pressed))
         #expect(model.manual.intervalProgress != nil, "the press stops the series when it comes up")

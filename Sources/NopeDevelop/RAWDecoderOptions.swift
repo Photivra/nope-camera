@@ -4,8 +4,8 @@ import NopeCore
 /// The RAW decoder settings that the development of HEIF and JPEG copies depends on.
 ///
 /// `CIRAWFilter` has them all. The protocol exists so a unit test can check, without a camera
-/// DNG, every value ``NeutralDevelopment`` sets: the Honesty wording "no noise reduction,
-/// sharpening or local tone mapping" (issue #1, "Formats") rests on these values. Each name and
+/// DNG, every value ``NeutralDevelopment`` sets: the Honesty wording that the app "turns
+/// off noise reduction, sharpening and local tone mapping" (issue #1, "Formats") rests on these values. Each name and
 /// its meaning are from `CIRAWFilter.h`.
 protocol RAWDecoderOptions: AnyObject {
     /// Whether the decoder can change luminance noise reduction for this file.

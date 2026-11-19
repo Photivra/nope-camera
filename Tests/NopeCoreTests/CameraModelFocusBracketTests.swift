@@ -915,6 +915,36 @@ struct CameraModelFocusBracketTests {
         #expect(await task.value == .cancelled)
     }
 
+    // MARK: - Fourth review of 1.0.0
+
+    @Test(arguments: [true, false])
+    func theShutterStopsAFocusBracketFromTakeBracketInBurstMode(onScreen: Bool) async {
+        // S1: Take Bracket (Focus) leaves the drive mode at Burst. While the bracket runs the
+        // shutter isn't a burst shutter; it stops the bracket after the current frame and takes
+        // no burst, from the on-screen shutter or a hardware button.
+        let (model, backend) = await makeModel(frames: 5, turnOn: false)
+        await model.send(.drive(.setMode(.burst)))
+        #expect(model.isBurstShutter)
+        let press: CameraIntent = onScreen ? .drive(.shutter(.pressed)) : .drive(.hardwareButton(.pressed))
+        let release: CameraIntent = onScreen ? .drive(.shutter(.released)) : .drive(.hardwareButton(.released))
+        await backend.setOnCapture { (count: Int) async -> CaptureError? in
+            guard count == 2 else { return nil }
+            let isBurstShutter = await model.isBurstShutter
+            #expect(!isBurstShutter, "the on-screen shutter sends Capture while a bracket runs")
+            await model.send(press)
+            await model.send(release)
+            return nil
+        }
+        let request = BracketShortcut(type: .focus, focusFrameCount: 5, focusRange: .wholeRange, frameCount: 3, step: 1)
+        let outcome = await model.perform(
+            .takeBracket(request), inbox: ShortcutInbox(sleep: ShortcutTests.neverTimesOut), settings: nil, presets: nil)
+        #expect(outcome == .focusBracketStopped(saved: 2, total: 5))
+        #expect(await backend.captures == 2)
+        #expect(model.bracketing.lastRun?.end == .stopped)
+        #expect(model.drive.lastBurst == nil, "no burst was taken")
+        #expect(model.isBurstShutter)
+    }
+
     // MARK: - Third review of 1.0.0
 
     @Test(arguments: [false, true])

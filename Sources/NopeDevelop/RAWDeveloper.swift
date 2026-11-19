@@ -3,8 +3,8 @@ import NopeCore
 
 /// Develops HEIF and JPEG files from a RAW photo, with metadata built from the allowlist.
 ///
-/// The RAW is rendered neutrally (``CoreImageRAWRenderer``: no noise reduction, sharpening or
-/// local tone mapping; issue #1, "Formats") and encoded with the system encoders
+/// The RAW is rendered neutrally (``CoreImageRAWRenderer``: noise reduction, sharpening and
+/// local tone mapping turned off; issue #1, "Formats") and encoded with the system encoders
 /// (``PhotoEncoder``, ``EncodingSettings``). The new file's metadata is built by
 /// `MetadataPlan` from the DNG's own properties, which already passed through the allowlist
 /// at capture, and its orientation is 1 (up) because the rendered image is upright.

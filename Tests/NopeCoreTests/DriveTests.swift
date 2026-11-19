@@ -110,6 +110,22 @@ func waitUntil(_ condition: () -> Bool) async {
     }
 }
 
+/// Waits as ``waitUntil(_:)`` does, then fails the test if the condition still doesn't hold, so
+/// a condition that never comes true ends the wait instead of hanging the run.
+///
+/// - Parameters:
+///   - what: What the test waits for, for the failure message.
+///   - sourceLocation: Where the failure is reported.
+///   - condition: The condition to wait for.
+@MainActor
+func waitOrFail(
+    _ what: String, sourceLocation: SourceLocation = #_sourceLocation, _ condition: () -> Bool
+) async {
+    await waitUntil(condition)
+    let met = condition()
+    #expect(met, "timed out waiting: \(what)", sourceLocation: sourceLocation)
+}
+
 /// Lets other tasks run for a moment.
 func settle() async {
     for _ in 0..<200 { await Task.yield() }
