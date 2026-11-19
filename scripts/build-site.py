@@ -355,13 +355,15 @@ def content(name):
 
 def check_claims(node, source, where="$"):
     """Every text ({"md": ...}) names the claims it relies on (docs/store/README.md, C1 to C12),
-    or ["none"] for a text that states no fact about the app. An empty list isn't an answer."""
+    or ["none"] for a text that relies on no listing claim: it states no fact about the app, or its
+    fact is checked against another source (README.md phrases, check_readme_phrases; the app's
+    Accessibility screen strings; store/accessibility-status.json). An empty list isn't an answer."""
     if isinstance(node, dict):
         if "md" in node:
             claims = node.get("claims")
             if not isinstance(claims, list) or not claims:
                 fail(f'{source}: {where} has no "claims" list, or an empty one. Name its claim ids (C1 to C12), '
-                     'or ["none"] for a text that states no fact about the app')
+                     'or ["none"] for a text that relies on no listing claim')
             if "none" in claims and len(claims) > 1:
                 fail(f'{source}: {where} names "none" with claim ids {claims}')
             unknown = [c for c in claims if c not in CLAIM_IDS and c != "none"]
@@ -779,7 +781,8 @@ def accessibility_status():
 
 # The listing's accessibility sentence names these; it may only once an iPhone pass is recorded.
 LISTING_ACCESSIBILITY = re.compile(r"VoiceOver|Voice Control|Switch Control|Full Keyboard Access|text sizes?|"
-                                   r"larger text|Dynamic Type", re.I)
+                                   r"larg(?:e|er|est) text|Dynamic Type|screen readers?|accessib\w*|assistive\w*|"
+                                   r"Reduced? Motion", re.I)
 
 
 def check_listing_accessibility():

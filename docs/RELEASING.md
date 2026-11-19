@@ -42,6 +42,11 @@ In this order (`docs/design/nope-site.md`, section 15):
    branches and tags", with the rules `v*` (tag), `main`, `release-*` and `release/*` (branches).
    The workflow allows the same refs: a run by hand from any other branch fails before it builds,
    and the deploy job runs only for a release tag or a run by hand from one of those branches.
+   A release tag publishes only when its commit is on `main` or on its release branch
+   (`release-X.Y.Z` or `release/X.Y.Z` for the tag `vX.Y.Z`). Also add a repository ruleset
+   (Rules, Rulesets, branch ruleset for `release-*` and `release/*`, "Restrict creations") so only
+   the maintainer can create release branches, since anyone with write access could otherwise
+   create one and run the workflow from it.
 5. **Repository settings, Code security:** the dependency graph and Dependabot alerts on, so the
    `site dependency review` job and the monthly grouped updates for `site/` work.
 
@@ -79,7 +84,7 @@ job stops with "A run by hand publishes only from main or a release branch", run
 
 The build and the checks run before every deploy (`scripts/check-site.sh`, the same on your
 computer): an unfinished policy, a "Last updated" date older than the text it dates, a listing
-that names VoiceOver, Voice Control or text sizes before an iPhone manual pass is recorded in
+that names an accessibility feature (VoiceOver, Voice Control, text sizes, screen readers and the like) before an iPhone manual pass is recorded in
 `store/accessibility-status.json`, a page that
 loads anything from another site, a broken link, an accessibility violation, a budget exceeded,
 or a Lighthouse score under its floor. Each says what to fix. To see the pages locally before the
@@ -99,5 +104,9 @@ so a pull request shows what the publishing build would refuse.
 are UTC days. The build compares each with the newest change to its text in git, read in UTC; on
 `main` that is the UTC day the pull request was merged. A date one day earlier than that is
 accepted, so a pull request merged on the UTC day after its date was written still publishes; one
-merged later needs its date changed first. A date after today (UTC) is refused. The error names
+merged later needs its date changed first. So the dates in `site/content/support.json` and
+`site/content/accessibility.json` (and the policy's) must be the merge day, UTC, or one day before
+it: if not, the publishing build on `main` fails, and so does every later site pull request,
+until a pull request rewrites the date. Set them to the merge day in the last push before merging.
+A date after today (UTC) is refused. The error names
 the date to write.

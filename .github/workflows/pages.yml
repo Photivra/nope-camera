@@ -6,7 +6,8 @@ name: site
 #   Publishing reaches users, so each publication is the maintainer's act (AGENTS.md, rule 5).
 #   A run by hand publishes only from main or a release branch (release-* or release/*); from
 #   any other branch it fails before building. The github-pages environment's deployment rule
-#   allows the same refs (docs/RELEASING.md, setup step 4).
+#   allows the same refs (docs/RELEASING.md, setup step 4). A tag publishes only a commit on main
+#   or on its release branch (release-X.Y.Z or release/X.Y.Z).
 # - A pull request that touches the site or one of its sources builds and checks with
 #   --preview and never publishes; its build is uploaded as an artifact to open locally.
 #   --preview skips only the policy's draft markers, and its version and date rules while those
@@ -71,6 +72,25 @@ jobs:
           # The "Last updated" checks read the history of the policy and content files.
           fetch-depth: 0
           persist-credentials: false
+      # A tag may be cut on the release branch before the release pull request is squash-merged,
+      # so after the merge its commit is on release-X.Y.Z (or release/X.Y.Z), not on main.
+      - name: A release tag publishes only a commit on main or its release branch
+        if: github.event_name == 'push'
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="${TAG#v}"
+          for branch in main "release-${version}" "release/${version}"; do
+            if ! git rev-parse --verify --quiet "refs/remotes/origin/${branch}^{commit}" > /dev/null; then
+              git fetch --quiet --no-tags origin "+refs/heads/${branch}:refs/remotes/origin/${branch}" 2> /dev/null || continue
+            fi
+            if git merge-base --is-ancestor "$GITHUB_SHA" "refs/remotes/origin/${branch}"; then
+              echo "The tag ${TAG} is on ${branch}"
+              exit 0
+            fi
+          done
+          echo "::error::The tag ${TAG} points at ${GITHUB_SHA}, which is on neither main nor release-${version} (or release/${version}). Tag a commit on one of them."
+          exit 1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: site/.nvmrc

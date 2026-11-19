@@ -55,7 +55,7 @@ Credentials signing, the settings screens (formats and Privacy), the Honesty scr
 Photo viewer and What's in This Photo are merged and tested in the Simulator, **but the release
 build is not yet checked on a device**, and the Honesty and privacy wording still needs fluent
 human review. The last photo's details are on What's in This Photo, not on the Honesty screen.
-The "Site" column lists the pages of nope.photivra.com that rely on each claim; every text in the site's content files (`site/content/`) names the claim ids it relies on, or `"none"` for a text that states no fact about the app, and the build fails on a text with no claims list or an empty one (`docs/design/nope-site.md`, section 13). Whether `"none"` is right for a sentence is a human review, like the listing itself. **Every claim below must be shipped and verified, on a device where the table says so, before
+The "Site" column lists the pages of nope.photivra.com that rely on each claim; every text in the site's content files (`site/content/`) names the claim ids it relies on, or `"none"` for a text that relies on no listing claim (C1 to C12): it either states no fact about the app, or its fact is checked against another source (the README.md phrases, the app's Accessibility screen strings, `store/accessibility-status.json`), and the build fails on a text with no claims list or an empty one (`docs/design/nope-site.md`, section 13). Whether `"none"` is right for a sentence is a human review, like the listing itself. **Every claim below must be shipped and verified, on a device where the table says so, before
 the listing is submitted; remove any sentence whose feature isn't in the release.**
 
 | # | Claim in the description | Depends on | Verified by | Site |
