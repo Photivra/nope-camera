@@ -38,7 +38,10 @@ and [platform version information](https://developer.apple.com/help/app-store-co
 - Wording from `docs/research/privacy-claims.md` and issue #1, "Wording rules": "as little
   processing as your phone allows", never "zero processing"; the signature "shows whether the
   file has been changed", never that the photo is real or who took it.
-- "nope." stays lowercase with its period in every language; "Photivra" has no period.
+- The listing names the app "Photivra Nope Camera", then "the app". "nope." appears only in
+  quoted interface text, lowercase with its period in every language; "Photivra" has no period.
+- No "tested" or "verified" claims in the listing or the app. What was tested goes in the
+  README, `docs/TESTING.md` and the App Review notes below.
 - Translations claim no more than the English.
 - **Names of other companies' features:** the text may use "Content Credentials", "App Privacy
   Report", "iOS" and "VoiceOver" as plain, factual names (maintainer's decision, 2026-11-12),
@@ -57,17 +60,17 @@ the listing is submitted; remove any sentence whose feature isn't in the release
 
 | # | Claim in the description | Depends on | Verified by |
 |---|---|---|---|
-| C1 | Single-frame Bayer RAW (DNG), never ProRAW or merged frames | Capture core and saving to Photos (merged; device check pending) | Tag check on a device; `docs/PRIVACY.md` |
-| C2 | A lens without unprocessed RAW is labeled before and after the shot | The "Processed" marker before the shot, on by default and hidden only if the person turns it off, and its processing note (issue #80); the photo's details and, when signed, its manifest after (to confirm) | UI tests (`ProcessedMarkerUITests.swift`); signature check |
+| C1 | On a lens that can save RAW, single-frame Bayer RAW (DNG), never ProRAW or merged frames | Capture core and saving to Photos (merged; device check pending) | Tag check on a device; `docs/PRIVACY.md` |
+| C2 | A lens without unprocessed RAW is labeled before the shot (unless the person turns the marker off) and after it | The "Processed" marker before the shot, on by default and hidden only if the person turns it off, and its processing note (issue #80); the photo's details and, when signed, its manifest after (to confirm) | UI tests (`ProcessedMarkerUITests.swift`); signature check |
 | C3 | Optional HEIF or JPEG developed by the app from the same RAW, with no noise reduction, sharpening or local tone mapping | `NopeDevelop` (merged; device check pending) | Development tests; output review |
 | C4 | No networking code, no network connections, no analytics, ads or accounts | Merged; the C2PA library is built without network features and CI checks the library and the linked app for networking code (`scripts/check-no-networking.sh`) | `docs/SECURITY_AUDIT.md` checks 3, 7 and 8 |
 | C5 | App Privacy Report lists no domains for the app | C4 | Audit check 8 on a device, over 7 days |
 | C6 | Optional details removed by default; you choose what each photo keeps | Metadata allowlist and fail-closed read-back (merged; device check pending); the Privacy settings screen where you choose (merged; device check pending) | Audit check 9 |
 | C7 | Location off by default; Focus on Faces off by default, so autofocus and auto exposure don't follow faces (the listing doesn't say face detection is off: iOS may still detect faces in the viewfinder, as the Honesty screen says) | Location switch off by default; asks for "while using the app" access when turned on; writes latitude, longitude and altitude only (`LocationTagging`, issue #43; device check pending); Focus on Faces off by default (issue #80) | Audit checks 9 and 16; unit tests (`NopeSettingsTests`) |
 | C8 | Add-only Photos access; can't see existing photos | Add-only saving (merged; device check pending) | Audit check 16 |
-| C9 | Signing off by default; when it's on, every photo is signed with a new key, signatures can't link photos, and a signed photo shows that it was taken with the app and which version | Signing off by default (issue #80); `NopeSigning` with C2PA (merged; device check of Secure Enclave signing pending) | Audit check 10; unit tests (`MetadataSettingsTests`) |
-| C10 | What's in This Photo lists the last photo's details; the Honesty screen says what the phone may still do and what no app can remove | What's in This Photo, opened from the last photo (merged); Honesty screen in Settings (merged: what the app never does, what iOS may still do, what no app can remove) | UI tests; human review of `Honesty.xcstrings` |
-| C11 | VoiceOver, Voice Control, the largest text sizes; volume buttons as a shutter | Volume and Camera Control shutter (merged); every 1.0 screen passing audits and the manual pass (not done) | `accessibility-label.md` |
+| C9 | Signing off by default; when it's on, every photo is signed with a new key, signatures can't link photos, and a signature names the app and its version as the maker, which is not proof (each file certifies its own key, so anyone could make a file that says the same) | Signing off by default (issue #80); `NopeSigning` with C2PA (merged; device check of Secure Enclave signing pending) | Audit check 10; unit tests (`MetadataSettingsTests`) |
+| C10 | What's in This Photo lists the last photo's details; the Honesty screen says what the device may still do and what no app can remove | What's in This Photo, opened from the last photo (merged); Honesty screen in Settings (merged: what the app never does, what iOS may still do, what no app can remove) | UI tests; human review of `Honesty.xcstrings` |
+| C11 | Designed to work with VoiceOver, Voice Control and the largest text sizes (a design aim, not a declared Accessibility Nutrition Label feature until the manual pass is done); volume buttons as a shutter | Volume and Camera Control shutter (merged); every 1.0 screen passing audits and the manual pass (not done) | `accessibility-label.md` |
 | C12 | Free and open source under GPL-3.0 | True today | `LICENSE` |
 
 The description deliberately leaves out features planned for 1.0 that are harder to verify or
@@ -94,6 +97,30 @@ Claims C1 to C12 don't change with these issues, with two notes: C4 and C5 must 
 on the build that includes #82 (App Intents run on the device; Siri itself is Apple's, as the
 Honesty screen and the privacy policy already say). C11 is rechecked in Spanish at the largest
 text sizes when #87 ships.
+
+## App Review notes (draft)
+
+For the App Review Information notes field in App Store Connect, and for TestFlight's What to
+Test. Draft, for the maintainer to review.
+
+- **What was tested.** The real hardware for 1.0.0 is an iPhone 16 Pro Max (iOS 27.2.1) and an
+  iPad Air (5th generation). Other iPhone and iPad models, iOS and iPadOS 26 and the Apple Watch
+  app were tested only in Apple's Simulator (`docs/TESTING.md`, "What was tested on real
+  hardware").
+- **No network.** The app contains no networking code and opens no network connection. The one
+  link in the app, the source code address on the About screen, opens in the browser when the
+  person taps it.
+- **Photos access is add-only.** The app never asks to read the photo library. The Last Photo
+  button can open the Photos app with the `photos-redirect://` address; it only brings Photos to
+  the front and reads nothing. Apple doesn't document this address (`docs/TESTING.md`, "On-device
+  checks").
+- **Camera and location.** Camera access is asked for before the camera first opens. Location is off by
+  default and asked for only when the person turns on Location in the app's settings.
+- **Signing** is off by default; when turned on, each photo is signed with a new key made on the
+  device.
+- **TestFlight builds** (What to Test): TestFlight itself collects crash reports, usage and
+  feedback with screenshots. The privacy statements in the app and the listing describe the App
+  Store build.
 
 ## Other App Store Connect fields (maintainer)
 

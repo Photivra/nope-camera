@@ -20491,9 +20491,9 @@ var signsPhotos: Bool
 ```
 
 Whether each photo is signed with Content Credentials. Outside the master switch; off by
-default (owner decision, issue #80): a signed photo shows that it was taken with the app
-and which version (the manifest's claim generator, `docs/PRIVACY.md`, "Content
-Credentials"), so signing is the person's choice. A stored value is kept as saved.
+default (owner decision, issue #80): a signed photo names the app and its version as its
+maker (the manifest's claim generator, `docs/PRIVACY.md`, "Content Credentials"), so
+signing is the person's choice. A stored value is kept as saved.
 
 ## `MetadataSettings/writesStandardFileTags`
 

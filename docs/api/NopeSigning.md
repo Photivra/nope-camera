@@ -375,8 +375,9 @@ static func description(of file: SignableFile) -> String
 The description of what happened to a file, in the manifest's own words.
 
 The manifest is part of the file, not the interface, so this English text isn't localized.
-It claims no more than the app does: "as little processing as the phone allows", never "no
-processing".
+It claims no more than the app does: "as little processing as the device allows", never "no
+processing". It says "device", not "phone", because an iPad writes the same text, and a
+signed file can't be corrected later.
 
 - Parameter file: What the file is.
 - Returns: One or two plain sentences.

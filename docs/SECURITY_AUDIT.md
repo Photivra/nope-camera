@@ -195,7 +195,7 @@ app and for each third-party SDK it bundles
 [Describing use of required reason API](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api)).
 
 **Does the app need one?** Yes. `App/NopeApp/PrivacyInfo.xcprivacy` exists and declares no
-tracking, no tracking domains, no collected data and no required-reason APIs.
+tracking, no tracking domains and no collected data, and the required-reason APIs below.
 
 **State as of 2026-11-12:** the manifest declares `NSPrivacyAccessedAPICategoryUserDefaults`
 with `CA92.1` and `1C8F.1`, for the settings (`NopeSettings`, stored in the App Group's

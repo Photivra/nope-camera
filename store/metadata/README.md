@@ -26,8 +26,11 @@ Before a release, the maintainer removes any sentence whose feature isn't in the
 
 ## Notes for reviewers
 
-- Keep "nope." exactly as written: lowercase, with the period. "Photivra Nope Camera" is never
-  translated.
+- The listing names the app "Photivra Nope Camera", then "the app" (AGENTS.md, "Name and
+  wordmark"). "nope." appears only in quoted interface text, exactly as written: lowercase,
+  with the period. "Photivra Nope Camera" is never translated.
+- The listing makes no "tested" or "verified" claims. What was tested is in the README,
+  `docs/TESTING.md` and the App Review notes (`docs/store/README.md`).
 - Apple setting and feature names (App Privacy Report, Voice Control, Settings) must match the
   names Apple uses on the current iOS version.
 - The Honesty screen's name must match the app's own name for that screen.
