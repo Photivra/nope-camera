@@ -4,3 +4,17 @@ updates:
     directory: /
     schedule:
       interval: weekly
+  # The site's build and check tools (site/package.json; docs/design/nope-site.md, 14.2). Not part
+  # of the app. Versions stay exact; a new version is proposed only after 14 days. Every update is
+  # one grouped pull request a month, so packages that move together (tailwindcss and
+  # @tailwindcss/cli) arrive together and the app's CI runs once.
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 14
+    groups:
+      site:
+        patterns: ["*"]
+    open-pull-requests-limit: 5

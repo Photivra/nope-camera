@@ -20,6 +20,6 @@ HONEST ABOUT THE LIMITS
 • What's in This Photo lists the details in the files of your last photo. The Honesty screen says what your device may still do outside the app's control, and what no app can remove, such as the sensor's faint noise pattern.
 
 FOR EVERYONE
-• Designed to work with VoiceOver, Voice Control and the largest text sizes. The volume buttons work as a shutter.
+• The volume buttons work as a shutter.
 
 Free and open source under the GNU GPL, version 3.

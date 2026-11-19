@@ -1,0 +1,17 @@
+{
+  "about": "The manual accessibility pass and the App Store Accessibility Nutrition Labels, per device. One source for docs/store/accessibility-label.md, the listing's \"For everyone\" sentence and the site's accessibility page (docs/design/nope-site.md, 7.1). manualPass is null until a full pass by hand with VoiceOver, Voice Control, Switch Control and the largest text size is recorded in docs/TESTING.md; then it is {\"date\": \"YYYY-MM-DD\", \"device\": \"the model\"}. declared lists the features declared in App Store Connect for that device, by Apple's names, and stays empty until the pass is done.",
+  "devices": {
+    "iPhone": {
+      "manualPass": null,
+      "declared": []
+    },
+    "iPad": {
+      "manualPass": null,
+      "declared": []
+    },
+    "Apple Watch": {
+      "manualPass": null,
+      "declared": []
+    }
+  }
+}
