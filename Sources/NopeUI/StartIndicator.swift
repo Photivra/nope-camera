@@ -159,9 +159,12 @@ extension VerticalAlignment {
 /// the safe area or the picture, where the launch screen draws its image
 /// (`UIImageRespectsSafeAreaInsets` off). While the camera is ready and starting, "Starting the
 /// camera…" is centered under it, its top edge ``wordsTop`` under the mark's center, on a plate of
-/// ``NopeMaterial/solid`` that can't be seen on the black picture and keeps the words readable over
-/// the scrolling layout's rows. Before the camera state is known there are no words and no plate:
-/// that frame is the launch screen again. It turns with
+/// ``NopeMaterial/solid`` that can't be seen on the black picture. While it shows, nothing is drawn
+/// under the plate: the scrolling layout waits to draw its scrolling content (LAUNCH-SCREEN.md,
+/// 13.2), and where the plate would come within ``NopeSpace/s`` of the pinned row, the words and
+/// the plate are left out and the mark is shown alone (``wordsFit(plateExtent:roomBelowCenter:)``).
+/// Before the camera state is known there are no words and no plate: that frame is the launch
+/// screen again. It turns with
 /// ``SwiftUICore/EnvironmentValues/cameraUprightRotation`` about the mark's center, so it is
 /// upright on an iPhone held sideways, as the launch screen was. It takes no touches, and
 /// VoiceOver reads it as one element, "Starting the camera…".
@@ -169,6 +172,13 @@ struct StartIndicator: View {
     /// Whether the words are shown under the mark: while the camera is ready and its session
     /// starts, not before the camera state is known.
     let showsWords: Bool
+
+    /// The top edge of the scrolling layout's pinned row in the window (global coordinates), in
+    /// points, or `nil` in the other layouts, where nothing is drawn under the plate.
+    let pinnedRowTop: CGFloat?
+
+    /// The size of the words, once laid out; `nil` before, when they aren't drawn.
+    @State private var wordsSize: CGSize?
 
     /// The distance from the mark's center to the top edge of the words: 40 points.
     static let wordsTop: CGFloat = 40
@@ -181,9 +191,60 @@ struct StartIndicator: View {
 
     /// Creates the indicator.
     ///
-    /// - Parameter showsWords: Whether "Starting the camera…" is shown under the mark.
-    init(showsWords: Bool) {
+    /// - Parameters:
+    ///   - showsWords: Whether "Starting the camera…" is shown under the mark.
+    ///   - pinnedRowTop: The top edge of the pinned row in the window (global coordinates), in
+    ///     points, or `nil` where there is no pinned row under the indicator.
+    init(showsWords: Bool, pinnedRowTop: CGFloat? = nil) {
         self.showsWords = showsWords
+        self.pinnedRowTop = pinnedRowTop
+    }
+
+    /// How far below the mark's center the plate reaches, in points, upright: ``wordsTop``, the
+    /// words' height and ``NopeSpace/m`` of padding.
+    ///
+    /// - Parameter wordsHeight: The height of the wrapped words, in points.
+    /// - Returns: The distance from the mark's center to the plate's bottom edge.
+    static func plateBottom(wordsHeight: CGFloat) -> CGFloat {
+        wordsTop + wordsHeight + NopeSpace.m
+    }
+
+    /// How far below the window's center the plate reaches on screen, in points: its upright
+    /// bottom (``plateBottom(wordsHeight:)``), or half its width when it is turned a quarter turn
+    /// on an iPhone held sideways.
+    ///
+    /// - Parameters:
+    ///   - wordsSize: The size of the wrapped words, in points.
+    ///   - isSideways: Whether the indicator is turned a quarter turn.
+    /// - Returns: The plate's extent below the window's center.
+    static func plateExtent(wordsSize: CGSize, isSideways: Bool) -> CGFloat {
+        guard isSideways else { return plateBottom(wordsHeight: wordsSize.height) }
+        return max(wordsSize.width, NopeSize.startMark) / 2 + NopeSpace.m
+    }
+
+    /// Whether the words and their plate fit above the pinned row (LAUNCH-SCREEN.md, 13.2, part
+    /// 2): the plate's bottom edge must stay at least ``NopeSpace/s`` above the row's top edge.
+    ///
+    /// - Parameters:
+    ///   - plateExtent: How far below the window's center the plate reaches, in points
+    ///     (``plateExtent(wordsSize:isSideways:)``).
+    ///   - roomBelowCenter: How far below the window's center the pinned row's top edge is, in
+    ///     points, or `nil` where there is no pinned row, when they always fit.
+    /// - Returns: `true` when the words and the plate are shown.
+    static func wordsFit(plateExtent: CGFloat, roomBelowCenter: CGFloat?) -> Bool {
+        guard let roomBelowCenter else { return true }
+        return plateExtent + NopeSpace.s <= roomBelowCenter
+    }
+
+    /// Whether the words and their plate are drawn: they are meant to show, they have been laid
+    /// out, and they fit above the pinned row.
+    ///
+    /// - Parameter windowCenter: The window's vertical center in global coordinates, in points.
+    private func drawsWords(windowCenter: CGFloat) -> Bool {
+        guard showsWords, let wordsSize else { return false }
+        return Self.wordsFit(
+            plateExtent: Self.plateExtent(wordsSize: wordsSize, isSideways: rotation.isSideways),
+            roomBelowCenter: pinnedRowTop.map { $0 - windowCenter })
     }
 
     /// The mark at the window's center, with the words under it.
@@ -195,7 +256,7 @@ struct StartIndicator: View {
             let upright = rotation.isSideways ? CGSize(width: window.height, height: window.width) : window
             ZStack(alignment: Alignment(horizontal: .center, vertical: .startMarkCenter)) {
                 Color.clear
-                markAndWords(width: upright.width)
+                markAndWords(width: upright.width, drawsWords: drawsWords(windowCenter: proxy.frame(in: .global).midY))
             }
             .frame(width: upright.width, height: upright.height)
             // About the window's center, which is the mark's center.
@@ -208,9 +269,11 @@ struct StartIndicator: View {
 
     /// The mark, and under it the words on their plate.
     ///
-    /// - Parameter width: The upright width of the window, which the words wrap within, less
-    ///   ``NopeSpace/l`` on each side.
-    @ViewBuilder private func markAndWords(width: CGFloat) -> some View {
+    /// - Parameters:
+    ///   - width: The upright width of the window, which the words wrap within, less
+    ///     ``NopeSpace/l`` on each side.
+    ///   - drawsWords: Whether the words and the plate are drawn, or only laid out.
+    @ViewBuilder private func markAndWords(width: CGFloat, drawsWords: Bool) -> some View {
         // The words' top edge is ``wordsTop`` under the mark's center: the mark's square ends half
         // its side under the center, so the gap is the difference (negative: the words start
         // inside the mark's empty lower margin, under its frame).
@@ -218,23 +281,24 @@ struct StartIndicator: View {
             StartMark()
                 .frame(width: NopeSize.startMark, height: NopeSize.startMark)
                 .alignmentGuide(.startMarkCenter) { $0[VerticalAlignment.center] }
+            if drawsWords {
+                words(width: width)
+            }
+        }
+        // A hidden copy of the words, laid out at the same width whether or not they are drawn,
+        // so their size is known before they are (LAUNCH-SCREEN.md, 13.2). It takes no room.
+        .background(alignment: .top) {
             if showsWords {
-                // As wide as the words need, up to the window less the margins, where they wrap.
-                // A flexible frame took the whole width, so the plate behind them became a black
-                // band across the window that hid the iPad column's shutter and the lower half of
-                // Q (second review of 1.0.0).
-                StartWordsWidth(maximumWidth: max(width - 2 * NopeSpace.l, 0)) {
-                    Text("Starting the camera…", bundle: .module, comment: "Shown briefly while the app checks camera access.")
-                        .font(.subheadline)
-                        .foregroundStyle(isNightMode ? NopeColor.label : NopeColor.labelSecondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                words(width: width)
+                    .fixedSize()
+                    .onGeometryChange(for: CGSize.self) { $0.size } action: { wordsSize = $0 }
+                    .hidden()
+                    .accessibilityHidden(true)
             }
         }
         .padding(NopeSpace.m)
         .background {
-            if showsWords {
+            if drawsWords {
                 Color.clear.nopeBackground(.solid, in: RoundedRectangle(cornerRadius: NopeRadius.large))
             }
         }
@@ -243,6 +307,25 @@ struct StartIndicator: View {
         .accessibilityLabel(
             Text("Starting the camera…", bundle: .module, comment: "Shown briefly while the app checks camera access."))
         .accessibilityIdentifier("startIndicator")
+    }
+}
+
+extension StartIndicator {
+    /// "Starting the camera…", as wide as the words need, up to the window less the margins,
+    /// where they wrap. A flexible frame took the whole width, so the plate behind them became a
+    /// black band across the window that hid the iPad column's shutter and the lower half of Q
+    /// (second review of 1.0.0).
+    ///
+    /// - Parameter width: The upright width of the window, less ``NopeSpace/l`` on each side.
+    /// - Returns: The words.
+    fileprivate func words(width: CGFloat) -> some View {
+        StartWordsWidth(maximumWidth: max(width - 2 * NopeSpace.l, 0)) {
+            Text("Starting the camera…", bundle: .module, comment: "Shown briefly while the app checks camera access.")
+                .font(.subheadline)
+                .foregroundStyle(isNightMode ? NopeColor.label : NopeColor.labelSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 }
 
@@ -284,5 +367,22 @@ struct StartWordsWidth: Layout {
         subviews.first?.place(
             at: CGPoint(x: bounds.midX, y: bounds.midY), anchor: .center,
             proposal: ProposedViewSize(width: bounds.width, height: bounds.height))
+    }
+}
+
+/// The top edge of the scrolling layout's pinned row (Last Photo, shutter, Q) in the window, in
+/// global coordinates, so ``CameraScreen`` can tell ``StartIndicator`` how much room there is
+/// under the mark (LAUNCH-SCREEN.md, 13.2). `nil` in the other layouts.
+struct PinnedRowTop: PreferenceKey {
+    /// No pinned row.
+    static let defaultValue: CGFloat? = nil
+
+    /// The first pinned row's top edge reported; there is at most one.
+    ///
+    /// - Parameters:
+    ///   - value: The value so far.
+    ///   - nextValue: The next view's value.
+    static func reduce(value: inout CGFloat?, nextValue: () -> CGFloat?) {
+        value = value ?? nextValue()
     }
 }

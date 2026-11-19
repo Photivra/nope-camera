@@ -1074,7 +1074,13 @@ button. While `CameraModel.isFirstStart` is `true` it shows `StartIndicator` ove
 screen: `StartMark`, the same three shapes in the icon's fixed colors (white in night mode, so
 night mode's multiply makes it red), with its center at the window's center, and, once the
 camera is ready and starting, "Starting the camera…" under it on a black plate; the session's
-spinner (`SessionStatusView`) isn't drawn meanwhile. The indicator fades (`NopeMotion.fade`)
+spinner (`SessionStatusView`) isn't drawn meanwhile. Nothing is drawn under the plate: in the
+scrolling layout (accessibility text sizes) `CameraReadyView` lays out everything that scrolls
+but doesn't draw it, and hides it from touches and VoiceOver, until the first start ends, while
+the pinned row (Last Photo, shutter, Q) is drawn from the start; the pinned row reports its top
+edge (`PinnedRowTop`), and where the plate would come within `NopeSpace.s` of it the indicator
+leaves out the words and the plate and shows the mark alone (docs/design/LAUNCH-SCREEN.md, 13).
+The indicator fades (`NopeMotion.fade`)
 when the first start ends; later starts use the spinner. The Lock Screen camera has no launch
 screen of its own: it draws black until its settings arrive, then the same `CameraScreen`, so it
 shows the indicator for its first start too. `scripts/check-launch-screen.sh` checks the color

@@ -51,4 +51,26 @@ struct StartIndicatorTests {
     @Test func theWordsStartFortyPointsUnderTheMarksCenter() {
         #expect(StartIndicator.wordsTop == 40)
     }
+
+    /// The plate reaches 40 points, the words' height and 16 points of padding below the mark's
+    /// center upright, and half its width (at least the mark's) plus the padding when turned a
+    /// quarter turn on an iPhone held sideways (LAUNCH-SCREEN.md, 13.2).
+    @Test func thePlatesExtentBelowTheCenter() {
+        #expect(StartIndicator.plateBottom(wordsHeight: 60) == 40 + 60 + NopeSpace.m)
+        #expect(StartIndicator.plateExtent(wordsSize: CGSize(width: 300, height: 60), isSideways: false) == 116)
+        #expect(StartIndicator.plateExtent(wordsSize: CGSize(width: 300, height: 60), isSideways: true) == 150 + NopeSpace.m)
+        #expect(StartIndicator.plateExtent(wordsSize: CGSize(width: 50, height: 20), isSideways: true) == 48 + NopeSpace.m)
+    }
+
+    /// The words and the plate are left out when the plate would come within 12 points
+    /// (``NopeSpace/s``) of the pinned row's top edge, and shown where there is no pinned row
+    /// (LAUNCH-SCREEN.md, 13.2, decision 10).
+    @Test func theWordsGiveWayToThePinnedRow() {
+        #expect(NopeSpace.s == 12)
+        #expect(StartIndicator.wordsFit(plateExtent: 116, roomBelowCenter: nil))
+        #expect(StartIndicator.wordsFit(plateExtent: 116, roomBelowCenter: 128))
+        #expect(StartIndicator.wordsFit(plateExtent: 116, roomBelowCenter: 400))
+        #expect(!StartIndicator.wordsFit(plateExtent: 116, roomBelowCenter: 127.5))
+        #expect(!StartIndicator.wordsFit(plateExtent: 116, roomBelowCenter: 20))
+    }
 }

@@ -506,27 +506,30 @@ other finding fails the test:
   on iPad, an open finding: on the iPad Simulator the test's 1.2-second press arrived as a tap
   (the focus square moved to the pressed point, unlocked), at the center and off it; it passes
   on iPhone. The device check below covers press and hold on iPad;
-- three iPad Air 11-inch (M4) findings from the 1.0.0 integration, open and not skipped (an
-  owner decision; 2026-11-18, iOS 27.2 Simulator):
+- two iPad Air 11-inch (M4) findings from the 1.0.0 integration, each set aside on one text in
+  one test, on iPad only (an owner decision; 2026-11-18, iOS 27.2 Simulator;
+  `isApprovedAuditException` in `NopeAppUITests.swift`). The recordings show both texts whole,
+  so both are taken to be false findings of the audit; before each release they are checked by
+  hand on an iPad at the largest text size (see "On-device checks"). Every other finding on
+  these screens, and every finding on these texts in other tests, still fails:
   - `testAssistantAccessPageAtTheLargestTextSize`: "Dynamic Type font sizes are partially
     unsupported" and "Text clipped" on the Assistant Access switch's explanation ("Lets Siri,
-    Shortcuts…"). In the 720-point popover the explanation runs past the list's lower edge and is
-    reached by scrolling. Scrolled fully into view, shown whole in the recording, a taller
-    popover (1000 points) and Settings as a sheet were each tried: the audit reported the same
-    two findings every time, as it does for the switch's title on the iPhone and the iPad Pro,
-    which the test already sets aside. So it is taken to be the same misreport of the audit; no
-    layout change was kept;
+    Shortcuts…", in the row `settings.assistantAccess.switch`). In the 720-point popover the
+    explanation runs past the list's lower edge and is reached by scrolling. Scrolled fully into
+    view, shown whole in the recording, a taller popover (1000 points) and Settings as a sheet
+    were each tried: the audit reported the same two findings every time, as it does for the
+    switch's title on the iPhone and the iPad Pro, which the test already sets aside. No layout
+    change was kept;
   - `testNightModeSettingsScreensPassAccessibilityAudits`: "Text clipped" on the Accessibility
-    page's "Pinching to switch lenses is optional. The lens buttons do the same." The recording
-    shows the sentence whole on two lines, inside the frame the audit reports, so it is taken to
-    be a false finding of the audit;
-  - `testFirstStartAtTheLargestTextSizeAndRightToLeft`: a contrast finding on the "Ultra Wide"
-    lens row. At the largest text size on iPad the first start's plate ("Starting the
-    camera…", at the window's center, docs/design/LAUNCH-SCREEN.md, 6.3) lies over the lens rows
-    of the scrolling layout and covers most of that row's title, so the audit measures the plate
-    with the title. It is real as drawn: whether the plate may cover the rows is a design question
-    for LAUNCH-SCREEN.md. Whether a row lies under the plate depends on the layout's height, which
-    is why it came and went before the 1.0.0 merges;
+    page's "Pinching to switch lenses is optional. The lens buttons do the same."
+    (`settings.accessibility.pinchOptional`). The recording shows the sentence whole on two
+    lines, inside the frame the audit reports;
+- a third finding from the 1.0.0 integration is fixed, not set aside:
+  `testFirstStartAtTheLargestTextSizeAndRightToLeft` reported a contrast finding on the
+  "Ultra Wide" lens row, which the first start's plate covered at the largest text size on iPad.
+  The scrolling layout now waits to draw everything that scrolls until the first start ends
+  (docs/design/LAUNCH-SCREEN.md, 13), so nothing is under the plate and the test's audit runs
+  with no finding set aside;
 - on an iPhone held sideways, clipped-text and contrast findings on SwiftUI nodes the audit
   can't tie to an element: it measures turned text in its unturned frame. The same views pass
   every check in portrait; the turned layout is on the manual accessibility pass below;
@@ -1109,9 +1112,17 @@ Automated:
   dark appearance); then that the indicator ends when the camera runs and stays gone after the
   background and a lens change, and that first run ends it; and that the shutter and Q are
   there under the indicator, whole, inside the window and usable (`testFirstStartKeepsTheControlsWhole`,
-  on the iPhone and the iPad).
+  on the iPhone and the iPad, at the default and the largest text size). At the largest text
+  size (the scrolling layout, LAUNCH-SCREEN.md, 13) `testFirstStartAtTheLargestTextSizeAndRightToLeft`
+  also checks that the lens rows don't exist during the first start, that Take Photo and Quick
+  Menu exist, are whole and can be pressed, that no button intersects the indicator, that the
+  audit passes with no finding set aside, and that the rows exist and the indicator is gone once
+  the camera runs.
 - `FirstStartTests` (NopeCore) covers `CameraModel.isFirstStart`; `StartIndicatorTests` (NopeUI)
-  the mark's geometry and colors.
+  the mark's geometry and colors, and the arithmetic of the rule that leaves out the words and
+  the plate where they would come within `NopeSpace.s` (12 points) of the pinned row
+  (`StartIndicator.wordsFit(plateExtent:roomBelowCenter:)`). The UI tests can't make a window
+  that short, so that case is check 11 below.
 
 A UI test can't capture the launch screen: iOS draws it before the app runs. On the Simulator
 it can be held for a screenshot:
@@ -1172,6 +1183,11 @@ the results here):
 9. After an update: install release 0.3.0, open it, install the new build over it, open it, and
    record whether the old launch screen is shown once.
 10. The Home Screen icon is still the Icon Composer icon now that the app has an asset catalog.
+11. At the largest text size, in a window too short for the words (an iPad in Stage Manager or
+    Split View at its smallest height, or the 4.7-inch iPhone with `-NopeSimulatedCamera
+    slowStart`): the first start shows the mark alone, with no words and no plate, at the
+    window's center; VoiceOver still reads "Starting the camera…"; the pinned row is drawn and
+    nothing else is until the camera runs. In a taller window the words and the plate show.
 
 ## On-device checks
 
@@ -1181,6 +1197,11 @@ and one on 27, the oldest and newest supported versions (issue #78):
 
 - the camera permission prompt shows the localized `NSCameraUsageDescription`, and each answer
   leads to the right screen (`SystemCameraAuthorization`);
+- on an iPad at the largest text size, the two texts whose audit findings are set aside (see "UI
+  tests and accessibility audits") show whole, with nothing cut off: the Assistant Access
+  switch's explanation ("Lets Siri, Shortcuts…", Settings › Privacy › Assistant Access) and, in
+  night mode, the Accessibility page's "Pinching to switch lenses is optional. The lens buttons
+  do the same.";
 - a Secure Enclave key signs and verifies (`SecureEnclaveSigningKey`), and a DNG, HEIF and JPEG
   saved on the device validate with c2patool (below) as `Valid` with only
   `signingCredential.untrusted` failing;

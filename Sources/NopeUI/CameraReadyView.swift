@@ -67,6 +67,10 @@ struct CameraReadyView: View {
     /// Whether Reduce Motion is on: the thumbnail and the quick menu fade instead of moving.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// Whether ``CameraScreen`` shows the camera's first start indicator: the scrolling layout
+    /// then waits to draw its scrolling content (docs/design/LAUNCH-SCREEN.md, 13.2).
+    @Environment(\.showsStartIndicator) private var showsStartIndicator
+
     /// Tells the app that a sheet opened or closed, so it can rotate.
     @Environment(\.cameraPresentsSheet) private var presentsSheet
 
@@ -461,10 +465,24 @@ struct CameraReadyView: View {
                 QuickMenuList(context: context, isPresented: $showsQuickMenu, openSettings: openSettings)
             } else {
                 scrollingContent
+                    // During the camera's first start everything that scrolls waits: laid out,
+                    // not drawn, no touches, hidden from VoiceOver, so nothing is under the
+                    // start indicator's plate. It fades in with the indicator's fade
+                    // (docs/design/LAUNCH-SCREEN.md, 13.2, decision 9).
+                    .opacity(showsStartIndicator ? 0 : 1)
+                    .allowsHitTesting(!showsStartIndicator)
+                    .accessibilityHidden(showsStartIndicator)
             }
+            // The pinned row is drawn from the start, so the shutter and Q are in reach during a
+            // slow start; its top edge tells the indicator how much room it has (13.2, decision 10).
             shutterRow(quickSize: NopeSize.scrollingRowButton)
                 .padding(.horizontal, NopeSpace.m)
                 .padding(.vertical, NopeSpace.xs)
+                .background {
+                    GeometryReader { proxy in
+                        Color.clear.preference(key: PinnedRowTop.self, value: proxy.frame(in: .global).minY)
+                    }
+                }
         }
     }
 

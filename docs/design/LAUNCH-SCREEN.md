@@ -1,6 +1,6 @@
 # Launch screen
 
-Design version: 1.0.0, direction B · Reach. Proposed 2026-11-18 for release 1.0.0; accepted by the owner the same day with all eight recommendations of section 11 (option B, built on A). Built for 1.0.0; the Simulator results of section 9 are in [docs/TESTING.md](../TESTING.md), "Launch screen". Section 13, "Large text and the plate", was proposed 2026-11-18 after the build and is not yet accepted or built.
+Design version: 1.0.0, direction B · Reach. Proposed 2026-11-18 for release 1.0.0; accepted by the owner the same day with all eight recommendations of section 11 (option B, built on A). Built for 1.0.0; the Simulator results of section 9 are in [docs/TESTING.md](../TESTING.md), "Launch screen". Section 13, "Large text and the plate", was proposed 2026-11-18 after the build, accepted by the owner the same day with both recommendations of 13.4 (decisions 9 and 10), and built for 1.0.0; sections 4, 6.3 and 7 and figure `pair-largest` are in line with it.
 
 For the implementer of release 1.0.0. The drawings are in [launch.html](launch.html); each figure named below is `screens/launch-<name>.html` with a PNG beside it. The mark's artwork is [launch-mark.svg](launch-mark.svg). Tokens are in [tokens.md](tokens.md), the rest of the build in [BUILD-SPEC.md](BUILD-SPEC.md).
 
@@ -74,7 +74,7 @@ Figures: `a`, `b`, `c`, `handoff-a`, `handoff-b`, `handoff-c`.
 | Camera ready | Black to black | The mark stays; the controls appear around it; it fades when the picture arrives | Matches on an iPhone held upright at the default text size |
 | First run, access declined, no camera | Black, then the screen | The mark, then the screen | A shutter ring and a picture frame that the next screen does not have |
 | Night Mode | Nothing of the app's is lit | The mark, about 0.4% of the screen, for the length of the launch | A white ring, about 1% of the screen, that turns red |
-| Largest text sizes (scrolling layout) | Black to black | The mark on its plate (figure `pair-largest`) | The picture is elsewhere |
+| Largest text sizes (scrolling layout) | Black to black | The mark and its words over black, the pinned row drawn, everything that scrolls held back until the picture arrives (figure `pair-largest`, section 13) | The picture is elsewhere |
 | iPad, iPhone Duo inner display | Black to black | The same point in the window | Needs a second layout, kept in step by hand |
 | iPhone launched sideways | Black to black | The window's center is the same point; a turn may show (check 5) | The layout is drawn in landscape and then replaced |
 | Apple's guidance | The stated case for a solid color | Met only because the mark is part of the first screen | Met in one state |
@@ -202,7 +202,7 @@ Apple's guidance allows a mark on the launch screen only if it is a fixed part o
 
 **`StartMark`.** The three shapes on the icon's 128-unit grid, scaled to `NopeSize.startMark`: corners `M36 28H16V48 M92 28H112V48 M16 72V92H36 M92 92H112V72` and the "n" `M48 76V40 M48 57A17 17 0 0 1 82 57V76`, both stroked 8 units wide with square caps, and a circle of radius 6 at (97, 72). The colors are the fixed `NopeColor.mark` and `NopeColor.markPeriod`, not `NopeColor.label` or `NopeColor.fact`: the system teal changes with Increase Contrast and the launch image cannot, and white is brighter than the icon's `#EDEDEE`. In Night Mode both are white, so that `NightModeStyle` turns the whole mark the night red; the teal would multiply to a red too dark to see. Hidden from VoiceOver; ignores nothing for Smart Invert, so it follows the controls around it.
 
-**`StartIndicator`.** The mark with its center at the center of the window, ignoring the safe area. While `state` is `.ready`, the words "Starting the camera…" (the existing key and comment; no new string) are centered under it, their top edge 40 pt under the mark's center, in `.subheadline` and `NopeColor.labelSecondary`, wrapping within the window's width less `NopeSpace.l` on each side. Behind both, a plate of `NopeMaterial.solid` with `NopeRadius.large` and `NopeSpace.m` of padding: it can't be seen on the black picture, and it keeps the words readable over the rows of the scrolling layout (figure `pair-largest`) and over a picture that arrives before the fade ends. In the `.starting` state there are no words and no plate edge to see: that frame is the launch screen again. The indicator takes no touches. It turns with `cameraUprightRotation` about the mark's center, so on an iPhone held sideways it is upright as the launch screen's was.
+**`StartIndicator`.** The mark with its center at the center of the window, ignoring the safe area. While `state` is `.ready`, the words "Starting the camera…" (the existing key and comment; no new string) are centered under it, their top edge 40 pt under the mark's center, in `.subheadline` and `NopeColor.labelSecondary`, wrapping within the window's width less `NopeSpace.l` on each side. Behind both, a plate of `NopeMaterial.solid` with `NopeRadius.large` and `NopeSpace.m` of padding: it can't be seen on the black picture, and it keeps the words readable over a picture that arrives before the fade ends. Nothing is drawn under it: in the scrolling layout everything that scrolls waits for the first start to end, and where the plate would come within `NopeSpace.s` of the pinned row the words and the plate are left out (section 13, figure `pair-largest`). In the `.starting` state there are no words and no plate edge to see: that frame is the launch screen again. The indicator takes no touches. It turns with `cameraUprightRotation` about the mark's center, so on an iPhone held sideways it is upright as the launch screen's was.
 
 **When.** `CameraScreen` shows the indicator while `model.isFirstStart`, and removes it with `NopeMotion.fade` (opacity only, the same with Reduce Motion). While it is shown, `SessionStatusView` draws no spinner. Every message of `SessionStatusView` is unchanged, and since each of them ends the first start, the mark is never shown with one. After the first start the spinner in the picture is used as today: on return from the background, a lens change and a restart of the camera. If the camera is slow to start, the mark and the words stay; there is no timer.
 
@@ -233,7 +233,7 @@ The app's first frame, in every case of the table, compared with the launch scre
 | Night Mode on | The same | Red from the first frame, the mark included | The picture | `handoff-night` |
 | The camera fails to start or is paused | The same | The mark and the words | The message replaces them at once | – |
 | Start in Clean View on | The same | As the first row, with the clean view's controls | The picture | – |
-| Largest text sizes | The same | The scrolling layout, the indicator on its plate | The picture | `pair-largest` |
+| Largest text sizes | The same | The scrolling layout's pinned row, and the indicator over black; everything that scrolls waits (section 13) | The picture and the scrolling content, in the indicator's fade | `pair-largest` |
 | iPhone held sideways | The same, in landscape | The indicator turned upright in the portrait window | The picture | `pair-sideways` |
 | iPad, iPhone Duo | The same | The same point in the window | The picture | `pair-ipad-*`, `pair-duo-*` |
 | Lock Screen camera | None | Black; then as the first row | The picture | `handoff-lock` |
@@ -322,7 +322,7 @@ Stated here so that no wording, test or release note depends on them until they 
 
 ## 13. Large text and the plate
 
-Proposed 2026-11-18, after the build. Not yet accepted; nothing here is built. Decisions are in 13.4.
+Proposed 2026-11-18, after the build. Accepted by the owner the same day with both recommendations of 13.4 (decision 9: everything that scrolls waits, the pinned row is drawn from the start; decision 10: where the words would come within `NopeSpace.s` of the pinned row, the words and the plate are left out, the mark alone, VoiceOver unchanged). Built for 1.0.0 as 13.3 describes.
 
 ### 13.1 The finding
 
@@ -345,7 +345,7 @@ What follows:
 - A warning that applies during the first start is shown when the first start ends. A camera that fails or is paused ends the first start, so its message is never held back (section 6.3, "When").
 - The stacked and column layouts are unchanged. So are Night Mode, right to left, the Lock Screen camera and every string.
 
-No figure is added. If this section is accepted, the right half of figure `pair-largest` is redrawn without the rows (status line, picture frame and rows gone; the pinned row, the mark and the words stay), and its caption, the "Largest text sizes" rows of sections 4 and 7 and the plate's sentence in section 6.3 are brought in line.
+No figure is added. The right half of figure `pair-largest` is redrawn without the rows (status line, picture frame and rows gone; the pinned row, the mark and the words stay), and its caption, the "Largest text sizes" rows of sections 4 and 7 and the plate's sentence in section 6.3 are brought in line.
 
 Considered and not chosen:
 

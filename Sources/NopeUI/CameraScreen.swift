@@ -101,10 +101,11 @@ public struct CameraScreen<Viewfinder: View>: View {
         }
         // The camera's first start: the launch screen's mark at the same point until the picture
         // arrives, then a fade (docs/design/LAUNCH-SCREEN.md, 6.3). Inside night mode's style, so
-        // it is red from the first frame.
-        .overlay {
+        // it is red from the first frame. In the scrolling layout it is told where the pinned row
+        // starts, so its words never come near the shutter (13.2).
+        .overlayPreferenceValue(PinnedRowTop.self) { pinnedRowTop in
             if model.isFirstStart {
-                StartIndicator(showsWords: isReady)
+                StartIndicator(showsWords: isReady, pinnedRowTop: pinnedRowTop)
                     .transition(.opacity)
             }
         }

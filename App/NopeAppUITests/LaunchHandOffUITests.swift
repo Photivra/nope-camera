@@ -92,14 +92,47 @@ extension NopeAppUITests {
         try audit(app)
     }
 
+    /// Asserts the scrolling layout during the first start (docs/design/LAUNCH-SCREEN.md, 13.3):
+    /// the lens rows don't exist for a UI test or for VoiceOver, while Take Photo and Quick Menu
+    /// exist, are whole inside the window and can be pressed; and no control that exists
+    /// intersects the indicator.
+    @MainActor
+    func assertScrollingContentWaits(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertFalse(app.buttons["Ultra Wide"].exists, "a lens row exists during the first start", file: file, line: line)
+        XCTAssertFalse(app.buttons["Wide"].exists, "a lens row exists during the first start", file: file, line: line)
+        let window = app.windows.firstMatch.frame
+        let indicator = startIndicator(app).frame
+        for name in ["Take Photo", "Quick Menu"] {
+            let button = app.buttons[name]
+            XCTAssertTrue(button.exists, "no \(name)", file: file, line: line)
+            XCTAssertTrue(window.contains(button.frame), "\(name) isn't whole: \(button.frame) in \(window)", file: file, line: line)
+            XCTAssertTrue(button.isHittable, "\(name) can't be pressed", file: file, line: line)
+        }
+        for control in app.buttons.allElementsBoundByIndex where control.exists && !control.frame.isEmpty {
+            XCTAssertFalse(
+                control.frame.intersects(indicator), "\(control.label) lies under the indicator: \(control.frame), \(indicator)",
+                file: file, line: line)
+        }
+    }
+
     /// At the largest text size the words wrap under the mark, which stays at the window's
-    /// center over the scrolling layout; right to left, in the dark appearance, changes nothing
-    /// about its place.
+    /// center over the scrolling layout; everything that scrolls waits for the first start to
+    /// end, so nothing is under the plate, and the screen passes its audit with no finding set
+    /// aside (LAUNCH-SCREEN.md, 13.2). Once the camera runs, the rows exist and the indicator is
+    /// gone. Right to left, in the dark appearance, changes nothing about its place.
     @MainActor
     func testFirstStartAtTheLargestTextSizeAndRightToLeft() throws {
         let large = launchSlowStart(Self.largestTextSize)
         assertFirstStart(large)
+        assertScrollingContentWaits(large)
         try auditScrollingScreen(large)
+        // The scenario's camera starts when the app first goes to the background.
+        XCUIDevice.shared.press(.home)
+        large.activate()
+        XCTAssertTrue(startIndicator(large).waitForNonExistence(timeout: 10), "the indicator didn't end")
+        XCTAssertTrue(large.buttons["Take Photo"].waitForExistence(timeout: 10))
+        let firstRow = large.buttons["Wide"]
+        XCTAssertTrue(firstRow.waitForExistence(timeout: 10), "the lens rows didn't appear after the first start")
         large.terminate()
 
         useAppearance(.dark)
@@ -114,9 +147,21 @@ extension NopeAppUITests {
     /// column. On iPad the indicator's plate spanned the window and hid the shutter and the lower
     /// half of Q (second review of 1.0.0); their frames were still right, so the lower half of
     /// each is checked for lit pixels too (the shutter's white ring, Q's letter).
+    ///
+    /// Also at the largest text size, in the scrolling layout, where the pinned row is drawn from
+    /// the start and everything that scrolls waits (LAUNCH-SCREEN.md, 13.3).
     @MainActor
     func testFirstStartKeepsTheControlsWhole() throws {
-        let app = launchSlowStart()
+        try assertFirstStartKeepsTheControlsWhole([])
+        try assertFirstStartKeepsTheControlsWhole(Self.largestTextSize)
+    }
+
+    /// The checks of ``testFirstStartKeepsTheControlsWhole()`` for one launch.
+    ///
+    /// - Parameter extraArguments: The launch arguments, such as the text size.
+    @MainActor
+    func assertFirstStartKeepsTheControlsWhole(_ extraArguments: [String]) throws {
+        let app = launchSlowStart(extraArguments)
         settle()
         let window = app.windows.firstMatch.frame
         let pixels = LaunchPixels.screen()
@@ -134,8 +179,9 @@ extension NopeAppUITests {
         }
         XCTAssertTrue(startIndicator(app).exists, "the first start ended during the test")
         let shot = XCTAttachment(screenshot: app.screenshot())
-        shot.name = "First start, controls"
+        shot.name = extraArguments.isEmpty ? "First start, controls" : "First start, controls, largest text"
         add(shot)
+        app.terminate()
     }
 
     /// When the camera runs the indicator fades and the picture stays black in the light
