@@ -331,4 +331,13 @@ enum LensName {
             String(localized: "Front", bundle: .module, comment: "Name of the front (selfie) camera.")
         }
     }
+
+    /// The label the lens buttons show for a lens's magnification, such as "0.5×", or `nil` for
+    /// a lens without one.
+    ///
+    /// - Parameter lens: The lens.
+    /// - Returns: The label.
+    static func magnificationLabel(for lens: Lens) -> String? {
+        lens.magnification.map { $0.formatted(.number.precision(.fractionLength(0...1))) + "×" }
+    }
 }

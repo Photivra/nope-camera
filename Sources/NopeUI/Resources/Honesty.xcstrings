@@ -1181,6 +1181,38 @@
           }
         }
       }
+    },
+    "Your Photo Library Is Never Read" : {
+      "comment" : "Honesty heading: the app can only add photos to the photo library, never see what is in it. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "nope. asks only for permission to add photos. With that permission, iOS doesn't let nope. see or change what is in your library. The small pictures nope. shows of the photos you just took are kept in memory only, until nope. closes. So each time nope. opens, the Last Photo spot starts with a button that opens the Photos app." : {
+      "comment" : "Claim 20 in docs/research/privacy-claims.md (PHAccessLevel.addOnly); docs/PRIVACY.md, \"Last photo and its details\"; docs/design/device-feedback-1.0.md, section 1. Last Photo is the name of the spot beside the shutter; Photos and iOS are Apple's names. Keep \"nope.\" unchanged. Must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Lenses Never Switch on Their Own" : {
+      "comment" : "Honesty heading: the app never changes lenses by itself, not even for a close-up. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "nope. never changes lenses for you, not even for a close-up. Each lens is a separate camera with its own sensor, so the photo comes from the lens you chose. Every lens has a closest distance it can focus at. Nearer than that, the picture stays soft. For a close-up, try the Ultra Wide lens (%@), or move back until the picture is sharp." : {
+      "comment" : "Honesty statement under Lenses Never Switch on Their Own, on a device whose Ultra Wide lens can autofocus. The value is that lens's label on the lens buttons, such as 0.5×. docs/design/device-feedback-1.0.md, section 3. Keep \"nope.\" unchanged. Must not claim more than the English: no distance, no other app. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "nope. never changes lenses for you, not even for a close-up. Each lens is a separate camera with its own sensor, so the photo comes from the lens you chose. Every lens has a closest distance it can focus at. Nearer than that, the picture stays soft. For a close-up, move back until the picture is sharp." : {
+      "comment" : "Honesty statement under Lenses Never Switch on Their Own, on a device without an Ultra Wide lens that can autofocus. docs/design/device-feedback-1.0.md, section 3. Keep \"nope.\" unchanged. Must not claim more than the English: no distance, no other app. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Focus and Exposure Lock" : {
+      "comment" : "Accessibility screen section header: tapping the picture to focus, and locking focus and exposure. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Tap the picture to focus there. Lock appears under the focus square for a few seconds. Touch and hold the picture to lock right away." : {
+      "comment" : "Accessibility screen: the focus square and Lock fade a few seconds after a tap (docs/design/device-feedback-1.0.md, section 5). Lock is the button under the focus square; use its translation. \"A few seconds\" stays true from 2 to 5 seconds. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "With VoiceOver or Switch Control on, the focus square and Lock stay until the scene changes. VoiceOver also has the action Lock Focus and Exposure on the viewfinder." : {
+      "comment" : "Accessibility screen: with VoiceOver or Switch Control on, the focus square and Lock don't fade (docs/design/device-feedback-1.0.md, section 5). VoiceOver and Switch Control are Apple's names; Lock and Lock Focus and Exposure are nope.'s names; use their translations. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
     }
   },
   "version" : "1.0"

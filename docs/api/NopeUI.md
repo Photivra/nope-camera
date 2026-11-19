@@ -3529,9 +3529,21 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 @MainActor struct CloseUpSuggestion
 ```
 
-"The subject may be too close to focus." with a button that switches to the ultra wide lens
-and one that dismisses the suggestion. The app never switches by itself. While the lens can't
-be changed (``LensBusyState``), only the switch button is disabled.
+"The subject may be too close to focus." with About Close-Up Focus, which opens the Honesty
+entry Lenses Never Switch on Their Own, a button that dismisses the suggestion and one that
+switches to the ultra wide lens (docs/design/device-feedback-1.0.md, section 3). The app
+never switches by itself. While the lens can't be changed (``LensBusyState``), only the switch
+button is disabled. The buttons wrap under one another when they don't fit beside each other.
+
+## `CloseUpSuggestion/aboutLabel`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor static var aboutLabel: Text { get }
+```
+
+The name of About Close-Up Focus.
 
 ## `CloseUpSuggestion/body`
 
@@ -6014,6 +6026,18 @@ var showsStartIndicator: Bool { get set }
 Whether the camera screen shows ``StartIndicator`` for the camera's first start, so
 ``SessionStatusView`` draws no spinner under it. Set by ``CameraScreen``.
 
+## `EnvironmentValues/simulatesAssistiveTechnology`
+
+public, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+var simulatesAssistiveTechnology: Bool { get set }
+```
+
+Whether to behave as with VoiceOver or Switch Control on, which the Simulator can't run:
+the focus square and Lock then never fade (docs/design/device-feedback-1.0.md, section 5).
+`false` by default; the app sets it only for a UI test launch argument.
+
 ## `EnvironmentValues/systemColorScheme`
 
 public, declared in `Sources/NopeUI/CameraEnvironment.swift`
@@ -6757,6 +6781,84 @@ The SF Symbol for a flash mode.
 
 - Parameter mode: The flash mode.
 
+## `FocusAidLinger`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+struct FocusAidLinger
+```
+
+When the focus square and Lock show (docs/design/device-feedback-1.0.md, section 5): from a
+tap for ``NopeMotion/focusAidLinger``, then they fade together. Where the camera focuses and
+exposes doesn't change; only the drawing leaves. A locked square never fades, and nothing
+fades while it is held: VoiceOver or Switch Control on, a finger on Lock, Lock with the
+keyboard's focus, or the scrolling layout, where touch and hold isn't available.
+
+## `FocusAidLinger/init()`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+init()
+```
+
+Creates a clock that hasn't started.
+
+## `FocusAidLinger/isShown(target:at:isHeld:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+func isShown(target: FocusTarget?, at time: ContinuousClock.Instant, isHeld: Bool) -> Bool
+```
+
+Whether the square and Lock show.
+
+- Parameters:
+  - target: The focus target, or `nil` (nothing to show).
+  - time: The time now.
+  - isHeld: Whether something holds them: VoiceOver or Switch Control on, Lock pressed or
+    focused, or the scrolling layout.
+- Returns: `true` while locked or held, and for ``NopeMotion/focusAidLinger`` after the
+  clock started; `false` without a target.
+
+## `FocusAidLinger/remaining(at:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+func remaining(at time: ContinuousClock.Instant) -> Duration?
+```
+
+How long until the aids fade, or `nil` when the clock hasn't started or has run out.
+
+- Parameter time: The time now.
+- Returns: The time left.
+
+## `FocusAidLinger/restart(at:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+mutating func restart(at time: ContinuousClock.Instant)
+```
+
+Starts the clock again.
+
+- Parameter time: The time now.
+
+## `FocusAidLinger/start`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+var start: ContinuousClock.Instant? { get }
+```
+
+When the clock started: at the last tap, the last change of the target, or when what
+held the aids ended. `nil` before any.
+
 ## `FocusBracketCard`
 
 internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
@@ -7233,18 +7335,30 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 
 The button.
 
-## `FocusLockButton/init(isLocked:action:)`
+## `FocusLockButton/holdChanged`
 
 internal, declared in `Sources/NopeUI/FocusAids.swift`
 
 ```swift
-@MainActor init(isLocked: Bool, action: @escaping () -> Void)
+@MainActor let holdChanged: (Bool) -> Void
+```
+
+Called with `true` while the button is pressed or has the keyboard's focus, and `false`
+when neither holds: the fade waits meanwhile.
+
+## `FocusLockButton/init(isLocked:holdChanged:action:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor init(isLocked: Bool, holdChanged: @escaping (Bool) -> Void = { _ in }, action: @escaping () -> Void)
 ```
 
 Creates the button.
 
 - Parameters:
   - isLocked: Whether focus and exposure are locked.
+  - holdChanged: Called when the button starts or stops holding the fade.
   - action: Locks or unlocks.
 
 ## `FocusLockButton/isLocked`
@@ -7518,12 +7632,23 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 
 The square or the button, or nothing.
 
-## `FocusSquareLayer/init(model:part:)`
+## `FocusSquareLayer/holdChanged`
 
 internal, declared in `Sources/NopeUI/FocusAids.swift`
 
 ```swift
-@MainActor init(model: CameraModel, part: Part)
+@MainActor let holdChanged: (Bool) -> Void
+```
+
+Called with `true` while Lock is pressed or has the keyboard's focus, which holds the
+fade, and `false` when that ends.
+
+## `FocusSquareLayer/init(model:part:isShown:holdChanged:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor init(model: CameraModel, part: Part, isShown: Bool = true, holdChanged: @escaping (Bool) -> Void = { _ in })
 ```
 
 Creates the layer.
@@ -7531,6 +7656,19 @@ Creates the layer.
 - Parameters:
   - model: The camera model.
   - part: The square or the lock button.
+  - isShown: Whether the square and Lock show now. Defaults to `true`.
+  - holdChanged: Called when Lock starts or stops holding the fade.
+
+## `FocusSquareLayer/isShown`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let isShown: Bool
+```
+
+Whether the square and Lock show now (``FocusAidLinger``); they fade when it turns
+`false`, and Lock takes no press from then.
 
 ## `FocusSquareLayer/model`
 
@@ -8455,6 +8593,16 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 
 One hint: a symbol and a sentence on a dark backing, announced when it appears.
 
+## `HintLabel/announces`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let announces: Bool
+```
+
+Whether the hint announces itself when it appears; `false` when its owner decides.
+
 ## `HintLabel/body`
 
 internal, declared in `Sources/NopeUI/FocusAids.swift`
@@ -8465,12 +8613,12 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 
 The hint.
 
-## `HintLabel/init(systemImage:text:)`
+## `HintLabel/init(systemImage:text:announces:)`
 
 internal, declared in `Sources/NopeUI/FocusAids.swift`
 
 ```swift
-@MainActor init(systemImage: String, text: String)
+@MainActor init(systemImage: String, text: String, announces: Bool = true)
 ```
 
 Creates a hint.
@@ -8478,6 +8626,7 @@ Creates a hint.
 - Parameters:
   - systemImage: The SF Symbol.
   - text: The sentence.
+  - announces: Whether it is announced when it appears. Defaults to `true`.
 
 ## `HintLabel/systemImage`
 
@@ -8595,15 +8744,30 @@ internal, declared in `Sources/NopeUI/HonestyScreen.swift`
 
 The statements, in sections.
 
-## `HonestyScreen/init()`
+## `HonestyScreen/closeUpLensLabel`
 
 internal, declared in `Sources/NopeUI/HonestyScreen.swift`
 
 ```swift
-@MainActor init()
+@MainActor let closeUpLensLabel: String?
+```
+
+The label the lens row shows for the ultra wide lens that can autofocus, such as "0.5×",
+or `nil` on a device without one: the entry Lenses Never Switch on Their Own then says
+only "move back" (docs/design/device-feedback-1.0.md, section 3).
+
+## `HonestyScreen/init(closeUpLensLabel:)`
+
+internal, declared in `Sources/NopeUI/HonestyScreen.swift`
+
+```swift
+@MainActor init(closeUpLensLabel: String? = nil)
 ```
 
 Creates the Honesty screen.
+
+- Parameter closeUpLensLabel: The lens row's label for the ultra wide lens that can
+  autofocus, or `nil` when the device has none. Defaults to `nil`.
 
 ## `HonestySection`
 
@@ -9053,6 +9217,77 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 The series' progress.
 
+## `LastPhotoSpot`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+enum LastPhotoSpot
+```
+
+What the Last Photo spot beside the shutter holds (docs/design/device-feedback-1.0.md,
+section 1).
+
+## `LastPhotoSpot/content(hasPhotos:isBusy:isSeriesRunning:isCleanView:canOpenPhotos:)`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+static func content(hasPhotos: Bool, isBusy: Bool, isSeriesRunning: Bool, isCleanView: Bool, canOpenPhotos: Bool) -> LastPhotoSpot
+```
+
+What the spot holds.
+
+- Parameters:
+  - hasPhotos: Whether a photo was saved since the app opened.
+  - isBusy: Whether a photo is being taken or saved now.
+  - isSeriesRunning: Whether a countdown or series runs or is paused: leaving the app for
+    Photos would interrupt it.
+  - isCleanView: Whether clean view hides the controls.
+  - canOpenPhotos: Whether the app can open Photos (not in the Lock Screen camera).
+- Returns: The content.
+
+## `LastPhotoSpot/lastPhoto`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+case lastPhoto
+```
+
+The last photo, which opens the Last Photo viewer.
+
+## `LastPhotoSpot/nothing`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+case nothing
+```
+
+Nothing: in clean view (Show Controls has the spot), during a countdown or series before
+the first photo, or where Photos can't be opened (the Lock Screen camera).
+
+## `LastPhotoSpot/openPhotos`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+case openPhotos
+```
+
+Open Photos, which opens the Photos app: before the first photo since the app opened.
+
+## `LastPhotoSpot/saving`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+case saving
+```
+
+The spinner, while a photo is taken or saved.
+
 ## `LegalTextView`
 
 internal, declared in `Sources/NopeUI/AboutScreen.swift`
@@ -9447,6 +9682,20 @@ enum LensName
 ```
 
 The localized names of the kinds of lens.
+
+## `LensName/magnificationLabel(for:)`
+
+internal, declared in `Sources/NopeUI/LensRow.swift`
+
+```swift
+static func magnificationLabel(for lens: Lens) -> String?
+```
+
+The label the lens buttons show for a lens's magnification, such as "0.5×", or `nil` for
+a lens without one.
+
+- Parameter lens: The lens.
+- Returns: The label.
 
 ## `LensName/string(for:)`
 
@@ -13225,12 +13474,35 @@ Button(action: toggleQuickMenu) {
 .buttonStyle(NopeIconButtonStyle(size: NopeSize.quick, isSelected: isOpen))
 ```
 
-## `NopeIconButtonStyle/init(size:isSelected:)`
+## `NopeIconButtonStyle/cornerRadius`
 
 internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
 
 ```swift
-@MainActor init(size: CGFloat = NopeSize.iconButton, isSelected: Bool = false)
+@MainActor let cornerRadius: CGFloat?
+```
+
+The corner radius of a rounded square, or `nil` for the circle. Open Photos in the Last
+Photo spot is the thumbnail's rounded square (docs/design/device-feedback-1.0.md,
+section 1); every other icon button is round.
+
+## `NopeIconButtonStyle/idleFill`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let idleFill: NopeIdleFill
+```
+
+What the button is filled with when it isn't selected: the control fill on the black
+rows, or the tile fill on a hint over the picture.
+
+## `NopeIconButtonStyle/init(size:isSelected:cornerRadius:idleFill:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(size: CGFloat = NopeSize.iconButton, isSelected: Bool = false, cornerRadius: CGFloat? = nil, idleFill: NopeIdleFill = .control)
 ```
 
 Creates the style.
@@ -13239,6 +13511,8 @@ Creates the style.
   - size: The diameter, in points: ``NopeSize/iconButton`` (44) by default, ``NopeSize/quick``
     (52) for Q. The hit target is never smaller than ``NopeSize/minTarget``.
   - isSelected: Whether the button is selected, as Q is while its panel is open.
+  - cornerRadius: The corner radius of a rounded square, or `nil` for the circle.
+  - idleFill: The fill when not selected. Defaults to the control fill.
 
 ## `NopeIconButtonStyle/isSelected`
 
@@ -13578,6 +13852,19 @@ static var fade: Animation { get }
 
 Ease in and out, 0.2 seconds: pills, chips, hints and clean view. The same with Reduce
 Motion, since a fade doesn't move.
+
+## `NopeMotion/focusAidLinger`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let focusAidLinger: Duration
+```
+
+How long the focus square and Lock stay after a tap before they fade: 3 seconds
+(docs/design/device-feedback-1.0.md, section 5). Provisional until device check F1, which
+may set it between 2 and 5 seconds. A locked square never fades, and nothing fades while
+VoiceOver or Switch Control is on (``FocusAidLinger``).
 
 ## `NopeMotion/opacity(isPressed:isEnabled:)`
 
@@ -14537,6 +14824,62 @@ internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
 ```
 
 The smallest height, in points.
+
+## `OpenPhotosButton`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+@MainActor struct OpenPhotosButton
+```
+
+Open Photos, in the Last Photo spot before the first photo since the app opened
+(docs/design/device-feedback-1.0.md, section 1): the thumbnail's size and corner, the fill of
+a control, and the symbol Open in Photos uses. No ring: the ring belongs to a photo. It opens
+the Photos app where the person left it; the app can't read the library or name a photo, so
+nothing here says it shows the last photo.
+
+## `OpenPhotosButton/action`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+@MainActor let action: () -> Void
+```
+
+Opens the Photos app.
+
+## `OpenPhotosButton/body`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The button.
+
+## `OpenPhotosButton/init(action:)`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+@MainActor init(action: @escaping () -> Void)
+```
+
+Creates the button.
+
+- Parameter action: Opens the Photos app.
+
+## `OpenPhotosButton/label`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+@MainActor static var label: Text { get }
+```
+
+The button's name for VoiceOver, Voice Control and the Large Content Viewer.
 
 ## `OpenSettingsAction`
 
@@ -17300,6 +17643,64 @@ internal, declared in `Sources/NopeUI/PresetsScreen.swift`
 ```
 
 The settings.
+
+## `PressReportingStyle`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor struct PressReportingStyle<Base> where Base : ButtonStyle
+```
+
+A button style that draws another style and reports whether the button is pressed, for
+Lock, whose fade waits while a finger is on it.
+
+## `PressReportingStyle/base`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let base: Base
+```
+
+The style that draws the button.
+
+## `PressReportingStyle/init(base:isPressed:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor init(base: Base, isPressed: Binding<Bool>)
+```
+
+Creates the style.
+
+- Parameters:
+  - base: The style that draws the button.
+  - isPressed: Set while the button is pressed.
+
+## `PressReportingStyle/isPressed`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@Binding @MainActor var isPressed: Bool { get nonmutating set }
+```
+
+Set while the button is pressed.
+
+## `PressReportingStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The base style's button, reporting its pressed state.
+
+- Parameter configuration: The button's label and press state.
 
 ## `PrivacySettingsView`
 
@@ -20623,6 +21024,18 @@ case honesty
 
 The Honesty row and page.
 
+## `SettingsID/honestyCloseUpFocus`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case honestyCloseUpFocus
+```
+
+The entry Lenses Never Switch on Their Own, on the Honesty page, which the camera's
+close-up hint opens (docs/design/device-feedback-1.0.md, section 3). Search doesn't list
+it: the Honesty row has its keywords.
+
 ## `SettingsID/jpegCompression`
 
 public, declared in `Sources/NopeUI/SettingsSearch.swift`
@@ -20970,6 +21383,17 @@ The camera screen keeps one for as long as Settings is open, outside the present
 Settings stays on the same page when its presentation changes: from a popover to the night
 mode sheet on iPad, or across a fold on the iPhone Duo. It is reset when Settings closes, so
 Settings opens at its list again, as before.
+
+## `SettingsNavigation/focusTarget`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor var focusTarget: SettingsID? { get set }
+```
+
+The Honesty entry that takes VoiceOver's focus when the Honesty page shows, once, or
+`nil`: set when the close-up hint opens Settings at its entry.
 
 ## `SettingsNavigation/init()`
 
@@ -21982,6 +22406,17 @@ static let honesty: LocalizedStringResource
 ```
 
 "Honesty".
+
+## `SettingsText/honestyCloseUpFocus`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let honestyCloseUpFocus: LocalizedStringResource
+```
+
+"Lenses Never Switch on Their Own": the Honesty entry on close-up focus, its heading and
+its name in Settings (docs/design/device-feedback-1.0.md, section 3).
 
 ## `SettingsText/jpegCompression`
 
@@ -23767,6 +24202,149 @@ internal, declared in `Sources/NopeUI/StatusMessageView.swift`
 
 The headline.
 
+## `SteadyHint`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor struct SteadyHint
+```
+
+"Hold it steady or use a tripod.": shown while `CameraModel.showsSteadyHint` is `true`, and
+at least ``SteadyHintTiming/minimumShown`` once shown; it leaves with ``NopeMotion/fade``.
+
+## `SteadyHint/body`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The hint, or nothing.
+
+## `SteadyHint/init(isWanted:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor init(isWanted: Bool)
+```
+
+Creates the hint.
+
+- Parameter isWanted: Whether the camera wants the hint now.
+
+## `SteadyHint/isWanted`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let isWanted: Bool
+```
+
+Whether the camera wants the hint now.
+
+## `SteadyHintTiming`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+struct SteadyHintTiming
+```
+
+When "Hold it steady or use a tripod." shows and is announced (docs/design/device-feedback-1.0.md,
+section 4): while its cause lasts, and at least ``minimumShown`` once shown, so it can be
+read; VoiceOver hears it when it appears, and not again within ``announcementGap`` if it
+returns. The minimum is the only timer, and it only keeps the hint longer.
+
+## `SteadyHintTiming/announcementGap`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+static let announcementGap: Duration
+```
+
+The shortest time between two announcements of the hint: 10 seconds.
+
+## `SteadyHintTiming/appear(at:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+mutating func appear(at time: ContinuousClock.Instant) -> Bool
+```
+
+Records that the hint appears.
+
+- Parameter time: The time now.
+- Returns: Whether VoiceOver should announce it: the first time, and then only after
+  ``announcementGap`` since the last announcement.
+
+## `SteadyHintTiming/disappear()`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+mutating func disappear()
+```
+
+Records that the hint left.
+
+## `SteadyHintTiming/init()`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+init()
+```
+
+Creates the timing of a hint not shown yet.
+
+## `SteadyHintTiming/lastAnnouncement`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+var lastAnnouncement: ContinuousClock.Instant? { get }
+```
+
+When the hint was last announced, or `nil` before the first time.
+
+## `SteadyHintTiming/minimumShown`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+static let minimumShown: Duration
+```
+
+The shortest time the hint shows once it appears: 2 seconds.
+
+## `SteadyHintTiming/remainingMinimum(at:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+func remainingMinimum(at time: ContinuousClock.Instant) -> Duration?
+```
+
+How long the hint must still show once its cause has ended, or `nil` when it may go now.
+
+- Parameter time: The time now.
+- Returns: The time left of ``minimumShown``, or `nil`.
+
+## `SteadyHintTiming/shownSince`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+var shownSince: ContinuousClock.Instant? { get }
+```
+
+When the hint appeared, or `nil` while it isn't shown.
+
 ## `SymbolAndValueLayout`
 
 internal, declared in `Sources/NopeUI/QuickPanel.swift`
@@ -24022,8 +24600,10 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 @MainActor struct ThumbnailSlot
 ```
 
-The last-photo slot beside the shutter (issue #68, "Feedback tiers"): empty and invisible
-until the first photo of the session, never an empty square. Then it shows the last photo with
+The last-photo slot beside the shutter (issue #68, "Feedback tiers"). Before the first photo
+since the app opened, it holds Open Photos, which opens the Photos app; where Photos can't be
+opened, or while a countdown or series runs, it is empty, never an empty square
+(docs/design/device-feedback-1.0.md, section 1). Then it shows the last photo with
 a teal seal when every file was signed, or an amber mark when signing was on and a file
 couldn't be signed. With signing off by choice it has no badge (docs/design/BUILD-SPEC.md, 3.3
 and 3.7): that isn't a warning, and its value still says "Saved. Not signed: signing is off in
@@ -24100,12 +24680,12 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 
 The photo's thumbnail, or `nil` to show a photo symbol.
 
-## `ThumbnailSlot/init(photos:image:isBusy:openViewer:openPhoto:showDetails:)`
+## `ThumbnailSlot/init(photos:image:isBusy:openViewer:openPhoto:showDetails:isSeriesRunning:)`
 
 internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 
 ```swift
-@MainActor init(photos: [SavedPhoto]?, image: Image? = nil, isBusy: Bool, openViewer: (() -> Void)? = nil, openPhoto: (() -> Void)? = nil, showDetails: (() -> Void)? = nil)
+@MainActor init(photos: [SavedPhoto]?, image: Image? = nil, isBusy: Bool, openViewer: (() -> Void)? = nil, openPhoto: (() -> Void)? = nil, showDetails: (() -> Void)? = nil, isSeriesRunning: Bool = false)
 ```
 
 Creates the slot.
@@ -24117,6 +24697,7 @@ Creates the slot.
   - openViewer: Opens the Last Photo viewer, or `nil` for none.
   - openPhoto: Opens Photos, or `nil` when the app can't.
   - showDetails: Shows the photo's details, or `nil` for none.
+  - isSeriesRunning: Whether a countdown or series runs or is paused. Defaults to `false`.
 
 ## `ThumbnailSlot/isBusy`
 
@@ -24127,6 +24708,26 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 ```
 
 Whether a photo is being taken or saved now.
+
+## `ThumbnailSlot/isSeriesRunning`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+@MainActor let isSeriesRunning: Bool
+```
+
+Whether a countdown or series runs or is paused, so Open Photos isn't offered.
+
+## `ThumbnailSlot/label`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+@MainActor static var label: Text { get }
+```
+
+The slot's name for VoiceOver and Voice Control.
 
 ## `ThumbnailSlot/openPhoto`
 

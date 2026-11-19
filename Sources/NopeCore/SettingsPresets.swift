@@ -313,7 +313,7 @@ public final class SettingsPresets {
     ///
     /// Assistant Access is never stored in a preset and never changed by one; Factory Defaults
     /// applied in the app (`keepsPrivacySettings` false) returns it to its defaults, off and
-    /// Every Action. Applied through an assistant (`keepsPrivacySettings` true), the Privacy
+    /// Every Action, and removes the tip's counter (``AssistantSession/tipCounter``). Applied through an assistant (`keepsPrivacySettings` true), the Privacy
     /// settings (``NopeSettings/metadata``: Details in Each Photo, Location, Sign Each Photo) and
     /// Assistant Access stay as they are, and everything else applies
     /// (`docs/design/assistant-access.md`, 7.4).
@@ -431,6 +431,10 @@ public final class SettingsPresets {
         guard settings.apply(preset.settings) else { return nil }
         settings.restore(
             metadata: keepsPrivacySettings ? metadata : nil, assistant: keepsAssistantAccess ? assistant : nil)
+        // Factory Defaults in the app also removes the Assistant Access tip's counter, the one
+        // counter the app stores (docs/SECURITY_AUDIT.md, "Local data"); an interface tells its
+        // ``AssistantSession`` (``AssistantSession/reloadTipCounter()``).
+        if !keepsAssistantAccess { settings.defaults.removeObject(forKey: AssistantSession.tipCounterKey) }
         // Set before the first wait, so an interface that follows the option sees it at once.
         if camera != nil { manualControlsSetUp = settings.showsManualControls }
         var notices: [PresetNotice] = []

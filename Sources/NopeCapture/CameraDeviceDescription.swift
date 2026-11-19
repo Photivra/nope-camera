@@ -123,6 +123,15 @@ struct CameraDeviceDescription: Equatable, Sendable {
     /// `isTorchModeSupported(.on)`).
     let hasTorch: Bool
 
+    /// The camera's `minimumFocusDistance`, in millimeters; −1 or any negative value when the
+    /// camera reports it as unknown.
+    let minimumFocusDistance: Int
+
+    /// Whether the photo output supports lens stabilization with this camera attached
+    /// (`isLensStabilizationDuringBracketedCaptureSupported`), the only public signal of lens
+    /// stabilization found (docs/design/device-feedback-1.0.md, section 4).
+    let reportsStabilization: Bool
+
     /// Creates a camera description.
     ///
     /// - Parameters:
@@ -143,13 +152,18 @@ struct CameraDeviceDescription: Equatable, Sendable {
     ///   - manualControls: The camera's answers about manual control. Defaults to none.
     ///   - flashModes: The supported flash modes. Defaults to none.
     ///   - hasTorch: Whether the camera has a torch. Defaults to `false`.
+    ///   - minimumFocusDistance: The minimum focus distance in millimeters, or −1 when unknown.
+    ///     Defaults to −1.
+    ///   - reportsStabilization: Whether the photo output supports lens stabilization with this
+    ///     camera. Defaults to `false`.
     init(
         uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool,
         rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>,
         exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int,
         photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, canTurnOffDistortionCorrection: Bool = false,
         manualControls: ManualControlSupport = .none,
-        flashModes: [FlashMode] = [], hasTorch: Bool = false
+        flashModes: [FlashMode] = [], hasTorch: Bool = false, minimumFocusDistance: Int = -1,
+        reportsStabilization: Bool = false
     ) {
         self.uniqueID = uniqueID
         self.deviceType = deviceType
@@ -167,5 +181,7 @@ struct CameraDeviceDescription: Equatable, Sendable {
         self.manualControls = manualControls
         self.flashModes = flashModes
         self.hasTorch = hasTorch
+        self.minimumFocusDistance = minimumFocusDistance
+        self.reportsStabilization = reportsStabilization
     }
 }

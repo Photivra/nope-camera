@@ -64,6 +64,9 @@ public final class ManualControlsModel {
     /// Reads the clock on the wall, for the end of a series that stops after a time.
     let currentDate: @Sendable () -> Date
 
+    /// Reads the monotonic clock, for when each camera reading arrived (``CloseUpDetector``).
+    let now: @Sendable () -> ContinuousClock.Instant
+
     /// The running interval series.
     private var intervalTask: Task<Void, Never>?
 
@@ -95,10 +98,10 @@ public final class ManualControlsModel {
     /// How fast a shutter full auto prefers. ``FastShutter/handheld`` by default.
     public internal(set) var fastShutter = FastShutter.handheld
 
-    /// Whether the camera should say "Hold it steady or use a tripod": in full auto when the
-    /// light is too low for a handheld-safe shutter, and with manual controls when the shutter
-    /// chosen or in use is slower than that. It follows only readings taken in the current mode
-    /// and lens. Interfaces show the hint from ``CameraModel/showsSteadyHint``, which leaves it
+    /// Whether the camera should say "Hold it steady or use a tripod": in full auto only, when
+    /// the light is too low for the fast shutter limit and the camera's shutter is slower than
+    /// the lens's steady limit (``updateSteadyHint()``). Never with manual controls on. It
+    /// follows only readings taken in the current mode and lens. Interfaces show the hint from ``CameraModel/showsSteadyHint``, which leaves it
     /// to the astro helper's own guidance while that is on.
     public internal(set) var showsSteadyHint = false
 
@@ -129,14 +132,18 @@ public final class ManualControlsModel {
     ///   - sleep: Waits a number of seconds between interval photos, throwing when cancelled.
     ///   - currentDate: Reads the clock on the wall, for a series that stops after a time. Tests
     ///     pass a scripted one.
+    ///   - now: Reads the monotonic clock, for when each reading arrived. Tests pass a scripted
+    ///     one.
     public init(
         backend: (any ManualCaptureBackend)?,
         sleep: @escaping @Sendable (Double) async throws -> Void,
-        currentDate: @escaping @Sendable () -> Date = { Date() }
+        currentDate: @escaping @Sendable () -> Date = { Date() },
+        now: @escaping @Sendable () -> ContinuousClock.Instant = { .now }
     ) {
         self.backend = backend
         self.sleep = sleep
         self.currentDate = currentDate
+        self.now = now
     }
 
     // MARK: - What an interface reads

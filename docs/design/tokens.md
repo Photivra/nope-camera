@@ -115,6 +115,8 @@ Pressed state of every custom button: opacity 0.7 and scale 0.97; opacity only w
 
 Busy dimming delay, `NopeMotion.busyDimDelay`: 0.5 s. While a single photo or bracket is taken or saved, the lens controls are disabled at once and drawn dimmed only once the photo has lasted this long; the change then uses `fade` ([lens-while-busy.md](lens-while-busy.md)).
 
+Focus aid linger, `NopeMotion.focusAidLinger`: 3 s, provisional until device check F1 (2 to 5 s). After a tap the focus square and Lock stay this long, then leave together with `fade`. A locked square never fades, and nothing fades while VoiceOver or Switch Control is on, while Lock is pressed or has the keyboard's focus, or in the scrolling layout ([device-feedback-1.0.md](device-feedback-1.0.md), section 5).
+
 ## Haptics
 
 All through `sensoryFeedback`. Existing: shutter `.impact`; saved `.impact(weight: .light)`; not saved `.error`; lens change `.selection`; countdown second `.impact(weight: .light)`; level reached `.alignment` (`NopeHaptic.levelReached`, the horizon or the top-down level becoming level; [level-haptic.md](level-haptic.md); the fallback `.impact(flexibility: .rigid, intensity: 0.6)` is built behind `NopeHaptic.levelTap`, one line to switch after the device check); All Auto `.success`. Added: `.selection` when the drive mode or Manual Controls changes; `burstFrame` `.impact(weight: .light, intensity: 0.6)` for each photo of a burst after the first.
@@ -124,11 +126,13 @@ All through `sensoryFeedback`. Existing: shutter `.impact`; saved `.impact(weigh
 | Type | Swift | Notes |
 | --- | --- | --- |
 | Primary | `ShutterButton` (kept) | Ring and disc; stop square while a series runs; the timer delay as a number on the disc |
-| Icon | `NopeIconButtonStyle(size:)` | 44 pt circle; 52 pt for Q |
+| Icon | `NopeIconButtonStyle(size:)` | 44 pt circle; 52 pt for Q; Open Photos in the Last Photo spot is the thumbnail's rounded square (`cornerRadius: NopeRadius.small`), and About Close-Up Focus on the close-up hint takes the tile fill (`idleFill: .tile`) |
 | Capsule | `NopeCapsuleStyle(isSelected:role:size:)` | Replaces `SelectableCapsuleStyle`; `role: .destructive` gives the red label |
 | Tile | `NopeTileStyle(isOn:)` | Q tiles and manual readouts |
 | Pill | `NopePillStyle(isSelected:)` | Replaces `pillShape()` |
 | Warning chip | `WarningChip` (kept, restyled with tokens) | Amber outline, triangle, words |
 | System | `.borderedProminent`, plain rows | Forms and sheets |
+
+A control that has nothing to do because its result is already in place is shown selected (the selected trait, and a check mark or the selected fill), at full contrast; dimming is kept for a control that can't be used now, and is never the only sign. Use the Whole Range in Bracket Settings, Reset on the exposure dial and Auto on a manual dial follow it ([device-feedback-1.0.md](device-feedback-1.0.md), decision 7).
 
 States for every custom type: normal, pressed, selected, disabled (opacity 0.4), night mode (on filled red with black label; off outlined in `nightOutline`), Increase Contrast (outline added to every unselected control), Button Shapes (already shapes; no change), and the largest text sizes (the label wraps or the Large Content Viewer shows it).

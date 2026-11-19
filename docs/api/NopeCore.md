@@ -1020,6 +1020,18 @@ public, declared in `Sources/NopeCore/AssistantAccess.swift`
 
 How many requests were refused because access was off since the app opened.
 
+## `AssistantSession/reloadTipCounter()`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor func reloadTipCounter()
+```
+
+Reads the tip's counter from the store again, after Factory Defaults removed it
+(``SettingsPresets/apply(_:camera:location:keepsPrivacySettings:)``): 0 when it is gone,
+so the tip can show again after five more confirmed requests.
+
 ## `AssistantSession/requestSettingsPage()`
 
 public, declared in `Sources/NopeCore/AssistantAccess.swift`
@@ -1873,21 +1885,52 @@ stop, so the limit doesn't switch on and off when the light is near the threshol
 tool setting, chosen to be larger than the meter's frame-to-frame changes (an
 assumption, checked on the device: docs/TESTING.md).
 
-## `AutoShutter/risksBlur(_:on:)`
+## `AutoShutter/showsSteadyHint(shutter:limit:isShown:)`
 
 internal, declared in `Sources/NopeCore/AutoControls.swift`
 
 ```swift
-static func risksBlur(_ duration: Double, on lens: Lens) -> Bool
+static func showsSteadyHint(shutter duration: Double, limit: Double, isShown: Bool) -> Bool
 ```
 
-Whether a shutter is slow enough to risk blur from hand shake, for the hint in manual
-controls.
+Whether "Hold it steady or use a tripod." shows after a reading in full auto, with a
+margin so it doesn't flicker (docs/design/device-feedback-1.0.md, section 4).
 
 - Parameters:
-  - duration: The shutter in use or chosen, in seconds.
-  - lens: The lens.
-- Returns: `true` when it is longer than ``handheldLimit(for:)``; `false` without a limit.
+  - duration: The shutter the camera is using, in seconds.
+  - limit: The lens's ``steadyLimit(for:)``.
+  - isShown: Whether the hint shows now.
+- Returns: `true` when the shutter is slower than the limit; `false` when it is at least
+  ``returnMargin`` (half a stop) faster; otherwise `isShown`, unchanged.
+
+## `AutoShutter/stabilizationAllowance`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static let stabilizationAllowance: Double
+```
+
+How many stops slower than the handheld rule a lens that reports stabilization
+(``Lens/reportsStabilization``) is taken to hold steady, for the steady hint: 2. A
+provisional value until device check S2 sets it (docs/TESTING.md; decision 12 of
+docs/design/device-feedback-1.0.md).
+
+## `AutoShutter/steadyLimit(for:)`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static func steadyLimit(for lens: Lens) -> Double?
+```
+
+The steady limit of a lens: the handheld rule moved by the lens's stabilization,
+`1/(2 × focal length) × 2^allowance`, inside the lens's shutter range. The allowance is
+``stabilizationAllowance`` on a lens that reports stabilization and 0 on any other.
+
+- Parameter lens: The lens.
+- Returns: The slowest shutter in seconds the lens is taken to hold by hand, or `nil`
+  when the lens reports no focal length or no shutter range.
 
 ## `BackgroundTimeRequesting`
 
@@ -4207,9 +4250,15 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 ```
 
 The lens to suggest when the subject seems closer than the selected lens can focus: the
-ultra wide lens, from the wide or a telephoto lens, while
-``ManualControlsModel/suggestsCloseUpLens`` is true. `nil` otherwise. An interface offers
-a button to switch; the app never switches on its own (issue #51).
+ultra wide lens that can autofocus (``DeviceCapabilities/closeUpFocusLens``), from the
+wide or a telephoto lens, while ``ManualControlsModel/suggestsCloseUpLens`` is true. `nil`
+otherwise. An interface offers a button to switch; the app never switches on its own
+(issue #51).
+
+When both lenses report their closest focus distance (``Lens/minimumFocusDistance``),
+the ultra wide lens is offered only if it focuses closer, so the advice can help. When
+either doesn't report one, it is still offered: whether the reported distances can be
+relied on is device check C2 (docs/TESTING.md).
 
 ## `CameraModel/comparison`
 
@@ -7512,12 +7561,19 @@ internal, declared in `Sources/NopeCore/AutoControls.swift`
 struct CloseUpDetector
 ```
 
-Notices when the subject seems closer than the lens can focus: the lens stays at its nearest
-position while autofocus keeps searching (issue #51, "Close-up assist").
+Notices when the subject seems closer than the lens can focus: autofocus searched, and the
+lens then stays at, or keeps coming back to, its nearest position (issue #51, "Close-up
+assist").
 
-It only suggests the ultra wide lens; the app never switches lenses on its own. The thresholds
-are assumptions to check on the device (docs/TESTING.md, "Close-up focus aids"):
-`lensPosition` is relative (0 is the nearest the lens can focus), not a distance.
+It only suggests the ultra wide lens; the app never switches lenses on its own. It judges by
+time, not by a count of readings, because the readings come only when something changes
+(``ExposureReading``; at most four a second). It allows for what autofocus does on a real
+device: the search is often seen only while the lens moves into the near band, and autofocus
+may search again for a moment once there.
+
+Every threshold is an assumption until the device checks (docs/TESTING.md, "Close-up focus
+aids", check C1): `lensPosition` is relative (0 is the nearest the lens can focus), not a
+distance.
 
 ## `CloseUpDetector/init()`
 
@@ -7539,30 +7595,55 @@ static let nearestPosition: Double
 
 How near the nearest position the lens must be, on the 0-to-1 relative scale.
 
-## `CloseUpDetector/record(_:)`
+## `CloseUpDetector/record(_:at:)`
 
 internal, declared in `Sources/NopeCore/AutoControls.swift`
 
 ```swift
-mutating func record(_ reading: ExposureReading) -> Bool
+mutating func record(_ reading: ExposureReading, at time: ContinuousClock.Instant) -> Bool
 ```
 
 Records a reading.
 
-- Parameter reading: The camera's reading.
-- Returns: Whether the subject seems too close: the lens stayed at its nearest position
-  for ``requiredReadings`` readings in a row, and autofocus searched during them.
+- Parameters:
+  - reading: The camera's reading.
+  - time: When it arrived.
+- Returns: Whether the subject seems too close: the lens was in the near band for
+  ``requiredNearTime`` of the last ``window``, and autofocus searched within
+  ``searchMemory`` when this began. Once reported, it stays reported while the lens keeps
+  to the near band that long.
 
-## `CloseUpDetector/requiredReadings`
+## `CloseUpDetector/requiredNearTime`
 
 internal, declared in `Sources/NopeCore/AutoControls.swift`
 
 ```swift
-static let requiredReadings: Int
+static let requiredNearTime: Duration
 ```
 
-How many readings in a row must find the lens there: two seconds at four readings a
-second (``ExposureReading`` rate).
+How much of ``window`` the lens must spend in the near band: 2 seconds, so a short search
+out of the band and back doesn't start the count again.
+
+## `CloseUpDetector/searchMemory`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static let searchMemory: Duration
+```
+
+How long a search counts after it was last seen: 4 seconds, enough for ``requiredNearTime``
+after a search seen on the way into the near band.
+
+## `CloseUpDetector/window`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static let window: Duration
+```
+
+How far back the detector looks: 2.5 seconds.
 
 ## `ComparisonCaptureBackend`
 
@@ -8650,6 +8731,19 @@ What the current device's cameras can do, published as plain values.
 
 A ``CaptureBackend`` builds this at run time (progressive enhancement: AGENTS.md, "Code").
 Interfaces show a feature only when the matching value says the device supports it.
+
+## `DeviceCapabilities/closeUpFocusLens`
+
+public, declared in `Sources/NopeCore/DeviceCapabilities.swift`
+
+```swift
+var closeUpFocusLens: Lens? { get }
+```
+
+The rear ultra wide lens when it can autofocus, the lens the close-up hint and the
+Honesty entry Lenses Never Switch on Their Own suggest for a close subject
+(docs/design/device-feedback-1.0.md, section 3). `nil` on a device without one, or whose
+ultra wide lens has fixed focus: suggesting it there might not help.
 
 ## `DeviceCapabilities/defaultLens`
 
@@ -13544,12 +13638,12 @@ A stable identifier for this lens on this device, supplied by the backend.
 
 It identifies the lens only within the app and is never written to a photo.
 
-## `Lens/init(id:kind:bayerRAWFormat:processedFallback:magnification:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:manualControls:equivalentFocalLength:flashModes:hasTorch:distortionCorrection:)`
+## `Lens/init(id:kind:bayerRAWFormat:processedFallback:magnification:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:manualControls:equivalentFocalLength:flashModes:hasTorch:distortionCorrection:minimumFocusDistance:reportsStabilization:)`
 
 public, declared in `Sources/NopeCore/Lens.swift`
 
 ```swift
-init(id: String, kind: Kind, bayerRAWFormat: String?, processedFallback: ProcessedFallback = .heif, magnification: Double? = nil, isoRange: ClosedRange<Double>? = nil, exposureDurationRange: ClosedRange<Double>? = nil, aperture: ApertureRange? = nil, maxBracketedPhotoCount: Int = 0, photoDimensions: [PhotoDimensions] = [], manualControls: ManualCapabilities = .none, equivalentFocalLength: Double? = nil, flashModes: [FlashMode] = [], hasTorch: Bool = false, distortionCorrection: DistortionCorrection = .notSwitchable)
+init(id: String, kind: Kind, bayerRAWFormat: String?, processedFallback: ProcessedFallback = .heif, magnification: Double? = nil, isoRange: ClosedRange<Double>? = nil, exposureDurationRange: ClosedRange<Double>? = nil, aperture: ApertureRange? = nil, maxBracketedPhotoCount: Int = 0, photoDimensions: [PhotoDimensions] = [], manualControls: ManualCapabilities = .none, equivalentFocalLength: Double? = nil, flashModes: [FlashMode] = [], hasTorch: Bool = false, distortionCorrection: DistortionCorrection = .notSwitchable, minimumFocusDistance: Double? = nil, reportsStabilization: Bool = false)
 ```
 
 Creates a lens description.
@@ -13572,6 +13666,10 @@ Creates a lens description.
   - hasTorch: Whether the lens has a torch. Defaults to `false`.
   - distortionCorrection: Whether the app can turn off the camera's geometric distortion
     correction. Defaults to ``DistortionCorrection/notSwitchable``, which claims least.
+  - minimumFocusDistance: The closest focus distance in millimeters, or `nil` when
+    unknown. Defaults to `nil`.
+  - reportsStabilization: Whether the camera reports lens stabilization for the lens.
+    Defaults to `false`, which claims least.
 
 ## `Lens/isoRange`
 
@@ -13629,6 +13727,20 @@ let maxBracketedPhotoCount: Int
 The most frames one bracketed capture may contain on this lens; 0 when bracketing isn't
 supported or the value is unknown.
 
+## `Lens/minimumFocusDistance`
+
+public, declared in `Sources/NopeCore/Lens.swift`
+
+```swift
+let minimumFocusDistance: Double?
+```
+
+The closest distance the lens can focus at, in millimeters, as the camera reports it
+(`AVCaptureDevice.minimumFocusDistance`), or `nil` when the camera reports it as unknown
+(−1). Used only to compare lenses for the close-up hint (``CameraModel/closeUpLens``); it
+is never shown: no device check has confirmed a value yet (docs/design/BRACKETING.md,
+check D5).
+
 ## `Lens/photoDimensions`
 
 public, declared in `Sources/NopeCore/Lens.swift`
@@ -13681,6 +13793,21 @@ let processedFallback: ProcessedFallback
 ```
 
 The least-processed format the lens can give when it has no Bayer RAW.
+
+## `Lens/reportsStabilization`
+
+public, declared in `Sources/NopeCore/Lens.swift`
+
+```swift
+let reportsStabilization: Bool
+```
+
+Whether the camera reports lens stabilization for this lens: the photo output's
+`isLensStabilizationDuringBracketedCaptureSupported` with this lens selected, the only
+public signal found (docs/design/device-feedback-1.0.md, section 4). `false` when it
+isn't reported. Whether it is true for each lens, and whether a single RAW photo is in
+fact taken stabilized, are device checks (docs/TESTING.md, checks S1 and S2); it only
+moves the steady hint's limit (``AutoShutter/steadyLimit(for:)``).
 
 ## `Lens/supportsBayerRAW`
 
@@ -14846,9 +14973,10 @@ public, declared in `Sources/NopeCore/LiveActivity.swift`
 var canStop: Bool { get }
 ```
 
-Whether the activity offers Stop: for an interval series or astro run that runs or is
-paused, because they have photos still to take that Stop would prevent. Every photo
-already taken is saved either way.
+Whether the activity offers Stop: for an interval series, astro run or focus bracket that
+runs or is paused, because they have photos still to take that Stop would prevent, and
+for a focus bracket's start delay (docs/design/device-feedback-1.0.md, section 6). Every
+photo already taken is saved either way.
 
 ## `LiveActivityContent/compactCount`
 
@@ -15208,7 +15336,7 @@ public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
 @MainActor func stopSeries(_ model: CameraModel) async
 ```
 
-Stops the interval series or astro run from the activity's Stop button, and ends the
+Stops the interval series, astro run or focus bracket from the activity's Stop button, and ends the
 activity at once, with every photo already taken saved.
 
 - Parameter model: The camera model.
@@ -15380,6 +15508,17 @@ case astroStartsIn
 ```
 
 "Astro starts in" followed by the system's countdown.
+
+## `LiveActivityStatusLine/bracketStopped(saved:total:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case bracketStopped(saved: Int, total: Int)
+```
+
+"Bracket stopped: 4 of 12 photos saved", as the focus bracket's card says it: a focus
+bracket ended before its last frame.
 
 ## `LiveActivityStatusLine/burstPhotosTaken(_:)`
 
@@ -17370,12 +17509,12 @@ Whether the camera's controls are held by a focus bracket, which sets focus, exp
 white balance itself while it runs or while an end of its range is set. Changes to the
 settings are kept, and applied when the hold ends.
 
-## `ManualControlsModel/init(backend:sleep:currentDate:)`
+## `ManualControlsModel/init(backend:sleep:currentDate:now:)`
 
 public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 ```swift
-@MainActor init(backend: (any ManualCaptureBackend)?, sleep: @escaping @Sendable (Double) async throws -> Void, currentDate: @escaping @Sendable () -> Date = { Date() })
+@MainActor init(backend: (any ManualCaptureBackend)?, sleep: @escaping @Sendable (Double) async throws -> Void, currentDate: @escaping @Sendable () -> Date = { Date() }, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now })
 ```
 
 Creates the model.
@@ -17385,6 +17524,8 @@ Creates the model.
   - sleep: Waits a number of seconds between interval photos, throwing when cancelled.
   - currentDate: Reads the clock on the wall, for a series that stops after a time. Tests
     pass a scripted one.
+  - now: Reads the monotonic clock, for when each reading arrived. Tests pass a scripted
+    one.
 
 ## `ManualControlsModel/interval`
 
@@ -17514,6 +17655,16 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 Whether autofocus is limited to near subjects (Close-Up). Off by default; reset by All
 Auto.
+
+## `ManualControlsModel/now`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor let now: @Sendable () -> ContinuousClock.Instant
+```
+
+Reads the monotonic clock, for when each camera reading arrived (``CloseUpDetector``).
 
 ## `ManualControlsModel/observeReadings()`
 
@@ -17731,10 +17882,10 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 @MainActor var showsSteadyHint: Bool { get set }
 ```
 
-Whether the camera should say "Hold it steady or use a tripod": in full auto when the
-light is too low for a handheld-safe shutter, and with manual controls when the shutter
-chosen or in use is slower than that. It follows only readings taken in the current mode
-and lens. Interfaces show the hint from ``CameraModel/showsSteadyHint``, which leaves it
+Whether the camera should say "Hold it steady or use a tripod": in full auto only, when
+the light is too low for the fast shutter limit and the camera's shutter is slower than
+the lens's steady limit (``updateSteadyHint()``). Never with manual controls on. It
+follows only readings taken in the current mode and lens. Interfaces show the hint from ``CameraModel/showsSteadyHint``, which leaves it
 to the astro helper's own guidance while that is on.
 
 ## `ManualControlsModel/startReadings()`
@@ -17810,12 +17961,16 @@ internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
 @MainActor func updateSteadyHint()
 ```
 
-Decides whether to show "Hold it steady or use a tripod".
+Decides whether to show "Hold it steady or use a tripod."
+(docs/design/device-feedback-1.0.md, section 4):
 
-- Full auto: when the fast shutter limit had to be lifted past the handheld rule, after a
-  reading in full auto.
-- Manual controls: when the person's shutter, or the camera's while it is Auto, is slower
-  than the handheld rule. The app changes nothing; it only says so.
+- Manual controls: never. The Shutter readout shows the speed in use, and the person has
+  chosen to decide.
+- Full auto: while the fast shutter limit is lifted and the camera's shutter is slower
+  than the lens's steady limit (``AutoShutter/steadyLimit(for:)``). It turns off only at a
+  reading half a stop faster than the limit (``AutoShutter/returnMargin``), and between
+  the two it keeps its state. While the limit holds, the shutter is never slower than the
+  handheld rule, so the hint can't show.
 
 ## `ManualControlsModel/value(of:)`
 
@@ -28961,7 +29116,7 @@ Applies a preset: every setting, then the camera's state.
 
 Assistant Access is never stored in a preset and never changed by one; Factory Defaults
 applied in the app (`keepsPrivacySettings` false) returns it to its defaults, off and
-Every Action. Applied through an assistant (`keepsPrivacySettings` true), the Privacy
+Every Action, and removes the tip's counter (``AssistantSession/tipCounter``). Applied through an assistant (`keepsPrivacySettings` true), the Privacy
 settings (``NopeSettings/metadata``: Details in Each Photo, Location, Sign Each Photo) and
 Assistant Access stay as they are, and everything else applies
 (`docs/design/assistant-access.md`, 7.4).
@@ -30367,12 +30522,12 @@ let frameAnalyses: AsyncStream<FrameAnalysis>
 
 The live analyses: ``placeholderAnalysis(for:)`` each time analysis is asked for.
 
-## `SimulatedCaptureBackend/init(permission:permissionAfterRequest:capabilities:startError:captureError:eventsAfterStart:reading:readingCount:torchAvailable:comparisonError:captureSeconds:focusShortfall:)`
+## `SimulatedCaptureBackend/init(permission:permissionAfterRequest:capabilities:startError:captureError:eventsAfterStart:reading:readingCount:readingSequence:readingInterval:torchAvailable:comparisonError:captureSeconds:focusShortfall:)`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
 
 ```swift
-init(permission: CameraPermission, permissionAfterRequest: CameraPermission? = nil, capabilities: DeviceCapabilities = .none, startError: CaptureError? = nil, captureError: CaptureError? = nil, eventsAfterStart: [CaptureEvent] = [], reading: ExposureReading = placeholderReading, readingCount: Int = 1, torchAvailable: Bool = true, comparisonError: CaptureError? = nil, captureSeconds: Double = 0, focusShortfall: Double = 0)
+init(permission: CameraPermission, permissionAfterRequest: CameraPermission? = nil, capabilities: DeviceCapabilities = .none, startError: CaptureError? = nil, captureError: CaptureError? = nil, eventsAfterStart: [CaptureEvent] = [], reading: ExposureReading = placeholderReading, readingCount: Int = 1, readingSequence: [ExposureReading] = [], readingInterval: Double = 0, torchAvailable: Bool = true, comparisonError: CaptureError? = nil, captureSeconds: Double = 0, focusShortfall: Double = 0)
 ```
 
 Creates a simulated backend.
@@ -30389,6 +30544,8 @@ Creates a simulated backend.
     ``placeholderReading``.
   - readingCount: How many times to report it when readings turn on, for example enough
     for the close-up suggestion. Defaults to 1.
+  - readingSequence: Readings to report in order instead, or none. Defaults to none.
+  - readingInterval: Seconds between two readings; 0, the default, sends them at once.
   - torchAvailable: Whether the system allows the torch. Defaults to `true`.
   - comparisonError: The error taking the comparison shot's second photo throws, or
     `nil` to succeed.
@@ -30557,6 +30714,40 @@ let readingCount: Int
 
 How many times ``reading`` is sent when readings are turned on.
 
+## `SimulatedCaptureBackend/readingInterval`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+let readingInterval: Double
+```
+
+The time between two readings sent, in seconds: 0 sends them all at once; more sends
+them as a camera does, one after another (``ExposureReading`` arrive at most four a
+second on a device).
+
+## `SimulatedCaptureBackend/readingSequence`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+let readingSequence: [ExposureReading]
+```
+
+The readings sent in order when readings are turned on, in place of ``reading``; empty to
+send ``reading``. A scene that changes, such as a lens sweeping into its nearest focus.
+
+## `SimulatedCaptureBackend/readingsToSend`
+
+internal, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+var readingsToSend: [ExposureReading] { get }
+```
+
+The readings sent when readings are turned on: ``readingSequence``, or ``reading``
+``readingCount`` times.
+
 ## `SimulatedCaptureBackend/requestPermission()`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
@@ -30575,7 +30766,8 @@ public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
 func setExposureReadingsEnabled(_ enabled: Bool) async
 ```
 
-Sends ``reading``, ``readingCount`` times, when readings are turned on.
+Sends ``readingsToSend`` when readings are turned on: at once, or one every
+``readingInterval`` seconds without holding up the caller.
 
 - Parameter enabled: Whether readings are on.
 

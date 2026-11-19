@@ -69,6 +69,22 @@ struct LensCatalogTests {
         #expect(lenses.first { $0.id == "wide" }?.distortionCorrection == .notSwitchable)
     }
 
+    @Test func closestFocusAndStabilizationAreWhatTheCameraReports() throws {
+        // docs/design/device-feedback-1.0.md, sections 3 and 4: −1 is unknown.
+        let wide = CameraDeviceDescription(
+            uniqueID: "wide", deviceType: .wideAngle, position: .back, isVirtual: false, rawPixelFormats: [],
+            supportsHEVC: true, isoRange: 50...12800, exposureDurationRange: 0.000014...1, aperture: .fixed(1.78),
+            maxBracketedPhotoCount: 8, photoDimensions: [], fieldOfViewDegrees: 70, minimumFocusDistance: 200,
+            reportsStabilization: true)
+        let lenses = LensCatalog.lenses(from: [wide, camera("ultra", .ultraWide, fieldOfView: 106)])
+        let reported = try #require(lenses.first { $0.id == "wide" })
+        #expect(reported.minimumFocusDistance == 200)
+        #expect(reported.reportsStabilization)
+        let unknown = try #require(lenses.first { $0.id == "ultra" })
+        #expect(unknown.minimumFocusDistance == nil)
+        #expect(!unknown.reportsStabilization)
+    }
+
     @Test func proRAWIsNotBayerRAW() throws {
         let proRAW = CameraDeviceDescription.RAWPixelFormat(code: 0x6C36_3472, isBayer: false)
         let lens = try #require(

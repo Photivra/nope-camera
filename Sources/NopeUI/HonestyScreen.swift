@@ -9,8 +9,24 @@ import SwiftUI
 /// settings by name and doesn't open them. All wording is in `Honesty.xcstrings` and needs a fluent human review in every
 /// language before release. VoiceOver reads it top to bottom, one statement at a time.
 struct HonestyScreen: View {
+    /// The label the lens row shows for the ultra wide lens that can autofocus, such as "0.5×",
+    /// or `nil` on a device without one: the entry Lenses Never Switch on Their Own then says
+    /// only "move back" (docs/design/device-feedback-1.0.md, section 3).
+    let closeUpLensLabel: String?
+
+    /// Where Settings is, for the entry to scroll to and focus, or `nil` outside Settings.
+    @Environment(SettingsNavigation.self) private var navigation: SettingsNavigation?
+
+    /// Whether VoiceOver's focus is on Lenses Never Switch on Their Own.
+    @AccessibilityFocusState private var isCloseUpEntryFocused: Bool
+
     /// Creates the Honesty screen.
-    init() {}
+    ///
+    /// - Parameter closeUpLensLabel: The lens row's label for the ultra wide lens that can
+    ///   autofocus, or `nil` when the device has none. Defaults to `nil`.
+    init(closeUpLensLabel: String? = nil) {
+        self.closeUpLensLabel = closeUpLensLabel
+    }
 
     /// The statements, in sections.
     var body: some View {
@@ -26,6 +42,35 @@ struct HonestyScreen: View {
             .padding(NopeSpace.m)
         }
         .navigationTitle(Text(SettingsText.honesty))
+        .modifier(SettingsScrollTarget(navigation: navigation, page: .honesty))
+        .onAppear(perform: focusRequestedEntry)
+    }
+
+    /// Moves VoiceOver's focus to the entry the close-up hint asked for, once, after the push.
+    private func focusRequestedEntry() {
+        guard let navigation, navigation.focusTarget == .honestyCloseUpFocus else { return }
+        navigation.focusTarget = nil
+        Task { @MainActor in
+            // After the push and the scroll, so focus lands on the entry on screen.
+            try? await Task.sleep(for: .milliseconds(500))
+            isCloseUpEntryFocused = true
+        }
+    }
+
+    /// The last sentence of Lenses Never Switch on Their Own names the ultra wide lens only on a
+    /// device whose ultra wide lens can focus.
+    private var closeUpFocusText: Text {
+        if let closeUpLensLabel {
+            Text(
+                "nope. never changes lenses for you, not even for a close-up. Each lens is a separate camera with its own sensor, so the photo comes from the lens you chose. Every lens has a closest distance it can focus at. Nearer than that, the picture stays soft. For a close-up, try the Ultra Wide lens (\(closeUpLensLabel)), or move back until the picture is sharp.",
+                tableName: "Honesty", bundle: .module,
+                comment: "Honesty statement under Lenses Never Switch on Their Own, on a device whose Ultra Wide lens can autofocus. The value is that lens's label on the lens buttons, such as 0.5×. docs/design/device-feedback-1.0.md, section 3. Keep \"nope.\" unchanged. Must not claim more than the English: no distance, no other app. Draft for the Honesty review.")
+        } else {
+            Text(
+                "nope. never changes lenses for you, not even for a close-up. Each lens is a separate camera with its own sensor, so the photo comes from the lens you chose. Every lens has a closest distance it can focus at. Nearer than that, the picture stays soft. For a close-up, move back until the picture is sharp.",
+                tableName: "Honesty", bundle: .module,
+                comment: "Honesty statement under Lenses Never Switch on Their Own, on a device without an Ultra Wide lens that can autofocus. docs/design/device-feedback-1.0.md, section 3. Keep \"nope.\" unchanged. Must not claim more than the English: no distance, no other app. Draft for the Honesty review.")
+        }
     }
 
     /// What the app never does, and how to check.
@@ -43,6 +88,12 @@ struct HonestyScreen: View {
                     bundle: .module,
                     comment: "Claims 3 and 5 in docs/research/privacy-claims.md (Data Not Collected; privacy manifest). Keep \"nope.\" unchanged."))
             HonestyStatement(
+                title: Text("Your Photo Library Is Never Read", tableName: "Honesty", bundle: .module, comment: "Honesty heading: the app can only add photos to the photo library, never see what is in it. Draft for the Honesty review."),
+                text: Text(
+                    "nope. asks only for permission to add photos. With that permission, iOS doesn't let nope. see or change what is in your library. The small pictures nope. shows of the photos you just took are kept in memory only, until nope. closes. So each time nope. opens, the Last Photo spot starts with a button that opens the Photos app.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Claim 20 in docs/research/privacy-claims.md (PHAccessLevel.addOnly); docs/PRIVACY.md, \"Last photo and its details\"; docs/design/device-feedback-1.0.md, section 1. Last Photo is the name of the spot beside the shutter; Photos and iOS are Apple's names. Keep \"nope.\" unchanged. Must not claim more than the English. Draft for the Honesty review."))
+            HonestyStatement(
                 title: Text("Check It Yourself", tableName: "Honesty", bundle: .module, comment: "Honesty heading: how to verify that the app makes no connections."),
                 text: Text(
                     "Turn on App Privacy Report (Settings › Privacy & Security). It lists every domain an app contacts during the last 7 days, starting from when you turn it on. nope. should list none.",
@@ -54,6 +105,9 @@ struct HonestyScreen: View {
                     "The HEIF and JPEG look in Settings changes only the copies nope. develops from the RAW. The RAW itself is never changed by it.",
                     tableName: "Honesty", bundle: .module,
                     comment: "Keep \"nope.\" unchanged. RAW, HEIF and JPEG are file format names. Must not claim more than the English."))
+            HonestyStatement(title: Text(SettingsText.honestyCloseUpFocus), text: closeUpFocusText)
+                .settingsRow(.honestyCloseUpFocus)
+                .accessibilityFocused($isCloseUpEntryFocused)
             HonestyStatement(
                 title: Text("Location Only If You Turn It On", tableName: "Honesty", bundle: .module, comment: "Honesty heading: photos include a location only when the person turns Location on."),
                 text: Text(

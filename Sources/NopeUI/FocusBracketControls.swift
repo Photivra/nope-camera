@@ -589,13 +589,28 @@ struct FocusBracketSections: View {
         Section {
             endRow(.nearest, value: settings.nearest)
             endRow(.farthest, value: settings.farthest)
+            // Never disabled or dimmed: with the whole range already in use it shows a check mark
+            // and is selected, as the selected choice of a picker is, and pressing it changes
+            // nothing (docs/design/device-feedback-1.0.md, section 2; tokens.md, "Button types").
             Button {
                 send(.bracket(.useWholeRange))
             } label: {
-                Text("Use the Whole Range", bundle: .module, comment: "Button in Bracket Settings: sets the focus bracket's range back to 0 to 1.")
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Use the Whole Range", bundle: .module, comment: "Button in Bracket Settings: sets the focus bracket's range back to 0 to 1.")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if settings.isWholeRange {
+                        Image(systemName: "checkmark")
+                            .fontWeight(.semibold)
+                            .accessibilityHidden(true)
+                    }
+                }
             }
-            // Not disabled with the whole range already set: a dimmed row fails the contrast
-            // check in night mode, and the button then changes nothing.
+            .accessibilityAddTraits(settings.isWholeRange ? .isSelected : [])
+            .accessibilityValue(
+                settings.isWholeRange
+                    ? Text("In use", bundle: .module, comment: "VoiceOver value of Use the Whole Range in Bracket Settings while the focus bracket already covers the whole range, 0 to 1.")
+                    : Text(verbatim: ""))
+            .accessibilityIdentifier("useWholeRange")
         } header: {
             Text("Focus Range", bundle: .module, comment: "Section header in Bracket Settings: the nearest and farthest focus of a focus bracket.")
         }

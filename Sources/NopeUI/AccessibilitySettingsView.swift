@@ -64,6 +64,22 @@ struct AccessibilitySettingsView: View {
             }
             Section {
                 row(
+                    systemImage: "viewfinder",
+                    Text(
+                        "Tap the picture to focus there. Lock appears under the focus square for a few seconds. Touch and hold the picture to lock right away.",
+                        tableName: "Honesty", bundle: .module,
+                        comment: "Accessibility screen: the focus square and Lock fade a few seconds after a tap (docs/design/device-feedback-1.0.md, section 5). Lock is the button under the focus square; use its translation. \"A few seconds\" stays true from 2 to 5 seconds. Draft for the Honesty review. Must not claim more than the English."))
+                row(
+                    systemImage: "lock",
+                    Text(
+                        "With VoiceOver or Switch Control on, the focus square and Lock stay until the scene changes. VoiceOver also has the action Lock Focus and Exposure on the viewfinder.",
+                        tableName: "Honesty", bundle: .module,
+                        comment: "Accessibility screen: with VoiceOver or Switch Control on, the focus square and Lock don't fade (docs/design/device-feedback-1.0.md, section 5). VoiceOver and Switch Control are Apple's names; Lock and Lock Focus and Exposure are nope.'s names; use their translations. Draft for the Honesty review. Must not claim more than the English."))
+            } header: {
+                Text("Focus and Exposure Lock", tableName: "Honesty", bundle: .module, comment: "Accessibility screen section header: tapping the picture to focus, and locking focus and exposure. Draft for the Honesty review.")
+            }
+            Section {
+                row(
                     systemImage: "hand.tap",
                     Text(
                         "On iPhone, a tap you can feel confirms each press of the shutter and each saved photo, and marks the moment the level is level.", bundle: .module,

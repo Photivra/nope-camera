@@ -402,7 +402,7 @@
       "comment" : "The name of nope.'s action that stops a running series of interval photos, in the Shortcuts app."
     },
     "Stop Series" : {
-      "comment" : "The name of the action behind the Stop button on nope.'s Live Activity: stops interval shooting or the night sky helper's frames. Keep \"nope.\" unchanged if it appears."
+      "comment" : "The name of the action behind the Stop button on nope.'s Live Activity: stops interval shooting, the night sky helper's frames or a focus bracket. Keep \"nope.\" unchanged if it appears."
     },
     "Stopped: %lld of %lld photos taken" : {
       "comment" : "Live Activity: interval shooting was stopped early. Both numbers are counts of photos."
@@ -412,9 +412,6 @@
     },
     "Stopped. Photos saved: %lld" : {
       "comment" : "Live Activity: a burst or the night sky helper stopped early, for example because the camera stopped. The number is how many photos were saved."
-    },
-    "Stops nope.'s interval shooting or astro frames. Every photo already taken is saved." : {
-      "comment" : "Describes the action behind the Stop button on nope.'s Live Activity. Keep \"nope.\" unchanged."
     },
     "Switch Lens" : {
       "comment" : "The name of nope.'s action that switches the camera to another lens, in the Shortcuts app."
@@ -852,6 +849,18 @@
     },
     "the wide camera" : {
       "comment" : "Fills the camera placeholder of the questions Siri asks before nope.'s actions, as in \"Take a photo with the wide camera?\".",
+      "extractionState" : "manual"
+    },
+    "Stops nope.'s interval shooting, astro frames or focus bracket. Every photo already taken is saved." : {
+      "comment" : "Describes the action behind the Stop button on nope.'s Live Activity. Keep \"nope.\" unchanged. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Stop Bracket" : {
+      "comment" : "VoiceOver name of the Stop button on nope.'s Live Activity while a focus bracket runs: stops after the current frame; every photo taken is kept. The same name as the button on the camera's focus bracket card.",
+      "extractionState" : "manual"
+    },
+    "Bracket stopped: %lld of %lld photos saved" : {
+      "comment" : "Live Activity: a focus bracket was stopped before its last frame, as the camera's card says it. Both numbers are counts of photos; the second is how many the bracket was to take.",
       "extractionState" : "manual"
     }
   },

@@ -6,6 +6,8 @@ This document says what to build, in which files, and how to tell it is done. Th
 
 Bracketing on the drive strip is part of this plan (owner decision, 2026-11-18, all nineteen recommendations of [BRACKETING.md](BRACKETING.md), section 10): its section 7 is the build specification for 1.0.0, and sections 3.4, 3.5, 3.14, 3.15, 4, 6 and 7 below take its changes. Focus bracketing (its section 8) was planned for 1.1.0 and is built in 1.0.0 (owner decision, 2026-11-18, issue #90); its device checks gate the release.
 
+The device feedback of [device-feedback-1.0.md](device-feedback-1.0.md) is part of this plan (owner decision, 2026-11-18, all 22 recommendations): its sections 1 to 5 amend 3.7 (the Last Photo spot, the steady hint, the focus square and Lock, the close-up hint), 3.10 (the Honesty and Accessibility pages, Settings search) and sections 4 and 5 below (its strings, every one a draft for the Honesty review); where they differ, it wins. Its section 9 records how it was built.
+
 Also proposed and not yet part of this plan: the launch screen, specified in [LAUNCH-SCREEN.md](LAUNCH-SCREEN.md). It adds an asset catalog and Info.plist keys to the app target and changes the first frames of `CameraScreen` (3.8).
 
 ## 1. Ground rules

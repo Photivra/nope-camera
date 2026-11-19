@@ -105,8 +105,9 @@ These work with manual controls off, and never change a manual setting
 - send the person's ``NopeSettings/followsFaces`` with ``AutoControlIntent/setFollowsFaces(_:)``,
   and their ``NopeSettings/photoSizes`` with ``CameraIntent/setPhotoSizes(_:)`` (offer a size
   only from ``Lens/photoSizeChoices``);
-- show "Hold it steady or use a tripod." while ``CameraModel/showsSteadyHint``, and offer
-  a button to switch to ``CameraModel/closeUpLens`` when it isn't `nil`;
+- show "Hold it steady or use a tripod." while ``CameraModel/showsSteadyHint`` (it is only ever
+  `true` with Manual Controls off; keep it at least two seconds once shown, so it can be read),
+  and offer a button to switch to ``CameraModel/closeUpLens`` when it isn't `nil`;
 - send the person's ``NopeSettings/fastShutter`` with ``AutoControlIntent/setFastShutter(_:)``. Clean view is ``CameraModel/isCleanView``, set with
 ``CameraIntent/setCleanView(_:)``; it never hides a warning that changes what the photo is, such
 as the no-RAW badge.

@@ -32,6 +32,10 @@ struct PresetsScreen: View {
     /// Where Settings is, to scroll to a row search opened, or `nil` outside Settings.
     @Environment(SettingsNavigation.self) private var navigation: SettingsNavigation?
 
+    /// What assistants did since the app opened, or `nil` in the Lock Screen camera: told when
+    /// Factory Defaults removed the tip's counter.
+    @Environment(\.assistantSession) private var assistantSession
+
     /// Creates the list.
     ///
     /// - Parameters:
@@ -158,6 +162,8 @@ struct PresetsScreen: View {
         Task {
             undoFailed = false
             await presets.apply(choice, camera: camera, location: camera?.location)
+            // Factory Defaults removed the Assistant Access tip's counter from the store.
+            if choice == .factoryDefaults { assistantSession?.reloadTipCounter() }
         }
     }
 }

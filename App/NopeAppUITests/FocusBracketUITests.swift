@@ -97,6 +97,65 @@ extension NopeAppUITests {
         XCTAssertEqual(app.buttons["Farthest Focus"].value as? String, "1.00")
     }
 
+    /// Use the Whole Range is never dimmed or disabled: with the whole range in use it is
+    /// selected with the value "In use"; after an end is set on the picture it isn't, and a
+    /// press returns the range to 0.00 to 1.00 and selects it (docs/design/device-feedback-1.0.md,
+    /// section 2).
+    @MainActor
+    func testUseTheWholeRangeIsSelectedNotDimmed() throws {
+        let app = launch("manual")
+        chooseFocusBracket(app)
+        openBracketSettings(app)
+        let whole = app.buttons["useWholeRange"]
+        scrollUntilHittable(app, whole)
+        XCTAssertTrue(whole.isEnabled)
+        XCTAssertTrue(whole.isSelected)
+        XCTAssertEqual(whole.value as? String, "In use")
+        try auditBracketSettings(app, afterScrolling: true)
+        closeBracketSettings(app)
+        app.buttons["Nearest Focus"].tap()
+        XCTAssertTrue(app.buttons["Set Nearest Focus"].waitForExistence(timeout: 5))
+        for _ in 0..<3 { app.buttons["Increase"].tap() }
+        app.buttons["Set Nearest Focus"].tap()
+        XCTAssertTrue(app.buttons["Nearest Focus"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.buttons["Nearest Focus"].value as? String, "0.03")
+        openBracketSettings(app)
+        scrollUntilHittable(app, whole)
+        XCTAssertTrue(whole.isEnabled)
+        XCTAssertFalse(whole.isSelected)
+        whole.tap()
+        XCTAssertTrue(
+            XCTWaiter().wait(
+                for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "selected == YES"), object: whole)], timeout: 5)
+                == .completed)
+        XCTAssertEqual(whole.value as? String, "In use")
+        closeBracketSettings(app)
+        XCTAssertEqual(app.buttons["Nearest Focus"].value as? String, "0.00")
+        XCTAssertEqual(app.buttons["Farthest Focus"].value as? String, "1.00")
+    }
+
+    /// Use the Whole Range selected in night mode, at the largest text size and right to left:
+    /// the audit of Bracket Settings, Focus, with no contrast finding skipped.
+    @MainActor
+    func testUseTheWholeRangePassesTheAuditInEveryForm() throws {
+        for arguments in [Self.nightModeOn, Self.largestTextSize, Self.rightToLeft] {
+            let app = launch("manual", extraArguments: arguments)
+            chooseBracket(app)
+            openBracketSettings(app)
+            chooseFocusType(app)
+            let whole = app.buttons["useWholeRange"]
+            scrollUntilHittable(app, whole)
+            XCTAssertTrue(whole.isSelected)
+            settle()
+            try app.performCompleteAccessibilityAudit(for: Self.auditTypes(contrast: true, dynamicType: false)) { issue in
+                // Every finding on Use the Whole Range fails, contrast included. The other rows
+                // are audited in the focus bracket tests with their known exceptions; after the
+                // scroll one may sit under the navigation bar's scroll edge effect.
+                !(issue.element?.label.contains("Use the Whole Range") ?? false)
+            }
+        }
+    }
+
     /// The shutter starts the series; the card counts the frames with the focus the lens reports
     /// and has Stop Bracket; Stop keeps every photo taken and the end card says how many.
     @MainActor

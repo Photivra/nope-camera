@@ -73,26 +73,34 @@ struct AutoValueTests {
         #expect(AutoShutter.longestShutter(for: bright, lens: noISO, fastShutter: .handheld, current: nil) == nil)
     }
 
-    @Test func blurRiskFollowsTheHandheldRule() {
-        #expect(AutoShutter.risksBlur(1.0 / 30.0, on: Fixtures.handheld))
-        #expect(!AutoShutter.risksBlur(1.0 / 60.0, on: Fixtures.handheld))
-        #expect(!AutoShutter.risksBlur(1, on: Fixtures.lens(focalLength: nil)))
+    @Test func theSteadyLimitCountsStabilization() {
+        // 24 mm without stabilization: the handheld rule, 1/48 s. With it, two stops slower, 1/12 s.
+        #expect(AutoShutter.steadyLimit(for: Fixtures.handheld) == 1.0 / 48.0)
+        #expect(AutoShutter.steadyLimit(for: Fixtures.lens(focalLength: 24, stabilized: true)) == 1.0 / 12.0)
+        // 120 mm stabilized: 1/60 s; 13 mm unstabilized: 1/26 s.
+        #expect(AutoShutter.steadyLimit(for: Fixtures.lens(focalLength: 120, stabilized: true)) == 1.0 / 60.0)
+        #expect(AutoShutter.steadyLimit(for: Fixtures.lens(focalLength: 13)) == 1.0 / 26.0)
+        // Kept inside the shutter range, at both ends.
+        #expect(AutoShutter.steadyLimit(for: Fixtures.lens(focalLength: 24, durations: 0.0001...0.01, stabilized: true)) == 0.01)
+        #expect(AutoShutter.steadyLimit(for: Fixtures.lens(focalLength: 24, durations: 0.1...1)) == 0.1)
+        // No focal length, a focal length of 0 or no shutter range: no limit.
+        #expect(AutoShutter.steadyLimit(for: Fixtures.lens(focalLength: nil, stabilized: true)) == nil)
+        #expect(AutoShutter.steadyLimit(for: Fixtures.lens(focalLength: 0)) == nil)
+        #expect(AutoShutter.steadyLimit(for: Fixtures.lens(focalLength: 24, durations: nil)) == nil)
+        #expect(AutoShutter.stabilizationAllowance == 2)
     }
 
-    // MARK: - Close-up detector
-
-    @Test func closeUpNeedsTheNearestPositionAndASearch() {
-        var detector = CloseUpDetector()
-        let still = Fixtures.reading(lensPosition: 0)
-        var results: [Bool] = []
-        for _ in 0..<CloseUpDetector.requiredReadings { results.append(detector.record(still)) }
-        #expect(results.allSatisfy { !$0 })
-        let searching = Fixtures.reading(lensPosition: 0.02, adjusting: true)
-        results = [
-            detector.record(searching), detector.record(still),
-            detector.record(Fixtures.reading(lensPosition: 0.5, adjusting: true)), detector.record(searching),
-        ]
-        #expect(results == [true, true, false, false])
+    @Test func theSteadyHintTurnsOnPastTheLimitAndOffHalfAStopFaster() {
+        let limit = 1.0 / 48.0
+        // Just slower than the limit: on, from off or on.
+        #expect(AutoShutter.showsSteadyHint(shutter: limit * 1.01, limit: limit, isShown: false))
+        #expect(AutoShutter.showsSteadyHint(shutter: limit * 1.01, limit: limit, isShown: true))
+        // At the limit, or just faster: it keeps its state.
+        #expect(!AutoShutter.showsSteadyHint(shutter: limit, limit: limit, isShown: false))
+        #expect(AutoShutter.showsSteadyHint(shutter: limit, limit: limit, isShown: true))
+        #expect(AutoShutter.showsSteadyHint(shutter: limit * 0.75, limit: limit, isShown: true))
+        // Half a stop faster: off.
+        #expect(!AutoShutter.showsSteadyHint(shutter: limit * AutoShutter.returnMargin, limit: limit, isShown: true))
     }
 
     // MARK: - Device controls
@@ -142,10 +150,10 @@ struct AutoControlsModelTests {
     /// A started camera on the first lens.
     func makeModel(
         lenses: [Lens] = [Fixtures.wide], enabled: Bool = false, applyErrors: [CaptureError?] = [],
-        previewSource: (any CameraPreviewSource)? = nil
+        previewSource: (any CameraPreviewSource)? = nil, clock: ManualClock = ManualClock()
     ) async -> (CameraModel, ScriptedManualBackend) {
         let backend = ScriptedManualBackend(lenses: lenses, applyErrors: applyErrors, previewSource: previewSource)
-        let model = CameraModel(backend: backend, saver: CameraModelTests.saver())
+        let model = CameraModel(backend: backend, saver: CameraModelTests.saver(), now: { clock.now() })
         await model.send(.start)
         if enabled { await model.send(.manual(.setEnabled(true))) }
         return (model, backend)
@@ -300,9 +308,13 @@ struct AutoControlsModelTests {
         #expect(model.manual.longestAutoShutter == 1.0 / 48.0)
         await deliver(Fixtures.reading(iso: 6400, duration: 1.0 / 48.0, offset: -2), to: model, from: backend)
         #expect(model.manual.longestAutoShutter == nil)
-        #expect(model.manual.showsSteadyHint)
+        // At the limit itself: not slower than the steady limit yet.
+        #expect(!model.manual.showsSteadyHint)
         #expect(await backend.applied.last == .automatic)
         #expect(model.manual.reading == nil)
+        // The camera then slows past it.
+        await model.manual.record(Fixtures.reading(iso: 6400, duration: 1.0 / 24.0))
+        #expect(model.manual.showsSteadyHint)
     }
 
     @Test func theLimitComesBackWhenTheLightDoes() async {
@@ -337,14 +349,14 @@ struct AutoControlsModelTests {
         #expect(model.manual.longestAutoShutter == 1.0 / 1000.0)
     }
 
-    @Test func manualControlsAreNeverLimitedButGetTheHint() async {
+    @Test func manualControlsAreNeverLimitedAndGetNoHint() async {
         let (model, backend) = await makeModel(lenses: [Fixtures.handheld])
         await model.send(.manual(.setEnabled(true)))
         // The full-auto limit is taken off: P is the camera's own exposure.
         #expect(await backend.applied.last == .automatic)
         await deliver(Fixtures.reading(iso: 100, duration: 1.0 / 15.0), to: model, from: backend)
         #expect(model.manual.reading != nil)
-        #expect(model.manual.showsSteadyHint)
+        #expect(!model.manual.showsSteadyHint)
         #expect(model.manual.longestAutoShutter == 1.0 / 48.0)
         await model.send(.manual(.setValue(.shutter, 1.0 / 250.0)))
         #expect(!model.manual.showsSteadyHint)
@@ -371,39 +383,78 @@ struct AutoControlsModelTests {
 
     // MARK: - Close-up suggestion
 
+    /// Three seconds of readings, four a second, each moving the clock on a quarter second.
+    func recordTooClose(_ model: CameraModel, clock: ManualClock) async {
+        for _ in 0..<12 {
+            clock.advance(by: .milliseconds(250))
+            await model.manual.record(Fixtures.reading(lensPosition: 0, adjusting: true))
+        }
+    }
+
     @Test func theUltraWideIsSuggestedWhenTheSubjectIsTooClose() async {
-        let (model, backend) = await makeModel(lenses: [Fixtures.wide, Fixtures.ultraWide])
-        let readings = Array(repeating: Fixtures.reading(lensPosition: 0, adjusting: true), count: CloseUpDetector.requiredReadings)
-        for reading in readings { backend.emit(reading) }
+        let clock = ManualClock()
+        let (model, backend) = await makeModel(lenses: [Fixtures.wide, Fixtures.ultraWide], clock: clock)
+        // Readings that arrive together prove nothing: no time passed at the nearest position.
+        for _ in 0..<12 { backend.emit(Fixtures.reading(lensPosition: 0, adjusting: true)) }
         backend.finishReadings()
         await model.manual.observeReadings()
+        #expect(!model.manual.suggestsCloseUpLens)
+        await recordTooClose(model, clock: clock)
         #expect(model.manual.suggestsCloseUpLens)
         #expect(model.closeUpLens == Fixtures.ultraWide)
         await model.send(.auto(.dismissCloseUpSuggestion))
         #expect(model.closeUpLens == nil)
-        await model.manual.record(Fixtures.reading(lensPosition: 0, adjusting: true))
+        await recordTooClose(model, clock: clock)
         #expect(!model.manual.suggestsCloseUpLens)
         // Switching lenses is the person's choice; on the ultra wide nothing is suggested.
         await model.send(.selectLens(Fixtures.ultraWide.id))
-        for reading in readings { await model.manual.record(reading) }
+        await recordTooClose(model, clock: clock)
         #expect(model.manual.suggestsCloseUpLens)
         #expect(model.closeUpLens == nil)
     }
 
     @Test func noSuggestionWithManualFocusOrALockOrNoUltraWide() async {
-        let (model, _) = await makeModel(lenses: [Fixtures.wide], enabled: true)
-        let reading = Fixtures.reading(lensPosition: 0, adjusting: true)
-        for _ in 0..<CloseUpDetector.requiredReadings { await model.manual.record(reading) }
+        let clock = ManualClock()
+        let (model, _) = await makeModel(lenses: [Fixtures.wide], enabled: true, clock: clock)
+        await recordTooClose(model, clock: clock)
         #expect(model.manual.suggestsCloseUpLens)
         #expect(model.closeUpLens == nil)
         await model.send(.manual(.setValue(.focus, 0)))
-        for _ in 0..<CloseUpDetector.requiredReadings { await model.manual.record(reading) }
+        await recordTooClose(model, clock: clock)
         #expect(!model.manual.suggestsCloseUpLens)
-        let (locked, _) = await makeModel()
+        let (locked, _) = await makeModel(clock: clock)
         await locked.send(.auto(.lockFocusAndExposure(at: nil)))
-        for _ in 0..<CloseUpDetector.requiredReadings { await locked.manual.record(reading) }
+        await recordTooClose(locked, clock: clock)
         #expect(!locked.manual.suggestsCloseUpLens)
         #expect(CameraModel(backend: ScriptedManualBackend(lenses: [Fixtures.wide])).closeUpLens == nil)
+    }
+
+    @Test func theUltraWideIsSuggestedOnlyWhereItCanHelp() async {
+        // A fixed-focus ultra wide is never suggested.
+        let fixedFocusUltraWide = Lens(
+            id: "ultra-wide-fixed", kind: .ultraWide, bayerRAWFormat: "rgg4", manualControls: .none)
+        let clock = ManualClock()
+        let (fixed, _) = await makeModel(lenses: [Fixtures.wide, fixedFocusUltraWide], clock: clock)
+        await recordTooClose(fixed, clock: clock)
+        #expect(fixed.manual.suggestsCloseUpLens)
+        #expect(fixed.closeUpLens == nil)
+        #expect(fixed.capabilities?.closeUpFocusLens == nil)
+        // Both report their closest focus: only an ultra wide that focuses closer is suggested.
+        let wide = Fixtures.lens(focalLength: 24, closest: 200)
+        for (closest, isSuggested) in [(20.0, true), (200.0, false), (300.0, false)] {
+            let ultraWide = Lens(
+                id: "ultra-wide-\(closest)", kind: .ultraWide, bayerRAWFormat: "rgg4", manualControls: Fixtures.aids,
+                minimumFocusDistance: closest)
+            let (model, _) = await makeModel(lenses: [wide, ultraWide], clock: clock)
+            await recordTooClose(model, clock: clock)
+            #expect((model.closeUpLens == ultraWide) == isSuggested, "\(closest)")
+        }
+        // Only one reports it: the ultra wide is still suggested (device check C2).
+        let unknown = Lens(
+            id: "ultra-wide-unknown", kind: .ultraWide, bayerRAWFormat: "rgg4", manualControls: Fixtures.aids)
+        let (model, _) = await makeModel(lenses: [wide, unknown], clock: clock)
+        await recordTooClose(model, clock: clock)
+        #expect(model.closeUpLens == unknown)
     }
 
     // MARK: - Magnifier
@@ -469,11 +520,13 @@ enum AutoFixtures {
 
     /// A wide lens with the aids and optional ranges.
     static func lens(
-        focalLength: Double?, isos: ClosedRange<Double>? = 50...6400, durations: ClosedRange<Double>? = 0.0001...1
+        focalLength: Double?, isos: ClosedRange<Double>? = 50...6400, durations: ClosedRange<Double>? = 0.0001...1,
+        stabilized: Bool = false, closest: Double? = nil
     ) -> Lens {
         Lens(
             id: "handheld", kind: .wide, bayerRAWFormat: "bgg4", isoRange: isos, exposureDurationRange: durations,
-            aperture: .fixed(1.8), manualControls: aids, equivalentFocalLength: focalLength)
+            aperture: .fixed(1.8), manualControls: aids, equivalentFocalLength: focalLength,
+            minimumFocusDistance: closest, reportsStabilization: stabilized)
     }
 
     /// A reading.

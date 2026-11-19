@@ -11,7 +11,7 @@ What each screen of the design must do for VoiceOver, Voice Control, Switch Cont
 - Every target is at least 44 × 44 pt, with at least 8 pt between targets (4 pt inside the lens group).
 - State is never color alone: on is filled and says On or its value; warnings have a triangle and words; verified facts have a seal and words.
 - A gesture is never the only way: each has a button or a VoiceOver action.
-- Nothing leaves on a timer. Failures stay until dismissed. Announcements are queued, not interrupted.
+- No message, failure or warning leaves on a timer. One marker does: the focus square with Lock, three seconds after a tap, and never while VoiceOver or Switch Control is on, while it has focus, or while it is locked. Its action always has a way that needs no timing: touch and hold, and the viewfinder's VoiceOver action ([device-feedback-1.0.md](device-feedback-1.0.md), section 5). Failures stay until dismissed. Announcements are queued, not interrupted.
 - The viewfinder and photos are excluded from Smart Invert.
 - UI tests call `performAccessibilityAudit()` through the existing helpers on every screen and state listed in BUILD-SPEC.md, at the default size, at the largest accessibility size, right to left, and in night mode where the screen has one.
 
@@ -36,7 +36,7 @@ Top to bottom, leading to trailing, in every layout. Containers are named so the
 | 11 | Lenses (container "Lens") | Ultra Wide, Wide, Telephoto, Front | "0.6×", plus "No RAW" where it applies | Button, selected trait |
 | 12 | Switch Camera | Switch Camera | none | Button |
 | 13 | Drive strip (container "Drive") | Single Photo, Self-Timer, Burst, Bracket, Interval Shooting, Astro | Self-Timer: "3 seconds"; Burst: "Fast" or "Slow" | Button, selected trait. The selected one has the hint "Double tap for options" when it has options. Voice Control accepts the short word and the long name |
-| 14 | Last Photo | Last Photo | "Saved and signed.", or the other save sentences; "Saving…" while busy | Button. Opens the Last Photo viewer; hint "Shows the photo." Actions: Open in Photos, Photo Details |
+| 14 | Last Photo | Last Photo | "Saved and signed.", or the other save sentences; "Saving…" while busy | Button. Opens the Last Photo viewer; hint "Shows the photo." Actions: Open in Photos, Photo Details. Before the first photo since the app opened, Open Photos in its place: "Open Photos, button", hint "Opens the Photos app.", Voice Control "Open Photos" or "Photos"; not in the Lock Screen camera, and not while a countdown or series runs ([device-feedback-1.0.md](device-feedback-1.0.md), section 1) |
 | 15 | Shutter | Take Photo | "Self-timer, 3 seconds", "Burst, fast." with the hint "Double tap for one photo. Double tap and hold for a burst." and the action Start Burst, "Start interval shooting", "Start Astro frames", "Bracket, exposure, 3 frames"; "Stop" while running | Button. The volume buttons, the Camera Control and Space do the same |
 | 16 | Q | Quick Menu | Open or Closed | Button. Voice Control: "Quick Menu", "Q". Large Content Viewer |
 

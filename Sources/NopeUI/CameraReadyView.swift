@@ -115,6 +115,25 @@ struct CameraReadyView: View {
     /// Opens Photos, or `nil` when the app can't.
     @Environment(\.openPhotosApp) private var openPhotosApp
 
+    /// When the focus square and Lock fade (docs/design/device-feedback-1.0.md, section 5).
+    @State private var focusAidLinger = FocusAidLinger()
+
+    /// The time the focus aids were last judged at: set when their clock starts and when it runs
+    /// out, so nothing runs in between.
+    @State private var focusAidTime = ContinuousClock.now
+
+    /// Whether Lock is pressed or has the keyboard's focus, which holds the fade.
+    @State private var isLockHeld = false
+
+    /// Whether VoiceOver is on: the focus aids don't fade.
+    @Environment(\.accessibilityVoiceOverEnabled) private var isVoiceOverOn
+
+    /// Whether Switch Control is on: the focus aids don't fade.
+    @Environment(\.accessibilitySwitchControlEnabled) private var isSwitchControlOn
+
+    /// Whether the UI tests simulate VoiceOver or Switch Control, which the Simulator can't run.
+    @Environment(\.simulatesAssistiveTechnology) private var simulatesAssistiveTechnology
+
     /// The photos the last good save added this session, or `nil` before the first.
     @State private var sessionPhotos: [SavedPhoto]?
 
@@ -216,6 +235,13 @@ struct CameraReadyView: View {
     /// and the readout row and dials give the picture to the running mode's card.
     private var isSeriesRunning: Bool {
         model.drive.isBusy || model.astro.isRunning || model.manual.intervalProgress != nil || model.bracketing.isRunning
+    }
+
+    /// Whether a countdown or series runs or is paused, so leaving for Photos would interrupt
+    /// it and Open Photos isn't offered (docs/design/device-feedback-1.0.md, decision 4).
+    private var isSeriesUnderWay: Bool {
+        isSeriesRunning || model.drive.countdown.isRunning || model.astro.progress != nil
+            || model.bracketing.progress != nil || model.bracketProgress != nil
     }
 
     /// What the shutter's disc shows: a stop square while a series runs (not a burst the
@@ -761,7 +787,8 @@ struct CameraReadyView: View {
                 isBusy: model.captureStatus == .capturing || model.captureStatus == .saving,
                 openViewer: { Task { await model.send(.setViewerOpen(true)) } },
                 openPhoto: openPhotosApp.map { open in { open() } },
-                showDetails: { showsPhotoDetails = true }
+                showDetails: { showsPhotoDetails = true },
+                isSeriesRunning: isSeriesUnderWay
             )
             .accessibilityFocused($isLastPhotoFocused)
             .uprightUnit()
@@ -1015,13 +1042,27 @@ struct CameraReadyView: View {
             // Reported outside the enlargement, so CameraScreen gets the picture's own frame and
             // enlarges the viewfinder the same way (FocusMagnifier).
             .background { Color.clear.anchorPreference(key: ViewfinderFrame.self, value: .bounds) { ViewfinderAnchors(frame: $0) } }
-            .overlay { FocusSquareLayer(model: model, part: .square) }
+            .overlay { FocusSquareLayer(model: model, part: .square, isShown: showsFocusAids) }
             .accessibilityIgnoresInvertColors()
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text("Viewfinder", bundle: .module, comment: "VoiceOver name of the live camera view."))
             .accessibilityValue(viewfinderDescription)
             .accessibilityActions { viewfinderActions }
-            .overlay { FocusSquareLayer(model: model, part: .lockButton) }
+            .overlay {
+                FocusSquareLayer(model: model, part: .lockButton, isShown: showsFocusAids) { isLockHeld = $0 }
+            }
+            // The fade of the focus square and Lock: the clock starts at each tap and each new
+            // target, and again when what held them ends; one wait until it runs out.
+            .onChange(of: model.manual.focusTarget) { restartFocusAidClock() }
+            .onChange(of: holdsFocusAids) { _, holds in
+                if !holds { restartFocusAidClock() }
+            }
+            .task(id: focusAidLinger) {
+                guard let remaining = focusAidLinger.remaining(at: .now) else { return }
+                try? await Task.sleep(for: remaining)
+                guard !Task.isCancelled else { return }
+                focusAidTime = .now
+            }
             .onGeometryChange(for: CGSize.self) { $0.size } action: { viewfinderSize = $0 }
             .contentShape(.rect)
             .modifier(
@@ -1071,6 +1112,25 @@ struct CameraReadyView: View {
         }
     }
 
+    /// Whether something holds the focus square and Lock on screen: VoiceOver or Switch Control,
+    /// a finger or the keyboard's focus on Lock, or the scrolling layout, where touch and hold
+    /// isn't available on the picture.
+    private var holdsFocusAids: Bool {
+        isVoiceOverOn || isSwitchControlOn || simulatesAssistiveTechnology || isLockHeld || layout == .scrolling
+    }
+
+    /// Whether the focus square and Lock show now.
+    private var showsFocusAids: Bool {
+        focusAidLinger.isShown(target: model.manual.focusTarget, at: focusAidTime, isHeld: holdsFocusAids)
+    }
+
+    /// Starts the focus aids' clock again: they show for ``NopeMotion/focusAidLinger`` from now.
+    private func restartFocusAidClock() {
+        let now = ContinuousClock.now
+        focusAidLinger.restart(at: now)
+        focusAidTime = now
+    }
+
     /// Focuses and exposes at a touched location, through the magnifier when it is on.
     ///
     /// - Parameters:
@@ -1085,6 +1145,8 @@ struct CameraReadyView: View {
             point = point.unmagnified(scale: FocusMagnifier.scale, anchor: FocusMagnifier.anchor(for: model.manual.focusTarget))
         }
         let target = point
+        // A tap at the same point sets the same target; the square and Lock show again anyway.
+        restartFocusAidClock()
         Task { await model.send(.auto(locks ? .lockFocusAndExposure(at: target) : .focusAndExpose(at: target))) }
     }
 

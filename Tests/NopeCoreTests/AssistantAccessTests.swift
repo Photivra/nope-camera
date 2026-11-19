@@ -178,6 +178,37 @@ struct AssistantAccessTests {
         #expect(!settings.assistantAccess)
     }
 
+    @Test func factoryDefaultsInTheAppRemovesTheTipCounter() async {
+        // docs/SECURITY_AUDIT.md, "Local data": the counter is removed by Factory Defaults.
+        let scratch = ScratchDefaults()
+        let settings = NopeSettings(defaults: scratch.defaults)
+        let presets = SettingsPresets(settings: settings)
+        let session = AssistantSession(settings: settings)
+        scratch.defaults.set(AssistantSession.tipThreshold + 1, forKey: AssistantSession.tipCounterKey)
+        session.reloadTipCounter()
+        #expect(session.tipCounter == AssistantSession.tipThreshold + 1)
+        _ = await presets.apply(.factoryDefaults, camera: nil, location: nil)
+        #expect(scratch.defaults.object(forKey: AssistantSession.tipCounterKey) == nil)
+        // The session reads it again, as the Presets page asks it to: from 0.
+        session.reloadTipCounter()
+        #expect(session.tipCounter == 0)
+        // Undo doesn't bring it back.
+        #expect(await presets.undo(camera: nil, location: nil))
+        #expect(scratch.defaults.object(forKey: AssistantSession.tipCounterKey) == nil)
+    }
+
+    @Test func otherPresetsAndAssistantsKeepTheTipCounter() async throws {
+        let scratch = ScratchDefaults()
+        let settings = NopeSettings(defaults: scratch.defaults)
+        let presets = SettingsPresets(settings: settings)
+        scratch.defaults.set(3, forKey: AssistantSession.tipCounterKey)
+        _ = await presets.apply(.factoryDefaults, camera: nil, location: nil, keepsPrivacySettings: true)
+        #expect(scratch.defaults.integer(forKey: AssistantSession.tipCounterKey) == 3)
+        let saved = try presets.saveCurrent(named: "Mine", camera: nil)
+        _ = await presets.apply(.saved(saved.id), camera: nil, location: nil)
+        #expect(scratch.defaults.integer(forKey: AssistantSession.tipCounterKey) == 3)
+    }
+
     @Test func factoryDefaultsThroughAnAssistantKeepsPrivacyAndAccess() async {
         let scratch = ScratchDefaults()
         let settings = NopeSettings(defaults: scratch.defaults)

@@ -54,7 +54,10 @@ enum LensCatalog {
                 fieldOfView: device.fieldOfViewDegrees, photoSize: device.photoDimensions.max { $0.pixelCount < $1.pixelCount }),
             flashModes: kind == .front ? [] : device.flashModes,
             hasTorch: device.hasTorch,
-            distortionCorrection: device.canTurnOffDistortionCorrection ? .turnedOff : .notSwitchable
+            distortionCorrection: device.canTurnOffDistortionCorrection ? .turnedOff : .notSwitchable,
+            // −1 means unknown (`AVCaptureDevice.minimumFocusDistance`).
+            minimumFocusDistance: device.minimumFocusDistance >= 0 ? Double(device.minimumFocusDistance) : nil,
+            reportsStabilization: device.reportsStabilization
         )
     }
 

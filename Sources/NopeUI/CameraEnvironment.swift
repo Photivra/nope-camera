@@ -86,6 +86,11 @@ extension EnvironmentValues {
     /// target sets it; it runs only when the person taps.
     @Entry public var openPhotosApp: CameraAction?
 
+    /// Whether to behave as with VoiceOver or Switch Control on, which the Simulator can't run:
+    /// the focus square and Lock then never fade (docs/design/device-feedback-1.0.md, section 5).
+    /// `false` by default; the app sets it only for a UI test launch argument.
+    @Entry public var simulatesAssistiveTechnology = false
+
     /// Called with `true` when the camera screen presents Settings or another sheet, and `false`
     /// when it closes. The iPhone app keeps the camera layout in portrait and lets sheets rotate
     /// (issue #68, "Settings and sheets rotate normally"); it uses this to allow rotation while a

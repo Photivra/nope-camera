@@ -153,6 +153,10 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
     case accessibility = "settings.accessibility"
     /// The Honesty row and page.
     case honesty = "settings.honesty"
+    /// The entry Lenses Never Switch on Their Own, on the Honesty page, which the camera's
+    /// close-up hint opens (docs/design/device-feedback-1.0.md, section 3). Search doesn't list
+    /// it: the Honesty row has its keywords.
+    case honestyCloseUpFocus = "settings.honesty.closeUpFocus"
     /// The About and Licenses row and page.
     case about = "settings.about"
     /// The License page, under About and Licenses.
@@ -192,6 +196,7 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
             .liveActivity, .accessibility, .honesty, .about:
             nil
         case .assistantAccessSwitch, .assistantAsk: .assistantAccess
+        case .honestyCloseUpFocus: .honesty
         case .factoryDefaults, .saveCurrentSettings: .presets
         case .pairedWithRAW: .formats
         case .copiesLook, .heifCompression, .heifBitDepth, .jpegCompression, .colorSpace, .copySize, .copiesRestoreDefaults:
@@ -230,7 +235,7 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
             .overlaysFocusPeaking, .overlaysHistogram, .overlaysLiveReadout, .overlaysKeepReadout,
             .showProcessedMarker, .nightMode, .keepNightModeAfterAstro, .redViewfinder, .keepScreenOn, .liveActivity:
             .screen
-        case .more, .accessibility, .honesty, .about, .license, .noticesAndTrademarks: .more
+        case .more, .accessibility, .honesty, .honestyCloseUpFocus, .about, .license, .noticesAndTrademarks: .more
         case .presets, .factoryDefaults, .saveCurrentSettings: nil
         }
     }
@@ -308,6 +313,10 @@ final class SettingsNavigation {
     /// The row to scroll to when its page shows, or `nil`.
     var scrollTarget: SettingsID?
 
+    /// The Honesty entry that takes VoiceOver's focus when the Honesty page shows, once, or
+    /// `nil`: set when the close-up hint opens Settings at its entry.
+    var focusTarget: SettingsID?
+
     /// Creates a navigation at the Settings list.
     init() {}
 
@@ -318,6 +327,7 @@ final class SettingsNavigation {
     func open(_ id: SettingsID) {
         searchText = ""
         openSearchResult(id)
+        focusTarget = id.page == .honesty ? id : nil
     }
 
     /// Shows a search result: pushes its page and asks for its row to be scrolled into view.
@@ -338,6 +348,7 @@ final class SettingsNavigation {
         path = []
         searchText = ""
         scrollTarget = nil
+        focusTarget = nil
     }
 }
 
@@ -535,6 +546,11 @@ enum SettingsText {
     static let accessibility = LocalizedStringResource("Accessibility", bundle: bundle, comment: "Settings row and screen title: taking photos without looking at the screen (hardware buttons, haptics, spoken feedback).")
     /// "Honesty".
     static let honesty = LocalizedStringResource("Honesty", table: "Honesty", bundle: bundle, comment: "Settings row and screen title: what nope. does and doesn't do, and what it can't control.")
+    /// "Lenses Never Switch on Their Own": the Honesty entry on close-up focus, its heading and
+    /// its name in Settings (docs/design/device-feedback-1.0.md, section 3).
+    static let honestyCloseUpFocus = LocalizedStringResource(
+        "Lenses Never Switch on Their Own", table: "Honesty", bundle: bundle,
+        comment: "Honesty heading: the app never changes lenses by itself, not even for a close-up. Draft for the Honesty review.")
     /// "About and Licenses".
     static let about = LocalizedStringResource("About and Licenses", bundle: bundle, comment: "Settings row and screen title: version, license and third-party notices.")
     /// "License".
@@ -607,6 +623,7 @@ enum SettingsText {
         case .liveActivity: liveActivity
         case .accessibility: accessibility
         case .honesty: honesty
+        case .honestyCloseUpFocus: honestyCloseUpFocus
         case .about: about
         case .license: license
         case .noticesAndTrademarks: noticesAndTrademarks
@@ -662,6 +679,8 @@ enum SettingsText {
             LocalizedStringResource("Search keywords: Keep Screen On", defaultValue: "awake, auto-lock, sleep, lock, dim, tripod, battery", bundle: bundle, comment: "Settings search keywords for Keep Screen On, separated by commas. Not shown on screen: list the words people in your language would type to keep the screen from locking or sleeping. Auto-Lock is the name of the iOS setting: use its name in the language's iOS.")
         case .liveActivity:
             LocalizedStringResource("Search keywords: Live Activity", defaultValue: "Lock Screen, Dynamic Island", bundle: bundle, comment: "Settings search keywords for Live Activity, separated by commas. Not shown on screen. Lock Screen and Dynamic Island are iOS names: use the names iOS shows in this language.")
+        case .honesty:
+            LocalizedStringResource("Search keywords: Honesty", defaultValue: "close-up, macro, close, near, blurry, soft, lens", bundle: bundle, comment: "Settings search keywords for the Honesty page, separated by commas. Not shown on screen: the page explains why nope. never changes lenses for a close-up. Keep nope. unchanged if it appears.")
         case .showProcessedMarker:
             LocalizedStringResource("Search keywords: Show Processed Marker", defaultValue: "no RAW, processing", bundle: bundle, comment: "Settings search keywords for Show Processed Marker, separated by commas. Not shown on screen. RAW is a file format name.")
         default:
@@ -924,7 +943,9 @@ enum SettingsSearch {
     }
 
     /// The items search lists: every row and page, without the group headers.
-    static let searchable: [SettingsID] = SettingsID.allCases.filter { ![.photos, .privacy, .camera, .screen, .more].contains($0) }
+    static let searchable: [SettingsID] = SettingsID.allCases.filter {
+        ![.photos, .privacy, .camera, .screen, .more, .honestyCloseUpFocus].contains($0)
+    }
 
     /// The words of a search, split at white space.
     ///

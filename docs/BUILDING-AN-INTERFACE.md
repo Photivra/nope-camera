@@ -102,8 +102,9 @@ environment values: `cameraUprightRotation` (which way up the iPhone is held),
 `cameraPresentsSheet` (so the app can rotate sheets while the camera stays in portrait),
 `openAppSettings` (Open Settings buttons; leave it `nil` and they are hidden) and
 `openPhotosApp` (Open in Photos in the Last Photo viewer and among the thumbnail's VoiceOver
-actions; leave it `nil`, as the Lock Screen camera does, and Open in Photos is hidden). A tap on
-the thumbnail opens the Last Photo viewer (`PhotoViewer.swift`), which shows
+actions, and Open Photos in the Last Photo spot before the first photo since the app opened;
+leave it `nil`, as the Lock Screen camera does, and both are hidden and the spot starts empty).
+A tap on the thumbnail opens the Last Photo viewer (`PhotoViewer.swift`), which shows
 `CameraModel.sessionPhotos` and tells the model it is open with `CameraIntent.setViewerOpen(_:)`.
 Each `SavedPhoto` carries its `thumbnail` and `details`, and each `SessionPhoto` its preview, for
 your own last-photo view.

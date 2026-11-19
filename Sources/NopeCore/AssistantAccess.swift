@@ -308,7 +308,8 @@ public final class AssistantSession {
     /// - Parameter defaults: The store for the tip's counter, normally the settings' store.
     public init(defaults: UserDefaults) {
         self.defaults = defaults
-        tipCounter = min(max(defaults.integer(forKey: Self.tipCounterKey), 0), Self.tipThreshold + 1)
+        tipCounter = 0
+        reloadTipCounter()
     }
 
     /// Creates an empty session that stores the tip's counter with the settings.
@@ -337,6 +338,13 @@ public final class AssistantSession {
     public func dismissTip() {
         guard showsTip else { return }
         storeTipCounter(Self.tipThreshold + 1)
+    }
+
+    /// Reads the tip's counter from the store again, after Factory Defaults removed it
+    /// (``SettingsPresets/apply(_:camera:location:keepsPrivacySettings:)``): 0 when it is gone,
+    /// so the tip can show again after five more confirmed requests.
+    public func reloadTipCounter() {
+        tipCounter = min(max(defaults.integer(forKey: Self.tipCounterKey), 0), Self.tipThreshold + 1)
     }
 
     /// Asks the camera screen to open Settings at the Assistant Access page.

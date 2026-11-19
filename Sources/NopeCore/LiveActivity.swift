@@ -123,11 +123,16 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         self.isNightMode = isNightMode
     }
 
-    /// Whether the activity offers Stop: for an interval series or astro run that runs or is
-    /// paused, because they have photos still to take that Stop would prevent. Every photo
-    /// already taken is saved either way.
+    /// Whether the activity offers Stop: for an interval series, astro run or focus bracket that
+    /// runs or is paused, because they have photos still to take that Stop would prevent, and
+    /// for a focus bracket's start delay (docs/design/device-feedback-1.0.md, section 6). Every
+    /// photo already taken is saved either way.
     public var canStop: Bool {
-        (kind == .interval || kind == .astro) && (phase == .running || phase == .paused)
+        switch kind {
+        case .interval, .astro: phase == .running || phase == .paused
+        case .focusBracket: phase == .countingDown || phase == .running || phase == .paused
+        case .burst, .timer: false
+        }
     }
 
     /// Whether the run has ended, so the activity shows its final state.
@@ -216,7 +221,8 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         switch kind {
         case .interval: .seriesStopped(taken: taken, total: total)
         case .timer: saved > 0 ? .photosSaved(saved) : .noPhotoTaken
-        case .astro, .burst, .focusBracket: .stoppedPhotosSaved(saved)
+        case .astro, .burst: .stoppedPhotosSaved(saved)
+        case .focusBracket: .bracketStopped(saved: saved, total: total)
         }
     }
 
@@ -275,6 +281,9 @@ public enum LiveActivityStatusLine: Equatable, Sendable {
     case photosSaved(Int)
     /// "Stopped. Photos saved: 5."
     case stoppedPhotosSaved(Int)
+    /// "Bracket stopped: 4 of 12 photos saved", as the focus bracket's card says it: a focus
+    /// bracket ended before its last frame.
+    case bracketStopped(saved: Int, total: Int)
     /// "Stopped. No photo taken."
     case noPhotoTaken
     /// "A photo wasn't saved. Open nope. for details."

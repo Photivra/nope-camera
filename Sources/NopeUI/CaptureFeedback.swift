@@ -257,8 +257,46 @@ struct FailureBanner: View {
     }
 }
 
-/// The last-photo slot beside the shutter (issue #68, "Feedback tiers"): empty and invisible
-/// until the first photo of the session, never an empty square. Then it shows the last photo with
+/// What the Last Photo spot beside the shutter holds (docs/design/device-feedback-1.0.md,
+/// section 1).
+enum LastPhotoSpot: Equatable {
+    /// Nothing: in clean view (Show Controls has the spot), during a countdown or series before
+    /// the first photo, or where Photos can't be opened (the Lock Screen camera).
+    case nothing
+
+    /// Open Photos, which opens the Photos app: before the first photo since the app opened.
+    case openPhotos
+
+    /// The spinner, while a photo is taken or saved.
+    case saving
+
+    /// The last photo, which opens the Last Photo viewer.
+    case lastPhoto
+
+    /// What the spot holds.
+    ///
+    /// - Parameters:
+    ///   - hasPhotos: Whether a photo was saved since the app opened.
+    ///   - isBusy: Whether a photo is being taken or saved now.
+    ///   - isSeriesRunning: Whether a countdown or series runs or is paused: leaving the app for
+    ///     Photos would interrupt it.
+    ///   - isCleanView: Whether clean view hides the controls.
+    ///   - canOpenPhotos: Whether the app can open Photos (not in the Lock Screen camera).
+    /// - Returns: The content.
+    static func content(
+        hasPhotos: Bool, isBusy: Bool, isSeriesRunning: Bool, isCleanView: Bool, canOpenPhotos: Bool
+    ) -> LastPhotoSpot {
+        if isCleanView { return .nothing }
+        if isBusy { return .saving }
+        if hasPhotos { return .lastPhoto }
+        return !isSeriesRunning && canOpenPhotos ? .openPhotos : .nothing
+    }
+}
+
+/// The last-photo slot beside the shutter (issue #68, "Feedback tiers"). Before the first photo
+/// since the app opened, it holds Open Photos, which opens the Photos app; where Photos can't be
+/// opened, or while a countdown or series runs, it is empty, never an empty square
+/// (docs/design/device-feedback-1.0.md, section 1). Then it shows the last photo with
 /// a teal seal when every file was signed, or an amber mark when signing was on and a file
 /// couldn't be signed. With signing off by choice it has no badge (docs/design/BUILD-SPEC.md, 3.3
 /// and 3.7): that isn't a warning, and its value still says "Saved. Not signed: signing is off in
@@ -287,6 +325,9 @@ struct ThumbnailSlot: View {
 
     /// Shows the photo's details (issue #53), or `nil` for none.
     let showDetails: (() -> Void)?
+
+    /// Whether a countdown or series runs or is paused, so Open Photos isn't offered.
+    let isSeriesRunning: Bool
 
     /// The slot's side, in points: larger than the 44-point minimum, smaller than the shutter
     /// (``NopeSize/thumbnail``).
@@ -324,9 +365,10 @@ struct ThumbnailSlot: View {
     ///   - openViewer: Opens the Last Photo viewer, or `nil` for none.
     ///   - openPhoto: Opens Photos, or `nil` when the app can't.
     ///   - showDetails: Shows the photo's details, or `nil` for none.
+    ///   - isSeriesRunning: Whether a countdown or series runs or is paused. Defaults to `false`.
     init(
         photos: [SavedPhoto]?, image: Image? = nil, isBusy: Bool, openViewer: (() -> Void)? = nil,
-        openPhoto: (() -> Void)? = nil, showDetails: (() -> Void)? = nil
+        openPhoto: (() -> Void)? = nil, showDetails: (() -> Void)? = nil, isSeriesRunning: Bool = false
     ) {
         self.photos = photos
         self.image = image
@@ -334,11 +376,21 @@ struct ThumbnailSlot: View {
         self.openViewer = openViewer
         self.openPhoto = openPhoto
         self.showDetails = showDetails
+        self.isSeriesRunning = isSeriesRunning
+    }
+
+    /// What the slot holds now.
+    private var content: LastPhotoSpot {
+        LastPhotoSpot.content(
+            hasPhotos: photos != nil, isBusy: isBusy, isSeriesRunning: isSeriesRunning, isCleanView: false,
+            canOpenPhotos: openPhoto != nil)
     }
 
     /// The slot.
     var body: some View {
-        if isBusy {
+        if content == .openPhotos, let openPhoto {
+            OpenPhotosButton(action: openPhoto)
+        } else if isBusy {
             ProgressView {
                 Text("Saving…", bundle: .module, comment: "Shown while a photo that was just taken is being checked and added to the photo library.")
             }
@@ -368,7 +420,7 @@ struct ThumbnailSlot: View {
     }
 
     /// The slot's name for VoiceOver and Voice Control.
-    private static var label: Text {
+    static var label: Text {
         Text("Last Photo", bundle: .module, comment: "VoiceOver name of the small picture beside the shutter: the last photo taken in this session.")
     }
 
@@ -423,5 +475,52 @@ struct ThumbnailSlot: View {
             }
         }
         .accessibilityIgnoresInvertColors()
+    }
+}
+
+/// Open Photos, in the Last Photo spot before the first photo since the app opened
+/// (docs/design/device-feedback-1.0.md, section 1): the thumbnail's size and corner, the fill of
+/// a control, and the symbol Open in Photos uses. No ring: the ring belongs to a photo. It opens
+/// the Photos app where the person left it; the app can't read the library or name a photo, so
+/// nothing here says it shows the last photo.
+struct OpenPhotosButton: View {
+    /// Opens the Photos app.
+    let action: () -> Void
+
+    /// Creates the button.
+    ///
+    /// - Parameter action: Opens the Photos app.
+    init(action: @escaping () -> Void) {
+        self.action = action
+    }
+
+    /// The button's name for VoiceOver, Voice Control and the Large Content Viewer.
+    static var label: Text {
+        Text("Open Photos", bundle: .module, comment: "Button in the Last Photo spot beside the shutter, before the first photo since nope. opened: opens the Photos app. Photos is the system photo library app. Draft for the Honesty review.")
+    }
+
+    /// The button.
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "photo.on.rectangle")
+                .font(.title3.weight(.semibold))
+        }
+        .buttonStyle(NopeIconButtonStyle(size: ThumbnailSlot.side, cornerRadius: NopeRadius.small))
+        .accessibilityLabel(Self.label)
+        .accessibilityInputLabels([
+            Self.label,
+            // Its own key: "Photos" alone is the interval series' picker.
+            Text(String(localized: "Open Photos: second name", defaultValue: "Photos", bundle: .module, comment: "Second Voice Control name of the Open Photos button beside the shutter. Photos is the system photo library app.")),
+        ])
+        .accessibilityHint(
+            Text("Opens the Photos app.", bundle: .module, comment: "VoiceOver hint of the Open Photos button beside the shutter. Photos is the system photo library app. Draft for the Honesty review."))
+        .accessibilityShowsLargeContentViewer {
+            Label {
+                Self.label
+            } icon: {
+                Image(systemName: "photo.on.rectangle")
+            }
+        }
+        .accessibilityIdentifier("openPhotos")
     }
 }
