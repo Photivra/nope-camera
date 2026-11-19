@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nope. design: The public site</title>
+<style>
+
+:root{--bg:#f2f2f7;--card:#fff;--ink:#1c1c1e;--muted:#5f5f64;--rule:#d1d1d6;--pick:#0b6b60}
+@media (prefers-color-scheme: dark){:root{--bg:#000;--card:#1c1c1e;--ink:#f2f2f7;--muted:#a1a1a6;--rule:#3a3a3c;--pick:#5fe0d0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+main{max-width:1120px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:28px;letter-spacing:-.02em;margin:0 0 8px}
+h2{font-size:22px;letter-spacing:-.01em;margin:48px 0 8px}
+h3{font-size:17px;margin:24px 0 4px}
+p{margin:0 0 12px;max-width:820px}
+a{color:inherit}
+.muted{color:var(--muted)}
+nav.set{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0}
+nav.set a{display:inline-block;padding:6px 12px;border-radius:16px;background:var(--card);text-decoration:none;font-size:13px;font-weight:600}
+nav.set a.here{background:var(--ink);color:var(--bg)}
+ul{margin:0 0 12px;padding-left:20px;max-width:820px}li{margin:0 0 4px}
+.figs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:32px 24px;margin-top:16px;align-items:start}
+.figs.wide{grid-template-columns:repeat(auto-fill,minmax(480px,1fr))}
+.figs.small{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+figure{margin:0}
+figure img{display:block;max-width:100%;height:auto;background:#000;box-shadow:0 0 0 1px var(--rule)}
+figcaption{font-size:13px;color:var(--muted);margin-top:12px}
+figcaption b{display:block;color:var(--ink);font-size:14px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:16px 0;background:var(--card);border-radius:12px;overflow:hidden;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:8px 12px;border-bottom:1px solid var(--rule)}
+tr:last-child td{border-bottom:0}
+thead th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+code{font:13px ui-monospace,Menlo,monospace}
+.pick{border-left:4px solid var(--pick);background:var(--card);border-radius:0 12px 12px 0;padding:16px 24px;margin-top:16px}
+.pick p:last-child,.pick ul:last-child{margin-bottom:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:16px}
+.cards a{display:block;background:var(--card);border-radius:16px;padding:16px 20px;text-decoration:none}
+.cards a b{display:block;font-size:17px}.cards a span{color:var(--muted);font-size:13px}
+.sw{border-radius:12px;padding:16px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.swl{font-size:12px;color:var(--muted);margin:16px 0 4px;font-weight:600}
+.scale{display:flex;align-items:flex-end;gap:16px;margin:8px 0 16px}
+.scale div{text-align:center;font-size:12px;color:var(--muted)}
+.scale i{display:block;background:var(--ink);height:16px;margin:0 auto 4px;border-radius:1px}
+.radii{display:flex;gap:16px;margin:8px 0}
+.radii div{text-align:center;font-size:12px;color:var(--muted)}
+.radii i{display:block;width:64px;height:64px;border:2px solid var(--ink);border-bottom-color:transparent;border-right-color:transparent;margin:0 auto 4px}
+.chip2{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;box-shadow:0 0 0 1px var(--rule)}
+.figs.full{grid-template-columns:1fr}.figs.full img{width:100%;height:auto}
+
+</style>
+</head>
+<body>
+<main>
+<h1>The public site</h1>
+<p class="muted">Proposed 2026-11-19 for release 1.0.0: nope.photivra.com. It becomes part of the plan when the decisions in nope-site.md are made. Not counted in the screen counts of this set.</p>
+<nav class="set"><a href="overview.html">Overview</a><a href="design-system.html">Design system</a><a href="icon.html">Icon</a><a href="launch.html">Launch screen</a><a href="nope-site.html" class=here>The public site</a></nav>
+<p style="margin-top:16px">A small site for people who use Photivra Nope Camera: a landing page, the privacy policy and support. It keeps the app’s rules: no cookies, no analytics, no JavaScript, and no request to any other site. The structure, the draft copy, the build specification, the checks and the decisions are in <a href="nope-site.md">nope-site.md</a>.</p>
+<p>These figures are drawings of the pages, not the site’s code. Their text is set in Inter (SIL Open Font License), embedded in each file. Screenshots and the App Store badge are labeled placeholders: the real ones are captures of the app and Apple’s own artwork.</p>
+<h2>Landing page</h2>
+<div class="figs wide">
+<figure id="site-home"><a href="screens/site-home.html"><img src="screens/site-home.png" width="560" alt="The landing page, dark" loading="lazy" style="border-radius:12px"></a><figcaption><b>The landing page, dark</b>1280 px wide, with the App Store badge shown as a labeled placeholder. The hero is the camera’s black with the wordmark lockup, the tagline and the scoped sentence; the statements below are the App Store description, word for word.</figcaption></figure>
+<figure id="site-home-light"><a href="screens/site-home-light.html"><img src="screens/site-home-light.png" width="560" alt="The landing page, light" loading="lazy" style="border-radius:12px"></a><figcaption><b>The landing page, light</b>The page follows the reader’s light or dark setting. The hero stays black in both, as the launch screen does, so the teal period is always on black.</figcaption></figure>
+</div>
+<h2>Phone, large text and before release</h2>
+<div class="figs wide">
+<figure id="site-home-phone"><a href="screens/site-home.html"><img src="screens/site-home-phone.png" width="260" alt="390 px wide, dark" loading="lazy" style="border-radius:12px"></a><figcaption><b>390 px wide, dark</b>One column. The four screenshots sit two by two. Drawn from site-home.html.</figcaption></figure>
+<figure id="site-home-large-text"><a href="screens/site-home-large-text.html"><img src="screens/site-home-large-text.png" width="260" alt="320 px wide, text at 200%" loading="lazy" style="border-radius:12px"></a><figcaption><b>320 px wide, text at 200%</b>The top of the page. Nothing is clipped and nothing scrolls sideways; the wordmark is sized by the window, not by the text size.</figcaption></figure>
+<figure id="site-home-before"><a href="screens/site-home-before.html"><img src="screens/site-home-before.png" width="560" alt="Before the app is on the App Store" loading="lazy" style="border-radius:12px"></a><figcaption><b>Before the app is on the App Store</b>No badge and no App Store link: a plain note in its place. This is the state the site is first published in, before the app is submitted.</figcaption></figure>
+</div>
+<h2>Privacy policy</h2>
+<div class="figs wide">
+<figure id="site-privacy"><a href="screens/site-privacy.html"><img src="screens/site-privacy.png" width="560" alt="The privacy page, light" loading="lazy" style="border-radius:12px"></a><figcaption><b>The privacy page, light</b>The policy draft as it is today, built from the one policy file: the three dates, links to each section, then the text in one column. Bracketed items are unfilled in the draft; the build refuses to publish while any remains.</figcaption></figure>
+<figure id="site-privacy-dark"><a href="screens/site-privacy-dark.html"><img src="screens/site-privacy-dark.png" width="260" alt="390 px wide, dark" loading="lazy" style="border-radius:12px"></a><figcaption><b>390 px wide, dark</b>The same page on a phone in the dark theme.</figcaption></figure>
+<figure id="site-privacy-print"><a href="screens/site-privacy-print.html"><img src="screens/site-privacy-print.png" width="560" alt="Printed" loading="lazy" style="border-radius:12px"></a><figcaption><b>Printed</b>The first sheet. Black on white, no navigation, the address and the dates under the title, link addresses printed after the link text.</figcaption></figure>
+</div>
+<h2>Support and not found</h2>
+<div class="figs wide">
+<figure id="site-support"><a href="screens/site-support.html"><img src="screens/site-support.png" width="560" alt="The support page, light" loading="lazy" style="border-radius:12px"></a><figcaption><b>The support page, light</b>The three ways to get help, with what each one reveals; what to include; common questions; devices; accessibility. Shown with the email block of option B.</figcaption></figure>
+<figure id="site-support-dark"><a href="screens/site-support-dark.html"><img src="screens/site-support-dark.png" width="260" alt="390 px wide, dark" loading="lazy" style="border-radius:12px"></a><figcaption><b>390 px wide, dark</b>The same page on a phone in the dark theme.</figcaption></figure>
+<figure id="site-404"><a href="screens/site-404.html"><img src="screens/site-404.png" width="560" alt="Page not found" loading="lazy" style="border-radius:12px"></a><figcaption><b>Page not found</b>Served for any unknown address. Not indexed and not in the sitemap.</figcaption></figure>
+</div>
+</main>
+</body>
+</html>

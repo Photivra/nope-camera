@@ -4,7 +4,7 @@ Every third-party component, dataset or specification used in this repository is
 
 | Component | Version | License | Source | Used for |
 |---|---|---|---|---|
-| Inter | 4.x | SIL Open Font License 1.1 | [rsms/inter](https://github.com/rsms/inter) | The "nope." wordmark, converted to outlines (brand artwork only; not bundled) |
+| Inter | 4.x | SIL Open Font License 1.1 | [rsms/inter](https://github.com/rsms/inter) | The "nope." wordmark, converted to outlines (brand artwork only; not bundled); a Latin subset is embedded in the site figures, `docs/design/screens/site-*.html` |
 | c2pa-rs (`c2pa-c-ffi`, built from source as `C2PAC.xcframework`, network features off) | 0.92.0 (tag `c2pa-v0.92.0`, commit `83eba34`) | MIT or Apache-2.0, at the user's option | [contentauth/c2pa-rs](https://github.com/contentauth/c2pa-rs) | C2PA Content Credentials: building, embedding and signing manifests (`c2pa-lib/README.md`) |
 | Rust crates compiled into `C2PAC` | See `c2pa-lib/CRATES.md` | Each listed there; all GPL-3.0-only compatible (checked by cargo-deny with `c2pa-lib/deny.toml`) | crates.io | Dependencies of c2pa-rs |
 | c2pa-swift (`C2PA`, vendored in `Vendor/c2pa-swift`, without its networking code) | 0.1.0 (commit `901cfbf`) | MIT or Apache-2.0, at the user's option | [contentauth/c2pa-swift](https://github.com/contentauth/c2pa-swift) | The Swift interface to the C2PA library (`NopeSigning`); changes listed in `Vendor/c2pa-swift/README.md` |
