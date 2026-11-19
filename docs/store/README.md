@@ -17,6 +17,7 @@ the other submission answers:
 | [`app-privacy-label.md`](app-privacy-label.md) | App Store Connect App Privacy answers ("Data Not Collected") |
 | [`accessibility-label.md`](accessibility-label.md) | Accessibility Nutrition Label answers, and the evidence each one needs |
 | [`privacy-policy-draft.md`](privacy-policy-draft.md) | The privacy policy, for the maintainer to publish |
+| [`STORE-PAGE-PLAN.md`](STORE-PAGE-PLAN.md) | The product page plan for 1.0.0 (proposal): each App Store page feature, screenshot and preview storyboards, the assets to make, the App Store Connect steps and the maintainer's decisions. Section 12 designs the Rate or Review row for the About screen (decided 2026-11-19, not built): a third About link, which opens the App Store's write-review page; the app shows no rating prompt |
 
 ## Field limits (App Store Connect)
 

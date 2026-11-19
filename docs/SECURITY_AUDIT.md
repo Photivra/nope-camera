@@ -258,6 +258,10 @@ AGENTS.md rule 4.
     (`AboutScreen.privacyPolicyURL` and `sourceURL`), which hand the URL to the system and don't
     fetch anything in the app; and the Photos app's `photos-redirect://` address, which opens
     Photos and reads nothing.
+    Planned, not built (maintainer's decision, 2026-11-19): a third About link, Rate or Review,
+    which hands the App Store's write-review address (`https://apps.apple.com/app/id<App Store
+    ID>?action=write-review`) to the system the same way; its design is in
+    `docs/store/STORE-PAGE-PLAN.md`, section 12. When it is built, this list names three links.
   - The binary checks in check 3 (`nm -u`, `otool -L`) on the app and every framework, and on
     the embedded Apple Watch app (`Watch/NopeWatch.app/NopeWatch`). It links WatchConnectivity,
     which carries the watch's commands over the system's paired-device connection; the app
