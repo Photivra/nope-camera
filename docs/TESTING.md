@@ -712,7 +712,13 @@ the newest 26.x runtime in Apple's Simulator runtime index as of 2026-11-18; the
 they don't fit the repository's cache, so each of those jobs downloads one (about 10 minutes,
 counted in their time limits). The iPhone 17 Pro and Apple Watch Series 11 are used because
 the iPhone 18 Pro and Apple Watch Series 12 Simulators need the 27 runtimes; the watch app runs
-with a simulated phone, so the watch needs no paired iPhone. With the deployment target at
+with a simulated phone, so the watch needs no paired iPhone. Checked locally on 2026-11-19
+with the 26.5 runtimes: the watch UI tests passed on an Apple Watch Series 11 (46mm) with
+watchOS 26.5, and on an iPhone 17 Pro with iOS 26.5 the first start, Honesty and focus fade
+tests passed, while `testSourceCodeIsAnHTTPSLink` and `testPrivacyPolicyIsAnHTTPSLink` failed:
+the recording shows both links on the About screen, but `app.links[…]` doesn't find them on
+iOS 26.5. Neither test is in iPhone shard 1, so the iOS 26 job doesn't run them; an open
+finding. With the deployment target at
 26.0, the compiler also rejects any API newer than iOS or watchOS 26 that isn't behind an
 `#available` check. Running on a version 26 device is part of the on-device checks below.
 
