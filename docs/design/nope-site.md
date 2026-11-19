@@ -1,14 +1,14 @@
 # The public site: nope.photivra.com
 
-Status: **proposal, 2026-11-19, for release 1.0.0. Needs the maintainer's decisions (section 16).** This page designs a small public site for Photivra Nope Camera, served by GitHub Pages at `https://nope.photivra.com/`. It is a design and a build specification. No site code is part of this change, nothing is published, and no repository setting is changed by it.
+Status: **accepted 2026-11-19 for release 1.0.0, with the maintainer's decisions recorded in section 16.** This page designs a small public site for Photivra Nope Camera, served by GitHub Pages at `https://nope.photivra.com/`. It is a design and a build specification. No site code is part of this change, nothing is published, and no repository setting is changed by it.
 
-The figures are in [nope-site.html](nope-site.html) and `screens/site-*`. Every piece of copy below is a **draft for the maintainer's wording review**; the privacy page is [the policy draft](../store/privacy-policy-draft.md) as it will be published.
+The figures are in [nope-site.html](nope-site.html) and `screens/site-*`. Every piece of copy below is a **draft for the maintainer's wording review**, except the policy text of section 5.1, which is approved; the privacy page is [the policy draft](../store/privacy-policy-draft.md) as it will be published.
 
-Contents: 1. Summary · 2. Rules the site follows · 3. Structure and addresses · 4. The landing page · 5. The privacy page · 6. The support page · 7. Not found · 8. Visual design · 9. Accessibility · 10. Search and sharing · 11. Performance · 12. Security and privacy of the site · 13. Keeping the site true · 14. Build, checks and publishing · 15. What the maintainer does · 16. Decisions for the maintainer · 17. Sources and what is unverified
+Contents: 1. Summary · 2. Rules the site follows · 3. Structure and addresses · 4. The landing page · 5. The privacy page · 6. The support page · 7. The accessibility page, and not found · 8. Visual design · 9. Accessibility · 10. Search and sharing · 11. Performance · 12. Security and privacy of the site · 13. Keeping the site true · 14. Build, checks and publishing · 15. What the maintainer does · 16. Decisions · 17. Sources and what is unverified
 
 ## 1. Summary
 
-- **Three pages and a not-found page:** `/` (what the app does, screenshots, the App Store link), `/privacy/` (the privacy policy, the address the app's About screen already opens) and `/support/` (how to get help; the store's support URL). `/accessibility/` and `/press/` are left for later (section 3).
+- **Four pages and a not-found page:** `/` (what the app does, screenshots, the App Store link), `/privacy/` (the privacy policy, the address the app's About screen already opens), `/support/` (how to get help; the store's support URL) and `/accessibility/` (what the app has, what has and hasn't been checked, how to report a problem). `/press/` is left for later (section 3).
 - **The site keeps the app's rules.** No cookies, no analytics, no JavaScript, no third-party fonts, scripts or content delivery networks, and no request to any other site. Every file is served from `nope.photivra.com`. A Content-Security-Policy in each page enforces it, and a check fails the build if it stops being true.
 - **The site says nothing the app's own text doesn't.** The landing page's statements are the App Store description, word for word, taken from `store/metadata/en-US/description.txt` at build time. The privacy page is built from the one policy file. The screenshots are the store's captures with the store's captions.
 - **It is built from the repository and published by a workflow** on each release tag and on demand: static files in `site/`, Tailwind CSS compiled at build time, checks before every deploy.
@@ -33,15 +33,17 @@ Contents: 1. Summary · 2. Rules the site follows · 3. Structure and addresses 
 | `https://nope.photivra.com/` | Landing page | Yes | The store's marketing URL (optional field) |
 | `https://nope.photivra.com/privacy/` | Privacy policy | Yes | The app's About screen; the store's privacy policy URL |
 | `https://nope.photivra.com/support/` | Support | Yes | The store's support URL |
+| `https://nope.photivra.com/accessibility/` | Accessibility | Yes | The store's optional Accessibility URL, once labels are declared |
 | `https://nope.photivra.com/404.html` | Not found | No (`noindex`) | GitHub Pages serves it for unknown addresses |
 | `/sitemap.xml`, `/robots.txt` | Generated at build | | Search engines |
-| `/.well-known/security.txt` | Points to private vulnerability reporting (RFC 9116) | | Optional (decision 21) |
+| `/.well-known/security.txt` | RFC 9116: `Contact:` the repository's private vulnerability reporting address first, then `mailto:hello@photivra.com`; `Expires:` one year after the release date; `Canonical:` its own address | | Decision 21 |
 
 Every page address ends in a slash and is the page's one canonical address. The two legal and support addresses are already written into the app and its tests; they never move.
 
+`/accessibility/` is built in 1.0.0 (maintainer's decision, 2026-11-19). The store plan (`docs/store/STORE-PAGE-PLAN.md`, section 10, on branch `design-store-page`) proposed it for after the manual pass; it is published now and states the pass's status as it is (section 7.1). The address goes into the store's Accessibility URL field only when labels are declared.
+
 **Not built for 1.0.0, with the reason:**
 
-- **`/accessibility/`.** The store plan (`docs/store/STORE-PAGE-PLAN.md`, section 10, on branch `design-store-page`) proposes this page as the optional Accessibility URL, published when the manual pass is done and the Accessibility Nutrition Labels are declared. Until then a page would describe what isn't yet checked. The support page carries the "report a barrier" paragraph meanwhile.
 - **`/press/`.** The wordmark file isn't in the repository yet ([TRADEMARKS.md](../../TRADEMARKS.md)), and the brand files aren't under the GPL. A press page waits for a decision on what may be downloaded and on what terms.
 - **Pages for custom product pages** (store plan, section 8). Added with those pages, each from the same claim table.
 
@@ -53,7 +55,7 @@ Figures: `site-home` (dark), `site-home-light`, `site-home-phone`, `site-home-la
 
 | # | Section | Content | Source of the words |
 |---|---|---|---|
-| 1 | Header | The app icon's mark, "Photivra Nope Camera", and three links: Privacy, Support, Source code | |
+| 1 | Header | The app icon's mark, "Photivra Nope Camera", and four links: Privacy, Support, Accessibility, Source code | |
 | 2 | Hero, on black in both themes | The wordmark lockup ("nope." with "Photivra Nope Camera" beneath, the page's one `h1`); the tagline; one scoped sentence; the App Store badge, or the "not yet" note; screenshot 1 | The lockup and tagline: AGENTS.md. The sentence: the first line of `description.txt` |
 | 3 | What it does, and what it doesn't | Five groups of statements | `description.txt`, word for word (section 13) |
 | 4 | What it looks like | Four screenshots with captions, and one line saying where they were captured | The store's captures and caption strings |
@@ -90,7 +92,7 @@ Section 5:
 >
 > Check it yourself: your browser's network inspector shows every request a page makes, and the site's files are in the public repository.
 
-Section 6, devices in short: "iPhone 11 or later, or iPhone SE (2nd generation) or later, with iOS 26 or later. iPad models that run iPadOS 26 or later. The Apple Watch app is a remote shutter. It takes no photos itself. English only in version 1.0.0." The Apple Watch line stays only if the watch app ships in 1.0.0 (store plan, decision 9).
+Section 6, devices in short: "iPhone 11 or later, or iPhone SE (2nd generation) or later, with iOS 26 or later. iPad models that run iPadOS 26 or later. The Apple Watch app is a remote shutter. It takes no photos itself. English only in version 1.0.0." The Apple Watch line is shown: the watch app ships in 1.0.0 (decision 25).
 
 Footer:
 
@@ -100,7 +102,7 @@ Footer:
 >
 > Apple, the Apple logo, iPhone, iPad and Apple Watch are trademarks of Apple Inc., registered in the U.S. and other countries and regions. App Store is a service mark of Apple Inc. This product includes DNG technology under license by Adobe.
 
-The Apple credit line lists only the Apple names the built pages use, appears once on each page, and its exact form is re-read against Apple's guidelines when the page is built. "Apple Watch" leaves the line if the watch sentence leaves the page.
+The Apple credit line lists only the Apple names the built pages use, appears once on each page, and its exact form is re-read against Apple's guidelines when the page is built. 
 
 ### 4.3 The App Store badge
 
@@ -112,7 +114,7 @@ From Apple's App Store Marketing Guidelines, read 2026-11-19 (section 17):
 - At least 40 px high on screen; clear space of one quarter of its height on every side.
 - The U.S. English badge. It links to the app's App Store page.
 - The page credits "Apple" and "the Apple logo" when the badge is shown (the footer line above).
-- The badge file is Apple's. It is self-hosted (no request to Apple), kept as Apple supplies it, and listed in `THIRD_PARTY.md` and `TRADEMARKS.md` as Apple's artwork under Apple's terms, not under the GPL. The maintainer downloads it from Apple's marketing resources; an agent doesn't fetch or recreate it.
+- The badge file is Apple's. It is self-hosted (no request to Apple), kept as Apple supplies it, and listed in `THIRD_PARTY.md` and `TRADEMARKS.md` as Apple's artwork under Apple's terms, not under the GPL. The maintainer downloads it from Apple's marketing resources and adds it only once the app can be downloaded; an agent doesn't fetch or recreate it. **The build works without the file:** in the "not yet" state nothing refers to it, and the build fails only if `available` is true and the file is missing.
 - **The badge and its link appear only when the app can be downloaded.** A value in `site/site.json` (`appStoreId`, and `available: true`) turns it on; with either missing the page shows the "not yet" note. The id exists once the app's record is created, before the app is available, so the id alone doesn't turn the badge on. The same id is the one `AboutScreen.appStoreID` would hold (store plan, section 12.2); the build checks the two agree when both exist.
 - No Smart App Banner (`apple-itunes-app` meta tag) for 1.0.0: it is drawn by Safari with data Safari fetches from Apple, so it would be the one thing on the page that causes a request the page didn't serve (decision 9).
 
@@ -124,7 +126,7 @@ The site uses **the store's screenshot set**, not a second one: the same capture
 
 - **Which:** image 1 (the camera, default state) in the hero; images 2 (Honesty), 3 (What's in This Photo), 4 (Details in Each Photo) and 8 (Sign Each Photo) below. Images whose gates are open at submission are not on the site either.
 - **Form:** the captured screen alone, unedited, with rounded corners and no device frame. No Apple product image, so Apple's bezel rules don't come into play. The caption is real text under the image (`figcaption`), not drawn into it, taken from the store's caption strings (`store/screenshots/captions/en-US.json` in the store plan).
-- **Source and labeling:** camera screens are captures from the maintainer's iPhone in the release build (the store plan's source A); screens without a viewfinder are Simulator captures (source C). One line under the row says so: "Screens of Photivra Nope Camera 1.0.0, unedited. The camera screens were captured on an iPhone 16 Pro Max. The others were captured in Apple's Simulator, which has no camera." If the store plan's source B is used for any image shown here (a still shown in the Simulator's viewfinder), the line names it the same way the listing does.
+- **Source and labeling:** camera screens are captures from the maintainer's iPhone in the release build (the store plan's source A); screens without a viewfinder are Simulator captures (source C). One line under the row says so: "Screens of Photivra Nope Camera 1.0.0, unedited. The camera screens were captured on an iPhone 16 Pro Max. The others were captured in Apple's Simulator, which has no camera." The picture behind the store images is a real photo taken with the app, which the maintainer provides before release (2026-11-19). Where an image shown here uses it in the Simulator's viewfinder (the store plan's source B), the line says so the same way the listing does.
 - **No photos as results.** The site shows screens of the app, never a gallery of "photos taken with the app", so it makes no claim about how a photo looks.
 - **Alternative text** for each image states the same fact as its caption and names the screen, for example: "The camera screen of Photivra Nope Camera. The status line reads RAW." The alt text never says more than the caption's claim allows.
 - **Until captures exist,** the page is published without the screenshot sections rather than with drawings from `docs/design/screens/`: those are mockups, not the app.
@@ -138,13 +140,30 @@ Figures: `site-privacy`, `site-privacy-dark`, `site-privacy-print`.
 - **"On this page"**: a list of links to each heading. Headings have stable anchors (`#what-we-collect`), so the app, the store notes and support answers can point at a section.
 - **Layout:** one column, at most 44rem wide (about 70 characters a line), body text 17 px, headings two steps larger, lists as lists. No decoration.
 - **Print:** black on white, the header links, the contents list and the footer links removed, the page address and the three dates in a line under the title, link addresses printed after the link text, headings kept with the paragraph that follows. Checked in the browser's print preview at Letter and A4.
-- **One addition the policy needs** before the site is live: today it says it "doesn't cover the Photivra website". This site is where the policy is read, and its host logs IP addresses, so the policy should say so itself. Draft for the maintainer, as a section before "Children":
+
+### 5.1 Approved changes to the policy text
+
+The maintainer approved these changes on 2026-11-19. The pull request that builds the site makes them in `docs/store/privacy-policy-draft.md`, **word for word**, together with the related lines of `docs/PRIVACY.md` and `docs/research/privacy-claims.md` that say there is no contact email.
+
+**1. In the opening paragraph,** "It doesn't cover the Photivra website or other Photivra products, which have their own policies." becomes:
+
+> It doesn't cover photivra.com or other Photivra products, which have their own policies.
+
+**2. A new section, placed directly before "Children":**
 
 > ## This website
 >
-> This policy is published at nope.photivra.com. The site uses no cookies, no analytics and no JavaScript, and loads nothing from other sites. It is hosted on GitHub Pages: when you load a page, GitHub receives your IP address and logs it for security, under GitHub's privacy statement.
+> This policy is published at nope.photivra.com. The site uses no cookies, no analytics and no JavaScript, and loads nothing from other sites. It is hosted on GitHub Pages: when you load a page, GitHub receives your IP address and logs it for security, under [GitHub's privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement).
 
-  And "It doesn't cover the Photivra website" becomes "It doesn't cover photivra.com", so the two sites aren't confused. If an email address is added (section 6), the "Contact" section changes with it.
+**3. The "Contact" section is replaced by:**
+
+> ## Contact
+>
+> Questions about this policy: write to [hello@photivra.com](mailto:hello@photivra.com), or open an issue in the GitHub repository, [github.com/Photivra/nope-camera/issues](https://github.com/Photivra/nope-camera/issues). Issues are public, so please don't include personal information. To report a security problem privately, use the repository's private vulnerability reporting (Security › Report a vulnerability).
+>
+> The app never sends email, and it collects nothing. If you choose to write to us by email, your message and your email address are forwarded to us by Cloudflare Email Routing and stored by our email provider. We use them only to reply to you. We delete messages after 1 year, and you can ask us to delete yours sooner.
+
+The address is the one photivra.com uses, and the forwarding and storage are described as that site's privacy page describes them. If either site's wording about email changes, the other changes with it.
 
 ## 6. The support page
 
@@ -160,7 +179,7 @@ Figures: `site-support`, `site-support-dark`.
 | Effect on the app's statements | None | The policy's "There is no contact email" changes; the policy says what is received by email and what it is used for. The app still collects nothing | The policy would have to describe the form's service |
 | Risk | App Review asks that the support address lead to an easy way to make contact; an account wall may not count as easy, and it shuts out people who won't make an account | Unwanted mail; an address to keep answered | Not acceptable under section 2 |
 
-**Recommendation: B.** GitHub issues stay the first way for bugs, and an email address at the project's domain is offered beside it, as a plain `mailto:` link with no script around it. The page says plainly what each way reveals. The address is an alias chosen by the maintainer; it is not written in this repository until the maintainer adds it. If the maintainer prefers A, the page ships without the email block and the policy's contact section stays as it is.
+**Decided, 2026-11-19: B.** GitHub issues stay the first way for bugs, and an email address is offered beside it, as a plain `mailto:` link with no script around it. The page says plainly what each way reveals. The address is **hello@photivra.com**, the same address photivra.com uses. Messages are forwarded by Cloudflare Email Routing and stored by the maintainer's email provider, used only to reply, deleted after 1 year, and deleted sooner on request (decision 11).
 
 ### 6.2 Outline and draft copy
 
@@ -172,7 +191,7 @@ Figures: `site-support`, `site-support-dark`.
 >
 > **Report a problem or ask a question.** Open an issue on GitHub. You need a free GitHub account. Issues are public. Don't include personal information, and attach a photo only if you're willing to make it public: a photo can carry its location and other details.
 >
-> **Write by email.** *(address)* If you write, we receive your email address and whatever you send. We use them only to answer you. Email is not private in transit the way the app is: your mail provider and ours handle the message.
+> **Write by email.** hello@photivra.com. If you write, your message and your email address are forwarded to us by Cloudflare Email Routing and stored by our email provider. We use them only to answer you. We delete messages after 1 year, and sooner if you ask.
 >
 > **Report a security problem privately.** Use private vulnerability reporting on GitHub. Please don't open a public issue for a security problem.
 >
@@ -197,13 +216,90 @@ Figures: `site-support`, `site-support-dark`.
 
 **Accessibility.**
 
-> If something in the app or on this site doesn't work with VoiceOver, Voice Control, Switch Control, a keyboard or large text, report it in the same way. It's handled as a bug.
+> What the app has for VoiceOver, Voice Control, Switch Control, a keyboard and large text, and what has and hasn't been checked, is on the accessibility page. A problem with any of them is handled as a bug: report it in the same way.
 
 The page ends with **Last updated** and **App version**. It has no rating request. The store plan allows the App Store's write-review link here; it is left out for 1.0.0 so the support page asks nothing of the reader (decision 20).
 
-## 7. Not found
+## 7. The accessibility page, and not found
 
-Figure: `site-404`. "Page not found. There is no page at this address. The site has three pages:" and the three links. `noindex`, not in the sitemap, same header and footer.
+### 7.1 The accessibility page
+
+Figure: `site-accessibility`. Built in 1.0.0 by the maintainer's decision of 2026-11-19.
+
+**The rule for this page:** it lists what the app has and says what has been checked. It never says the app "is accessible", "works with" an assistive technology or conforms to a standard. A feature is said to be supported on a device only when its Accessibility Nutrition Label is declared for that device, which needs the manual pass ([`docs/store/accessibility-label.md`](../store/accessibility-label.md); store plan, decisions 11 and 15). Until then the status reads "Not yet done".
+
+| # | Section | Content | Source |
+|---|---|---|---|
+| 1 | Title and one paragraph | What the page is for | Draft below |
+| 2 | What has been checked | A four-line status table (automated audits; by hand on an iPhone; by hand on an iPad; on an Apple Watch), then two paragraphs | A status file, below |
+| 3 | What the app has | The statements of the app's own Accessibility screen, under its own headings | `AccessibilitySettingsView.swift` and its strings |
+| 4 | Report a problem | GitHub issues and hello@photivra.com, with what each reveals; what to include | Section 6 |
+| 5 | This site | The site's target and how it is checked | Section 9 |
+| 6 | Last updated, App version | | |
+
+Draft copy, in the state of 2026-11-19 (no manual pass done):
+
+> # Accessibility
+>
+> This page says what Photivra Nope Camera has for people who use VoiceOver, Voice Control, Switch Control, a keyboard or large text, what has been checked and what hasn't, and how to report a problem.
+>
+> ## What has been checked
+>
+> | | |
+> |---|---|
+> | Automated audits | Run in Apple's Simulator |
+> | By hand on an iPhone | Not yet done |
+> | By hand on an iPad | Not yet done |
+> | On an Apple Watch | Not checked on a real watch |
+>
+> The project's tests run Apple's automated accessibility audit on the camera, Settings, the Last Photo viewer and What's in This Photo, in Apple's Simulator. An automated audit can't show that a person can do everything with an assistive technology.
+>
+> A full pass by hand with VoiceOver, Voice Control, Switch Control and the largest text size has not yet been done on an iPhone or an iPad. The Apple Watch app has run only in the Simulator. Until a pass is done on a device, the app's App Store page declares no accessibility features for that device, and this page doesn't say the app works with them.
+>
+> ## What the app has
+>
+> These are the statements of the app's own Accessibility screen, in Settings.
+>
+> **Taking photos.** The volume buttons, and the Camera Control on iPhones that have one, take a photo. With a hardware keyboard, the Space bar takes a photo. Pinching to switch lenses is optional. The lens buttons do the same.
+>
+> **Self-timer and burst.** Timer, above the shutter, sets a self-timer of 3 or 10 seconds. Burst is beside it: hold the shutter for a burst, or use Start Burst so nothing has to be held. VoiceOver says each second of the countdown.
+>
+> **Focus and exposure lock.** Tap the picture to focus there. Lock appears under the focus square for a few seconds. Touch and hold the picture to lock right away. With VoiceOver or Switch Control on, the focus square and Lock stay until the scene changes. VoiceOver also has the action Lock Focus and Exposure on the viewfinder.
+>
+> **Feedback.** On iPhone, a tap you can feel confirms each press of the shutter and each saved photo, and marks the moment the level is level. VoiceOver says when each photo is saved and signed, or what went wrong.
+>
+> **Siri and Shortcuts.** "Take a photo with nope." works after you turn on Assistant Access in Settings, under Privacy. The app then asks before each action; Only Before a Photo or Never asks less. VoiceOver, Voice Control, Switch Control, the volume buttons and Camera Control always work.
+>
+> **Sound and video.** The app has no audio or video content, so captions and audio descriptions don't apply. No information is given by sound alone.
+>
+> ## Report a problem
+>
+> If something in the app or on this site doesn't work for you, tell us. It's handled as a bug.
+>
+> Open an issue on GitHub. Issues are public and need a free GitHub account.
+>
+> Write to hello@photivra.com. Your message and your email address are forwarded to us by Cloudflare Email Routing and stored by our email provider. We use them only to answer you, and delete messages after 1 year, or sooner if you ask.
+>
+> It helps to say which assistive technology or setting you use, your device and its iOS or iPadOS version, and the screen where the problem is.
+>
+> ## This site
+>
+> These pages are built to meet the Web Content Accessibility Guidelines (WCAG) 2.2 at level AA. They use no JavaScript and no motion, follow your light or dark setting and your text size, and can be read at 320 pixels wide and at 400% zoom without scrolling sideways. Every page is run through an automated accessibility check before it is published. That is a target and a check, not a statement of conformance: if a page doesn't work for you, report it in the same way.
+
+How the page stays true:
+
+- **"What the app has" is the app's own screen.** Each sentence is a string of `AccessibilitySettingsView`, with "nope." written as "the app" outside the quoted Siri phrase, and without the Night Mode notes, which only make sense inside the app. The check fails if a sentence on the page has no matching string, so a feature removed from the app leaves the page in the same release. Two of the screen's sections ("Siri and Shortcuts", "Focus and Exposure Lock") are still drafts for the Honesty review; the page shows each only once its strings are reviewed and its device checks in `docs/TESTING.md` are recorded, and is published without it otherwise. The same holds for the pinch sentence (issue 95) and the level's tap.
+- **"Sound and video"** is not on the app's screen. Its first sentence is from `accessibility-label.md` (Captions and Audio Descriptions: not applicable); "No information is given by sound alone" is AGENTS.md's rule and stays only if the manual pass confirms it; until then the sentence is left out.
+- **The status table is data, not prose.** A small file, `store/accessibility-status.json`, holds for each device (iPhone, iPad, Apple Watch) the date of the manual pass, or none, and the features declared in App Store Connect, or none. `accessibility-label.md`, the listing's "For everyone" sentence and this page all follow it. With a pass recorded and labels declared for a device, that device's line reads, for example, "Done on an iPhone 16 Pro Max, *(date)*", and a list appears: "Declared on the App Store for iPhone: VoiceOver, Voice Control, Larger Text, …", exactly the features declared and no others. The check fails if the page names a feature the file doesn't.
+- **The automated-audit sentence** names only the screens whose UI tests run the audit (`docs/TESTING.md`, "UI tests and accessibility audits"). It doesn't say "every screen" and gives no result beyond "run".
+- **"This site"** states the target of section 9. The sentence "Every page is run through an automated accessibility check before it is published" is true because the deploy can't happen otherwise (section 14.3). After the manual pass of section 9 is recorded, one sentence may be added: "They were also read by hand with VoiceOver and with a keyboard on *(date)*."
+- The page has a **Last updated** date, written in its content file, with the same staleness check as the policy's.
+
+The page is in the sitemap, in the header and footer links of every page, and in the not-found page's list. The support page's "Accessibility" paragraph points to it.
+
+### 7.2 Not found
+
+Figure: `site-404`. "Page not found. There is no page at this address. The site has four pages:" and the four links. `noindex`, not in the sitemap, same header and footer.
 
 ## 8. Visual design
 
@@ -270,8 +366,9 @@ The wordmark on the site is the Inter outline file, once that brand file is adde
 | `site-privacy` | The privacy page, light |
 | `site-privacy-dark` | The privacy page at 390 px, dark |
 | `site-privacy-print` | The first printed sheet of the privacy page |
-| `site-support` | The support page, light, with the email block of option B |
+| `site-support` | The support page, light |
 | `site-support-dark` | The support page at 390 px, dark |
+| `site-accessibility` | The accessibility page, light, in the state before any manual pass |
 | `site-404` | The not-found page |
 
 The figures are self-contained HTML with a PNG, like the rest of this folder, with one difference: their text is set in Inter, embedded as a Latin subset, because site artwork may not use an Apple system font. Screenshots and the badge are labeled placeholders. Bracketed items in the policy text appear as they are in the draft.
@@ -313,10 +410,11 @@ The baseline is WCAG 2.2 AA, the same as the app's. The site states no accessibi
   | `/` | Photivra Nope Camera: RAW photos, no tracking | Photivra Nope Camera takes photos with as little processing as the camera allows, can sign each one, and keeps nothing that tracks you. For iPhone and iPad. Free and open source. |
   | `/privacy/` | Privacy policy · Photivra Nope Camera | The app doesn't collect any data. It has no accounts, no analytics, no ads and no crash reporting, and it makes no network connections. |
   | `/support/` | Support · Photivra Nope Camera | How to get help with Photivra Nope Camera, report a problem, and check which devices it runs on. |
-  | `/404.html` | Page not found · Photivra Nope Camera | (none; `noindex`) |
+  | `/accessibility/` | Accessibility · Photivra Nope Camera | What Photivra Nope Camera has for VoiceOver, Voice Control, Switch Control, a keyboard and large text, what has been checked, and how to report a problem. |
+| `/404.html` | Page not found · Photivra Nope Camera | (none; `noindex`) |
 
 - **Canonical:** `<link rel="canonical">` on each page, `https`, with the trailing slash. Enforce HTTPS redirects `http`.
-- **Sitemap:** `sitemap.xml` in the sitemaps.org 0.9 format with the three pages, each with `lastmod` set to the date of the release the site was built from; `robots.txt` with `User-agent: *`, `Allow: /` and `Sitemap: https://nope.photivra.com/sitemap.xml`; `<link rel="sitemap" type="application/xml" href="/sitemap.xml">` in each page. All three are generated by the build from the list of pages, so they can't disagree with it.
+- **Sitemap:** `sitemap.xml` in the sitemaps.org 0.9 format with the four pages, each with `lastmod` set to the date of the release the site was built from; `robots.txt` with `User-agent: *`, `Allow: /` and `Sitemap: https://nope.photivra.com/sitemap.xml`; `<link rel="sitemap" type="application/xml" href="/sitemap.xml">` in each page. All three are generated by the build from the list of pages, so they can't disagree with it.
 - **Open Graph and the large-image card:** `og:type` (`website`), `og:site_name`, `og:title`, `og:description`, `og:url`, `og:image` with its width, height and alternative text, `og:locale` (`en_US`), and `twitter:card` set to `summary_large_image`. These are read by a service when someone shares a link; they cause no request from a reader's browser.
 - **The social image:** one self-hosted PNG, 1200 × 630, the wordmark lockup on black with the tagline and the scoped sentence in Inter. No screenshot in it, no badge, no Apple artwork. Its alternative text: "nope. Photivra Nope Camera".
 - **Structured data** (JSON-LD), on the landing page only:
@@ -326,7 +424,7 @@ The baseline is WCAG 2.2 AA, the same as the app's. The site states no accessibi
   - **Never:** `aggregateRating`, `review`, award or feature lists, or screenshots that aren't on the page.
 - **Icons:** `favicon.ico` (32 px), an SVG icon, `apple-touch-icon.png` (180 px) and a minimal `manifest.webmanifest` (name, icons, black theme and background color, `display: browser`). All are the app icon, a brand asset, self-hosted.
 - **The Photivra site:** the footer links to `https://photivra.com/` ("An app from Photivra"). photivra.com links back and lists this site's sitemap in its `robots.txt`; that change is made in that site, not here.
-- **`llms.txt`** in the repository gains the site's address; the site itself doesn't need one for three pages.
+- **`llms.txt`** in the repository gains the site's address; the site itself doesn't need one for four pages.
 
 ## 11. Performance
 
@@ -342,7 +440,7 @@ The baseline is WCAG 2.2 AA, the same as the app's. The site states no accessibi
 | **Landing page, first view** (HTML, CSS, fonts, icon, hero image) | **150 KB** |
 | Each screenshot below the fold | 60 KB |
 | **Landing page, everything** | **400 KB** |
-| Privacy page; support page | 80 KB each |
+| Privacy page; support page; accessibility page | 80 KB each |
 | JavaScript | 0 |
 | Requests to other hosts | 0 |
 | The social image (not loaded by pages) | 120 KB |
@@ -368,7 +466,7 @@ The baseline is WCAG 2.2 AA, the same as the app's. The site states no accessibi
   No `script-src` entry means scripts fall under `default-src 'none'`. No `'unsafe-inline'`: the pages have no `style` attributes and no inline `<style>`; inline SVG uses presentation attributes only.
 - **`<meta name="referrer" content="no-referrer">`,** so a site the reader goes to isn't told which page they came from.
 - **What a meta tag can't do:** `frame-ancestors`, reporting and `sandbox` only work as response headers, and GitHub Pages doesn't let a site set headers (no HSTS header of its own either). The pages have no forms and no actions, so framing gains an attacker nothing; the limit is stated here rather than hidden.
-- **External links** are limited to a short list the check enforces: the repository on `github.com`, GitHub's privacy statement, `apps.apple.com` (when available), `photivra.com`, and the GPL text. Nothing else can be linked without changing the list in a reviewed pull request.
+- **External links** are limited to a short list the check enforces: the repository on `github.com`, GitHub's privacy statement, `apps.apple.com` (when available), `photivra.com`, the GPL text, and the one `mailto:hello@photivra.com` link. Nothing else can be linked without changing the list in a reviewed pull request.
 - **No forms, no embedded media, no iframes, no `mailto:` with a prefilled body.**
 - **DNS only, no proxy.** The domain's record points straight at GitHub. A proxy in front of the site would be a second party that sees every reader, and some proxies add scripts or rewrite pages; either would make the site's statements false (section 15).
 - **What the host does** is said on the landing page and in the policy: GitHub logs the reader's IP address for security.
@@ -381,6 +479,7 @@ The baseline is WCAG 2.2 AA, the same as the app's. The site states no accessibi
 | The statements on the landing page | `store/metadata/en-US/description.txt` | The first line, the groups and the last line are read from the file | The build fails on a heading it has no sentence-case name for; one human review of the listing covers both |
 | Titles, descriptions and other site-only sentences | `site/content/` (one file per page) | Templates | Each sentence that states a fact about the app carries a claim id (C1 to C12) in a comment; the check fails on a fact sentence without one, and [`docs/store/README.md`](../store/README.md)'s claim table gains a "Site" column |
 | Screenshots and captions | The store's captures and caption strings | Resized by the build | A screenshot whose gate is open isn't in the store set, so it isn't on the site |
+| The accessibility page | The strings of `AccessibilitySettingsView`; `store/accessibility-status.json` | Sentences kept in `site/content/`, the status read from the file | The check fails on a sentence without a matching app string, and on a feature or a pass the status file doesn't hold (section 7.1) |
 | Devices and languages | README, "Requirements" and "Languages" | Kept by hand in `site/content/`, with a check that the device lines match the README's | The check |
 | App version | `MARKETING_VERSION` in `Config/Base.xcconfig` | Read by the build | `scripts/check-repo.sh` already ties it to the changelog; the build fails if the policy's app version differs |
 | The App Store link | `site/site.json` | Template | Shown only with an id and `available: true`; checked against `AboutScreen.appStoreID` when that exists |
@@ -432,7 +531,7 @@ All run on the built `_site/`, on the runner, against a local server on `127.0.0
 | HTML | Validation errors | The Nu HTML Checker, run locally |
 | Links | A broken internal link or anchor; a missing file; `http:` anywhere. External links are checked for form only, not fetched | `check-site.sh` |
 | Search | A page without exactly one `h1`, a unique title, a description, a canonical address that is `https` with a trailing slash, `lang="en-US"`, the sitemap link; a sitemap that doesn't list exactly the public pages; `robots.txt` without the sitemap line; `404.html` in the sitemap or without `noindex`; JSON-LD that doesn't parse, or that holds a rating, a review, or an offer while the app isn't available | `check-site.sh` |
-| Truth | A `[bracket]` or "DRAFT" in the policy page; the policy's version differing from the app's; a stale "Last updated"; a fact sentence without a claim id; device lines differing from the README; token values differing from `tokens.md`; the badge shown without `available`; a host name banned by AGENTS.md rule 6 | `check-site.sh` |
+| Truth | A `[bracket]` or "DRAFT" in the policy page; the policy's version differing from the app's; a stale "Last updated"; a fact sentence without a claim id; device lines differing from the README; an accessibility sentence without its app string, or a status the status file doesn't hold; token values differing from `tokens.md`; the badge shown without `available`; a host name banned by AGENTS.md rule 6 | `check-site.sh` |
 | Accessibility | Any violation at WCAG 2.2 A or AA, on every page, in both themes and at 320 px | axe-core in a headless browser |
 | Size | Any budget of section 11 exceeded | `check-site.sh` |
 | Lighthouse | Scores under the floor on any page: performance 95, accessibility 100, best practices 95, search 100 (mobile profile, three runs, the median) | Lighthouse, run locally |
@@ -456,7 +555,7 @@ All run on the built `_site/`, on the runner, against a local server on `127.0.0
 2. The maintainer does the one-time setup of section 15.
 3. **First publication, by hand, before the app is submitted,** from the release branch, in the "not yet" state. The privacy and support addresses are then live for App Review, and the store's marketing URL may be filled (store plan, decision 16).
 4. The app is approved and released; the release is tagged; the tag's workflow republishes the site.
-5. The maintainer sets `appStoreId` and `available` in `site/site.json` and runs the workflow by hand; the badge appears. From then on each release tag republishes by itself.
+5. The maintainer adds Apple's badge file, sets `appStoreId` and `available` in `site/site.json` and runs the workflow by hand; the badge appears. From then on each release tag republishes by itself.
 
 Publishing the site reaches users, so each publication is the maintainer's act (AGENTS.md, rule 5): a tag, or a run started by hand.
 
@@ -468,43 +567,45 @@ One time, in this order. None of it is done by an agent.
 2. **DNS at the domain's provider:** a `CNAME` record, name `nope`, target `photivra.github.io` (the organization's Pages host, without the repository name), **DNS only, not proxied**. No wildcard record for the domain: GitHub warns that a wildcard lets others claim subdomains. If the domain has CAA records, they must allow Let's Encrypt, which issues the certificate.
 3. **Repository settings, Pages:** source "GitHub Actions"; custom domain `nope.photivra.com`; wait for the DNS check and the certificate (GitHub says up to 24 hours); then turn on **Enforce HTTPS**.
 4. **Repository settings, Environments, `github-pages`:** allow deployments from release tags (`v*`) and from the branch used for runs by hand. Optionally require the maintainer's approval for each deployment (decision 17).
-5. **Download the App Store badge** from Apple's marketing resources and add it to `site/assets/`, unchanged.
-6. **Choose the support address** (if option B) and add it; fill the policy's bracketed items and its dates.
-7. **Run the workflow by hand** for the first publication; open the three addresses; check them with a browser's network inspector (only `nope.photivra.com` in the list) and with VoiceOver; print the privacy page.
+5. **Fill the policy's bracketed items and its dates.** The support address, hello@photivra.com, already exists.
+6. **Once the app can be downloaded:** download the App Store badge from Apple's marketing resources, add it to `site/assets/` unchanged, and set `appStoreId` and `available` (section 14.5, step 5).
+7. **Run the workflow by hand** for the first publication; open the four addresses; check them with a browser's network inspector (only `nope.photivra.com` in the list) and with VoiceOver; print the privacy page.
 8. In App Store Connect, the privacy policy URL, the support URL and, if wanted, the marketing URL are the three addresses.
 9. On photivra.com: link to the site and list its sitemap in `robots.txt`.
 
 After that a release needs nothing more than its tag. The repository's release instructions gain these steps in the pull request that builds the site, so a release never depends on an agent.
 
-## 16. Decisions for the maintainer
+## 16. Decisions
 
-| # | Decision | Recommendation |
+Decided by the maintainer on 2026-11-19. Decisions 2 and 11 differ from the recommendation; the rest are as recommended.
+
+| # | Decision | Decided |
 |---|---|---|
-| 1 | Accept this design as the site for 1.0.0 | Yes |
-| 2 | Pages: `/`, `/privacy/`, `/support/` and a not-found page; `/accessibility/` after the manual pass and the Nutrition Labels; `/press/` later | Yes, three pages now |
-| 3 | No JavaScript at all, with the JSON-LD data block as the one allowed `<script>` element | Yes. If any `<script>` element is unwanted, drop JSON-LD; the rest of section 10 stands |
-| 4 | The hero is black in both themes, with the lockup, the tagline and the scoped sentence | Yes. It keeps the teal period on black and matches the launch screen |
-| 5 | The tagline on the landing page | Use it, always directly above "as little processing as the camera allows". Without that sentence it would read as "no processing" |
-| 6 | Landing page statements are taken word for word from `description.txt` | Yes: one text, one review. The page then changes whenever the listing does |
-| 7 | Body font: self-hosted Inter, or the reader's system font | Inter. It matches the wordmark and the store images, and no page or picture of the site then shows an Apple system font. Cost: about 45 KB |
-| 8 | Screenshots: the store's set (images 1, 2, 3, 4 and 8), no device frames, with one line saying where they were captured; none until captures exist | Yes |
-| 9 | App Store badge: Apple's black badge, self-hosted, shown only once the app can be downloaded; no Smart App Banner | Yes. The banner would cause a request to Apple that the page didn't serve |
-| 10 | Support contact: (A) GitHub issues only, or (B) issues and an email address | B. An account wall may not meet App Review's "easy way to contact", and it shuts some people out. It changes the policy's "There is no contact email" |
-| 11 | If B: the address, and how long messages are kept | An alias at the project's domain; say on the page that messages are used only to answer, and state the retention once decided |
-| 12 | Add a "This website" section to the privacy policy, and change "the Photivra website" to "photivra.com" | Yes. The site is where the policy is read, and its host logs IP addresses |
-| 13 | The "what was run on real hardware" paragraph on the support page | Yes, worded as a limit, as in the README. It isn't on the landing page |
-| 14 | "Last updated" comes from a date written in the policy file, with a check that it isn't stale | Yes. A legal date should be a person's decision, not a build time |
+| 1 | Accept this design as the site for 1.0.0 | Accepted |
+| 2 | Pages: `/`, `/privacy/`, `/support/` and a not-found page; `/accessibility/` after the manual pass and the Nutrition Labels; `/press/` later | **Four pages now:** `/`, `/privacy/`, `/support/`, `/accessibility/` and a not-found page. `/press/` later. The accessibility page is built in 1.0.0 and states the manual pass's status as it is (section 7.1) |
+| 3 | No JavaScript at all, with the JSON-LD data block as the one allowed `<script>` element | Yes: no JavaScript; the JSON-LD data block is the one `<script>` element |
+| 4 | The hero is black in both themes, with the lockup, the tagline and the scoped sentence | Yes |
+| 5 | The tagline on the landing page | Yes, always directly above "as little processing as the camera allows" |
+| 6 | Landing page statements are taken word for word from `description.txt` | Yes |
+| 7 | Body font: self-hosted Inter, or the reader's system font | Inter, self-hosted |
+| 8 | Screenshots: the store's set (images 1, 2, 3, 4 and 8), no device frames, with one line saying where they were captured; none until captures exist | Yes. The picture behind the store images is a real photo taken with the app, provided by the maintainer before release |
+| 9 | App Store badge: Apple's black badge, self-hosted, shown only once the app can be downloaded; no Smart App Banner | Yes. The badge file is added later, only once the app can be downloaded; the build works without it. No Smart App Banner |
+| 10 | Support contact: (A) GitHub issues only, or (B) issues and an email address | B: GitHub issues and an email address |
+| 11 | If B: the address, and how long messages are kept | **Revised 2026-11-19: hello@photivra.com,** the address photivra.com uses (first decided as a separate address the same day, then changed). Messages and the sender's address are forwarded by Cloudflare Email Routing and stored by the maintainer's email provider, used only to reply, kept 1 year, and deleted sooner on request |
+| 12 | Add a "This website" section to the privacy policy, and change "the Photivra website" to "photivra.com" | Approved, with the email and retention wording: the exact text is in section 5.1 |
+| 13 | The "what was run on real hardware" paragraph on the support page | Yes, worded as a limit |
+| 14 | "Last updated" comes from a date written in the policy file, with a check that it isn't stale | Yes |
 | 15 | The build refuses to publish a policy with a bracketed item or "DRAFT" | Yes |
-| 16 | Publish by hand before submission in the "not yet" state, then on each release tag; no preview deployments | Yes. App Review needs the two addresses live first |
-| 17 | Require the maintainer's approval on the `github-pages` environment for every deployment | No for 1.0.0: a tag or a run by hand is already the maintainer's act. Turn it on if anyone else gains write access |
-| 18 | Site build dependencies: Tailwind CLI (decided), and Node-based check tools (axe-core, Lighthouse, a headless browser driver) plus the Nu HTML Checker, all pinned, CI only; dependency review and update alerts for `site/` turned on in the repository settings | Yes. They are the first npm dependencies in the repository; none is served or bundled. If fewer are wanted, keep Tailwind, `check-site.sh` and axe-core, and run Lighthouse by hand before a release |
-| 19 | Lighthouse floors: performance 95, accessibility 100, best practices 95, search 100; budgets as in section 11 | Yes. Budgets and floors are raised or lowered only by the maintainer |
+| 16 | Publish by hand before submission in the "not yet" state, then on each release tag; no preview deployments | Yes |
+| 17 | Require the maintainer's approval on the `github-pages` environment for every deployment | No for 1.0.0 |
+| 18 | Site build dependencies: Tailwind CLI (decided), and Node-based check tools (axe-core, Lighthouse, a headless browser driver) plus the Nu HTML Checker, all pinned, CI only; dependency review and update alerts for `site/` turned on in the repository settings | Yes |
+| 19 | Lighthouse floors: performance 95, accessibility 100, best practices 95, search 100; budgets as in section 11 | Yes |
 | 20 | The App Store write-review link on the support page | Not for 1.0.0 |
-| 21 | `/.well-known/security.txt` pointing to private vulnerability reporting | Yes; it is one static file. It needs an expiry date renewed at least yearly, which the build can set from the release date |
-| 22 | DNS only (no proxy) for `nope`, and domain verification for the organization | Yes to both |
-| 23 | Commit the App Store badge (Apple's file) and the wordmark outlines (a brand file) under `site/assets/`, listed in `THIRD_PARTY.md` and `TRADEMARKS.md` as not under the GPL | Yes. The site can't be built from the repository otherwise. The wordmark file is needed before the build starts |
+| 21 | `/.well-known/security.txt` pointing to private vulnerability reporting | Yes; its contact lines are in section 3 |
+| 22 | DNS only (no proxy) for `nope`, and domain verification for the organization | Yes to both; both are the maintainer's tasks (section 15) |
+| 23 | Commit the App Store badge (Apple's file) and the wordmark outlines (a brand file) under `site/assets/`, listed in `THIRD_PARTY.md` and `TRADEMARKS.md` as not under the GPL | Yes. The wordmark outlines are made from Inter by the builder before the site is built; the badge is added later (decision 9) |
 | 24 | The footer line "An app from Photivra" linking to photivra.com, and the publisher named in the structured data as in `NOTICE` | Yes |
-| 25 | The Apple Watch line on the landing page | Follows the store plan's decision 9: shown only if the watch app ships in 1.0.0 |
+| 25 | The Apple Watch line on the landing page | The watch app ships in 1.0.0 (store plan, decision 9), so the line is shown |
 
 ## 17. Sources and what is unverified
 
@@ -526,6 +627,7 @@ Read on 2026-11-19:
 - That a CAA record without Let's Encrypt blocks the certificate, and that a proxied record does (both recalled; the GitHub pages read don't mention them). DNS only is recommended for the reasons in section 12 either way.
 - That a browser doesn't apply `script-src` to an `application/ld+json` block: the page-load check of 14.3 shows it, since a CSP violation fails the build.
 - That `frame-ancestors`, reporting and `sandbox` are ignored in a meta Content-Security-Policy (from the CSP specification, not re-read that day).
+- That the two draft sections of the app's Accessibility screen pass the Honesty review unchanged; the accessibility page's copy follows the reviewed strings.
 - Whether GitHub gives a Pages site's owner any access logs. The draft copy says only what GitHub's page says.
 - That deleting an app removes its stored settings (the support answer); cite Apple's documentation first.
 - The exact form of Apple's credit line for a site read worldwide, and the current badge file; re-read the guidelines when building.
