@@ -36,7 +36,7 @@ and [platform version information](https://developer.apple.com/help/app-store-co
 - Positioning from issue #1: easy, with no setup; as little processing as the phone allows; and
   privacy. No comparisons that name other apps.
 - Wording from `docs/research/privacy-claims.md` and issue #1, "Wording rules": "as little
-  processing as your phone allows", never "zero processing"; the signature "shows whether the
+  processing as the camera allows" in the listing (owner decision, 2026-11-18), never "zero processing"; the signature "shows whether the
   file has been changed", never that the photo is real or who took it.
 - The listing names the app "Photivra Nope Camera", then "the app". "nope." appears only in
   quoted interface text, lowercase with its period in every language; "Photivra" has no period.
@@ -107,9 +107,9 @@ Test. Draft, for the maintainer to review.
   iPad Air (5th generation). Other iPhone and iPad models, iOS and iPadOS 26 and the Apple Watch
   app were tested only in Apple's Simulator (`docs/TESTING.md`, "What was tested on real
   hardware").
-- **No network.** The app contains no networking code and opens no network connection. The one
-  link in the app, the source code address on the About screen, opens in the browser when the
-  person taps it.
+- **No network.** The app contains no networking code and opens no network connection. The two
+  links in the app, the privacy policy and the source code on the About screen, open in the
+  browser when the person taps them.
 - **Photos access is add-only.** The app never asks to read the photo library. The Last Photo
   button can open the Photos app with the `photos-redirect://` address; it only brings Photos to
   the front and reads nothing. Apple doesn't document this address (`docs/TESTING.md`, "On-device
@@ -124,8 +124,10 @@ Test. Draft, for the maintainer to review.
 
 ## Other App Store Connect fields (maintainer)
 
-- **Privacy policy URL:** required even with no data collected; the page the maintainer
-  publishes from `privacy-policy-draft.md`.
+- **Privacy policy URL:** required even with no data collected:
+  `https://photivra.com/nope/privacy/`, the page the maintainer publishes from
+  `privacy-policy-draft.md`. The app's About screen links to the same address (App Review
+  Guideline 5.1.1(i)); it opens in the browser.
 - **Support URL:** required; for example the repository's issues page.
 - **Copyright:** the copyright holder named in `NOTICE`.
 - **Category:** Photo & Video.

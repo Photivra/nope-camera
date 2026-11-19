@@ -36,8 +36,9 @@ Privacy Report (Settings › Privacy & Security). It lists every domain an app c
 last 7 days, starting from when you turn it on. The app should list none. iOS itself, for example
 iCloud Photos, makes its own connections.
 
-One link in the app, the source code address on the About screen, opens in your web browser
-when you tap it. The app doesn't fetch it; your browser does, under its own privacy settings.
+Two links in the app, on the About screen, open in your web browser when you tap them: the
+source code and this policy. The app doesn't fetch them; your browser does, under its own
+privacy settings.
 
 The Apple Watch app sends only your commands, such as the shutter and the delay, to the app on
 your iPhone, and gets back only short status, such as "Saved and signed". No photos or photo

@@ -87,7 +87,7 @@ Status: research, 2026-11-11 (iOS/iPadOS 27, Android 17). No code. This is not l
 
 - **The "last photo" details and the thumbnail** come from memory at save time, not from Photos. The empty state means "no photo saved since nope. opened".
 - **Wording:** the Honesty screen's App Privacy Report line says "from when you turn it on, for the last 7 days". The Enhanced Visual Search line says "may", not "on by default". The sharing line says location is included unless turned off under Options.
-- **A privacy policy link** is planned for Settings and the store listings. 1.0.0 has one link in the app, the source code on the About screen; the privacy policy draft says so. App Review Guideline 5.1.1(i) asks for the policy to be reachable within the app as well, which is the maintainer's decision before submission.
+- **A privacy policy link** is on the About screen (`https://photivra.com/nope/privacy/`, opened in the browser) and in the store listing, as App Review Guideline 5.1.1(i) asks. With the source code, the app has two links.
 - **Face framing** is described without attributing "on device" to Apple.
 
 ## Must verify on a device

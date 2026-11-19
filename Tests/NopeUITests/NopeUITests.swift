@@ -57,6 +57,11 @@ struct AboutScreenTests {
         #expect(AboutScreen.sourceURL.absoluteString == "https://github.com/Photivra/nope-camera")
     }
 
+    @Test func privacyPolicyLinkIsHTTPS() {
+        #expect(AboutScreen.privacyPolicyURL.scheme == "https")
+        #expect(AboutScreen.privacyPolicyURL.absoluteString == "https://photivra.com/nope/privacy/")
+    }
+
     @Test func noticeCarriesTheDNGNotice() {
         #expect(LegalTextView.text(named: "NOTICE").contains(AboutScreen.dngNotice))
     }

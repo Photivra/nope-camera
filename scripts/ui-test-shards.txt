@@ -262,6 +262,7 @@
 3 2 NopeAppUITests/testPresetsFromTheTrayInNightMode 46 38
 1 1 NopeAppUITests/testPresetsInRightToLeftLayout 62 53
 3 2 NopeAppUITests/testPresetsSaveApplyUndoRenameAndDelete 147 162
+2 1 NopeAppUITests/testPrivacyPolicyIsAnHTTPSLink 54e 60e
 2 2 NopeAppUITests/testPressingADisabledLensDuringTheCountdownChangesNothing 62e 62e
 3 2 NopeAppUITests/testProToolsGrowsWithTheLargestTextSize 65 74
 2 1 NopeAppUITests/testProToolsHasNoBracketing 49 57

@@ -1112,8 +1112,8 @@
       "comment" : "Footer of Details in This Photo in the photo details. Details in Each Photo is the name of the Settings page. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
-    "To check a file, open it in a Content Credentials checker. Each photo is signed with its own one-time key, so a checker reports the file as valid and the signer as untrusted." : {
-      "comment" : "In the photo details, under a signed photo's manifests: how to check a file. Names no product. Must be checked against the checker people are most likely to use before it ships. Draft wording for the Honesty review.",
+    "To check a file, open it in a Content Credentials checker. Each photo is signed with its own one-time key, so a checker should report the file as unchanged and the signer as unknown or untrusted. Checkers word this differently." : {
+      "comment" : "In the photo details, under a signed photo's manifests: how to check a file. Names no product. Must be checked against the checker people are most likely to use before it ships. Draft wording for the Honesty review. \"should\": the wording of the checker people use isn't checked yet; c2patool reports the file as valid and the signer as untrusted. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "Turn on App Privacy Report (Settings › Privacy & Security). It lists every domain an app contacts during the last 7 days, starting from when you turn it on. nope. should list none." : {
@@ -1406,7 +1406,7 @@
       "comment" : "Under the This Session list on nope.'s Assistant Access page. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.",
       "extractionState" : "manual"
     },
-    "Lets Siri, Shortcuts and other assistants on this device use nope.'s actions, such as taking a photo or switching lenses. While this is off, nope. refuses every one of them." : {
+    "Lets Siri, Shortcuts and other assistants on this device use nope.'s actions, such as taking a photo or switching lenses. While this is off, nope. refuses its actions." : {
       "comment" : "Explains the Assistant Access switch in nope.'s Settings. Siri and Shortcuts are Apple's names. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.",
       "extractionState" : "manual"
     },
@@ -1564,6 +1564,14 @@
     },
     "Even a RAW has passed through the camera's own electronics before any app gets it." : {
       "comment" : "Claim 28 in docs/research/privacy-claims.md. Never read as \"no processing\": it says the RAW comes from the camera hardware, not from the sensor untouched. RAW is a file format name. Must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Privacy Policy" : {
+      "comment" : "Row on the About screen that opens the privacy policy in the browser. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Opens in your browser." : {
+      "comment" : "Footer under the Privacy Policy row on the About screen, and the row's VoiceOver hint: the policy opens in the browser, not in the app. Draft for the Honesty review.",
       "extractionState" : "manual"
     }
   },

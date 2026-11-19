@@ -153,6 +153,9 @@ for any user-facing claim comes from
   manifest declares no tracking, no tracking domains and no collected data; it declares
   `UserDefaults` (`CA92.1`) because the shared `NopeCore` code linked into it contains the
   iPhone app's settings code, which the watch app never runs.
+- **Links:** two, on the About screen: the privacy policy (`https://photivra.com/nope/privacy/`)
+  and the source code. Each hands its `https` address to the system when tapped and opens in the
+  browser; the app has no web view and fetches nothing.
 - **Entitlements:** the app and the controls extension each have one, the App Group
   (`com.apple.security.application-groups`, `group.<bundle identifier>`;
   `App/NopeApp.entitlements`, `App/NopeControls.entitlements`), which lets them share the
@@ -580,7 +583,10 @@ allows only where no system API exists, with fuzzing; that is an open owner deci
 | Orientation | Without it the photo shows sideways or upside down |
 | Color profile (HEIF and JPEG) | Without it colors look washed out or oversaturated |
 
-None of the locked items identify you or link your photos.
+The locked items describe the camera's sensor and color, not the person. Whether any of them
+(the color matrices, the as-shot white balance, the black and white levels) differs between two
+devices of the same model hasn't been checked, so the app doesn't say they can't identify a
+device or link photos (`docs/TESTING.md`, "What was tested on real hardware").
 
 ## How each file's metadata is built and checked
 

@@ -1024,6 +1024,24 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(element(app, containing: "Opens in your browser").exists)
     }
 
+    /// The privacy policy row is a link to its https address (App Review Guideline 5.1.1(i));
+    /// the test doesn't tap it, so no browser opens and nothing goes online.
+    @MainActor
+    func testPrivacyPolicyIsAnHTTPSLink() throws {
+        let app = launch("denied")
+        openSettings(app)
+        open(app, row: "About and Licenses")
+        let link = app.links["Privacy Policy"]
+        var swipes = 0
+        while !link.isHittable && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
+        XCTAssertTrue(link.exists)
+        XCTAssertEqual(link.value as? String, "https://photivra.com/nope/privacy/")
+        XCTAssertEqual(link.label, "Privacy Policy")
+    }
+
     @MainActor
     func testFormatsAndPrivacySwitchesFollowTheRules() throws {
         let app = launch("denied")

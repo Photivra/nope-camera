@@ -16,9 +16,10 @@ About and licenses: the version, the GPL-3.0-only license text, the project's no
 The license and notice texts are bundled copies of the repository's `LICENSE` and `NOTICE`
 (`Resources/GPL-3.0.txt` and `Resources/NOTICE.txt`); a unit test keeps them identical. They
 are legal texts, shown exactly as written and not translated (AGENTS.md, "Keep every
-notice"). The source address is a link: tapping it hands the `https` address to the system,
-which opens it in the browser. The app itself makes no network request (AGENTS.md,
-"Prevention first").
+notice"). The privacy policy and the source address are links: tapping one hands its `https`
+address to the system, which opens it in the browser. The app itself makes no network
+request and has no web view (AGENTS.md, "Prevention first"). App Review Guideline 5.1.1(i)
+asks for the privacy policy to be reachable within the app.
 
 ## `AboutScreen/body`
 
@@ -50,6 +51,26 @@ internal, declared in `Sources/NopeUI/AboutScreen.swift`
 ```
 
 Creates the About screen.
+
+## `AboutScreen/privacyPolicyAddress`
+
+internal, declared in `Sources/NopeUI/AboutScreen.swift`
+
+```swift
+@MainActor static let privacyPolicyAddress: String
+```
+
+The address of the privacy policy (`docs/store/privacy-policy-draft.md`).
+
+## `AboutScreen/privacyPolicyURL`
+
+internal, declared in `Sources/NopeUI/AboutScreen.swift`
+
+```swift
+@MainActor static let privacyPolicyURL: URL
+```
+
+The privacy policy address as a URL, opened by the system browser when tapped.
 
 ## `AboutScreen/sourceAddress`
 

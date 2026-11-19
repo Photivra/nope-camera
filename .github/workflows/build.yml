@@ -263,8 +263,8 @@ jobs:
       - name: All iPhone shards passed
         run: '[[ "${{ needs.ui-tests-shard.result }}" == success ]]'
 
-  # The source link test is skipped on iPad: there the link isn't found in the Settings popover
-  # (docs/TESTING.md).
+  # The source and privacy policy link tests are skipped on iPad: there the source link wasn't
+  # found in the Settings popover (docs/TESTING.md).
   ui-tests-ipad-shard:
     name: ui-tests-ipad ${{ matrix.shard }}/3
     needs: ui-build
@@ -293,6 +293,7 @@ jobs:
         run: >
           scripts/run-ui-test-shard.sh "${{ matrix.shard }}" "iPad Air 11-inch (M4)" products ui-tests-ipad.xcresult
           -skip-testing:NopeAppUITests/NopeAppUITests/testSourceCodeIsAnHTTPSLink
+          -skip-testing:NopeAppUITests/NopeAppUITests/testPrivacyPolicyIsAnHTTPSLink
       - name: Upload the per-test results
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -1,1 +1,1 @@
-Single-frame RAW with as little processing as your phone allows. Signing if you want it. No network connections, no analytics, and optional details removed by default.
+Single-frame RAW with as little processing as the camera allows. Signing if you want it. No network connections, no analytics, and optional details removed by default.
