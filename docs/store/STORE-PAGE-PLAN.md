@@ -1,10 +1,12 @@
 # App Store product page plan for 1.0.0
 
-Status: **proposal, needs the maintainer's decisions (section 16).** Written 2026-11-19 for
-release 1.0.0. Nothing here is submitted, and no file in `store/metadata/` is changed by this
-plan: every piece of copy below is a proposal. This page plans how Photivra Nope Camera uses each
-part of an App Store product page, which assets to make and how, and what the maintainer does in
-App Store Connect.
+Status: **accepted by the maintainer on 2026-11-19, with every decision as recommended (section
+16).** Written 2026-11-19 for release 1.0.0. Nothing here is submitted, and no file in
+`store/metadata/` is changed by this plan: each piece of copy below goes into those files in its
+own pull request, when the checks named for it are recorded. This page plans how Photivra Nope
+Camera uses each part of an App Store product page, which assets to make and how, and what the
+maintainer does in App Store Connect. The layout mockups of every screenshot are in
+[`docs/design/store.html`](../design/store.html).
 
 It builds on the other pages in this folder: the claim table and field limits in
 [`README.md`](README.md), the [App Privacy answers](app-privacy-label.md), the
@@ -151,9 +153,8 @@ screenshot (section 6).
 Every image uses a clean status bar (`xcrun simctl status_bar <device> override --time 9:41
 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3`; on the device, a
 screen recording or capture with Do Not Disturb on). The status bar must not show a carrier name.
-Wi-Fi or cellular bars are part of the system status bar and say nothing about the app; if the
-maintainer prefers, capture in Airplane Mode so the image matches "no network connections"
-(decision 6, option).
+Wi-Fi or cellular bars are part of the system status bar and say nothing about the app, so the
+images use the standard bar, not Airplane Mode (decision 6).
 
 ## 4. Screenshot layout
 
@@ -170,8 +171,8 @@ One layout for all three device classes:
 
 Accessibility of the images:
 
-- Caption text at least 4.5:1 against its ground (white on black is 21:1), and large: at least
-  1/22 of the image height for the main line, so it reads in the small search-result size.
+- Caption text at least 4.5:1 against its ground (white on black is 21:1), and large: about
+  1/32 of the image height for the main line (90 px in the iPhone upload), so it reads in the small search-result size.
 - No information by color alone: the Night Mode image says "Night Mode" in the caption.
 - As far as known (unverified) the App Store gives screenshots no alternative text, so **every
   caption's fact must also be a sentence in the description**, where VoiceOver reads it. The
@@ -498,9 +499,8 @@ two weeks' notice.
   switch, Live Activities, the Apple Watch remote, Camera Control); accessibility work, with the
   declared Nutrition Labels; the expected release date; the product page link.
 - **What not to send:** anything the page itself can't say (section 1).
-- **When:** two honest choices (decision 12). (a) Release as soon as the build is approved and
-  nominate the same day, accepting that the notice is short. (b) Nominate when the build is
-  submitted and set the release date two to three weeks later.
+- **When:** the app is released as soon as the build is approved, and the nomination is sent the
+  same day, accepting that the notice is shorter than Apple asks for (decision 12).
 - A second nomination fits a later release that adds languages, since localization is one of the
   things Apple's editors name.
 - If Apple asks for promotional artwork, it is made from the brand files in `docs/design/` and
@@ -533,7 +533,7 @@ two weeks' notice.
 | 5 | Apple Watch captures (6.3) | 4 | Script, Apple Watch Series 12 (46mm) Simulator | `-NopeSimulatedPhone` scenarios, through `scripts/run-watch-ui-tests.sh`'s setup |
 | 6 | Caption strings | 1 file | Agent, reviewed by maintainer | `store/screenshots/captions/en-US.json` |
 | 7 | Layout step: capture plus caption to the upload size | 1 script | Agent | A script that draws the band with Inter and writes PNGs without an alpha channel to `store/screenshots/en-US/<device>/NN.png`; checks size, no alpha, caption contrast |
-| 8 | Layout mockups of every image, before any capture | 20 | Design (Fable) | HTML and PNG in `docs/design/screens/store-*`, with placeholder pictures drawn in SVG as the design folder requires |
+| 8 | Layout mockups of every image, before any capture | 20 | Done 2026-11-19 | HTML and PNG in `docs/design/screens/store-*`, gathered in [`docs/design/store.html`](../design/store.html); every place for a real picture is marked as a placeholder |
 | 9 | Preview P1 (P2, P3 later) | 1 to 3 | Maintainer records; agent edits | Screen recording on the device; cut list from section 7; export 886 × 1920 H.264 |
 | 10 | Support page and privacy page on the site | 2 | Maintainer | Privacy from `privacy-policy-draft.md`; support with a contact |
 | 11 | Accessibility page | 1 | Maintainer, after the pass | Section 10 |
@@ -564,34 +564,36 @@ In order. Steps 1 to 9 can be done before the build is ready.
 7. App Review Information: the notes in `README.md`, "App Review notes"; contact details.
 8. Export compliance: as in `README.md`.
 9. Featuring › Nominations: section 14.
-10. Add the build, choose manual or dated release (decision 12), submit.
+10. Add the build, choose release on approval (decision 12), submit.
 11. After approval: read the live page on an iPhone, an iPad and the watch tab against this plan
     and the claim table; fix anything that differs before release.
 12. After release: answer reviews; update the promotional text only when a release changes what
     the app does; add custom product pages (section 8) when their links exist.
 
-## 16. Decisions for the maintainer
+## 16. Decisions
 
-| # | Decision | Recommendation |
+All seventeen were decided by the maintainer on 2026-11-19, each as recommended.
+
+| # | Decision | Decided (2026-11-19) |
 |---|---|---|
-| 1 | Accept this plan as the page plan for 1.0.0 | Yes |
-| 2 | Subtitle: keep "RAW photos. No tracking." or use another | Keep. It is short, both halves are in the claim table, and it matches the first screenshot |
+| 1 | This plan as the page plan for 1.0.0 | Accepted |
+| 2 | Subtitle | Keep "RAW photos. No tracking." |
 | 3 | Secondary category | Utilities |
-| 4 | How the viewfinder is filled (5.2) | A for iPhone camera screens and previews, B for iPad, C where no viewfinder shows; add the footnote sentence with B |
-| 5 | Commit the source stills to the repository | Yes, under `store/screenshots/source/`, after checking each file's details; they are public on the page anyway |
-| 6 | Status bar in images: standard clean bar, or Airplane Mode | Standard clean bar. The bar describes the phone, not the app; Airplane Mode in every image would suggest the app needs it |
-| 7 | Promotional text: keep the current text, or option B with the tagline | Keep for submission; change to B after C1, C4 and C6 are recorded on a device |
-| 8 | The Rate or Review row (section 12): which release builds it | 1.0.0, if the app's record and its id exist before the release build is cut; the row is hidden without an id, so it can't ship broken. Otherwise the first release after |
-| 9 | Apple Watch on the page: the watch app has run only in the Simulator | Ship the watch set (it is required with a watch app) and one plain sentence; no claim beyond "remote shutter"; leave its accessibility labels undeclared. If the maintainer would rather not list an app unchecked on hardware, the alternative is to hold the watch app for a later release, which is a build decision, not a page one |
-| 10 | App preview at submission | P1 only, and only if recorded on the device from the release build; otherwise none |
-| 11 | The "Designed to work with VoiceOver, Voice Control and the largest text sizes" sentence | Do the manual pass on the iPhone before submission and declare the labels; if the pass isn't done, remove the sentence and declare nothing |
-| 12 | Featuring: (a) release on approval and nominate the same day, or (b) nominate at submission and release two to three weeks later | (a), unless the device checks leave slack anyway. A first release gains more from being out and corrected early than from the chance of a feature |
-| 13 | Description additions and keywords (2.2, 2.3) | Add each paragraph and its keywords only as its checks are recorded; submit without them rather than wait |
+| 4 | How the viewfinder is filled (5.2) | A (device captures) for iPhone camera screens and previews; B (a still taken with the app, in the Simulator) for iPad and for iPhone states the device can't reach; C (the Simulator as it is) where no viewfinder shows. The footnote sentence goes into the description with B |
+| 5 | Source stills | Committed under `store/screenshots/source/`, after each file's details are checked |
+| 6 | Status bar in images | The standard clean bar, not Airplane Mode |
+| 7 | Promotional text | Keep the current text for submission; change to option B (2.1) after C1, C4 and C6 are recorded on a device |
+| 8 | The Rate or Review row (section 12) | In 1.0.0 if the app's App Store ID exists before the release build is cut; otherwise in the next release. The row is hidden without an id |
+| 9 | Apple Watch on the page | The watch screenshot set and one plain sentence ("remote shutter"); the watch's accessibility labels stay undeclared |
+| 10 | App preview at submission | P1 only, and only if it is recorded on the device from the release build; otherwise none |
+| 11 | The "Designed to work with VoiceOver, Voice Control and the largest text sizes" sentence | The manual pass is done on the iPhone before submission and the labels are declared; if the pass isn't done, the sentence is removed and nothing is declared |
+| 12 | Featuring | Release on approval and nominate the same day |
+| 13 | Description additions and keywords (2.2, 2.3) | Each paragraph and its keywords are added only as its checks are recorded; the submission doesn't wait for them |
 | 14 | Custom product pages | None at submission. Privacy first, then RAW and manual, when the site has pages that link to them. Never the "proof" page |
-| 15 | iPad Nutrition Labels | Declare only after the pass on the iPad Air; until then undeclared |
-| 16 | Marketing URL | Leave empty until the site's first page is live |
-| 17 | Layout mockups (15.1, item 8) before any capture | Yes: 20 figures in `docs/design/screens/store-*` for review first |
+| 15 | iPad Nutrition Labels | Declared only after the pass on the iPad Air |
+| 16 | Marketing URL | Empty until the site's first page is live |
+| 17 | Layout mockups before any capture | Yes; drawn 2026-11-19 ([`docs/design/store.html`](../design/store.html)) |
 
-Decided on 2026-11-19 and not open: no Product Page Optimization tests and no In-App Events
-(section 9); no rating prompt or popup, and a Rate or Review row on the About screen (section
-12); no pre-order.
+Also decided on 2026-11-19: no Product Page Optimization tests, no In-App Events and no
+pre-order (section 9); no rating prompt or popup, and a Rate or Review row on the About screen
+(section 12).
