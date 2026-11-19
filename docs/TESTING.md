@@ -545,6 +545,17 @@ other finding fails the test:
     and on the iPhone 18 Pro in all four but the largest text size; the iPhone recording shows
     it whole on two lines too.
     The recording shows the sentence whole on two lines, inside the frame the audit reports;
+- a fourth finding from the 1.0.0 integration, set aside after it was measured (an owner
+  decision on the third code review, 2026-11-19; `isMeasuredGridStyleFinding` in
+  `OverlayUITests.swift`): in `testOverlaySettingsAtTheLargestTextSize`, on the iPhone 18 Pro
+  Simulator with iOS 27.2, "Dynamic Type font sizes are partially unsupported" on the "Grid
+  Style" text (`settings.overlays.gridStyle`, the inline picker's label, drawn as its section's
+  title). `testGridStyleTextGrowsAtEveryTextSize` measures it at each size from Large to the
+  largest: 52, 54, 56, 59, 63.7, 69.7, 78, 86.3 and 93.3 points high, 370 wide, taller at every
+  step (on the iPad Air 11-inch (M4) Simulator, in the popover: 52 to 93.5 points, 440 wide),
+  so the finding is taken to be a false one. Only that finding, on that text, in that test
+  is skipped; the measuring test keeps checking that it grows, and a screenshot at the largest
+  size is attached to its result;
 - a third finding from the 1.0.0 integration is fixed, not set aside:
   `testFirstStartAtTheLargestTextSizeAndRightToLeft` reported a contrast finding on the
   "Ultra Wide" lens row, which the first start's plate covered at the largest text size on iPad.
@@ -706,7 +717,8 @@ and watchOS 26 jobs run on the `xcode-27` image and first add the runtime they n
 `scripts/add-simulator-runtime.sh <iOS|watchOS> 26.5 <device type> <name>`: when the runtime
 isn't installed it downloads Apple's with `xcodebuild -downloadPlatform <platform>
 -buildVersion 26.5 -architectureVariant arm64` (once more if that fails), then creates the
-Simulator when it isn't there, and prints its identifier. 26.5 (iOS 23F77, watchOS 23T570) is
+Simulator when it isn't there, and prints its identifier. Its simctl calls each have a
+two-minute limit and are tried once more; when both tries fail it says so and fails the step. 26.5 (iOS 23F77, watchOS 23T570) is
 the newest 26.x runtime in Apple's Simulator runtime index as of 2026-11-18; the version is
 `OLDEST_OS` in `build.yml`. The runtimes (8.5 GB for iOS, 4 GB for watchOS) aren't cached:
 they don't fit the repository's cache, so each of those jobs downloads one (about 10 minutes,
@@ -724,19 +736,19 @@ finding. With the deployment target at
 
 ### UI test shards
 
-By the listed times the UI suite takes about 487 minutes of test time on the iPhone Simulator
-and 512 on the iPad Simulator on the GitHub macOS runner (about twice as long as on a recent
+By the listed times the UI suite takes about 499 minutes of test time on the iPhone Simulator
+and 521 on the iPad Simulator on the GitHub macOS runner (about twice as long as on a recent
 Mac, so CI limits are sized from runner times, never from local ones). About four fifths of
 those times are estimates (`e`, twice a local time), so the runner is expected to measure
 less. CI runs it in six iPhone shards and five iPad shards, each its own job:
 
 | Job | Tests (listed times) | With about 7 minutes of setup | Limit |
 |---|---|---|---|
-| `ui-tests 1/6` … `6/6` | 81 minutes each | 88 minutes | 130 minutes |
-| `ui-tests-ipad 1/5` … `5/5` | 103 minutes each | 110 minutes | 160 minutes |
+| `ui-tests 1/6` … `6/6` | 81 to 90 minutes each | 88 to 97 minutes | 130 minutes |
+| `ui-tests-ipad 1/5` … `5/5` | 103 to 109 minutes each | 110 to 116 minutes | 160 minutes |
 | `ui-tests 1/6 (iOS 26)` | 81 minutes | 98 minutes, with the runtime download | 140 minutes |
 | `ui-tests-watch` | 2 minutes | 13 minutes, with its build | 45 minutes |
-| `ui-tests-watch (watchOS 26)` | 2 minutes | 23 minutes, with the runtime download | 55 minutes |
+| `ui-tests-watch (watchOS 26)` | 2 minutes | 23 minutes, with the runtime download | 70 minutes, with room for the runtime wait |
 
 The 1.0.0 merges (device feedback, Honesty, the first start's plate) brought the listed times
 to 122 minutes for each of four iPhone shards and 171 for each of three iPad shards, past the
@@ -898,8 +910,12 @@ background task scheduler took 9.6 minutes and the install ended with "server di
 +707 s; its retry ran into a second loss of the Simulator in the first test and the job's
 35-minute limit. Their cause is assumed, not shown.
 
-`scripts/wait-for-simulator-runtimes.sh`, the first use of simctl in the shard and watch jobs,
-reads `xcrun simctl runtime list -j`. When a runtime other than the two usual ones
+`scripts/wait-for-simulator-runtimes.sh` runs before a Simulator is booted in the shard and
+watch jobs and, before its tests, in `unit-tests (iOS 26)`. It counts from the job's first use
+of simctl, which it notes in a file (`SIMULATOR_FIRST_USE_FILE`) when it is the first; in the
+three iOS and watchOS 26 jobs that first use is `scripts/add-simulator-runtime.sh`, which notes
+the time before its own first simctl call, ten minutes of download earlier, so the later wait
+counts from when the disk image service started. It reads `xcrun simctl runtime list -j`. When a runtime other than the two usual ones
 (`SIMULATOR_RUNTIMES_ON_DISK_IMAGES` in `build.yml`) is mounted under
 `/Library/Developer/CoreSimulator/Volumes`, it waits until 750 seconds have passed, with nothing
 booted, so the remounting is over before a Simulator runs: in the bundles the last unmount came
@@ -907,7 +923,11 @@ booted, so the remounting is over before a Simulator runs: in the bundles the la
 On other runners it returns at once. The job limits leave room for the wait; no test's time
 limit changed. That the wait is enough rests on
 those logs: a runner whose runtime under test never mounts the usual way hasn't been seen
-through a whole job.
+through a whole job. Open: a runtime the 26 jobs download is itself mounted from a disk image;
+if the runner mounts it under `/Library/Developer/CoreSimulator/Volumes` by design, the wait
+would take its full 12.5 minutes in each of those jobs (not seen yet; the job limits allow for
+it). After the first run on the runner, add the 26.5 runtime identifiers to
+`SIMULATOR_RUNTIMES_ON_DISK_IMAGES` if they are mounted that way in every job.
 
 #### A Simulator that dies on the runner
 
@@ -1266,11 +1286,11 @@ and one on 27, the oldest and newest supported versions (issue #78):
 
 - the camera permission prompt shows the localized `NSCameraUsageDescription`, and each answer
   leads to the right screen (`SystemCameraAuthorization`);
-- on an iPad at the largest text size, the two texts whose audit findings are set aside (see "UI
-  tests and accessibility audits") show whole, with nothing cut off: the Assistant Access
+- at the largest text size, the texts whose audit findings are set aside (see "UI tests and
+  accessibility audits") show whole, with nothing cut off: on an iPad the Assistant Access
   switch's explanation ("Lets Siri, Shortcuts…", Settings › Privacy › Assistant Access) and, in
   night mode, the Accessibility page's "Pinching to switch lenses is optional. The lens buttons
-  do the same.";
+  do the same."; on an iPhone, the "Grid Style" title in Settings › Viewfinder Overlays;
 - a Secure Enclave key signs and verifies (`SecureEnclaveSigningKey`), and a DNG, HEIF and JPEG
   saved on the device validate with c2patool (below) as `Valid` with only
   `signingCredential.untrusted` failing;
@@ -1387,6 +1407,42 @@ and one on 27, the oldest and newest supported versions (issue #78):
   another photo, and the Live Activity said "Paused: n photos taken · m:ss left" and counted down
   while away.
 
+### Open device checks named by the third code review of 1.0.0
+
+Each item below is a statement the app or its documents make that rests on iOS behavior no one
+has recorded yet. None has been run. Record each result with the date, the device and the iOS
+version in the section named, or list it in the changelog as not yet checked:
+
+- **Assistant Access** ("Assistant Access on a device" below): that
+  `authenticationPolicy = .requiresAuthentication` makes iOS ask for an unlock before
+  `perform()` (check 5, and check 11 for Siri on a locked phone), and which of the two checks
+  refuses on a locked phone: iOS's unlock, or the app's own fallback
+  (`isProtectedDataAvailable`, which lags a lock by some seconds and is always true on a device
+  without a passcode); that `requestConfirmation` shows and speaks its question from an intent
+  started in the background mode (check 2); that a refused or cancelled request never opens the
+  app, and that `continueInForeground` opens it after Confirm (check 1); and that the preset
+  picker in the Shortcuts app lists no saved names while access is off (`PresetQuery`, check 13).
+- **Focus bracketing** ("Bracketing on a device"): D5 to D7 (`focusSettleSeconds` of 0.1 s, the
+  0.02 tolerance, whether a frame taken right after the handler is sharp where planned), and D11
+  (exposure and white balance hold across the frames on each lens).
+- **Keep Screen On** ("Keep Screen On and the Night Mode search field on a device"): checks 1 to
+  3 and 7 of `docs/design/keep-screen-on.md`, section 11 (the idle timer after the limit,
+  Auto-Brightness while dimmed, the brightness put back after each way out, VoiceOver with the
+  cover); also whether a brightness set in Control Center while dimmed is kept.
+- **Pinch** ("Pinch to switch lenses on a device"): the thresholds, a pinch that continues while
+  the camera restarts for its first step, and that two fingers are never taken for a tap, a lock
+  or a clean-view swipe.
+- **Device feedback** ("Device feedback for 1.0.0"): C1 and C2 (the close-up detector and the
+  Ultra Wide advice; for C1 also a tripod and a still close subject, where readings may stop),
+  S1 to S5 (the stabilization signal and the 2-stop allowance, both provisional), and F1 to F7
+  (the fade, Voice Control's "Tap Lock" in time, Full Keyboard Access focus through
+  `@FocusState`).
+- **Opening Photos**: the `photos-redirect://` address, which Apple doesn't document, now has two
+  entry points, the viewer's Open in Photos and the camera's Open Photos (P1 under "Device
+  feedback for 1.0.0"). Record that each opens the Photos app; the app ignores the result of the
+  call, so if a future iOS stops opening the address, both buttons would do nothing without a
+  message.
+
 ### Lock Screen, Control Center, Siri and Shortcuts on a device
 
 Issues #42 and #62. Assumptions to confirm: the capture extension needs no entitlement, can add
@@ -1444,11 +1500,11 @@ result, the device and the iOS version here. A check that fails changes the desi
 
 | # | Check on a device | If it doesn't hold | Result |
 | --- | --- | --- | --- |
-| 1 | A gated intent starts in the background and moves to the foreground only after the check and the question (`supportedModes` `[.background, .foreground(.dynamic)]`, `continueInForeground`): with access off, "Take a photo with nope." answers without opening the app | Go back to `openAppWhenRun`: the app opens, then refuses or asks | Not run |
-| 2 | `requestConfirmation` shows the question, the line under it ("You can change this in nope. › Settings › Privacy.") and the custom buttons (Take Photo, Switch Lens, Apply Preset, Cancel) in Siri and in Shortcuts, before the app opens, and throws on Cancel | The app's own card on the camera (design, 5.5); drop the line if only it fails | Not run |
+| 1 | A gated intent starts in the background and moves to the foreground only after the check and the question (`supportedModes` `[.background, .foreground(.dynamic)]`, `continueInForeground`): with access off, "Take a photo with nope." answers without opening the app; a cancelled question doesn't open it either; after Confirm, `continueInForeground` opens it | Go back to `openAppWhenRun`: the app opens, then refuses or asks | Not run |
+| 2 | `requestConfirmation`, from an intent started in the background mode, shows and speaks the question, the line under it ("You can change this in nope. › Settings › Privacy.") and the custom buttons (Take Photo, Switch Lens, Apply Preset, Cancel) in Siri and in Shortcuts, before the app opens, and throws on Cancel | The app's own card on the camera (design, 5.5); drop the line if only it fails | Not run |
 | 3 | An unattended Shortcuts automation stops at the question and doesn't run the action | Every Action and Only Before a Photo must refuse when no person can answer | Not run |
 | 4 | After Cancel, Siri and Shortcuts show "Cancelled. Nothing changed." | No answer; nothing is claimed | Not run |
-| 5 | `authenticationPolicy = .requiresAuthentication` makes Siri ask for an unlock for every gated action, on the Lock Screen, through headphones and in a car; the app's own check (protected data unavailable) answers "Unlock this device to use nope.'s actions. Nothing changed." if a request still arrives locked | The check refuses while the device is locked, by the app's own test (built) | Not run |
+| 5 | `authenticationPolicy = .requiresAuthentication` makes Siri ask for an unlock for every gated action, on the Lock Screen, through headphones and in a car; the app's own check (protected data unavailable) answers "Unlock this device to use nope.'s actions. Nothing changed." if a request still arrives locked. Record which of the two refuses on a locked phone: the app's fallback (`isProtectedDataAvailable`) lags a lock by some seconds and is always true without a passcode | The check refuses while the device is locked, by the app's own test (built) | Not run |
 | 6 | A result can carry one button that runs Open Assistant Access (Open Settings in the off answer). Not built: the off answer is the sentence alone, which names the path; the Open Assistant Access action exists in Shortcuts | Keep the sentence alone | Not run |
 | 7 | Camera-domain assistant schemas: what exists on iOS 26 and 27, and whether a conforming intent still runs `perform()` and can ask for confirmation. None is adopted | No schema is adopted | Not run |
 | 8 | The system doesn't record or suggest the app's actions unless the app donates them (the app donates nothing) | State what the system does on the Honesty screen; point to the system's Siri settings for the app | Not run |

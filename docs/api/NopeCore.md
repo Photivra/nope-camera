@@ -2589,6 +2589,18 @@ internal, declared in `Sources/NopeCore/BracketModel.swift`
 
 Asks the running bracket to stop after the current frame.
 
+## `BracketModel/runCount`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var runCount: Int { get set }
+```
+
+How many focus brackets have begun since the model was made, so a Siri or Shortcuts
+request can tell whether a bracket it asked for began, and never answers from an earlier
+one's ``lastRun`` (third review of 1.0.0, S2).
+
 ## `BracketModel/running`
 
 public, declared in `Sources/NopeCore/BracketModel.swift`
@@ -3847,6 +3859,19 @@ direction of flow").
 
 The model is isolated to the main actor, so an interface can read its properties directly.
 
+## `CameraModel/actionCount`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var actionCount: Int { get set }
+```
+
+Counts the person's actions only (``CameraIntent/isActivity``), not the photos saved: a
+series' photos are not an action. An interface watches it to close what stays "until the
+next action", such as the hint after an assistant's action (docs/design/assistant-access.md,
+section 10). Only its changes matter.
+
 ## `CameraModel/activityCount`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -4193,12 +4218,12 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The device's capabilities while ``state`` is ``CameraState/ready(_:)``, otherwise `nil`.
 
-## `CameraModel/capture(onceBracket:)`
+## `CameraModel/capture(onceBracket:appliesBracketInApp:)`
 
 internal, declared in `Sources/NopeCore/CameraModel.swift`
 
 ```swift
-@MainActor func capture(onceBracket: BracketSettings? = nil) async
+@MainActor func capture(onceBracket: BracketSettings? = nil, appliesBracketInApp: Bool = true) async
 ```
 
 Takes one photo with the selected lens, if the camera can capture now, or the exposure
@@ -4215,10 +4240,16 @@ takes the bracket; if none arrives, it takes nothing and reports
 ``CaptureError/bracketNotReady``. A bracket never becomes a single photo, and with a
 bracket on no photo fires the flash (``shutterUsesFlash``).
 
-- Parameter onceBracket: A bracket to take this time only, through the same bracket path
-  as the shutter's, without changing ``ManualControlsModel/bracket`` (a Siri or
-  Shortcuts request, issue #62); `nil` for the shutter's usual photo. The caller checks
-  first that ``ManualControlsModel/bracketFrames(once:)`` can plan it.
+- Parameters:
+  - onceBracket: A bracket to take this time only, through the same bracket path as the
+    shutter's, without changing ``ManualControlsModel/bracket`` (a Siri or Shortcuts
+    request, issue #62); `nil` for the shutter's usual photo. The caller checks first that
+    ``ManualControlsModel/bracketFrames(once:)`` can plan it.
+  - appliesBracketInApp: Whether the exposure bracket on in the manual controls applies
+    when `onceBracket` is `nil`: `true` for the shutter and the Apple Watch, `false` for
+    Siri and Shortcuts' Take Photo, which always takes one photo
+    (``PhotoShortcut/appliesBracketInApp``). The flash stays off while a bracket is on
+    either way, as the flash control is hidden then.
 
 ## `CameraModel/captureFormat`
 
@@ -4954,6 +4985,24 @@ The outcome a capture status reports.
 - Parameter status: The status after the photo.
 - Returns: The outcome.
 
+## `CameraModel/outcome(of:planned:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
+
+```swift
+@MainActor func outcome(of status: CaptureStatus, planned: Int) -> ShortcutOutcome
+```
+
+The outcome a capture status reports, with the photos saved before a part-way failure
+(``lastPressPhotos``): a bracket or burst that saved some of its photos and then failed
+answers how many of how many were saved, and Photos Saved is that number (third review
+of 1.0.0, question 6).
+
+- Parameters:
+  - status: The status after the photos.
+  - planned: How many photos were planned.
+- Returns: The outcome.
+
 ## `CameraModel/pauseAfterErrorSeconds`
 
 public, declared in `Sources/NopeCore/CameraModel+Interval.swift`
@@ -5086,9 +5135,11 @@ internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 @MainActor func pressShutter() async
 ```
 
-What the shutter does: stops a running countdown, burst or interval series, or else
-applies the drive mode: one photo, the self-timer, a burst or an interval series. While
-the astro helper is on, it starts or stops an astro run instead (``AstroModel``).
+What the shutter does: stops a running countdown, burst, focus bracket or interval
+series, or else applies the drive mode: one photo, the self-timer, a burst, a focus
+bracket or an interval series. While the astro helper is on, it starts or stops an astro
+run instead (``AstroModel``). While any series runs, the shutter stops it, in every drive
+mode and with either type of bracket on.
 
 ## `CameraModel/previewSource`
 
@@ -26514,6 +26565,21 @@ photos.
 Every value is checked here, so an intent can pass what the person typed in Shortcuts as it
 is.
 
+## `PhotoShortcut/appliesBracketInApp`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let appliesBracketInApp: Bool
+```
+
+Whether an exposure bracket that is on in the manual controls applies to a single photo,
+as it does to the shutter: `true` for the Apple Watch's shutter, which takes what the
+phone's drive strip says (docs/design/BRACKETING.md, section 6); `false` for Siri and
+Shortcuts, whose Take Photo always takes one photo, so the question and the answer
+match what was taken (third review of 1.0.0, question 7). Take Bracket is the action
+for a bracket.
+
 ## `PhotoShortcut/count`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -26522,10 +26588,9 @@ public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 let count: Int
 ```
 
-How many photos, from 1 to ``DriveModel/maximumBurstFrames``. One takes a single photo
-(an exposure bracket that is on in the manual controls still applies, as it does to the
-shutter); more takes a burst of exactly that many frames with the burst's own loop, each
-frame its own photo.
+How many photos, from 1 to ``DriveModel/maximumBurstFrames``. One takes a single photo;
+more takes a burst of exactly that many frames with the burst's own loop, each frame its
+own photo.
 
 ## `PhotoShortcut/delaySeconds`
 
@@ -26538,12 +26603,12 @@ let delaySeconds: Int
 The delay before the photo, in seconds, from 0 (none) to ``maximumDelaySeconds``. A delay
 runs the self-timer, with its countdown on screen and announced.
 
-## `PhotoShortcut/init(delaySeconds:lensKind:count:)`
+## `PhotoShortcut/init(delaySeconds:lensKind:count:appliesBracketInApp:)`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 
 ```swift
-init(delaySeconds: Int = 0, lensKind: Lens.Kind? = nil, count: Int = 1)
+init(delaySeconds: Int = 0, lensKind: Lens.Kind? = nil, count: Int = 1, appliesBracketInApp: Bool = false)
 ```
 
 Creates a request.
@@ -26554,6 +26619,8 @@ Creates a request.
   - lensKind: The kind of lens, or `nil` for the lens already selected.
   - count: How many photos. Values below 1 become 1, and values above
     ``DriveModel/maximumBurstFrames`` become ``DriveModel/maximumBurstFrames``.
+  - appliesBracketInApp: Whether an exposure bracket on in the manual controls applies
+    to a single photo (the Apple Watch), or not (Siri and Shortcuts, the default).
 
 ## `PhotoShortcut/init(timer:customDelaySeconds:lensKind:count:)`
 
@@ -28301,12 +28368,12 @@ let id: Int
 The photo's place in this session's saves: 1 for the first, counting up. Never reused,
 also after older photos are dropped, so a viewer can keep its page.
 
-## `SessionPhoto/init(id:photo:lens:takenAt:preview:)`
+## `SessionPhoto/init(id:photo:lens:takenAt:preview:previewWasReleased:)`
 
 public, declared in `Sources/NopeCore/SessionPhotos.swift`
 
 ```swift
-init(id: Int, photo: SavedPhoto, lens: Lens?, takenAt: Date, preview: PhotoPreview?)
+init(id: Int, photo: SavedPhoto, lens: Lens?, takenAt: Date, preview: PhotoPreview?, previewWasReleased: Bool = false)
 ```
 
 Creates a record.
@@ -28317,6 +28384,7 @@ Creates a record.
   - lens: The lens, or `nil`.
   - takenAt: When the shutter took it.
   - preview: The compressed preview, or `nil`.
+  - previewWasReleased: Whether a preview was made and released, so `preview` is `nil`.
 
 ## `SessionPhoto/lens`
 
@@ -28373,6 +28441,18 @@ Whether the preview has fewer pixels than the saved photo, so a viewer zoomed in
 shows a preview (BUILD-SPEC.md, 3.14, decision V5). `false` without a preview, and when
 the saved size isn't known.
 
+## `SessionPhoto/previewWasReleased`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+var previewWasReleased: Bool { get }
+```
+
+Whether a preview was made and then released (by ``SessionPhotos``, or at once because
+the app had left the foreground), as opposed to never made. A viewer says which, so it
+never says a preview was released when none could be made (third review of 1.0.0, L8).
+
 ## `SessionPhoto/takenAt`
 
 public, declared in `Sources/NopeCore/SessionPhotos.swift`
@@ -28415,12 +28495,12 @@ The rules (AGENTS.md, "Photos never linger" and "Battery"; docs/PRIVACY.md):
   and the time) stay in memory until the app quits, as the thumbnail and Photo Details always
   have.
 
-## `SessionPhotos/add(_:lens:takenAt:preview:)`
+## `SessionPhotos/add(_:lens:takenAt:preview:previewWasReleased:)`
 
 internal, declared in `Sources/NopeCore/SessionPhotos.swift`
 
 ```swift
-@MainActor func add(_ photo: SavedPhoto, lens: Lens?, takenAt: Date, preview: PhotoPreview?)
+@MainActor func add(_ photo: SavedPhoto, lens: Lens?, takenAt: Date, preview: PhotoPreview?, previewWasReleased: Bool = false)
 ```
 
 Adds a saved photo as the newest, drops the oldest records beyond the count limit, and
@@ -28431,6 +28511,8 @@ releases the previews of photos older than the newest ``previewLimit``.
   - lens: The lens it was taken with.
   - takenAt: When the shutter took it.
   - preview: Its compressed preview, or `nil`.
+  - previewWasReleased: Whether a preview was made and released before it was added
+    (the app had left the foreground), so `preview` is `nil`.
 
 ## `SessionPhotos/countLimit`
 
@@ -29745,6 +29827,18 @@ case cancelled
 
 The countdown was cancelled on the device, so no photo was taken. Say so.
 
+## `ShortcutOutcome/focusBracketBlockedByAstro`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case focusBracketBlockedByAstro
+```
+
+The astro helper is on, so no focus bracket was taken. Say so, and that turning Astro off
+allows one. While the helper is on the app treats a focus bracket as off, and the shutter
+belongs to the astro run.
+
 ## `ShortcutOutcome/focusBracketStopped(saved:total:)`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -30002,6 +30096,18 @@ case savedSeveral(count: Int, allSigned: Bool)
 Several photos were saved, each its own photo: a burst, or an exposure bracket (asked
 for, or on in the manual controls). `count` is how many were saved. Say "Photos saved
 and signed." or "Photos saved. Not all of them are signed."
+
+## `ShortcutOutcome/savedSome(saved:total:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case savedSome(saved: Int, total: Int)
+```
+
+A bracket, burst or focus bracket saved some of its photos and then failed. `saved` is
+how many were saved, `total` how many were planned. Say how many of how many were saved,
+and that the app shows why the others weren't.
 
 ## `ShortcutRequest`
 

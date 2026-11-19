@@ -823,9 +823,14 @@ internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
 
 The Assistant Access hint and cards on the camera (`docs/design/assistant-access.md`,
 section 10; figures `assistant-camera-notice`, `assistant-camera-refused`, `assistant-tip`):
-after an action an assistant ran, "Siri or Shortcuts" and the sentence the assistant got;
-after a refusal, how many were refused, with Settings and Close; once after five confirmed
-requests, the tip. Nothing where the app has no session (the Lock Screen camera).
+after an action an assistant ran, "Siri or Shortcuts" and the sentence the assistant got,
+with Close; after a refusal, how many were refused, with Settings and Close; once after five
+confirmed requests, the tip. Nothing where the app has no session (the Lock Screen camera).
+
+No message here leaves on a timer (docs/design/ACCESSIBILITY.md): the hint stays until the
+next action on the camera (`CameraModel.actionCount`) or Close, so a person using
+VoiceOver, Switch Control or the largest text size has as long as they need (third review of
+1.0.0, S7).
 
 ## `AssistantHints/body`
 
@@ -837,30 +842,27 @@ internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
 
 The hint and cards that apply.
 
-## `AssistantHints/hintSeconds(voiceOverIsOn:)`
+## `AssistantHints/init(model:)`
 
 internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
 
 ```swift
-@MainActor static func hintSeconds(voiceOverIsOn: Bool) -> Double
-```
-
-How long the hint stays, in seconds: as long as the other passing camera messages, and
-longer with VoiceOver, so it is announced before it goes. A product choice, not a
-platform value.
-
-- Parameter voiceOverIsOn: Whether VoiceOver is on.
-- Returns: The time in seconds.
-
-## `AssistantHints/init()`
-
-internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
-
-```swift
-@MainActor init()
+@MainActor init(model: CameraModel)
 ```
 
 Creates the hints; they read the session from the environment.
+
+- Parameter model: The camera model.
+
+## `AssistantHints/model`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model, whose actions close the hint.
 
 ## `AssistantNoticeHint`
 
@@ -870,7 +872,8 @@ internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
 @MainActor struct AssistantNoticeHint
 ```
 
-"Siri or Shortcuts" over the sentence an assistant got, announced after any capture result.
+"Siri or Shortcuts" over the sentence an assistant got, announced after any capture result,
+with a Close button.
 
 ## `AssistantNoticeHint/body`
 
@@ -882,17 +885,29 @@ internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
 
 The hint.
 
-## `AssistantNoticeHint/init(sentence:)`
+## `AssistantNoticeHint/close`
 
 internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
 
 ```swift
-@MainActor init(sentence: String)
+@MainActor let close: () -> Void
+```
+
+Closes the hint.
+
+## `AssistantNoticeHint/init(sentence:close:)`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor init(sentence: String, close: @escaping () -> Void)
 ```
 
 Creates the hint.
 
-- Parameter sentence: The sentence the assistant got.
+- Parameters:
+  - sentence: The sentence the assistant got.
+  - close: Closes the hint.
 
 ## `AssistantNoticeHint/sentence`
 
@@ -16348,12 +16363,12 @@ internal, declared in `Sources/NopeUI/PhotoViewer.swift`
 
 The fallback.
 
-## `PhotoViewerFallback/init(thumbnail:makesPreviews:)`
+## `PhotoViewerFallback/init(thumbnail:makesPreviews:wasReleased:)`
 
 internal, declared in `Sources/NopeUI/PhotoViewer.swift`
 
 ```swift
-@MainActor init(thumbnail: PhotoThumbnail?, makesPreviews: Bool = true)
+@MainActor init(thumbnail: PhotoThumbnail?, makesPreviews: Bool = true, wasReleased: Bool = true)
 ```
 
 Creates the fallback.
@@ -16362,6 +16377,8 @@ Creates the fallback.
   - thumbnail: The saved photo's thumbnail, or `nil`.
   - makesPreviews: Whether this process makes previews: `false` in the Lock Screen
     camera.
+  - wasReleased: Whether the photo's preview was made and released, rather than never
+    made.
 
 ## `PhotoViewerFallback/makesPreviews`
 
@@ -16382,6 +16399,16 @@ internal, declared in `Sources/NopeUI/PhotoViewer.swift`
 ```
 
 The saved photo's thumbnail, or `nil` for a photo symbol.
+
+## `PhotoViewerFallback/wasReleased`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let wasReleased: Bool
+```
+
+Whether the photo's preview was made and released (`SessionPhoto.previewWasReleased`).
 
 ## `PhotoViewerHint`
 
@@ -16841,16 +16868,6 @@ static var lockScreenNoPreviewSentence: String { get }
 
 "On the Lock Screen, nope. doesn't make previews. The photo is saved in Photos."
 
-## `PhotoViewerText/lockScreenNoPreviewTitle`
-
-internal, declared in `Sources/NopeUI/PhotoViewer.swift`
-
-```swift
-static var lockScreenNoPreviewTitle: String { get }
-```
-
-"No Preview", the title in the Lock Screen camera's viewer, which makes no previews.
-
 ## `PhotoViewerText/newPhoto`
 
 internal, declared in `Sources/NopeUI/PhotoViewer.swift`
@@ -16861,31 +16878,48 @@ static var newPhoto: Text { get }
 
 "New Photo".
 
-## `PhotoViewerText/noPreviewSentence(makesPreviews:)`
+## `PhotoViewerText/noPreviewSentence(makesPreviews:wasReleased:)`
 
 internal, declared in `Sources/NopeUI/PhotoViewer.swift`
 
 ```swift
-static func noPreviewSentence(makesPreviews: Bool) -> String
+static func noPreviewSentence(makesPreviews: Bool, wasReleased: Bool) -> String
 ```
 
-The sentence for a photo without a preview: ``previewNotKeptSentence`` where previews are
-made and this one was released, ``lockScreenNoPreviewSentence`` where none are made.
+The sentence for a photo without a preview: ``lockScreenNoPreviewSentence`` where none
+are made, ``previewNotKeptSentence`` where this one was released, and
+``previewNotMadeSentence`` where it couldn't be made.
 
-- Parameter makesPreviews: Whether this process makes previews.
+- Parameters:
+  - makesPreviews: Whether this process makes previews.
+  - wasReleased: Whether this photo's preview was made and released.
 
-## `PhotoViewerText/noPreviewTitle(makesPreviews:)`
+## `PhotoViewerText/noPreviewTitle`
 
 internal, declared in `Sources/NopeUI/PhotoViewer.swift`
 
 ```swift
-static func noPreviewTitle(makesPreviews: Bool) -> String
+static var noPreviewTitle: String { get }
+```
+
+"No Preview", the title in the Lock Screen camera's viewer, which makes no previews, and
+in the app's viewer for a photo whose preview couldn't be made.
+
+## `PhotoViewerText/noPreviewTitle(makesPreviews:wasReleased:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static func noPreviewTitle(makesPreviews: Bool, wasReleased: Bool) -> String
 ```
 
 The title for a photo without a preview: ``previewNotKeptTitle`` where previews are made
-and this one was released, ``lockScreenNoPreviewTitle`` where none are made.
+and this one was released, ``noPreviewTitle`` where none are made or this one couldn't be.
 
-- Parameter makesPreviews: Whether this process makes previews.
+- Parameters:
+  - makesPreviews: Whether this process makes previews.
+  - wasReleased: Whether this photo's preview was made and released
+    (`SessionPhoto.previewWasReleased`).
 
 ## `PhotoViewerText/notSigned`
 
@@ -16957,6 +16991,16 @@ static var previewNotKeptTitle: String { get }
 ```
 
 "Preview Not Kept".
+
+## `PhotoViewerText/previewNotMadeSentence`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var previewNotMadeSentence: String { get }
+```
+
+"nope. couldn't make a preview of this photo. The photo is saved in Photos."
 
 ## `PhotoViewerText/processed`
 
@@ -19027,6 +19071,53 @@ internal, declared in `Sources/NopeUI/QuickPanel.swift`
 ```
 
 Opens Settings.
+
+## `QuickMenuListIsOpen`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+struct QuickMenuListIsOpen
+```
+
+Whether Q's list is open in the scrolling layout, where it takes the place of the scrolling
+content, so ``CameraScreen`` shows the first start's mark without its words and plate while
+it is open (LAUNCH-SCREEN.md, 13.2, part 3). `false` when it is closed and in the other
+layouts.
+
+## `QuickMenuListIsOpen/defaultValue`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+static let defaultValue: Bool
+```
+
+Closed.
+
+## `QuickMenuListIsOpen/init()`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+init()
+```
+
+Creates the key. It holds no state.
+
+## `QuickMenuListIsOpen/reduce(value:nextValue:)`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+static func reduce(value: inout Bool, nextValue: () -> Bool)
+```
+
+Open when any view reports it open; there is at most one list.
+
+- Parameters:
+  - value: The value so far.
+  - nextValue: The next view's value.
 
 ## `QuickMenuPicker`
 
@@ -23465,7 +23556,8 @@ camera…" is centered under it, its top edge ``wordsTop`` under the mark's cent
 ``NopeMaterial/solid`` that can't be seen on the black picture. While it shows, nothing is drawn
 under the plate: the scrolling layout waits to draw its scrolling content (LAUNCH-SCREEN.md,
 13.2), and where the plate would come within ``NopeSpace/s`` of the pinned row, the words and
-the plate are left out and the mark is shown alone (``wordsFit(plateExtent:roomBelowCenter:)``).
+the plate are left out and the mark is shown alone (``wordsFit(plateExtent:roomBelowCenter:)``),
+as they are while Q's list is open there (``QuickMenuListIsOpen``).
 Before the camera state is known there are no words and no plate: that frame is the launch
 screen again. It turns with
 ``SwiftUICore/EnvironmentValues/cameraUprightRotation`` about the mark's center, so it is
