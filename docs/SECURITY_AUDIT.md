@@ -99,8 +99,22 @@ archive (`Products/Applications/NopeApp.app`).
 
 - **Run:**
   - `strings -a NopeApp.app/NopeApp | grep -iE 'BEGIN (EC |RSA )?PRIVATE KEY|api[_-]?key|secret|token|password|/Users/|http://|https://'`
-  - `strings -a NopeApp.app/NopeApp | grep -E 'NopeTagCheck|NopeCameraProbe|NopeSimulatedCamera|NopeArmDebugRun'`
-    (Debug-only tools must not be in Release).
+  - `strings -a <binary> | grep -E -- '-Nope[A-Z]|NopeSimulated|NopeTagCheckRun|NopeCameraProbe|NopeArmDebugRun'`
+    on each of the four binaries: `NopeApp.app/NopeApp`,
+    `Extensions/NopeCaptureExtension.appex/NopeCaptureExtension`,
+    `PlugIns/NopeControls.appex/NopeControls` and `Watch/NopeWatch.app/NopeWatch`, each of
+    which must exist and not be empty (`[[ -s ]]`). No hits: Debug-only tools must not be in
+    Release (the UI-test scenarios, the simulated viewfinder still
+    `-NopeSimulatedViewfinderImage`, the test App Store ID `-NopeSimulatedAppStoreID`, the watch
+    app's `-NopeSimulatedPhone` and the galleries among them; `-Nope[A-Z]` matches every `-Nope…` launch argument, and the settings argument
+    domain `-NopeSettings.<key>` isn't a string in the binary). Optimized Swift keeps a string
+    literal of 15 UTF-8 bytes or fewer inside the instructions, where `strings` can't see it, so
+    `scripts/check-security.sh` fails on any `"-Nope…"` literal in app code shorter than 16
+    bytes; that is what makes the search cover every argument. CI runs the same search on every
+    Release build ("No Debug-only tools in the Release app") and fails if a binary is missing or
+    empty, and `scripts/check-security.sh` checks that every file in `App/NopeApp/DebugTools/` is
+    one `#if DEBUG` block with no `#else`, `#elseif`, code outside it, block comment or
+    multi-line string.
   - `nm -u NopeApp.app/NopeApp` and the same on every binary in `NopeApp.app/Frameworks/`,
     then search the undefined symbols for networking:
     `grep -E 'URLSession|NSURLConnection|nw_|CFSocket|CFStream|socket$|_connect$|getaddrinfo|SecTrust'`.
@@ -253,11 +267,17 @@ AGENTS.md rule 4.
   - `scripts/check-security.sh` (bans `URLSession`, `NWConnection`, `import Network`,
     `CFNetwork`, `WebKit` and analytics SDK names in app code).
   - `grep -rnE 'import (Network|WebKit|SafariServices)|URLSession|NWConnection|URLRequest|openURL|UIApplication\.shared\.open|Link\(' Sources App`:
-    the only allowed hits are the two links on the About screen that open in the browser, the
-    privacy policy (`https://nope.photivra.com/privacy/`) and the source code
-    (`AboutScreen.privacyPolicyURL` and `sourceURL`), which hand the URL to the system and don't
-    fetch anything in the app; and the Photos app's `photos-redirect://` address, which opens
-    Photos and reads nothing.
+    the only allowed hits are the three links on the About screen: the privacy policy
+    (`https://nope.photivra.com/privacy/`) and the source code, which open in the browser, and
+    the App Store write-review page (`https://apps.apple.com/app/id<App Store ID>?action=write-review`),
+    which opens the App Store (`AboutScreen.privacyPolicyURL`, `sourceURL` and `rateURL`). Each
+    hands its URL to the system and fetches nothing in the app. The third is shown only once
+    `AboutScreen.appStoreID` is set. Also allowed: the Photos app's `photos-redirect://` address,
+    which opens Photos and reads nothing.
+  - `scripts/check-app-store-id.sh`: the App Store ID is set, so the Release build has its Rate or
+    Review row. It fails while `AboutScreen.appStoreID` is `nil`; it isn't run on pull requests,
+    because the id exists only once the app's App Store Connect record does (which is before any
+    build can be uploaded).
   - The binary checks in check 3 (`nm -u`, `otool -L`) on the app and every framework, and on
     the embedded Apple Watch app (`Watch/NopeWatch.app/NopeWatch`). It links WatchConnectivity,
     which carries the watch's commands over the system's paired-device connection; the app
@@ -514,7 +534,7 @@ Copy this into the audit report issue for each release.
 - [ ] 4. Signed entitlements match the allowlist
 - [ ] 5. Info.plist: only the needed usage strings, accurate in every language that ships; no background modes, URL schemes, file sharing or ATS exceptions; `ITSAppUsesNonExemptEncryption` = `NO`
 - [ ] 6. Privacy manifest matches every required-reason API in the binary; Xcode privacy report reviewed
-- [ ] 7. Static no-network proof
+- [ ] 7. Static no-network proof; App Store ID set (`scripts/check-app-store-id.sh`)
 - [ ] 8. Packet capture, App Privacy Report and offline run: zero app traffic
 - [ ] 9. Metadata dumps of every format and switch combination match the allowlist; fail-closed tests pass; tag check rerun on the release iOS version
 - [ ] 10. New Secure Enclave key per photo, never exported; generic certificate; valid in the C2PA reference tool; tampered files fail

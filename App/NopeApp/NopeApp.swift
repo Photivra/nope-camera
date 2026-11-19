@@ -100,7 +100,7 @@ struct NopeApp: App {
     var body: some Scene {
         WindowGroup {
             #if DEBUG
-            // Debug builds only: `-NopeTagCheck`, `-NopeCameraProbe` or an armed run replace the
+            // Debug builds only: `-NopeTagCheckRun`, `-NopeCameraProbe` or an armed run replace the
             // camera screen (docs/TESTING.md, "Tag check"). Release builds don't contain them.
             switch DebugRunLaunch.decision {
             case .perform(.tagCheck):
@@ -241,6 +241,8 @@ struct NopeApp: App {
         .overlay(alignment: .center) { SimulatedShortcut.ResultView() }
         // UI tests only: `-NopeSimulatedPinchLabelSeconds <seconds>` keeps a pinch's lens label up.
         .environment(\.lensPinchLabelSeconds, SimulatedPinch.labelSeconds)
+        // UI tests only: `-NopeSimulatedAppStoreID <digits>` shows the Rate or Review row on About.
+        .modifier(SimulatedAppStore.Override())
         #endif
         // The battery and Low Power Mode warnings follow the system's change notifications;
         // nothing polls (AGENTS.md, "Battery").

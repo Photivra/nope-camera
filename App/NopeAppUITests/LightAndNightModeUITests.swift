@@ -381,6 +381,32 @@ extension NopeAppUITests {
         return count
     }
 
+    /// Counts the pixels of text or symbols inside a frame, sampled every point: pixels whose
+    /// red, green or blue differs by more than 60 from the background, read at the middle of the
+    /// frame's top edge (3 points in, where a vertically centered row draws nothing). Returns -1
+    /// when the screenshot can't be read.
+    ///
+    /// - Parameters:
+    ///   - app: The app on screen.
+    ///   - frame: The region to count, such as half of a list row.
+    ///   - background: The point whose color is the background, such as the row's top middle.
+    @MainActor
+    func inkPixels(_ app: XCUIApplication, in frame: CGRect, background: CGPoint) -> Int {
+        settle()
+        let image = XCUIScreen.main.screenshot().image
+        guard let pixels = Pixels(image) else { return -1 }
+        let scale = image.scale
+        let paper = pixels.color(x: Int(background.x * scale), y: Int(background.y * scale))
+        var count = 0
+        for y in stride(from: frame.minY, to: frame.maxY, by: 1) {
+            for x in stride(from: frame.minX, to: frame.maxX, by: 1) {
+                let (red, green, blue) = pixels.color(x: Int(x * scale), y: Int(y * scale))
+                if max(abs(red - paper.0), abs(green - paper.1), abs(blue - paper.2)) > 60 { count += 1 }
+            }
+        }
+        return count
+    }
+
     /// The color class of the pixel at the center of a frame.
     @MainActor
     func centerColor(_ app: XCUIApplication, of frame: CGRect) -> PixelColor {

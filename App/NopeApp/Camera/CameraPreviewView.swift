@@ -33,11 +33,15 @@ struct Viewfinder: View {
     /// The simulated backend's picture: dark gray, or in Debug builds the plain color a UI test
     /// asks for with `-NopeSimulatedViewfinder white` or `yellow`, to check contrast over the
     /// brightest scenes (issue #68, "Contrast"), or with `target` a white square on black, to
-    /// check the focus magnifier enlarges the picture.
+    /// check the focus magnifier enlarges the picture. With
+    /// `-NopeSimulatedViewfinderImage <path>`, Debug builds show that still instead, for store
+    /// screenshots (``SimulatedViewfinderImage``).
     @ViewBuilder private var placeholder: some View {
         // The Lock Screen capture extension shares this file but not the UI-test scenarios.
         #if DEBUG && !NOPE_CAPTURE_EXTENSION
-        if SimulatedCameraLaunch.showsTargetViewfinder {
+        if let still = SimulatedViewfinderImage.image {
+            SimulatedViewfinderImage.view(still)
+        } else if SimulatedCameraLaunch.showsTargetViewfinder {
             SimulatedCameraLaunch.targetViewfinder
         } else {
             SimulatedCameraLaunch.viewfinderColor ?? Color(white: 0.12)

@@ -82,6 +82,10 @@ public struct SettingsScreen: View {
     /// Assistant Access is read only.
     @Environment(\.assistantSession) private var assistantSession
 
+    /// The app's App Store ID, or `nil`: without one, About has no Rate or Review link and search
+    /// doesn't list it.
+    @Environment(\.appStoreID) private var appStoreID
+
     /// Creates the settings screen.
     ///
     /// - Parameters:
@@ -151,7 +155,8 @@ public struct SettingsScreen: View {
             offersAstro: camera?.deviceOffersAstro ?? false,
             offersKeepScreenOn: offersKeepScreenOn,
             offersPinch: LensPinch.isOffered(on: lenses),
-            offersAssistantAccessPage: assistantSession != nil)
+            offersAssistantAccessPage: assistantSession != nil,
+            offersRateOrReview: AboutScreen.rateURL(appStoreID: appStoreID) != nil)
     }
 
     /// The list or the search results, in the navigation stack.

@@ -194,10 +194,31 @@ struct SettingsSearchTests {
         #expect(!SettingsSearch.Availability(offersKeepScreenOn: false).offers(.keepScreenOn))
     }
 
+    /// Rate or Review is found by its keywords on About, only where the app has an App Store ID
+    /// (`docs/store/STORE-PAGE-PLAN.md`, 12.1).
+    @Test func rateOrReviewIsFoundByItsKeywordsOnlyWithAnID() {
+        let withID = SettingsSearch.Availability(offersRateOrReview: true)
+        for word in ["rate", "review", "rating", "feedback", "App Store"] {
+            #expect(SettingsSearch.settings(matching: word, availability: withID).contains(.rateOrReview), "\(word)")
+            #expect(!SettingsSearch.settings(matching: word, availability: .init()).contains(.rateOrReview), "\(word)")
+        }
+        // "stars" is what people type for Astro, so it doesn't list Rate or Review.
+        #expect(!SettingsSearch.settings(matching: "stars", availability: withID).contains(.rateOrReview))
+        #expect(!SettingsSearch.Availability().offers(.rateOrReview))
+        #expect(SettingsID.rateOrReview.rawValue == "settings.about.rateOrReview")
+        #expect(SettingsID.rateOrReview.page == .about)
+        #expect(SettingsID.rateOrReview.group == .more)
+        #expect(SettingsID.rateOrReview.navigationPath == [.about])
+        #expect(SettingsID.rateOrReview.scrollTarget == .rateOrReview)
+        #expect(SettingsSearch.place(of: .rateOrReview) == "More › About and Licenses")
+        #expect(String(localized: SettingsText.rateOrReview) == "Rate or Review")
+    }
+
     @Test func everyRowIsFoundByItsOwnTitle() {
         let all = SettingsSearch.Availability(
             hasPresets: true, offersPhotoSize: true, hasFrontCamera: true, offersLocation: true,
-            offersProcessedMarker: true, offersLiveActivity: true, offersAstro: true, offersPinch: true)
+            offersProcessedMarker: true, offersLiveActivity: true, offersAstro: true, offersPinch: true,
+            offersRateOrReview: true)
         for id in SettingsSearch.searchable {
             let title = String(localized: SettingsText.title(of: id))
             #expect(SettingsSearch.settings(matching: title, availability: all).contains(id), "\(id): \(title)")
@@ -212,6 +233,7 @@ struct SettingsSearchTests {
             ("Presets", SettingsID.presets), ("Photo Size", .photoSize), ("Mirror", .mirrorFrontCamera),
             ("gps", .detailsLocation), ("Processed", .showProcessedMarker), ("Live Activity", .liveActivity),
             ("Keep Night Mode", .keepNightModeAfterAstro), ("Keep Screen On", .keepScreenOn), ("auto-lock", .keepScreenOn),
+            ("Rate or Review", .rateOrReview), ("review", .rateOrReview),
         ] {
             #expect(!SettingsSearch.settings(matching: query, availability: none).contains(id), "\(id)")
         }

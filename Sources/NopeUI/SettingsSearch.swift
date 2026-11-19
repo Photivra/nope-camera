@@ -163,6 +163,9 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
     case license = "settings.about.license"
     /// The Notices and Trademarks page, under About and Licenses.
     case noticesAndTrademarks = "settings.about.notices"
+    /// The Rate or Review link, last on About and Licenses, shown only once the app has an App
+    /// Store ID (`docs/store/STORE-PAGE-PLAN.md`, section 12).
+    case rateOrReview = "settings.about.rateOrReview"
 
     /// The identifier of an optional detail's switch on Details in Each Photo, or `nil` for an
     /// item Settings doesn't offer (`MetadataItem/isOfferedInSettings`).
@@ -209,7 +212,7 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
         case .overlaysGrid, .overlaysGridStyle, .overlaysLevel, .overlaysFocusPeaking, .overlaysHistogram,
             .overlaysLiveReadout, .overlaysKeepReadout:
             .overlays
-        case .license, .noticesAndTrademarks: .about
+        case .license, .noticesAndTrademarks, .rateOrReview: .about
         }
     }
 
@@ -235,7 +238,8 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
             .overlaysFocusPeaking, .overlaysHistogram, .overlaysLiveReadout, .overlaysKeepReadout,
             .showProcessedMarker, .nightMode, .keepNightModeAfterAstro, .redViewfinder, .keepScreenOn, .liveActivity:
             .screen
-        case .more, .accessibility, .honesty, .honestyCloseUpFocus, .about, .license, .noticesAndTrademarks: .more
+        case .more, .accessibility, .honesty, .honestyCloseUpFocus, .about, .license, .noticesAndTrademarks, .rateOrReview:
+            .more
         case .presets, .factoryDefaults, .saveCurrentSettings: nil
         }
     }
@@ -557,6 +561,8 @@ enum SettingsText {
     static let license = LocalizedStringResource("License", bundle: bundle, comment: "Title of the screen showing the full license text.")
     /// "Notices and Trademarks".
     static let noticesAndTrademarks = LocalizedStringResource("Notices and Trademarks", bundle: bundle, comment: "Row and screen title for the copyright, trademark and third-party notices.")
+    /// "Rate or Review".
+    static let rateOrReview = LocalizedStringResource("Rate or Review", bundle: bundle, comment: "Link on the About screen that opens the App Store's page for writing a rating or review of the app. A label, not a request: it names what the page offers.")
 
     /// An item's name, as its row shows it.
     ///
@@ -627,6 +633,7 @@ enum SettingsText {
         case .about: about
         case .license: license
         case .noticesAndTrademarks: noticesAndTrademarks
+        case .rateOrReview: rateOrReview
         }
     }
 
@@ -681,6 +688,8 @@ enum SettingsText {
             LocalizedStringResource("Search keywords: Live Activity", defaultValue: "Lock Screen, Dynamic Island", bundle: bundle, comment: "Settings search keywords for Live Activity, separated by commas. Not shown on screen. Lock Screen and Dynamic Island are iOS names: use the names iOS shows in this language.")
         case .honesty:
             LocalizedStringResource("Search keywords: Honesty", defaultValue: "close-up, macro, close, near, blurry, soft, lens", bundle: bundle, comment: "Settings search keywords for the Honesty page, separated by commas. Not shown on screen: the page explains why nope. never changes lenses for a close-up. Keep nope. unchanged if it appears.")
+        case .rateOrReview:
+            LocalizedStringResource("Search keywords: Rate or Review", defaultValue: "rate, review, rating, feedback, App Store", bundle: bundle, comment: "Settings search keywords for the Rate or Review link on the About screen, separated by commas. Not shown on screen. App Store is Apple's name: use its name in the language's iOS.")
         case .showProcessedMarker:
             LocalizedStringResource("Search keywords: Show Processed Marker", defaultValue: "no RAW, processing", bundle: bundle, comment: "Settings search keywords for Show Processed Marker, separated by commas. Not shown on screen. RAW is a file format name.")
         default:
@@ -889,6 +898,9 @@ enum SettingsSearch {
         /// Whether the Assistant Access page can be opened: everywhere but the Lock Screen
         /// camera, where the row is read only.
         var offersAssistantAccessPage = true
+        /// Whether About shows the Rate or Review link: only once the app has an App Store ID
+        /// (``AboutScreen/rateURL(appStoreID:)``).
+        var offersRateOrReview = false
 
         /// Creates the availability.
         ///
@@ -903,11 +915,12 @@ enum SettingsSearch {
         ///   - offersKeepScreenOn: Whether Keep Screen On is offered.
         ///   - offersPinch: Whether the device has two or more rear lenses, so Pinch applies.
         ///   - offersAssistantAccessPage: Whether the Assistant Access page can be opened.
+        ///   - offersRateOrReview: Whether About shows the Rate or Review link.
         init(
             hasPresets: Bool = true, offersPhotoSize: Bool = false, hasFrontCamera: Bool = true,
             offersLocation: Bool = true, offersProcessedMarker: Bool = false, offersLiveActivity: Bool = false,
             offersAstro: Bool = false, offersKeepScreenOn: Bool = true,
-            offersPinch: Bool = false, offersAssistantAccessPage: Bool = true
+            offersPinch: Bool = false, offersAssistantAccessPage: Bool = true, offersRateOrReview: Bool = false
         ) {
             self.hasPresets = hasPresets
             self.offersPhotoSize = offersPhotoSize
@@ -919,6 +932,7 @@ enum SettingsSearch {
             self.offersKeepScreenOn = offersKeepScreenOn
             self.offersPinch = offersPinch
             self.offersAssistantAccessPage = offersAssistantAccessPage
+            self.offersRateOrReview = offersRateOrReview
         }
 
         /// Whether the item exists here.
@@ -937,6 +951,7 @@ enum SettingsSearch {
             case .keepScreenOn: offersKeepScreenOn
             case .pinch: offersPinch
             case .assistantAccess, .assistantAccessSwitch, .assistantAsk: offersAssistantAccessPage
+            case .rateOrReview: offersRateOrReview
             default: true
             }
         }

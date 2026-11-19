@@ -1,5 +1,14 @@
 import SwiftUI
 
+extension EnvironmentValues {
+    /// The app's numeric App Store ID, from which the About screen builds its Rate or Review
+    /// link, or `nil` while there is none, which hides the row and its search entry
+    /// (`docs/store/STORE-PAGE-PLAN.md`, section 12). ``AboutScreen/appStoreID`` by default; the
+    /// app's UI tests set one in Debug builds (`-NopeSimulatedAppStoreID`), because the
+    /// repository has no id until the app's App Store record exists.
+    @Entry public var appStoreID: String? = AboutScreen.appStoreID
+}
+
 /// About and licenses: the version, the GPL-3.0-only license text, the project's notices
 /// (including the Adobe DNG notice) and where the source code is.
 ///
@@ -10,7 +19,53 @@ import SwiftUI
 /// address to the system, which opens it in the browser. The app itself makes no network
 /// request and has no web view (AGENTS.md, "Prevention first"). App Review Guideline 5.1.1(i)
 /// asks for the privacy policy to be reachable within the app.
+///
+/// The last section, App Store, has one link, Rate or Review, that hands the App Store's
+/// write-review address to the system, which opens the App Store. It is a plain link the person
+/// taps: the app never asks for a rating, uses no StoreKit review request, and stores nothing
+/// about whether the row was tapped (`docs/store/STORE-PAGE-PLAN.md`, section 12). The section
+/// shows only once ``appStoreID`` is set, so no dead link ships.
 struct AboutScreen: View {
+    /// The app's numeric App Store ID ("Apple ID" in App Store Connect, App Information), or
+    /// `nil` until the app's App Store record exists. It is not secret. While it is `nil` the
+    /// Rate or Review row is hidden, and `scripts/check-app-store-id.sh`, run before each release,
+    /// fails.
+    nonisolated static let appStoreID: String? = nil
+
+    /// The App Store's write-review address for an App Store ID:
+    /// `https://apps.apple.com/app/id<ID>?action=write-review`.
+    ///
+    /// The `action=write-review` form is not verified until it can be opened for a live app; it
+    /// is a device check after the first release (`docs/TESTING.md`).
+    ///
+    /// - Parameter appStoreID: The numeric App Store ID, or `nil`.
+    /// - Returns: The address, or `nil` without an id or for one that isn't all ASCII digits.
+    static func rateAddress(appStoreID: String?) -> String? {
+        guard let appStoreID, !appStoreID.isEmpty, appStoreID.allSatisfy({ ("0"..."9").contains($0) }) else { return nil }
+        return "https://apps.apple.com/app/id\(appStoreID)?action=write-review"
+    }
+
+    /// The write-review address as a URL, opened by the system when tapped.
+    ///
+    /// - Parameter appStoreID: The numeric App Store ID, or `nil`.
+    /// - Returns: The URL, or `nil` when ``rateAddress(appStoreID:)`` is `nil`.
+    static func rateURL(appStoreID: String?) -> URL? {
+        rateAddress(appStoreID: appStoreID).flatMap { URL(string: $0) }
+    }
+
+    /// The write-review address for ``appStoreID``, or `nil` while it isn't set.
+    static var rateAddress: String? { rateAddress(appStoreID: appStoreID) }
+
+    /// The write-review URL for ``appStoreID``, or `nil` while it isn't set.
+    static var rateURL: URL? { rateURL(appStoreID: appStoreID) }
+
+    /// The App Store ID in use: ``appStoreID``, or the one the app's UI tests set.
+    @Environment(\.appStoreID) private var currentAppStoreID
+
+    /// The Settings navigation, or `nil` outside Settings: a search result for Rate or Review
+    /// scrolls to the row, which is below the fold.
+    @Environment(SettingsNavigation.self) private var navigation: SettingsNavigation?
+
     /// The address of the source code.
     static let sourceAddress = "https://github.com/Photivra/nope-camera"
 
@@ -79,6 +134,11 @@ struct AboutScreen: View {
                 }
                 .accessibilityHint(Text("Opens in your browser.", tableName: "Honesty", bundle: .module, comment: "Footer under the Privacy Policy row on the About screen, and the row's VoiceOver hint: the policy opens in the browser, not in the app. Draft for the Honesty review."))
                 .accessibilityValue(Text(verbatim: Self.privacyPolicyAddress))
+                // A link, not a button, for VoiceOver: the iOS 26.5 Simulator reports a `Link` in
+                // a `Form` as a button unless the button trait is removed; the same on the other
+                // two links (docs/TESTING.md).
+                .accessibilityAddTraits(.isLink)
+                .accessibilityRemoveTraits(.isButton)
             } footer: {
                 Text("Opens in your browser.", tableName: "Honesty", bundle: .module, comment: "Footer under the Privacy Policy row on the About screen, and the row's VoiceOver hint: the policy opens in the browser, not in the app. Draft for the Honesty review.")
             }
@@ -88,6 +148,8 @@ struct AboutScreen: View {
                 }
                 .accessibilityLabel(Text("Source code address", bundle: .module, comment: "VoiceOver name of the web address of the source code."))
                 .accessibilityValue(Text(verbatim: Self.sourceAddress))
+                .accessibilityAddTraits(.isLink)
+                .accessibilityRemoveTraits(.isButton)
             } header: {
                 Text("Source Code", bundle: .module, comment: "Section header for where to find the app's source code.")
             } footer: {
@@ -95,8 +157,33 @@ struct AboutScreen: View {
                     "Opens in your browser. Photivra Nope Camera itself makes no network connections.", bundle: .module,
                     comment: "Footer under the source code link on the About screen. Keep \"Photivra Nope Camera\" unchanged.")
             }
+            if let rateURL = Self.rateURL(appStoreID: currentAppStoreID) {
+                rateSection(rateURL)
+            }
         }
         .navigationTitle(Text(SettingsText.about))
+        .modifier(SettingsScrollTarget(navigation: navigation, page: .about))
+    }
+
+    /// The App Store section: the Rate or Review link, last on the screen, drawn like the
+    /// Privacy Policy link, with no symbol, badge or color of its own, so night mode turns it red
+    /// like the other links.
+    ///
+    /// - Parameter url: The write-review URL.
+    private func rateSection(_ url: URL) -> some View {
+        Section {
+            Link(destination: url) {
+                Text(SettingsText.rateOrReview)
+            }
+            .accessibilityHint(Text("Opens the App Store.", bundle: .module, comment: "VoiceOver hint of the Rate or Review row on the About screen: tapping it leaves the app for the App Store. App Store is Apple's name; use its name in the language's iOS."))
+            .accessibilityAddTraits(.isLink)
+            .accessibilityRemoveTraits(.isButton)
+            .settingsRow(.rateOrReview)
+        } header: {
+            Text("App Store", bundle: .module, comment: "Section header on the About screen above the Rate or Review row. App Store is Apple's name; use its name in the language's iOS.")
+        } footer: {
+            Text("Opens the App Store. Ratings and reviews there are public.", bundle: .module, comment: "Footer under the Rate or Review row on the About screen: the row leaves the app, and anything written there can be read by anyone. App Store is Apple's name; use its name in the language's iOS.")
+        }
     }
 
     /// The version and build number from an Info.plist dictionary, such as "0.1.0 (1)".

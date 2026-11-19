@@ -17,6 +17,7 @@ the other submission answers:
 | [`app-privacy-label.md`](app-privacy-label.md) | App Store Connect App Privacy answers ("Data Not Collected") |
 | [`accessibility-label.md`](accessibility-label.md) | Accessibility Nutrition Label answers, and the evidence each one needs |
 | [`privacy-policy-draft.md`](privacy-policy-draft.md) | The privacy policy, for the maintainer to publish |
+| [`STORE-PAGE-PLAN.md`](STORE-PAGE-PLAN.md) | The product page plan for 1.0.0 (accepted 2026-11-19, every decision as recommended; layout mockups in [`docs/design/store.html`](../design/store.html)): each App Store page feature, screenshot and preview storyboards, the assets to make, the App Store Connect steps and the maintainer's decisions. Section 12 designs the Rate or Review row for the About screen (decided 2026-11-19, built in 1.0.0): a third About link, which opens the App Store's write-review page; the app shows no rating prompt |
 
 ## Field limits (App Store Connect)
 
@@ -107,9 +108,12 @@ Test. Draft, for the maintainer to review.
   iPad Air (5th generation). Other iPhone and iPad models, iOS and iPadOS 26 and the Apple Watch
   app were tested only in Apple's Simulator (`docs/TESTING.md`, "What was tested on real
   hardware").
-- **No network.** The app contains no networking code and opens no network connection. The two
-  links in the app, the privacy policy and the source code on the About screen, open in the
-  browser when the person taps them.
+- **No network.** The app contains no networking code and opens no network connection. The three
+  links in the app, on the About screen, leave the app only when the person taps them: the
+  privacy policy and the source code open in the browser, and Rate or Review opens the App
+  Store's write-review page for the app. The app never asks for a rating and doesn't use
+  StoreKit's review request. Until the app is released, its App Store page isn't public, so
+  during review Rate or Review may open a page the App Store doesn't show yet.
 - **Photos access is add-only.** The app never asks to read the photo library. The Last Photo
   button can open the Photos app with the `photos-redirect://` address; it only brings Photos to
   the front and reads nothing. Apple doesn't document this address (`docs/TESTING.md`, "On-device

@@ -158,9 +158,15 @@ for any user-facing claim comes from
   manifest declares no tracking, no tracking domains and no collected data; it declares
   `UserDefaults` (`CA92.1`) because the shared `NopeCore` code linked into it contains the
   iPhone app's settings code, which the watch app never runs.
-- **Links:** two, on the About screen: the privacy policy (`https://nope.photivra.com/privacy/`)
-  and the source code. Each hands its `https` address to the system when tapped and opens in the
-  browser; the app has no web view and fetches nothing.
+- **Links:** three, on the About screen: the privacy policy (`https://nope.photivra.com/privacy/`)
+  and the source code, which open in the browser, and Rate or Review, which opens the App Store's
+  write-review page for the app (`https://apps.apple.com/app/id<App Store ID>?action=write-review`).
+  1.0.0 ships with all three: Rate or Review is shown when `AboutScreen.appStoreID` is set, and
+  `scripts/check-app-store-id.sh`, which fails while it is `nil`, must pass before the release
+  build. Each hands its `https` address to the system when tapped; the
+  app has no web view, fetches nothing, never asks for a rating and stores nothing about whether a
+  link was tapped. What happens in the browser or the App Store is under their own privacy terms,
+  and ratings and reviews written in the App Store are public.
 - **Entitlements:** the app and the controls extension each have one, the App Group
   (`com.apple.security.application-groups`, `group.<bundle identifier>`;
   `App/NopeApp.entitlements`, `App/NopeControls.entitlements`), which lets them share the
@@ -173,7 +179,7 @@ for any user-facing claim comes from
   photos) and, for a failed save to Photos or a settings hand-off, the error's domain and code
   and the resource types, marked private; never photo data or metadata. Debug builds include the
   tag check (below), which writes test captures to the app's container only when launched with
-  `-NopeTagCheck`; it isn't compiled into Release builds. The `-NopeCameraProbe` diagnostic
+  `-NopeTagCheckRun`; it isn't compiled into Release builds. The `-NopeCameraProbe` diagnostic
   also saves one live video frame as a JPEG, to check exposure (see [`TESTING.md`](TESTING.md),
   "Black frames").
 
@@ -398,7 +404,7 @@ geometric distortion correction off where the camera allows it; and zoom 1.0.
 
 The metadata plan below is confirmed by dumping every tag from real files captured on a device.
 
-- **Capture:** a debug-only mode (`-NopeTagCheck`, Debug builds only) captures, with each
+- **Capture:** a debug-only mode (`-NopeTagCheckRun`, Debug builds only) captures, with each
   physical camera, a Bayer RAW DNG and a processed HEIF through the app's own capture backend,
   so the files carry exactly what the app's captures carry: `.speed` prioritization, no ProRAW,
   zoom 1.0, no deferred delivery, constant color or distortion correction, and no location

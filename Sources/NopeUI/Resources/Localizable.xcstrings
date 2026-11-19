@@ -53,6 +53,10 @@
       "comment" : "Card on the camera after an exposure bracket or a burst: how many separate photos were saved to the photo library.",
       "extractionState" : "manual"
     },
+    "App Store" : {
+      "comment" : "Section header on the About screen above the Rate or Review row. App Store is Apple's name; use its name in the language's iOS.",
+      "extractionState" : "manual"
+    },
     "As fast as the camera is ready" : {
       "comment" : "Detail of the Fast burst speed in the Burst menu. It makes no claim about a rate.",
       "extractionState" : "manual"
@@ -405,6 +409,14 @@
       "comment" : "VoiceOver hint on the selected Bracket word of the drive strip above the shutter: activating it again opens Bracket Settings.",
       "extractionState" : "manual"
     },
+    "Opens the App Store." : {
+      "comment" : "VoiceOver hint of the Rate or Review row on the About screen: tapping it leaves the app for the App Store. App Store is Apple's name; use its name in the language's iOS.",
+      "extractionState" : "manual"
+    },
+    "Opens the App Store. Ratings and reviews there are public." : {
+      "comment" : "Footer under the Rate or Review row on the About screen: the row leaves the app, and anything written there can be read by anyone. App Store is Apple's name; use its name in the language's iOS.",
+      "extractionState" : "manual"
+    },
     "Order" : {
       "comment" : "Picker in Bracket Settings, and a setting of the Take Bracket action: the order in which the frames are taken.",
       "extractionState" : "manual"
@@ -735,6 +747,10 @@
       "comment" : "In the photo details: the EXIF exposure program Portrait mode.",
       "extractionState" : "manual"
     },
+    "Rate or Review" : {
+      "comment" : "Link on the About screen that opens the App Store's page for writing a rating or review of the app. A label, not a request: it names what the page offers.",
+      "extractionState" : "manual"
+    },
     "RAW Sensor Data" : {
       "comment" : "Heading in the photo details: facts about the RAW file's sensor data. RAW is a file format name.",
       "extractionState" : "manual"
@@ -771,6 +787,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "continuous, speed"
+          }
+        }
+      }
+    },
+    "Search keywords: Rate or Review" : {
+      "comment" : "Settings search keywords for the Rate or Review link on the About screen, separated by commas. Not shown on screen. App Store is Apple's name: use its name in the language's iOS.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "rate, review, rating, feedback, App Store"
           }
         }
       }

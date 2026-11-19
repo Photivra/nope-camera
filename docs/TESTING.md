@@ -15,7 +15,13 @@ scripts/test-check-coverage.sh
 scripts/test-dump-tags.sh   # macOS only: the tag dumper's TIFF walker
 scripts/test-check-file-compat.sh
 scripts/test-check-launch-screen.sh && scripts/check-launch-screen.sh   # add a built .app to check its Info.plist
+scripts/test-check-app-store-id.sh
 ```
+
+Before the release build, `scripts/check-app-store-id.sh` must pass: it fails while
+`AboutScreen.appStoreID` is `nil`, and 1.0.0 ships with its Rate or Review row. It isn't run on
+pull requests, because the id exists only once the app's App Store Connect record does
+(`docs/SECURITY_AUDIT.md`, check 7).
 
 `check-security.sh` reads tracked files only (`git ls-files`), so stage new files before running
 it.
@@ -586,6 +592,8 @@ each test checks, with `performAccessibilityAudit()` in every state:
 | `noRAW` | A device without RAW (wide and front, no Bayer RAW): the "Processed" marker ("Processed: no RAW on this lens, HEIF" for VoiceOver) and the HEIF fallback in the viewfinder description, portrait and landscape, default and largest text sizes; Space takes a photo |
 | `multitasking` | iPad Split View, Slide Over or Stage Manager: "The camera works only when nope. fills the screen.", shutter disabled |
 | `-NopeSimulatedViewfinder white` or `yellow` | The camera with a photo, the manual readout and an open dial over a pure white and a pure yellow picture |
+| `-NopeSimulatedViewfinderImage <path>` | The simulated picture is the still at that path on the Mac (HEIF, JPEG or PNG), shown whole on black, for store screenshots taken on the Simulator (`SimulatedViewfinderImage.swift`; `ViewfinderStillUITests.swift` checks a white still replaces the gray). Only the picture changes: the histogram, focus peaking and zebras still measure the simulated frame, so screenshots with those overlays on don't describe the still. Use only a photo taken with the app and saved unedited |
+| `-NopeSimulatedAppStoreID <digits>` | An App Store ID, so About shows its Rate or Review row (`RateOrReviewUITests.swift`): a link with its App Store header and footer, last on the page; found by search ("rating", "feedback"); audited at the default and largest text sizes, right to left and in night mode (no non-red pixel). Without it the row and its search entry are absent, as in a build with no id. The link is never tapped: the Simulator has no App Store |
 | `metadataRejected` | Every file carries a simulated future system tag: "Not saved: nope. couldn't confirm that the photo holds only the details you chose."; also at the largest accessibility text size |
 | `photosDenied` | Adding to Photos isn't allowed: the "isn't allowed to add photos" banner with Open Settings |
 | `signingFails` | The signer fails: the photo is saved unsigned, the last-photo slot and the "Not Signed" chip say "Saved. Not signed: the signature couldn't be created.", shutter still enabled; also right-to-left, with the bottom row mirrored |
@@ -728,26 +736,31 @@ the iPhone 18 Pro and Apple Watch Series 12 Simulators need the 27 runtimes; the
 with a simulated phone, so the watch needs no paired iPhone. Checked locally on 2026-11-19
 with the 26.5 runtimes: the watch UI tests passed on an Apple Watch Series 11 (46mm) with
 watchOS 26.5, and on an iPhone 17 Pro with iOS 26.5 the first start, Honesty and focus fade
-tests passed, while `testSourceCodeIsAnHTTPSLink` and `testPrivacyPolicyIsAnHTTPSLink` failed:
-the recording shows both links on the About screen, but `app.links[…]` doesn't find them on
-iOS 26.5. Neither test is in iPhone shard 1, so the iOS 26 job doesn't run them; an open
-finding. With the deployment target at
+tests passed. On iOS 26.5 the Simulator reports a SwiftUI `Link` in the About form as a button,
+not a link (on iOS 27.2 the same build reports a link), so `app.links[…]` didn't find the
+privacy policy or source code link and `testSourceCodeIsAnHTTPSLink` and
+`testPrivacyPolicyIsAnHTTPSLink` failed there. Each of the three About links now adds the link
+trait and removes the button trait (`.accessibilityAddTraits(.isLink)` and
+`.accessibilityRemoveTraits(.isButton)`; adding the link trait alone leaves a button on 26.5),
+and both tests, with the Rate or Review link tests, pass on iOS 26.5 and 27.2 (checked locally
+on 2026-11-19). Whether VoiceOver on an iOS 26 device says "link" is a device check below. With
+the deployment target at
 26.0, the compiler also rejects any API newer than iOS or watchOS 26 that isn't behind an
 `#available` check. Running on a version 26 device is part of the on-device checks below.
 
 ### UI test shards
 
-By the listed times the UI suite takes about 499 minutes of test time on the iPhone Simulator
-and 521 on the iPad Simulator on the GitHub macOS runner (about twice as long as on a recent
+By the listed times the UI suite takes about 512 minutes of test time on the iPhone Simulator
+and 534 on the iPad Simulator on the GitHub macOS runner (about twice as long as on a recent
 Mac, so CI limits are sized from runner times, never from local ones). About four fifths of
 those times are estimates (`e`, twice a local time), so the runner is expected to measure
 less. CI runs it in six iPhone shards and five iPad shards, each its own job:
 
 | Job | Tests (listed times) | With about 7 minutes of setup | Limit |
 |---|---|---|---|
-| `ui-tests 1/6` … `6/6` | 81 to 90 minutes each | 88 to 97 minutes | 130 minutes |
-| `ui-tests-ipad 1/5` … `5/5` | 103 to 109 minutes each | 110 to 116 minutes | 160 minutes |
-| `ui-tests 1/6 (iOS 26)` | 81 minutes | 98 minutes, with the runtime download | 140 minutes |
+| `ui-tests 1/6` … `6/6` | 84 to 90 minutes each | 91 to 97 minutes | 130 minutes |
+| `ui-tests-ipad 1/5` … `5/5` | 106 to 109 minutes each | 113 to 116 minutes | 160 minutes |
+| `ui-tests 1/6 (iOS 26)` | 84 minutes | 101 minutes, with the runtime download | 140 minutes |
 | `ui-tests-watch` | 2 minutes | 13 minutes, with its build | 45 minutes |
 | `ui-tests-watch (watchOS 26)` | 2 minutes | 23 minutes, with the runtime download | 70 minutes, with room for the runtime wait |
 
@@ -1470,6 +1483,17 @@ version in the section named, or list it in the changelog as not yet checked:
   S1 to S5 (the stabilization signal and the 2-stop allowance, both provisional), and F1 to F7
   (the fade, Voice Control's "Tap Lock" in time, Full Keyboard Access focus through
   `@FocusState`).
+- **Rate or Review** (once `AboutScreen.appStoreID` is set): tapping the row on About opens the
+  App Store at the app's write-review page on an iPhone and an iPad, and the app stays as it
+  was. The `?action=write-review` form is unverified until it can be opened for a live app, so
+  check it after the first release; on a TestFlight build, note only that the App Store opens
+  (it doesn't take reviews for a TestFlight build). With App Privacy Report on, the tap adds no
+  domain under the app (`docs/SECURITY_AUDIT.md`, check 8). From the Lock Screen camera, if About
+  is offered there, the link needs the device unlocked first, as the other two do.
+- **About links on iOS 26**: on an iPhone with iOS 26, VoiceOver reads each of the three About
+  links (Privacy Policy, the source code address, Rate or Review) as "link", not "button". The
+  iOS 26.5 Simulator reported them as buttons until the button trait was removed; this checks
+  the fix where VoiceOver speaks.
 - **Opening Photos**: the `photos-redirect://` address, which Apple doesn't document, now has two
   entry points, the viewer's Open in Photos and the camera's Open Photos (P1 under "Device
   feedback for 1.0.0"). Record that each opens the Photos app; the app ignores the result of the
@@ -1829,7 +1853,7 @@ can only be checked on hardware. On each device available (record the model and 
   off; the first photo says "Saved. Not signed: signing is off in Settings." and Photos gets one
   DNG; Factory Defaults returns to the same values. Installing over an earlier build keeps the
   formats, signing and Focus on Faces the person had stored.
-- **Which lenses have no Bayer RAW:** run the Debug tag check (`-NopeTagCheck`, "Tag check"
+- **Which lenses have no Bayer RAW:** run the Debug tag check (`-NopeTagCheckRun`, "Tag check"
   below) and record, for each physical camera, whether it gives Bayer RAW.
 - **Marker and note:** on each lens without Bayer RAW (for example an iPad's cameras, or a
   front camera without RAW), "Processed: No RAW on This Lens" shows before the first photo and
@@ -2343,7 +2367,7 @@ least-processing value.
 The code is in `App/NopeApp/DebugTools/` (`TagCheckScreen.swift`, `TagCheckRunner.swift`,
 `TagCheckReport.swift`), wrapped in `#if DEBUG`. It is compiled only in the Debug
 configuration, and Release builds contain none of it. It runs only when the app is launched
-with the `-NopeTagCheck` launch argument, or from an armed run (below).
+with the `-NopeTagCheckRun` launch argument, or from an armed run (below).
 
 The tag check drives the app's own capture backend (`AVFoundationCaptureBackend`) through the
 `CaptureBackend` API only, the same instance the camera screen would use. It creates no capture
@@ -2398,11 +2422,11 @@ frames").
 2. Install a Debug build. Open the app normally from the Home Screen once and check that the
    viewfinder shows the scene.
 3. Launch the tag check. In Xcode: Product › Scheme › Edit Scheme › Run, keep the Build
-   Configuration at Debug, add `-NopeTagCheck` to "Arguments Passed On Launch", and run. From the
+   Configuration at Debug, add `-NopeTagCheckRun` to "Arguments Passed On Launch", and run. From the
    command line:
    ```sh
    xcrun devicectl device process launch --device <device-id> --terminate-existing \
-     com.photivra.nope.dev -- -NopeTagCheck
+     com.photivra.nope.dev -- -NopeTagCheckRun
    ```
    Arguments after the bundle ID must follow `--`; without it `devicectl` parses `-Nope...` as
    its own options and does not launch the app.
@@ -2513,13 +2537,13 @@ the camera picture is blanked gives blank frames whatever the pipeline, and prov
   the app and scene activation state, authorization, `isInterrupted`, every interruption or
   runtime-error notification, `isSuspended`, multitasking camera access, the exposure state,
   the photo's `{Exif}`, the decoded luminance and the raw luma-plane bytes of the frame.
-  `-NopeProbeNoVideoOutput` leaves out the video data output; `-NopeProbeFront` uses the front
+  `-NopeProbeNoVideoOutput` leaves out the video data output; `-NopeProbeFrontCamera` uses the front
   camera.
 - `-NopeArmDebugRun tagcheck` (or `probe`) only stores the run and shows a message. The next
   launch from the Home Screen performs it once and clears it.
 
 Pass every argument after `--`, for example
-`xcrun devicectl device process launch --device <device-id> --terminate-existing com.photivra.nope.dev -- -NopeCameraProbe -NopeProbeFront`.
+`xcrun devicectl device process launch --device <device-id> --terminate-existing com.photivra.nope.dev -- -NopeCameraProbe -NopeProbeFrontCamera`.
 
 ### The tag dumper
 

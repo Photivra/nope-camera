@@ -11,8 +11,8 @@ import SwiftUI
 /// The tag check runs only when the app is launched with the ``argument`` launch argument in a
 /// Debug build. It is never compiled into Release builds.
 enum TagCheckLaunch {
-    /// The launch argument that starts the tag check: `-NopeTagCheck`.
-    static let argument = "-NopeTagCheck"
+    /// The launch argument that starts the tag check: `-NopeTagCheckRun`.
+    static let argument = "-NopeTagCheckRun"
 
     /// `true` when the current process was launched with ``argument``.
     static var isRequested: Bool {
