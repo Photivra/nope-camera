@@ -1552,6 +1552,18 @@ Device checks added by the last viewer and details changes for 1.0.0. Not run.
   photo is dropped from the session (the session keeps 100). The viewer moves to the newest
   photo; double tap and pinch zoom it. `PhotoViewerTests.theShownPageFollowsTheFallbackWhenItsPhotoIsDropped`
   covers the rule; no UI test runs a series that long.
+- **Memory in the viewer** (issue #103). The viewer now decodes each of its three pages at the
+  size it fills on the screen, and the page shown at the preview's full 3072 pixels only while
+  it is zoomed in. By arithmetic (not measured), a 4:3 photo upright on a 402-point page at 3
+  pixels per point decodes at 1206 × 1608 pixels (about 7.8 MB) instead of 2304 × 3072 (about
+  28 MB), so three pages hold about 23 MB instead of 85 MB. With 20 photos taken, record the
+  app's memory (Xcode's memory gauge, or Instruments, Allocations) on the camera, with the
+  viewer open on a middle photo, zoomed in, and after a swipe to the next photo, on this build
+  and on the build before the change, on the smallest and largest supported iPhone and an iPad.
+  Check by eye that a fitted page is as sharp as before and that a zoomed page turns sharp
+  within a moment. The simulated previews of the UI tests are 30 × 40 pixels, so the Simulator
+  can't show it; `PhotoViewerTests.pagesDecodeAtTheirFittedSizeAndTheZoomedPageAtFull` covers
+  the sizes asked for.
 
 ### Lock Screen, Control Center, Siri and Shortcuts on a device
 

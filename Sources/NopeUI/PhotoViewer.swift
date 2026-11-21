@@ -257,6 +257,55 @@ enum PhotoViewerFacts {
         return [index, index - 1, index + 1].filter { photos.indices.contains($0) }.map { photos[$0].id }
     }
 
+    /// One picture to decode: a photo, and the longest side to decode it to.
+    struct Decode: Equatable {
+        /// The photo's ``SessionPhoto/id``.
+        let id: Int
+        /// The longest side to decode to, in pixels, or `nil` for the preview's own size.
+        let maximumPixelSize: Int?
+    }
+
+    /// The pictures to decode: the page shown and its two neighbors, each at the size it fills
+    /// on the screen, and the page shown at the preview's own size once it is zoomed in
+    /// (issue #103). A preview decoded at its full 3072 pixels holds about 28 MB; fitted on an
+    /// iPhone page it holds 4 to 8 MB.
+    ///
+    /// - Parameters:
+    ///   - shownID: The photo shown.
+    ///   - photos: The session's photos, oldest first.
+    ///   - page: The page's size, in points; nothing is decoded before it is laid out.
+    ///   - displayScale: The screen's pixels per point.
+    ///   - isZoomed: Whether the page shown is zoomed past fit.
+    /// - Returns: What to decode, the page shown first.
+    static func decodes(
+        around shownID: Int?, in photos: [SessionPhoto], page: CGSize, displayScale: CGFloat, isZoomed: Bool
+    ) -> [Decode] {
+        guard page.width > 0, page.height > 0 else { return [] }
+        return decodedIDs(around: shownID, in: photos).compactMap { id in
+            guard let photo = photos.first(where: { $0.id == id }) else { return nil }
+            guard let preview = photo.preview, !(isZoomed && id == shownID) else {
+                return Decode(id: id, maximumPixelSize: nil)
+            }
+            let side = decodeSide(
+                preview: CGSize(width: preview.width, height: preview.height), page: page, displayScale: displayScale)
+            return Decode(id: id, maximumPixelSize: side)
+        }
+    }
+
+    /// The longest side a preview fills on a page, in pixels, rounded up so the picture is
+    /// never enlarged; `nil` when that is the preview's own size or more.
+    ///
+    /// - Parameters:
+    ///   - preview: The preview's size, in pixels.
+    ///   - page: The page's size, in points.
+    ///   - displayScale: The screen's pixels per point.
+    /// - Returns: The side, in pixels, or `nil` for the preview's own size.
+    static func decodeSide(preview: CGSize, page: CGSize, displayScale: CGFloat) -> Int? {
+        let fitted = fittedSize(of: preview, in: page)
+        let side = Int((max(fitted.width, fitted.height) * displayScale).rounded(.up))
+        return side < Int(max(preview.width, preview.height)) ? side : nil
+    }
+
     /// The identifier of the photo an offset away from the one shown, or `nil` past either end.
     ///
     /// - Parameters:
@@ -695,8 +744,9 @@ struct PhotoViewerScreen: View {
     /// Whether a photo taken while the viewer was open couldn't be saved.
     @State private var showsFailure = false
 
-    /// The decoded pictures of the page shown and its neighbors.
-    @State private var pictures: [Int: Image] = [:]
+    /// The decoded pictures of the page shown and its neighbors, with the size each was
+    /// decoded at.
+    @State private var pictures: [Int: DecodedPicture] = [:]
 
     /// The heights of the facts and the rows in the scrolling arrangement.
     @State private var scrollingRowsHeight: CGFloat = 0
@@ -819,7 +869,7 @@ struct PhotoViewerScreen: View {
                 isFailureFocused = true
             }
         }
-        .task(id: PictureRequest(ids: PhotoViewerFacts.decodedIDs(around: shown?.id, in: photos), previews: photos.map { $0.preview != nil })) {
+        .task(id: PictureRequest(decodes: decodes, previews: photos.map { $0.preview != nil })) {
             await decodePictures()
         }
         .sheet(isPresented: $showsDetails) {
@@ -938,7 +988,7 @@ struct PhotoViewerScreen: View {
         PhotoViewerPager(
             // The scroll view reports no page while a drag it doesn't scroll is under way; that
             // isn't a page change, and mustn't reset the zoom.
-            photos: photos, shownID: Binding(get: { shownID }, set: { id in if let id { shownID = id } }), pictures: pictures, zoom: $zoom, maximumZoom: maximumZoom,
+            photos: photos, shownID: Binding(get: { shownID }, set: { id in if let id { shownID = id } }), pictures: pictures.mapValues(\.image), zoom: $zoom, maximumZoom: maximumZoom,
             pageSize: pageSize, makesPreviews: model.sessionPhotos.makesPreviews, toggleControls: toggleControls
         )
         .onGeometryChange(for: CGSize.self) { $0.size } action: { pageSize = $0 }
@@ -1145,24 +1195,45 @@ struct PhotoViewerScreen: View {
         }
     }
 
-    /// Decodes the pictures of the page shown and its neighbors, and lets go of the others.
+    /// The pictures to decode now: the page shown and its neighbors at their fitted size, and
+    /// the page shown at full size while it is zoomed in (issue #103).
+    private var decodes: [PhotoViewerFacts.Decode] {
+        PhotoViewerFacts.decodes(
+            around: shown?.id, in: photos, page: pageSize, displayScale: displayScale, isZoomed: zoom.isZoomed)
+    }
+
+    /// Decodes the pictures of the page shown and its neighbors at the sizes asked for, and lets
+    /// go of the others. A picture at another size stays until its new one is decoded, so the
+    /// page doesn't go blank while zooming or after a page change; a page that leaves the zoom
+    /// drops its full-size picture for a fitted one.
     private func decodePictures() async {
-        let ids = PhotoViewerFacts.decodedIDs(around: shown?.id, in: photos)
-        pictures = pictures.filter { ids.contains($0.key) }
-        for id in ids where pictures[id] == nil {
-            guard let thumbnail = await model.sessionPhotos.picture(of: id) else { continue }
+        let wanted = decodes
+        pictures = pictures.filter { entry in wanted.contains { $0.id == entry.key } }
+        for decode in wanted where pictures[decode.id]?.maximumPixelSize != .some(decode.maximumPixelSize) {
+            guard
+                let thumbnail = await model.sessionPhotos.picture(of: decode.id, maximumPixelSize: decode.maximumPixelSize)
+            else { continue }
             guard !Task.isCancelled else { return }
-            pictures[id] = Image.photo(thumbnail)
+            pictures[decode.id] = Image.photo(thumbnail).map { DecodedPicture(image: $0, maximumPixelSize: decode.maximumPixelSize) }
         }
         // A released preview loses its picture too (docs/PRIVACY.md).
         pictures = pictures.filter { entry in photos.first { $0.id == entry.key }?.preview != nil }
     }
 }
 
-/// What the viewer decodes: the pages around the one shown, and which previews are held.
+/// A decoded picture and the longest side it was decoded to (`nil`: the preview's own size).
+private struct DecodedPicture {
+    /// The picture.
+    let image: Image
+    /// The longest side it was decoded to, in pixels, or `nil` for the preview's own size.
+    let maximumPixelSize: Int?
+}
+
+/// What the viewer decodes: the pages around the one shown at their sizes, and which previews
+/// are held.
 private struct PictureRequest: Equatable {
-    /// The pages to decode.
-    let ids: [Int]
+    /// The pages to decode and their sizes.
+    let decodes: [PhotoViewerFacts.Decode]
     /// Whether each photo of the session holds a preview, oldest first.
     let previews: [Bool]
 }

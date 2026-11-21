@@ -153,6 +153,31 @@ struct PhotoViewerTests {
         #expect(PhotoViewerFacts.shownID(1, in: []) == nil)
     }
 
+    @Test func pagesDecodeAtTheirFittedSizeAndTheZoomedPageAtFull() {
+        // Issue #103: a 3072 × 2304 preview fitted on a 402-point page at 3 pixels per point is
+        // 1206 pixels wide, so each page decodes at 1206 pixels instead of 3072.
+        let photos = [Self.photo(1), Self.photo(2), Self.photo(3), Self.photo(4)]
+        let page = CGSize(width: 402, height: 600)
+        let fitted = PhotoViewerFacts.decodes(around: 2, in: photos, page: page, displayScale: 3, isZoomed: false)
+        #expect(fitted == [.init(id: 2, maximumPixelSize: 1206), .init(id: 1, maximumPixelSize: 1206), .init(id: 3, maximumPixelSize: 1206)])
+        // Zoomed past fit, the page shown decodes at the preview's own size; its neighbors don't.
+        let zoomed = PhotoViewerFacts.decodes(around: 2, in: photos, page: page, displayScale: 3, isZoomed: true)
+        #expect(zoomed == [.init(id: 2, maximumPixelSize: nil), .init(id: 1, maximumPixelSize: 1206), .init(id: 3, maximumPixelSize: 1206)])
+        // A part pixel rounds up, so the fitted picture is never enlarged.
+        #expect(PhotoViewerFacts.decodeSide(preview: CGSize(width: 3072, height: 2304), page: CGSize(width: 402.5, height: 600), displayScale: 3) == 1208)
+        // A page as large as the preview, or larger, decodes it at its own size.
+        #expect(PhotoViewerFacts.decodeSide(preview: CGSize(width: 3072, height: 2304), page: CGSize(width: 2000, height: 1500), displayScale: 2) == nil)
+        // A 13-inch iPad page (1376 × 1032 points at 2): 2752 pixels, a little less than the preview.
+        #expect(PhotoViewerFacts.decodeSide(preview: CGSize(width: 3072, height: 2304), page: CGSize(width: 1376, height: 1032), displayScale: 2) == 2752)
+        #expect(PhotoViewerFacts.decodeSide(preview: CGSize(width: 3072, height: 2304), page: CGSize(width: 1536, height: 1152), displayScale: 2) == nil)
+        // Before the page is laid out nothing is decoded; a photo without a preview asks for
+        // nothing smaller.
+        #expect(PhotoViewerFacts.decodes(around: 2, in: photos, page: .zero, displayScale: 3, isZoomed: false).isEmpty)
+        let released = [Self.photo(1, preview: nil, released: true)]
+        #expect(PhotoViewerFacts.decodes(around: 1, in: released, page: page, displayScale: 3, isZoomed: false) == [.init(id: 1, maximumPixelSize: nil)])
+        #expect(PhotoViewerFacts.decodes(around: nil, in: photos, page: page, displayScale: 3, isZoomed: false).isEmpty)
+    }
+
     @Test func zoomReachesThePreviewsPixelsAndAtLeastTwiceFit() {
         let preview = CGSize(width: 3072, height: 2304)
         // An iPhone page of 402 points at 3 pixels per point: 1206 pixels, so 2.55 × fit.
