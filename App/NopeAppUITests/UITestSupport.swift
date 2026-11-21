@@ -1,5 +1,44 @@
 import XCTest
 
+/// Polls a condition until it holds or the time runs out, and says whether it held.
+///
+/// The deadline is on `ContinuousClock`, the monotonic clock, so a change to the simulator's or
+/// test device's time can't cut a wait short or stretch it (issue #124). The condition is checked
+/// first, then after each pause, and once more when the time is up. The pause is
+/// `Thread.sleep`, not an `XCTWaiter` predicate: a predicate that queries the app from inside the
+/// waiter stalled the test runner on CI (``NopeAppUITests/rotate(_:to:file:line:)``).
+///
+/// ```swift
+/// let closed = waitUntil(timeout: .seconds(5)) { !card.exists }
+/// XCTAssertTrue(closed)
+/// ```
+///
+/// - Parameters:
+///   - timeout: The longest wait.
+///   - poll: The pause between checks; 0.2 seconds by default.
+///   - condition: The condition, checked on the main actor. It may keep state between checks,
+///     such as the last frame it read.
+/// - Returns: Whether the condition held before the time ran out.
+@MainActor
+@discardableResult
+func waitUntil(timeout: Duration, poll: Duration = .milliseconds(200), _ condition: () -> Bool) -> Bool {
+    let deadline = ContinuousClock.now + timeout
+    while !condition() {
+        guard ContinuousClock.now < deadline else { return false }
+        Thread.sleep(forTimeInterval: poll.timeInterval)
+    }
+    return true
+}
+
+extension Duration {
+    /// The duration in seconds, for `Thread.sleep(forTimeInterval:)` and the test log.
+    var timeInterval: TimeInterval {
+        let parts = components
+        // `attoseconds` counts 10^-18 seconds.
+        return TimeInterval(parts.seconds) + TimeInterval(parts.attoseconds) / 1e18
+    }
+}
+
 /// Helpers shared by the UI test classes for the slower CI runner (docs/TESTING.md, "UI test
 /// shards").
 extension XCUIApplication {
@@ -46,24 +85,26 @@ extension XCUIApplication {
             reported.append(issue)
             return true
         }
-        let started = Date()
+        // Timed on the monotonic clock, as every wait in the UI tests is (issue #124).
+        let clock = ContinuousClock()
+        let started = clock.now
         do {
             try performAccessibilityAudit(for: types, collect)
         } catch let error as NSError
             where error.domain == Self.auditErrorDomain && error.code == Self.auditTimedOutCode {
             // The test log says which check was slow: XCTest's error doesn't.
-            NSLog("Audit of types %llu didn't finish in %.1f s; running one audit per type", types.rawValue, Date().timeIntervalSince(started))
+            NSLog("Audit of types %llu didn't finish in %.1f s; running one audit per type", types.rawValue, (clock.now - started).timeInterval)
             // The audits per type report every issue again.
             reported.removeAll()
             for type in Self.singleAuditTypes where types.contains(type) {
-                let typeStarted = Date()
+                let typeStarted = clock.now
                 do {
                     try performAccessibilityAudit(for: type, collect)
                 } catch {
-                    NSLog("Audit of type %llu alone failed after %.1f s", type.rawValue, Date().timeIntervalSince(typeStarted))
+                    NSLog("Audit of type %llu alone failed after %.1f s", type.rawValue, (clock.now - typeStarted).timeInterval)
                     throw error
                 }
-                NSLog("Audit of type %llu alone took %.1f s", type.rawValue, Date().timeIntervalSince(typeStarted))
+                NSLog("Audit of type %llu alone took %.1f s", type.rawValue, (clock.now - typeStarted).timeInterval)
             }
         }
         for issue in reported {

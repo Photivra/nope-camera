@@ -83,10 +83,7 @@ extension NopeAppUITests {
         try audit(app, afterScrolling: true, checksDynamicType: false, checksContrast: !isPad)
         // Search finds it by a keyword.
         flipSwitch(row)
-        let deadline = Date().addingTimeInterval(5)
-        while (row.switches.firstMatch.value as? String) != "1" && Date() < deadline {
-            Thread.sleep(forTimeInterval: 0.2)
-        }
+        waitUntil(timeout: .seconds(5)) { (row.switches.firstMatch.value as? String) == "1" }
         XCTAssertEqual(row.switches.firstMatch.value as? String, "1")
         searchSettings(app, for: "stars")
         XCTAssertTrue(

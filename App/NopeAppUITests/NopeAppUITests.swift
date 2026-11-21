@@ -47,10 +47,7 @@ final class NopeAppUITests: XCTestCase {
     func useAppearance(_ appearance: XCUIDevice.Appearance, file: StaticString = #filePath, line: UInt = #line) {
         guard XCUIDevice.shared.appearance != appearance else { return }
         XCUIDevice.shared.appearance = appearance
-        let deadline = Date().addingTimeInterval(5)
-        while XCUIDevice.shared.appearance != appearance && Date() < deadline {
-            _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Appearance")], timeout: 0.2)
-        }
+        waitUntil(timeout: .seconds(5)) { XCUIDevice.shared.appearance == appearance }
         XCTAssertEqual(XCUIDevice.shared.appearance, appearance, "the device's light or dark setting didn't change", file: file, line: line)
     }
 
@@ -89,12 +86,9 @@ final class NopeAppUITests: XCTestCase {
         XCUIDevice.shared.orientation = orientation
         if isPad {
             let window = app.windows.firstMatch
-            let deadline = Date().addingTimeInterval(10)
-            var shaped = false
-            while !shaped && Date() < deadline {
+            let shaped = waitUntil(timeout: .seconds(10)) {
                 let frame = window.frame
-                shaped = frame.width > 0 && (frame.width > frame.height) == orientation.isLandscape
-                if !shaped { Thread.sleep(forTimeInterval: 0.2) }
+                return frame.width > 0 && (frame.width > frame.height) == orientation.isLandscape
             }
             XCTAssertTrue(shaped, "the window didn't rotate", file: file, line: line)
         }
@@ -142,17 +136,17 @@ final class NopeAppUITests: XCTestCase {
         let pill = app.staticTexts[mode].firstMatch
         let before = pill.exists ? pill.frame : nil
         XCUIDevice.shared.orientation = orientation
-        let deadline = Date().addingTimeInterval(10)
         var last: CGRect?
-        while Date() < deadline {
+        let turned = waitUntil(timeout: .seconds(10)) {
             let frame = pill.exists ? pill.frame : nil
-            if let frame, frame != before, frame == last {
-                iPhoneSideways = true
-                settle()
-                return
-            }
-            last = frame
-            Thread.sleep(forTimeInterval: 0.2)
+            defer { last = frame }
+            guard let frame else { return false }
+            return frame != before && frame == last
+        }
+        if turned {
+            iPhoneSideways = true
+            settle()
+            return
         }
         XCUIDevice.shared.orientation = .portrait
         if isIPhoneDuoSimulator {
@@ -224,10 +218,7 @@ final class NopeAppUITests: XCTestCase {
     func openSettings(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         let settings = app.buttons["Settings"]
         let quick = quickMenuButton(app)
-        let deadline = Date().addingTimeInterval(20)
-        while !settings.exists && !quick.exists && Date() < deadline {
-            Thread.sleep(forTimeInterval: 0.2)
-        }
+        waitUntil(timeout: .seconds(20)) { settings.exists || quick.exists }
         if !settings.exists {
             XCTAssertTrue(quick.exists, "no Settings button and no Q", file: file, line: line)
             scrollUntilHittable(app, quick)
@@ -357,13 +348,13 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     private func waitUntilStill(_ app: XCUIApplication) {
         let shutter = app.buttons["Take Photo"]
-        var last = shutter.frame
-        let deadline = Date().addingTimeInterval(10)
-        while Date() < deadline {
-            Thread.sleep(forTimeInterval: 0.5)
+        // The first check only reads the frame, so each comparison is of two reads half a second
+        // apart.
+        var last: CGRect?
+        waitUntil(timeout: .seconds(10), poll: .milliseconds(500)) {
             let current = shutter.frame
-            if current == last { return }
-            last = current
+            defer { last = current }
+            return current == last
         }
     }
 
@@ -1800,11 +1791,10 @@ final class NopeAppUITests: XCTestCase {
         let rows = Set(options.allElementsBoundByIndex.map(\.frame.debugDescription))
         picker.tap()
         // The menu's item is the match that wasn't on the screen before the tap.
-        let deadline = Date().addingTimeInterval(10)
         var item: XCUIElement?
-        while item == nil && Date() < deadline {
+        waitUntil(timeout: .seconds(10), poll: .milliseconds(300)) {
             item = options.allElementsBoundByIndex.first { !rows.contains($0.frame.debugDescription) && $0.isHittable }
-            if item == nil { Thread.sleep(forTimeInterval: 0.3) }
+            return item != nil
         }
         XCTAssertNotNil(item, "the menu didn't show \(option)")
         item?.tap()
