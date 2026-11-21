@@ -220,8 +220,7 @@ extension NopeAppUITests {
         XCTAssertTrue(flip.waitForExistence(timeout: 5))
         flip.tap()
         XCTAssertTrue(bracketWord(app, "Single").waitForExistence(timeout: 10))
-        let deadline = Date().addingTimeInterval(10)
-        while bracketWord(app).exists && Date() < deadline { Thread.sleep(forTimeInterval: 0.2) }
+        waitUntil(timeout: .seconds(10)) { !bracketWord(app).exists }
         XCTAssertFalse(bracketWord(app).exists, "the front camera's focus can't be set")
         XCTAssertTrue(bracketWord(app, "Single").isSelected)
         // The aid lenses take no exposure bracket but can take a focus bracket.

@@ -70,6 +70,27 @@ extension NopeAppUITests {
         XCTAssertTrue(app.buttons["Cancel Timer"].waitForExistence(timeout: 5))
     }
 
+    /// The longest delay a Siri or Shortcuts request may ask for (`PhotoShortcut.maximumDelaySeconds`).
+    private static let longestCountdownSeconds = 60
+
+    /// Launches the app counting down from ``longestCountdownSeconds``, so an accessibility audit
+    /// ends long before the countdown does. The countdown is started by a simulated Take Photo
+    /// request (`-NopeSimulatedShortcut`), the one way to start one longer than the shutter's 10
+    /// seconds; it is the same self-timer (`CameraModel.startTimer(seconds:_:)`) and blocks the
+    /// lens in the same way (`CameraModel.canChangeLens`). Assistant Access is on with no question,
+    /// as in `ShortcutUITests`, so the request runs.
+    @MainActor
+    private func launchCountingDown(extraArguments: [String] = []) -> XCUIApplication {
+        let app = launch(
+            "slowSaving",
+            extraArguments: [
+                "-NopeSimulatedShortcut", String(Self.longestCountdownSeconds), "-NopeSettings.assistantAccess", "YES",
+                "-NopeSettings.assistantAsk", "never",
+            ] + extraArguments)
+        XCTAssertTrue(app.buttons["Cancel Timer"].waitForExistence(timeout: 20))
+        return app
+    }
+
     /// Starts an interval series from the shutter and brightens the screen it dims.
     @MainActor
     private func startIntervalSeries(_ app: XCUIApplication) {
@@ -86,7 +107,9 @@ extension NopeAppUITests {
     }
 
     /// 4. During a self-timer countdown every lens button and Switch Camera stays in place; only
-    /// the lens in use is enabled. After Cancel Timer all are enabled again.
+    /// the lens in use is enabled. After Cancel Timer all are enabled again. The accessibility
+    /// audit of the countdown runs in a 60-second countdown, because an audit can outlast the
+    /// shutter's ten seconds.
     @MainActor
     func testLensControlsAreDisabledInPlaceDuringTheCountdown() throws {
         let app = launch("slowSaving")
@@ -99,14 +122,21 @@ extension NopeAppUITests {
         assertLensControlsAreBusy(app)
         let busyFrames = (Self.otherLensNames + [Self.lensInUse]).map { lensControl(app, $0).frame } + [app.buttons["Switch Camera"].frame]
         XCTAssertEqual(busyFrames, frames, "nothing moved")
-        // No audit here: it can outlast the ten seconds; testLensControlsAreDisabledDuringAnIntervalSeries
-        // audits the same disabled controls.
 
         app.buttons["Cancel Timer"].tap()
         XCTAssertTrue(app.buttons["Cancel Timer"].waitForNonExistence(timeout: 5))
         assertLensControlsAreFree(app)
         let freeFrames = (Self.otherLensNames + [Self.lensInUse]).map { lensControl(app, $0).frame } + [app.buttons["Switch Camera"].frame]
         XCTAssertEqual(freeFrames, frames, "nothing moved")
+
+        let countingDown = launchCountingDown()
+        assertLensControlsAreBusy(countingDown)
+        try audit(countingDown)
+        let cancel = countingDown.buttons["Cancel Timer"]
+        XCTAssertTrue(cancel.exists, "the audit ended during the countdown")
+        cancel.tap()
+        XCTAssertTrue(cancel.waitForNonExistence(timeout: 5))
+        assertLensControlsAreFree(countingDown)
     }
 
     /// 5. The same during an interval series, the waits between photos included: at the default
@@ -174,6 +204,9 @@ extension NopeAppUITests {
         XCTAssertTrue(lensControl(app, Self.lensInUse).isSelected)
         XCTAssertFalse(ultraWide.isSelected)
         XCTAssertTrue(app.buttons["Cancel Timer"].exists, "the countdown goes on")
+        // No audit here: this test waits for the 10-second countdown's own photo, and an audit
+        // can outlast the countdown. testLensControlsAreDisabledInPlaceDuringTheCountdown audits
+        // the same disabled controls in a 60-second countdown.
         let thumbnail = app.descendants(matching: .any)["Last Photo"]
         let saved = NSPredicate(format: "value CONTAINS %@", "Saved")
         XCTAssertEqual(

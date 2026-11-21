@@ -49,6 +49,25 @@ In this order (`docs/design/nope-site.md`, section 15):
    create one and run the workflow from it.
 5. **Repository settings, Code security:** the dependency graph and Dependabot alerts on, so the
    `site dependency review` job and the monthly grouped updates for `site/` work.
+6. **The redirect domains, `nopecamera.com` and `nopecamera.org`, at your DNS provider.** Each
+   sends every address to the site with a permanent (301) redirect that keeps the path:
+   `https://nopecamera.com/privacy/` goes to `https://nope.photivra.com/privacy/`.
+   `nope.photivra.com` stays the site's one address: it is the custom domain in GitHub Pages, the
+   canonical address in every page (`site/site.json`, `domain`) and the address in App Store
+   Connect, and its `CNAME` record of step 2 stays **DNS only**. Neither redirect domain is added
+   to GitHub Pages. For each of the two domains:
+   1. **Placeholder records, proxied:** an `A` record for the domain itself (name `@`) with the
+      address `192.0.2.1`, and the same for `www`, both set to **proxied**. The address is a
+      documentation address (RFC 5737) that is never reached: with the record proxied, your DNS
+      provider answers the request and sends the redirect. No other records are needed for the
+      redirect.
+   2. **A redirect rule** for requests to the domain and to its `www` name: status 301, target
+      `https://nope.photivra.com` followed by the request's path, so the path is kept. Let it match
+      `http` and `https` requests alike; the target is always `https`.
+   3. **Check it:** `curl -sI https://nopecamera.com/privacy/` answers `301` with
+      `location: https://nope.photivra.com/privacy/`. Check `http://` and the `www` name too, and
+      the same for `nopecamera.org`. `curl -sI https://nope.photivra.com/` still answers from
+      GitHub Pages (`server: GitHub.com`), not through the provider's proxy.
 
 ### Publishing
 

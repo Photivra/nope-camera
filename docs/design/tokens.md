@@ -117,7 +117,7 @@ Rules: one meaning for each color; never color alone; no yellow; brand color rea
 
 Pressed state of every custom button: opacity 0.7 and scale 0.97; opacity only with Reduce Motion.
 
-Busy dimming delay, `NopeMotion.busyDimDelay`: 0.5 s. While a single photo or bracket is taken or saved, the lens controls are disabled at once and drawn dimmed only once the photo has lasted this long; the change then uses `fade` ([lens-while-busy.md](lens-while-busy.md)).
+Busy dimming delay, `NopeMotion.busyDimDelay`: 0.5 s, an assumption until checked on a device: that most single photos are saved within it, so the lens row doesn't blink, and that a longer one is dimmed soon enough to read as busy. While a single photo or bracket is taken or saved, the lens controls are disabled at once and drawn dimmed only once the photo has lasted this long; the change then uses `fade` ([lens-while-busy.md](lens-while-busy.md)).
 
 Focus aid linger, `NopeMotion.focusAidLinger`: 3 s, provisional until device check F1 (2 to 5 s). After a tap the focus square and Lock stay this long, then leave together with `fade`. A locked square never fades, and nothing fades while VoiceOver or Switch Control is on, while Lock is pressed or has the keyboard's focus, or in the scrolling layout ([device-feedback-1.0.md](device-feedback-1.0.md), section 5).
 

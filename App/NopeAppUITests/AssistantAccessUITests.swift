@@ -84,8 +84,7 @@ extension NopeAppUITests {
         // Turning access on: no row appears or disappears, except the line at the top.
         flipSwitch(settingsElement(app, "settings.assistantAccess.switch"))
         let line = app.staticTexts["settings.assistantAccess.notUsedNow"]
-        let deadline = Date().addingTimeInterval(5)
-        while line.exists && Date() < deadline { Thread.sleep(forTimeInterval: 0.2) }
+        waitUntil(timeout: .seconds(5)) { !line.exists }
         XCTAssertFalse(line.exists)
         XCTAssertTrue(askChoice(app, "everyAction").exists)
         XCTAssertTrue(isSelected(never))
@@ -254,8 +253,7 @@ extension NopeAppUITests {
         XCTAssertTrue(card.waitForExistence(timeout: 30))
         XCTAssertTrue(element(app, containing: "refused 1 request since it opened.").exists, "the singular")
         app.buttons["assistant.refusalCard.close"].tap()
-        let deadline = Date().addingTimeInterval(5)
-        while card.exists && Date() < deadline { Thread.sleep(forTimeInterval: 0.2) }
+        waitUntil(timeout: .seconds(5)) { !card.exists }
         XCTAssertFalse(card.exists)
     }
 
@@ -333,8 +331,7 @@ extension NopeAppUITests {
         XCTAssertTrue(element(app, containing: "You’ve confirmed 5 assistant requests.").exists)
         try audit(app, checksDynamicType: false, checksContrast: false)
         app.buttons["assistant.tip.close"].tap()
-        let deadline = Date().addingTimeInterval(5)
-        while tip.exists && Date() < deadline { Thread.sleep(forTimeInterval: 0.2) }
+        waitUntil(timeout: .seconds(5)) { !tip.exists }
         XCTAssertFalse(tip.exists, "closed for good")
     }
 

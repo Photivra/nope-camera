@@ -154,10 +154,7 @@ extension NopeAppUITests {
         let location = settingsElement(app, "settings.details.location")
         XCTAssertTrue(location.exists)
         location.switches.firstMatch.tap()
-        let deadline = Date().addingTimeInterval(5)
-        while (location.switches.firstMatch.value as? String) != "1" && Date() < deadline {
-            Thread.sleep(forTimeInterval: 0.2)
-        }
+        waitUntil(timeout: .seconds(5)) { (location.switches.firstMatch.value as? String) == "1" }
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
         let changed = settingsElement(app, "settings.details")
@@ -437,10 +434,7 @@ extension NopeAppUITests {
         let window = app.windows.firstMatch.frame
         XCTAssertLessThan(bar.frame.minY, window.height * 0.1, "Settings opens as a popover")
         flipSwitch(settingsElement(app, "settings.nightMode"))
-        let deadline = Date().addingTimeInterval(5)
-        while !(bar.exists && bar.frame.minY > window.height * 0.1) && Date() < deadline {
-            Thread.sleep(forTimeInterval: 0.2)
-        }
+        waitUntil(timeout: .seconds(5)) { bar.exists && bar.frame.minY > window.height * 0.1 }
         XCTAssertTrue(bar.exists, "Settings stays open")
         XCTAssertGreaterThan(bar.frame.minY, window.height * 0.1, "Settings is now the night-mode sheet")
         try audit(app, checksDynamicType: false, checksContrast: false)

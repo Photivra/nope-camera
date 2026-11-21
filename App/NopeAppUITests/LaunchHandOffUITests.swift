@@ -258,11 +258,7 @@ extension XCUIElement {
     /// Waits up to five seconds for the element to be selected.
     @MainActor
     fileprivate func waitForSelection() -> Bool {
-        let deadline = Date().addingTimeInterval(5)
-        while !isSelected && Date() < deadline {
-            Thread.sleep(forTimeInterval: 0.2)
-        }
-        return isSelected
+        waitUntil(timeout: .seconds(5)) { isSelected }
     }
 }
 
