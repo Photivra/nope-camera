@@ -242,6 +242,25 @@ struct IntervalTimeTests {
         await finish(backend, events)
     }
 
+    @Test func aLastPhotoThatFailsAtTheEndEndsItAsStopped() async {
+        let clock = FakeClock(date: Self.start)
+        let (model, backend, events) = await makeModel(clock: clock)
+        // The second photo, the last one, takes past the end and then fails (issue #105).
+        await backend.setOnCapture { number in
+            guard number == 2 else { return nil }
+            clock.advance(by: 90)
+            return .captureFailed
+        }
+        await startTimedSeries(model, duration: 120)
+        await waitUntil { model.manual.intervalProgress?.taken == 1 }
+        await pass(60, on: clock)
+        await waitUntil { model.manual.intervalProgress == nil }
+        #expect(clock.seconds(at: clock.now) >= 120, "the failure came after the end")
+        #expect(model.captureStatus == .failed(.captureFailed))
+        #expect(model.manual.lastIntervalEnd == .stopped, "a failure is never a finished series")
+        await finish(backend, events)
+    }
+
     @Test func aCameraThatStopsForGoodEndsItBeforeTheTime() async {
         let clock = FakeClock(date: Self.start)
         let (model, backend, events) = await makeModel(clock: clock)

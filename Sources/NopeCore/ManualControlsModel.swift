@@ -1,6 +1,20 @@
 import Foundation
 import Observation
 
+/// What came of one photo of an interval series (`CameraModel.takeIntervalPhoto()`).
+enum IntervalPhotoOutcome: Equatable, Sendable {
+    /// The photo was taken and saved.
+    case taken
+
+    /// The series stops after a time, and the time was up while the photo waited for the camera:
+    /// the series finished.
+    case timeUp
+
+    /// The photo couldn't be taken or saved, or the camera stopped for good: the series stopped,
+    /// and the camera says why.
+    case failed
+}
+
 /// The manual and pro controls: the state behind the control grid, the exposure modes, the
 /// locks, bracketing and interval shooting.
 ///
@@ -356,8 +370,8 @@ public final class ManualControlsModel {
     /// - Parameters:
     ///   - intent: The intent.
     ///   - capture: Takes one photo of an interval series the way the shutter does, waiting
-    ///     while the series is paused, and returns whether the photo was taken and saved.
-    func handle(_ intent: ManualControlIntent, capture: @escaping @MainActor () async -> Bool) async {
+    ///     while the series is paused, and says what came of it.
+    func handle(_ intent: ManualControlIntent, capture: @escaping @MainActor () async -> IntervalPhotoOutcome) async {
         var next = settings
         switch intent {
         case .setEnabled(let enabled):
@@ -588,12 +602,14 @@ public final class ManualControlsModel {
     ///
     /// A series that stops after a time ends at a fixed moment of the monotonic clock
     /// (``IntervalProgress/deadline``), set when it starts, so a change of the device's time
-    /// doesn't move it: it takes no photo whose interval would end at or after that time, and when the
-    /// time is up while it waits for the camera, `capture` returns `false` and the series ends
-    /// as finished.
+    /// doesn't move it: it takes no photo whose interval would end at or after that time, and when
+    /// the time is up while it waits for the camera, `capture` says so and the series ends as
+    /// finished. A photo that fails ends any series as stopped, also one that fails at or after
+    /// the end (issue #105).
     ///
-    /// - Parameter capture: Takes one photo and returns whether it was taken and saved.
-    private func startInterval(capture: @escaping @MainActor () async -> Bool) {
+    /// - Parameter capture: Takes one photo and says whether it was taken and saved, the time
+    ///   was up while it waited, or it failed.
+    private func startInterval(capture: @escaping @MainActor () async -> IntervalPhotoOutcome) {
         guard intervalProgress == nil else { return }
         let series = interval
         let duration: Duration? = series.stopAfter == .time ? .seconds(series.duration) : nil
@@ -606,10 +622,12 @@ public final class ManualControlsModel {
             var taken = 0
             var isFinished = false
             while true {
-                let wasTaken = await capture()
+                let outcome = await capture()
                 guard !Task.isCancelled else { return }
-                guard wasTaken else {
-                    isFinished = isIntervalTimeUp
+                guard outcome == .taken else {
+                    // Only a time that was up while the series waited finishes it; a photo that
+                    // failed stops it, also when it failed at or after the end (issue #105).
+                    isFinished = outcome == .timeUp
                     break
                 }
                 taken += 1

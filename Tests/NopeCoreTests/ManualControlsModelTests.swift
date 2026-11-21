@@ -514,7 +514,7 @@ struct ManualControlsModelTests {
         await send(model, .setInterval(IntervalSettings(interval: 1, count: 4)))
         await model.manual.handle(.startInterval) { [model] in
             await model.send(.manual(.stopInterval))
-            return true
+            return .taken
         }
         for _ in 0..<20 { await Task.yield() }
         #expect(model.manual.intervalProgress == nil)

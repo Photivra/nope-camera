@@ -343,7 +343,7 @@ public final class CameraModel {
             await pressShutter()
         case .manual(let intent):
             if case .startInterval = intent, intervalBlocker != nil { return }
-            await manual.handle(intent) { [weak self] in await self?.takeIntervalPhoto() ?? false }
+            await manual.handle(intent) { [weak self] in await self?.takeIntervalPhoto() ?? .failed }
             await manualControlsDidChange(after: intent)
             bracketDidChange(after: intent)
         case .setCleanView(let isOn):

@@ -1665,6 +1665,10 @@ system's clocks.
   5 minutes set it two hours back. Expected: the series still ends 10 minutes after it began, the
   card's time left follows the stopwatch, and a photo is still taken every 10 seconds. Turn Set
   Automatically back on afterwards.
+- A failed last photo (#105): start a series of 3 photos, 30 s apart, and before the third
+  photo make saving fail (turn off the app's Photos access in the Settings app, or fill the
+  storage). Expected: the camera says why the photo wasn't saved, and the card and the Live
+  Activity end as Stopped, never Finished.
 
 ### Shared settings, the Night Mode control and the Lock Screen camera on a device
 
