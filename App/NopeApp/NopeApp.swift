@@ -416,13 +416,22 @@ struct NopeApp: App {
         #if DEBUG
         if let saver = SimulatedCameraLaunch.saver(appVersion: version) { return saver }
         #endif
+        #if DEBUG
+        // Debug builds time each preview with a signpost, and can make none, to measure what
+        // previews cost a burst on a device (issue #104; docs/TESTING.md, "Burst rate").
+        let previewer: any PhotoPreviewing = SignpostedPreviewer(ImageIOPreviewer())
+        let makesPreviews = PreviewCostLaunch.makesPreviews
+        #else
+        let previewer: any PhotoPreviewing = ImageIOPreviewer()
+        let makesPreviews = true
+        #endif
         return PhotoSaver(
             developer: RAWDeveloper(),
             signer: ContentCredentialsSigner(
                 keyProvider: platformKeyProvider(), generator: ClaimGenerator(version: version)),
             reader: ImageIOReadBack(), library: PhotoKitLibrary(),
             appVersion: version, thumbnailer: ImageIOThumbnailer(),
-            previewer: ImageIOPreviewer())
+            previewer: previewer, makesPreviews: makesPreviews)
     }
 
     /// Decodes both photos of the comparison shot for the compare view (issue #55): ImageIO, in

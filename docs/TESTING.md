@@ -1893,6 +1893,46 @@ RAW + HEIF + JPEG and HEIF, with signing on and off:
   Fast. Where Fast measures under about 3 a second, the app stops offering Slow on that lens for
   the session (`DriveModel.slowBurstMinimumFastRate`); check the Burst menu then has only Fast.
 
+**What previews cost a burst (issue #104).** Each saved photo gets a compressed preview for the
+Last Photo viewer: the saved file decoded at up to 3072 pixels and encoded as a JPEG, after the
+photo is added to Photos and inside the same save task (`PhotoSaver`), so with RAW only it is a
+full RAW decode per burst frame. Each frame is saved while the next is taken, so the preview
+slows a burst only when saving is the slower half. Nobody has measured this yet; the fix depends
+on the numbers (`docs/plans/1.0.0-finish.md`, section 4.3; owner decision 12: decide after the
+numbers). Two Debug-only tools measure it (`App/NopeApp/DebugTools/PreviewCost.swift`):
+
+- every preview made in a Debug build is a "Save preview" interval in Instruments' Points of
+  Interest (subsystem `com.photivra.nope`), with no photo data or value recorded;
+- the launch argument `-NopeNoSavePreviews` makes the saves of that launch make no preview
+  (`PhotoSaver.makesPreviews`): the viewer shows each photo's "only the thumbnail is left"
+  fallback. A normal launch makes them again.
+
+On each test device, Debug build, signing off, RAW only (Settings › Formats), Burst Limit 20,
+Burst at Fast, nothing else running:
+
+1. Launch normally (`xcrun devicectl device process launch --device <device-id>
+   --terminate-existing com.photivra.nope.dev`). On each rear lens, take three 20-photo bursts
+   (one tap each) and record each summary card's rate ("2.6 a second"). Record the photos a
+   second from the photos' capture times for one of them, as a check of the card.
+2. Record one burst on the main lens with Instruments' Points of Interest instrument, attached
+   to the app on the phone, and note the median and the longest "Save preview" interval and the
+   time between two photos' starts.
+3. Launch again with `-- -NopeNoSavePreviews` and repeat step 1 on the same lenses.
+4. Compare the median rates. If previews cost less than about 10% of the rate, the plan changes
+   only two cheap things (no preview while the app is not active; none for a frame beyond the
+   newest 20 of a counted burst, which `SessionPhotos.maximumPreviews` would drop at once). If
+   they cost more, the options are, in order: smaller previews for burst frames, previews made
+   after the burst from data still in memory, or no preview for burst frames but the last; the
+   last changes what the viewer shows and is the owner's call (decision 12).
+
+Results (fill in; none yet):
+
+| Device, iOS | Lens | Rate with previews (3 runs) | Rate without (3 runs) | "Save preview", median / longest |
+| --- | --- | --- | --- | --- |
+| | Main | | | |
+| | Ultra Wide | | | |
+| | Telephoto | | | |
+
 ### Holding the shutter on a device (issues #100, #101)
 
 The order of a press and its release, the numbered presses, the hold of each source and the
@@ -2799,6 +2839,9 @@ the camera picture is blanked gives blank frames whatever the pipeline, and prov
   camera.
 - `-NopeArmDebugRun tagcheck` (or `probe`) only stores the run and shows a message. The next
   launch from the Home Screen performs it once and clears it.
+- `-NopeNoSavePreviews` makes the launch's saves make no preview for the Last Photo viewer, to
+  measure what previews cost a burst ("Burst rate" above). Debug builds also mark each preview
+  as a "Save preview" signpost interval.
 
 Pass every argument after `--`, for example
 `xcrun devicectl device process launch --device <device-id> --terminate-existing com.photivra.nope.dev -- -NopeCameraProbe -NopeProbeFrontCamera`.

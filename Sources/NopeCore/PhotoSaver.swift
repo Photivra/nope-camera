@@ -37,6 +37,11 @@ public struct PhotoSaver: Sendable {
     /// Reads the monotonic clock, for the timings in the details.
     private let now: @Sendable () -> ContinuousClock.Instant
 
+    /// Whether a save makes the preview for ``SessionPhotos`` at all: `true`, except in a
+    /// Debug build launched to measure what previews cost a burst (issue #104; docs/TESTING.md,
+    /// "Burst rate"). With `false` the viewer shows each photo's thumbnail fallback.
+    public let makesPreviews: Bool
+
     /// The app's version, written with its name when ``MetadataItem/appNameAndVersion`` is on.
     public let appVersion: String
 
@@ -52,12 +57,15 @@ public struct PhotoSaver: Sendable {
     ///   - previewer: Makes the compressed screen-size preview the Last Photo viewer shows
     ///     (``SessionPhotos``), or `nil` for none.
     ///   - now: Reads the clock for the timings. Tests pass a scripted one.
+    ///   - makesPreviews: Whether a save makes the preview; `false` only to measure what
+    ///     previews cost (issue #104).
     public init(
         developer: any PhotoDeveloping, signer: (any PhotoSigning)?, reader: any MetadataReading,
         library: any PhotoLibrary, appVersion: String, thumbnailer: (any PhotoThumbnailing)? = nil,
         previewer: (any PhotoPreviewing)? = nil,
-        now: @escaping @Sendable () -> ContinuousClock.Instant = { .now }
+        now: @escaping @Sendable () -> ContinuousClock.Instant = { .now }, makesPreviews: Bool = true
     ) {
+        self.makesPreviews = makesPreviews
         self.developer = developer
         self.signer = signer
         self.reader = reader
@@ -191,7 +199,7 @@ public struct PhotoSaver: Sendable {
                 // details for the session only (docs/PRIVACY.md, "Last photo and its details").
                 capture: PhotoDetails.CaptureReport(photo)))
         let savedFiles = finished.map(\.file)
-        let preview = makesPreview ? previewer.flatMap { maker in quickest(of: savedFiles).flatMap(maker.preview(of:)) } : nil
+        let preview = makesPreview && makesPreviews ? previewer.flatMap { maker in quickest(of: savedFiles).flatMap(maker.preview(of:)) } : nil
         return (saved, savedFiles, preview)
     }
 

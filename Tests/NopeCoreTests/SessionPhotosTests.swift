@@ -209,6 +209,20 @@ struct SessionPhotosTests {
         #expect(previewer.requested == [.raw])
     }
 
+    /// The switch a Debug build uses to measure what previews cost a burst (issue #104).
+    @Test func aSaverSetToMakeNoPreviewsMakesNone() async throws {
+        let previewer = RecordingPreviewer()
+        #expect(Self.saver(previewer: previewer).makesPreviews)
+        let saver = PhotoSaver(
+            developer: FakeDeveloper(), signer: nil, reader: BytesReader(), library: FakeLibrary(), appVersion: "0.2.0",
+            previewer: previewer, makesPreviews: false)
+        #expect(!saver.makesPreviews)
+        let result = try await saver.saveWithPreview(PhotoSaverTests.rawPhoto(), settings: SaveSettings.rawPlusHEIFSigned)
+        #expect(result.preview == nil)
+        #expect(previewer.requested.isEmpty)
+        #expect(result.saved.formats == [.raw, .heif], "the photo is saved as usual")
+    }
+
     @Test func thePublicSaveMakesNoPreview() async throws {
         let previewer = RecordingPreviewer()
         _ = try await Self.saver(previewer: previewer).save(PhotoSaverTests.rawPhoto(), settings: SaveSettings.rawPlusHEIFSigned)
