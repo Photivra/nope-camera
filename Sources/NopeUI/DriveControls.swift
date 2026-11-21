@@ -47,17 +47,28 @@ enum DriveText {
         case .timer(let delay):
             return Text("Self-timer: \(spokenSeconds(delay.seconds))", bundle: .module, comment: "VoiceOver value of the shutter when the self-timer is on. The value is a number of seconds in words, such as 3 seconds, formatted by the system.")
         case .burst:
-            return burstValue(model.burstSpeed)
+            return burstValue(model.burstSpeed, limit: model.drive.burstLimit.frameCount)
         case .interval:
             return Text("Interval shooting. Press to start the series.", bundle: .module, comment: "VoiceOver value of the shutter in the interval drive mode: one press starts a series of photos at a fixed interval.")
         }
     }
 
-    /// The shutter's VoiceOver value in burst mode: "Burst, fast." or "Burst, slow."
+    /// The shutter's VoiceOver value in burst mode: "Burst, fast." or "Burst, slow.", and with a
+    /// Burst Limit "Burst, fast, 10 photos." (docs/design/finish-1.0.md, 5.3).
     ///
-    /// - Parameter speed: The burst speed.
-    static func burstValue(_ speed: BurstSpeed) -> Text {
-        switch speed {
+    /// - Parameters:
+    ///   - speed: The burst speed.
+    ///   - limit: The photos a press takes with a Burst Limit, or `nil`.
+    static func burstValue(_ speed: BurstSpeed, limit: Int? = nil) -> Text {
+        if let limit {
+            return switch speed {
+            case .fast:
+                Text("Burst, fast, \(limit) photos.", bundle: .module, comment: "VoiceOver value of the shutter in burst mode at the Fast speed with a Burst Limit: one press takes this many photos. The number is the limit, 3 to 50. Draft wording for the Honesty review (issue #121).")
+            case .slow:
+                Text("Burst, slow, \(limit) photos.", bundle: .module, comment: "VoiceOver value of the shutter in burst mode at the Slow speed (up to 2 photos a second) with a Burst Limit: one press takes this many photos. The number is the limit, 3 to 50. Draft wording for the Honesty review (issue #121).")
+            }
+        }
+        return switch speed {
         case .fast:
             Text("Burst, fast.", bundle: .module, comment: "VoiceOver value of the shutter in burst mode at the Fast speed: photos are taken as fast as the camera is ready while the shutter is held.")
         case .slow:
@@ -70,7 +81,20 @@ enum DriveText {
     /// - Parameter model: The camera model.
     static func shutterHint(_ model: CameraModel) -> Text? {
         guard model.drive.mode == .burst, !model.astro.isOn, !model.drive.isBusy else { return nil }
+        if let limit = model.drive.burstLimit.frameCount {
+            return Text("Double tap to take \(limit) photos. Double tap again to stop.", bundle: .module, comment: "VoiceOver hint of the shutter in burst mode with a Burst Limit: a double tap takes this many photos, and a second double tap stops the burst early. The number is the limit, 3 to 50. Draft wording for the Honesty review (issue #121).")
+        }
         return Text("Double tap for one photo. Double tap and hold for a burst.", bundle: .module, comment: "VoiceOver hint of the shutter in burst mode: a double tap takes one photo; a double tap and hold takes photos until the finger lifts.")
+    }
+
+    /// What VoiceOver hears when a burst ends: why it stopped by itself (``endMessage(_:)``),
+    /// or for a burst with a Burst Limit its summary, "4 of 10 photos saved"; otherwise `nil`.
+    ///
+    /// - Parameter result: How the burst ended.
+    static func endAnnouncement(_ result: BurstResult) -> String? {
+        if let message = endMessage(result) { return message }
+        guard result.start == .limited, result.hasSummary, let limit = result.limit else { return nil }
+        return ModeCardText.photosSaved(result.saved, of: limit)
     }
 
     /// What to announce when a burst ends other than by the person, or `nil`.
@@ -179,11 +203,14 @@ enum ModeCardState: Equatable {
     /// Frames.
     case astroCountdown(remaining: Int)
 
-    /// Burst is chosen and nothing runs: the speed, what the shutter does, and Start Burst.
-    case burstIdle(BurstSpeed)
+    /// Burst is chosen and nothing runs: the speed, what the shutter does, and Start Burst; with
+    /// a Burst Limit (issue #121), the count in the title ("Fast burst · 10 photos"), "A press
+    /// takes 10 photos. Press again to stop." and no button, since a press starts the burst.
+    case burstIdle(BurstSpeed, limit: Int? = nil)
 
     /// A burst takes photos: "Photos taken: 12", the measured rate, and "Release to stop" while
-    /// the shutter holds it, or Stop Burst.
+    /// the shutter holds it, or Stop Burst. A limited burst shows "3 of 10", the rate with
+    /// "Press to stop", a bar by photos taken, and Stop Burst.
     case burstRunning(BurstProgress)
 
     /// A burst took its last photo and the last ones are being saved: "Saving: 9 of 12 photos
@@ -232,6 +259,7 @@ enum ModeCardState: Equatable {
     ///   - burst: The running burst, or `nil`.
     ///   - endedBurst: A burst whose summary or end message still shows, or `nil`.
     ///   - burstSpeed: The speed a burst on the selected lens uses, for the idle card.
+    ///   - burstLimit: The photos a press takes with a Burst Limit, or `nil`, for the idle card.
     ///   - intervalProgress: The running interval series, or `nil`.
     ///   - intervalSettings: The next interval series.
     ///   - isAstroOn: Whether Astro is on.
@@ -242,7 +270,8 @@ enum ModeCardState: Equatable {
     /// - Returns: The card, or `nil`.
     static func resolve(
         mode: DriveMode, countdownRemaining: Int?, burst: BurstProgress?, endedBurst: BurstResult?,
-        burstSpeed: BurstSpeed = .fast, intervalProgress: IntervalProgress?, intervalSettings: IntervalSettings, isAstroOn: Bool, astroRun: AstroRun?,
+        burstSpeed: BurstSpeed = .fast, burstLimit: Int? = nil, intervalProgress: IntervalProgress?,
+        intervalSettings: IntervalSettings, isAstroOn: Bool, astroRun: AstroRun?,
         astroStartDelay: SelfTimerDelay, astroEstimate: AstroEstimate?, showsControls: Bool
     ) -> ModeCardState? {
         if let intervalProgress { return .intervalRunning(intervalProgress) }
@@ -260,7 +289,7 @@ enum ModeCardState: Equatable {
         }
         switch mode {
         case .interval: return .intervalIdle(intervalSettings)
-        case .burst: return endedBurst.map { .burstEnded($0) } ?? .burstIdle(burstSpeed)
+        case .burst: return endedBurst.map { .burstEnded($0) } ?? .burstIdle(burstSpeed, limit: burstLimit)
         case .single, .timer: return nil
         }
     }
@@ -300,7 +329,7 @@ enum ModeCardState: Equatable {
         let ready = resolve(
             mode: model.drive.mode, countdownRemaining: model.drive.countdown.remainingSeconds,
             burst: model.drive.burstProgress, endedBurst: endedBurst, burstSpeed: model.burstSpeed,
-            intervalProgress: model.manual.intervalProgress,
+            burstLimit: model.drive.burstLimit.frameCount, intervalProgress: model.manual.intervalProgress,
             intervalSettings: model.manual.interval, isAstroOn: astro.isOn, astroRun: run,
             astroStartDelay: astro.startDelay, astroEstimate: estimate, showsControls: showsControls)
         // The frame count is Astro's own, whether or not the camera can estimate the run yet.
@@ -602,7 +631,7 @@ enum ModeCardText {
     static func joined(_ first: String, _ second: String) -> String {
         String(
             localized: "%@ · %@", defaultValue: "\(first) · \(second)", bundle: .module,
-            comment: "Burst card on the camera: two details joined, such as a duration (\"4.2 seconds\") and a measured rate (\"2.6 a second\"), or a rate and \"Release to stop\".")
+            comment: "Burst card on the camera: two details joined, such as a duration (\"4.2 seconds\") and a measured rate (\"2.6 a second\"), or a rate and \"Release to stop\" or \"Press to stop\".")
     }
 
     /// The idle card's title: "Fast burst", or "Slow burst: up to 2 a second".
@@ -615,6 +644,61 @@ enum ModeCardText {
         case .slow:
             Text("Slow burst: up to \(speed.maximumPhotosPerSecond ?? 2) a second", bundle: .module, comment: "Burst card on the camera, before a burst: the speed in use. The number is the most photos a second, 2; it can be fewer.")
         }
+    }
+
+    /// The idle card's title with a Burst Limit: "Fast burst · 10 photos" or "Slow burst · 10
+    /// photos" (docs/design/finish-1.0.md, 5.2).
+    ///
+    /// - Parameters:
+    ///   - speed: The burst speed.
+    ///   - limit: The photos a press takes.
+    static func burstIdleTitle(_ speed: BurstSpeed, limit: Int) -> Text {
+        switch speed {
+        case .fast:
+            Text("Fast burst · \(limit) photos", bundle: .module, comment: "Burst card on the camera, before a burst, with a Burst Limit: the speed in use and the photos one press takes. Photos are taken as fast as the camera is ready. The number is the limit, 3 to 50. Draft wording for the Honesty review (issue #121).")
+        case .slow:
+            Text("Slow burst · \(limit) photos", bundle: .module, comment: "Burst card on the camera, before a burst, with a Burst Limit: the speed in use (up to 2 photos a second) and the photos one press takes. The number is the limit, 3 to 50. Draft wording for the Honesty review (issue #121).")
+        }
+    }
+
+    /// "A press takes 10 photos. Press again to stop."
+    ///
+    /// - Parameter limit: The photos a press takes.
+    static func burstIdleDetail(limit: Int) -> Text {
+        Text("A press takes \(limit) photos. Press again to stop.", bundle: .module, comment: "Burst card on the camera, before a burst, with a Burst Limit: one press of the shutter or a volume button takes this many photos, and a second press stops early. The number is the limit, 3 to 50. Draft wording for the Honesty review (issue #121).")
+    }
+
+    /// The running card's title: "Photos taken: 12", or "3 of 10" for a limited burst.
+    ///
+    /// - Parameter progress: The burst's progress.
+    static func burstRunningTitle(_ progress: BurstProgress) -> Text {
+        guard let limit = progress.limit else { return burstTaken(progress.taken) }
+        return Text("\(progress.taken) of \(limit)", bundle: .module, comment: "Burst card on the camera while a burst with a Burst Limit runs: the photos taken so far of the photos it will take, such as 3 of 10. Draft wording for the Honesty review (issue #121).")
+    }
+
+    /// "Press to stop".
+    static var pressToStop: String {
+        String(localized: "Press to stop", bundle: .module, comment: "Burst card on the camera while a burst with a Burst Limit runs: a second press of the shutter or a volume button stops it after the photo being taken. Draft wording for the Honesty review (issue #121).")
+    }
+
+    /// "4 of 10 photos saved", for a burst with a Burst Limit. In the Honesty table: it states
+    /// how many of the photos asked for were saved.
+    ///
+    /// - Parameters:
+    ///   - saved: The photos saved.
+    ///   - limit: The photos the press asked for.
+    static func photosSaved(_ saved: Int, of limit: Int) -> String {
+        String(localized: "\(saved) of \(limit) photos saved", table: "Honesty", bundle: .module, comment: "Burst card on the camera and VoiceOver after a burst with a Burst Limit: how many photos it saved of the photos one press asked for, such as 10 of 10 or 4 of 10. Draft wording for the Honesty review (issue #121).")
+    }
+
+    /// The ended card's title: why the burst stopped by itself, or the photos saved ("12
+    /// photos saved", or "4 of 10 photos saved" with a Burst Limit).
+    ///
+    /// - Parameter result: How the burst ended.
+    static func burstEndedTitle(_ result: BurstResult) -> String {
+        if let message = DriveText.endMessage(result) { return message }
+        if result.start == .limited, let limit = result.limit { return photosSaved(result.saved, of: limit) }
+        return photosSaved(result.saved)
     }
 
     /// "Hold the shutter. A tap takes one photo."
@@ -638,8 +722,13 @@ enum ModeCardText {
     /// - Parameter progress: The burst's progress.
     static func burstRunningDetail(_ progress: BurstProgress) -> String? {
         let rate = progress.rate.map(burstRate)
-        guard progress.start == .held else { return rate }
-        return rate.map { joined($0, releaseToStop) } ?? releaseToStop
+        let howToStop: String
+        switch progress.start {
+        case .held: howToStop = releaseToStop
+        case .limited: howToStop = pressToStop
+        case .started, .counted: return rate
+        }
+        return rate.map { joined($0, howToStop) } ?? howToStop
     }
 
     /// "Saving: 9 of 12 photos saved".
@@ -665,14 +754,27 @@ enum ModeCardText {
     static func burstEndedDetail(_ result: BurstResult) -> String? {
         switch result.end {
         case .stopped, .limitReached:
-            guard result.taken >= 2 else { return nil }
-            let duration = burstDuration(result.duration)
-            return result.rate.map { joined(duration, burstRate($0)) } ?? duration
+            return burstTiming(result)
+        case .countReached where result.start == .limited:
+            // A Burst Limit's count reached: "10 of 10 photos saved" has the time and rate.
+            return burstTiming(result)
         case .storageFull, .cameraStopped:
+            // A limited burst says how many of its count were saved, also when none was.
+            if result.start == .limited, let limit = result.limit { return photosSaved(result.saved, of: limit) }
             return result.saved > 0 ? photosSaved(result.saved) : nil
         case .countReached, .batteryLow, .failed:
             return nil
         }
+    }
+
+    /// A burst's time and rate, "4.2 seconds · 2.6 a second", or the time alone without a
+    /// rate; `nil` for fewer than two photos.
+    ///
+    /// - Parameter result: How the burst ended.
+    private static func burstTiming(_ result: BurstResult) -> String? {
+        guard result.taken >= 2 else { return nil }
+        let duration = burstDuration(result.duration)
+        return result.rate.map { joined(duration, burstRate($0)) } ?? duration
     }
 
     /// "Cancel Timer".
@@ -800,15 +902,22 @@ struct ModeCards: View {
             ModeCard(title: ModeCardText.firstFrame(in: remaining)) {
                 stopButton(ModeCardText.stopFrames) { send(.drive(.cancelTimer)) }
             }
-        case .burstIdle(let speed):
+        case .burstIdle(let speed, let limit?):
+            // A press already starts the limited burst, so the card has no button.
+            ModeCard(title: ModeCardText.burstIdleTitle(speed, limit: limit), detail: ModeCardText.burstIdleDetail(limit: limit)) {
+                EmptyView()
+            }
+        case .burstIdle(let speed, nil):
             ModeCard(title: ModeCardText.burstIdleTitle(speed), detail: ModeCardText.burstIdleDetail) {
                 stopButton(ModeCardText.startBurst, isDestructive: false) { send(.drive(.startBurst)) }
             }
         case .burstRunning(let progress):
-            // One element for VoiceOver, updated politely: the count, then the rate.
+            // One element for VoiceOver, updated politely: the count, then the rate. A limited
+            // burst reads "3 of 10" and has a bar by photos taken.
             ModeCard(
-                title: ModeCardText.burstTaken(progress.taken),
-                detail: ModeCardText.burstRunningDetail(progress).map { Text(verbatim: $0) }
+                title: ModeCardText.burstRunningTitle(progress),
+                detail: ModeCardText.burstRunningDetail(progress).map { Text(verbatim: $0) },
+                fractionDone: progress.limit.map { Double(progress.taken) / Double(max($0, 1)) }
             ) {
                 // A held burst ends when the shutter comes up; the others need a button.
                 if progress.start != .held {
@@ -821,11 +930,16 @@ struct ModeCards: View {
                 fractionDone: Double(saved) / Double(max(taken, 1))
             ) { EmptyView() }
         case .burstEnded(let result):
-            let title = DriveText.endMessage(result) ?? ModeCardText.photosSaved(result.saved)
             // Start Burst stays on the card, so a burst never needs a hold, even before the next
-            // action clears the summary (docs/design/BURST.md, 4.2).
-            ModeCard(title: Text(verbatim: title), detail: ModeCardText.burstEndedDetail(result).map { Text(verbatim: $0) }) {
-                stopButton(ModeCardText.startBurst, isDestructive: false) { send(.drive(.startBurst)) }
+            // action clears the summary (docs/design/BURST.md, 4.2); with a Burst Limit a press
+            // starts the next burst, so there is none.
+            ModeCard(
+                title: Text(verbatim: ModeCardText.burstEndedTitle(result)),
+                detail: ModeCardText.burstEndedDetail(result).map { Text(verbatim: $0) }
+            ) {
+                if result.start != .limited {
+                    stopButton(ModeCardText.startBurst, isDestructive: false) { send(.drive(.startBurst)) }
+                }
             }
         case .intervalIdle(let settings):
             SettingsCard(
@@ -1249,9 +1363,14 @@ struct DriveFeedback: ViewModifier {
                 if start == .started {
                     Self.announce(String(localized: "Burst started.", bundle: .module, comment: "Announced to VoiceOver when a burst starts."))
                 }
+                // With a Burst Limit the count is said once, at the start: saying each photo would
+                // talk over itself at several a second (docs/design/finish-1.0.md, 5.3).
+                if start == .limited, let limit = drive.burstProgress?.limit {
+                    Self.announce(String(localized: "Burst started, \(limit) photos.", bundle: .module, comment: "Announced to VoiceOver when a burst with a Burst Limit starts. The number is the photos it will take, 3 to 50. Draft wording for the Honesty review (issue #121)."))
+                }
             }
             .onChange(of: drive.lastBurst) { _, result in
-                if let result, let message = DriveText.endMessage(result) { Self.announce(message) }
+                if let result, let message = DriveText.endAnnouncement(result) { Self.announce(message) }
             }
     }
 

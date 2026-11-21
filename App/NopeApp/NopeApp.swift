@@ -310,6 +310,11 @@ struct NopeApp: App {
         .task(id: settings.torchLevel) {
             await model.send(.light(.setTorchLevel(settings.torchLevel)))
         }
+        // Burst Limit (issue #121): how many photos a press takes in Burst, applied when the
+        // camera opens and whenever the setting changes (in Settings or by a preset).
+        .task(id: settings.burstLimit) {
+            await model.send(.drive(.setBurstLimit(settings.burstLimit)))
+        }
         // A control's change normally arrives at once (`SharedSettingsSync`); reading the store
         // again on return to the foreground also covers a signal sent while the app was suspended.
         .onChange(of: scenePhase) { _, phase in

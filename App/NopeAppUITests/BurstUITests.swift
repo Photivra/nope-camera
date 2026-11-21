@@ -263,6 +263,45 @@ extension NopeAppUITests {
         }
     }
 
+    /// Burst Limit 10 (issue #121): the idle card names the count and has no Start Burst, the
+    /// shutter's value says it, and a tap runs to "10 of 10 photos saved".
+    @MainActor
+    func testBurstLimitTapRunsToTheCount() throws {
+        let app = launchBurst(extraArguments: ["-NopeSettings.burstLimit", "ten"])
+        let shutter = app.buttons["Take Photo"]
+        XCTAssertTrue(element(app, containing: "Fast burst · 10 photos").waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "A press takes 10 photos. Press again to stop.").exists)
+        XCTAssertFalse(app.buttons["Start Burst"].exists, "a press already starts the burst")
+        XCTAssertTrue(burstWaitForValue(shutter, containing: "Burst, fast, 10 photos."))
+        try audit(app)
+        shutter.tap()
+        XCTAssertTrue(app.buttons["Stop Burst"].waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "10 of 10 photos saved").waitForExistence(timeout: 30))
+        XCTAssertFalse(app.buttons["Start Burst"].exists)
+        try audit(app)
+    }
+
+    /// Burst Limit 50: while it runs the card reads "3 of 50" with Stop Burst and the shutter
+    /// says a press stops it; a second press of the shutter stops it early, and every photo taken
+    /// is saved ("4 of 50 photos saved"). The stop square on the shutter is drawn only and is
+    /// checked on a device (docs/TESTING.md, "Burst Limit on a device").
+    @MainActor
+    func testBurstLimitSecondPressStopsEarly() throws {
+        let app = launchBurst(extraArguments: ["-NopeSettings.burstLimit", "fifty"])
+        let shutter = app.buttons["Take Photo"]
+        XCTAssertTrue(element(app, containing: "Fast burst · 50 photos").waitForExistence(timeout: 5))
+        shutter.tap()
+        XCTAssertTrue(app.buttons["Stop Burst"].waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: " of 50").waitForExistence(timeout: 5))
+        XCTAssertTrue(burstWaitForValue(shutter, containing: "Taking a burst. Press to stop."))
+        try audit(app)
+        shutter.tap()
+        let summary = element(app, containing: "of 50 photos saved")
+        XCTAssertTrue(summary.waitForExistence(timeout: 20))
+        XCTAssertLessThan(photosSaved(summary) ?? 50, 50, summary.label)
+        try audit(app)
+    }
+
     /// iPad: the column layout, a press and hold, and a tap for one photo.
     @MainActor
     func testBurstOnIPad() throws {

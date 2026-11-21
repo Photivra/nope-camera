@@ -2422,9 +2422,32 @@ The setting alone (Settings › Camera › Burst Limit) is covered by `NopeSetti
 the menu, search, a preset round trip, the largest text size, right to left and Night Mode, with
 audits). On a phone: the row with VoiceOver (the explanation read with it, the value read as
 "Off" or the number) and Voice Control ("Burst Limit"); and the choice made in the app reaches
-the Lock Screen camera's Settings. The burst that stops at the limit has its own device check
-with the shutter work (Burst Limit 10: a tap, a hold, a second press at photo 4, with each kind
-of button).
+the Lock Screen camera's Settings.
+
+### Burst Limit on a device (issue #121)
+
+The burst that runs to the limit is covered by `BurstTests` (a tap and a hold run to the count
+from each source; a second press, a hardware press, assistive activation and Stop Burst stop it
+after the photo being taken; Start Burst and `.capture` take the count; a limit of 50 ends by its
+count; storage still stops it; a running burst keeps its count when the limit changes; Siri
+keeps its own count), `WatchTests` (the watch's shutter still takes one photo in Burst with a
+limit, owner decision 9), `DriveCardsTests` and `DriveTextTests` (the cards' words and the
+announcements) and `BurstUITests.swift` (`testBurstLimitTapRunsToTheCount`,
+`testBurstLimitSecondPressStopsEarly`, with audits). On a phone, with Burst Limit 10:
+
+- a tap, a hold, and a second press at about photo 4, with the on-screen shutter, a volume
+  button and the Camera Control each: the tap and the hold take 10 photos ("10 of 10 photos
+  saved"), the second press stops after the photo being taken ("4 of 10 photos saved"), and every
+  photo taken is in Photos;
+- while it runs, the shutter shows the stop square and the card "3 of 10", "Press to stop" and
+  a bar;
+- VoiceOver: the shutter reads "Burst, fast, 10 photos." with the hint "Double tap to take 10
+  photos. Double tap again to stop."; a double tap announces "Burst started, 10 photos.", the
+  card reads "3 of 10" when focused, the shutter's actions include Stop Burst, and the end is
+  announced ("10 of 10 photos saved"); Switch Control and Voice Control can stop it ("Stop
+  Burst");
+- the Lock Screen camera with the limit set in the app;
+- the Apple Watch shutter in Burst with the limit: one photo, as before.
 
 ### Pinch to switch lenses on a device (issue #95)
 

@@ -394,6 +394,38 @@ struct DriveTextTests {
         #expect(ModeCardText.burstEndedDetail(BurstResult(end: .countReached, saved: 3, start: .counted)) == nil)
     }
 
+    @Test func burstLimitCardWords() {
+        #expect(ModeCardText.pressToStop == "Press to stop")
+        #expect(ModeCardText.photosSaved(4, of: 10) == "4 of 10 photos saved")
+        // Running: "3 of 10", the rate and "Press to stop".
+        let running = BurstProgress(taken: 3, saved: 2, start: .limited, rate: 2.6, limit: 10)
+        #expect(ModeCardText.burstRunningDetail(running) == "2.6 a second · Press to stop")
+        #expect(ModeCardText.burstRunningDetail(BurstProgress(taken: 1, saved: 0, start: .limited, limit: 10)) == "Press to stop")
+        #expect(ModeCardText.burstRunningDetail(BurstProgress(taken: 3, saved: 2, start: .counted, rate: 2)) == "2.0 a second")
+        // Ended: "10 of 10 photos saved" with the time and rate, or the reason with "4 of 10".
+        let full = BurstResult(end: .countReached, saved: 10, start: .limited, duration: .seconds(3.6), rate: 2.5, limit: 10)
+        #expect(ModeCardText.burstEndedTitle(full) == "10 of 10 photos saved")
+        #expect(ModeCardText.burstEndedDetail(full) == "3.6 seconds · 2.5 a second")
+        let early = BurstResult(end: .stopped, saved: 4, start: .limited, duration: .seconds(1.2), rate: 2.5, limit: 10)
+        #expect(ModeCardText.burstEndedTitle(early) == "4 of 10 photos saved")
+        let storage = BurstResult(end: .storageFull, saved: 4, start: .limited, limit: 10)
+        #expect(ModeCardText.burstEndedTitle(storage) == "Burst stopped: storage is full.")
+        #expect(ModeCardText.burstEndedDetail(storage) == "4 of 10 photos saved")
+        let none = BurstResult(end: .cameraStopped, saved: 0, start: .limited, limit: 10)
+        #expect(ModeCardText.burstEndedDetail(none) == "0 of 10 photos saved")
+        #expect(ModeCardText.burstEndedTitle(BurstResult(end: .stopped, saved: 12, start: .held)) == "12 photos saved")
+    }
+
+    @MainActor
+    @Test func burstLimitAnnouncements() {
+        let full = BurstResult(end: .countReached, saved: 10, start: .limited, limit: 10)
+        #expect(DriveText.endAnnouncement(full) == "10 of 10 photos saved")
+        #expect(DriveText.endAnnouncement(BurstResult(end: .storageFull, saved: 4, start: .limited, limit: 10)) == "Burst stopped: storage is full.")
+        #expect(DriveText.endAnnouncement(BurstResult(end: .stopped, saved: 12, start: .held)) == nil, "the shutter's taps say it")
+        #expect(DriveText.endAnnouncement(BurstResult(end: .countReached, saved: 3, start: .counted)) == nil, "Siri says it")
+        #expect(DriveText.endAnnouncement(BurstResult(end: .stopped, saved: 0, start: .limited, limit: 10)) == nil)
+    }
+
     @Test func secondsUseSystemFormatting() {
         #expect(DriveText.shortSeconds(3).contains("3"))
         #expect(DriveText.spokenSeconds(10).contains("10"))

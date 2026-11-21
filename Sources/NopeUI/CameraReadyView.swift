@@ -847,6 +847,15 @@ struct CameraReadyView: View {
                     ModeCardText.startBurst
                 }
             }
+            // While a burst that needs no holding runs (Start Burst, or a Burst Limit), VoiceOver,
+            // Switch Control and Voice Control can stop it from the shutter (issue #121).
+            if let burst = model.drive.burstProgress, burst.start != .held, !burst.isSaving {
+                Button {
+                    Task { await model.send(.drive(.stopBurst)) }
+                } label: {
+                    ModeCardText.stopBurst
+                }
+            }
             if model.isCleanView {
                 Button {
                     Task { await model.send(.setCleanView(false)) }

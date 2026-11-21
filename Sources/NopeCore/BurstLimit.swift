@@ -5,14 +5,14 @@ import Foundation
 ///
 /// With the limit Off, a tap takes one photo and holding takes photos until the shutter comes
 /// up, as before the setting existed. With a limit, a tap or a hold of the shutter (on screen or
-/// a hardware button) is to start a burst that runs to the count even after the finger lifts, and
-/// a second press is to stop it after the photo being taken (owner decisions, 2026-11-21).
+/// a hardware button), assistive activation and Start Burst start a burst that runs to the count
+/// even after the finger lifts (``BurstStart/limited``), and a second press stops it after the
+/// photo being taken (owner decisions, 2026-11-21). Every photo taken is saved; low storage and
+/// the camera stopping still end it early.
 ///
-/// **Not used yet.** In 1.0.0 the setting is built in two parts: this value, its storage, its
-/// place in presets and Factory Defaults, and its Settings row and search come first; the burst
-/// behavior that reads ``frameCount`` (`DriveModel`, `CameraModel+Drive.swift`, the burst card)
-/// comes with the shutter work of `docs/plans/1.0.0-finish.md`, section 4.2. Until then the
-/// shutter works as with Off.
+/// An interface sends the setting with ``DriveIntent/setBurstLimit(_:)`` when the camera screen
+/// appears and whenever it changes; ``DriveModel/burstLimit`` holds it, and the burst's progress
+/// and result carry the count (``BurstProgress/limit``, ``BurstResult/limit``).
 ///
 /// What the setting doesn't change:
 /// - Siri and Shortcuts keep their own photo count (``PhotoShortcut/count``).

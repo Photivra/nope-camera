@@ -110,6 +110,11 @@ struct LockedCameraView: View {
         .task(id: settings.torchLevel) {
             await model.send(.light(.setTorchLevel(settings.torchLevel)))
         }
+        // Burst Limit (issue #121): how many photos a press takes in Burst, applied when the
+        // camera opens and whenever the setting changes (in Settings or by a preset).
+        .task(id: settings.burstLimit) {
+            await model.send(.drive(.setBurstLimit(settings.burstLimit)))
+        }
     }
 
     /// The same save pipeline as the app's: the RAW developer, the ImageIO read-back, add-only

@@ -1,6 +1,10 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%lld of %lld photos saved" : {
+      "comment" : "Burst card on the camera and VoiceOver after a burst with a Burst Limit: how many photos it saved of the photos one press asked for, such as 10 of 10 or 4 of 10. Draft wording for the Honesty review (issue #121).",
+      "extractionState" : "manual"
+    },
     "%lld photos saved and signed." : {
       "comment" : "Shown after an exposure bracket: each frame was added to the photo library as its own photo, each with a Content Credentials signature. The number is the count of photos, at least 3. Honesty wording: says only that they were saved and signed.",
       "extractionState" : "manual"

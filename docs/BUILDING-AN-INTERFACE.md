@@ -84,7 +84,9 @@ also pass the on-screen shutter's touch to `model.shutter(.pressed, from: .onScr
 when it goes down and `.released` or `.cancelled`, with the same press number, when it comes up
 or the finger slides off, and skip that touch's `.capture`: holding takes a burst and a tap one
 photo. Call it with no `Task` in between, so a release can't overtake its press (issue #100). Offer `.drive(.startBurst)` as a button and an accessibility action, so no one has to hold
-the shutter, and the speeds in `burstSpeeds` with `.drive(.setBurstSpeed(_:))`. Show
+the shutter, and the speeds in `burstSpeeds` with `.drive(.setBurstSpeed(_:))`. Send the
+person's Burst Limit with `.drive(.setBurstLimit(_:))`; with a limit, a press takes
+`burstProgress.limit` photos, so show "3 of 10" and a way to stop it. Show
 `burstProgress.rate` only when it isn't `nil`, and dim the shutter while
 `burstProgress.isSaving` (`canPressShutter` does). Pass a `DeviceStatusReading` to `CameraModel` and show
 `storageWarning` and `deviceStatus.batteryWarning`. During an interval series, call

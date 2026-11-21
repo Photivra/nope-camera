@@ -485,6 +485,183 @@ struct BurstTests {
         #expect(holds.press(6, from: .hardware) == .new(number: 6, isReleased: false))
     }
 
+    // MARK: - Burst Limit (issue #121)
+
+    /// A model in burst mode with a Burst Limit.
+    func limitedModel(
+        _ limit: BurstLimit, backend: any CaptureBackend = ScriptedBackend(capabilities: CameraModelTests.oneLens),
+        reader: (any DeviceStatusReading)? = nil
+    ) async -> CameraModel {
+        let model = await makeModel(backend: backend, reader: reader)
+        await model.send(.drive(.setBurstLimit(limit)))
+        #expect(model.drive.burstLimit == limit)
+        return model
+    }
+
+    @Test func limitedValuesAndSummaries() {
+        let progress = BurstProgress(taken: 3, saved: 2, start: .limited, limit: 10)
+        #expect(progress.limit == 10)
+        #expect(BurstProgress(taken: 1, saved: 0).limit == nil)
+        #expect(BurstResult(end: .countReached, saved: 10, start: .limited, limit: 10).hasSummary, "10 of 10")
+        #expect(BurstResult(end: .stopped, saved: 1, start: .limited, limit: 10).hasSummary, "1 of 10")
+        #expect(!BurstResult(end: .stopped, saved: 0, start: .limited, limit: 10).hasSummary)
+        #expect(!BurstResult(end: .storageFull, saved: 4, start: .limited, limit: 10).hasSummary, "storage has its sentence")
+        #expect(!BurstResult(end: .failed, saved: 4, start: .limited, limit: 10).hasSummary)
+        #expect(BurstResult(end: .stopped, saved: 3).limit == nil)
+    }
+
+    @Test(arguments: ShutterSource.allCases)
+    func aTapWithALimitRunsToTheCount(_ source: ShutterSource) async {
+        let hooked = HookedBackend(ScriptedBackend(capabilities: CameraModelTests.oneLens))
+        let model = await limitedModel(.ten, backend: hooked)
+        await hooked.setOnCapture { [model] count in
+            guard count == 1 else { return }
+            let progress = await model.drive.burstProgress
+            #expect(progress?.start == .limited && progress?.limit == 10)
+        }
+        let work = model.shutter(.pressed, from: source)
+        model.shutter(.released, from: source)
+        await work?.value
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .countReached, saved: 10))
+        #expect(model.drive.lastBurst?.start == .limited)
+        #expect(model.drive.lastBurst?.limit == 10)
+        #expect(model.drive.lastBurst?.hasSummary == true)
+        #expect(savedCount(model) == 10)
+    }
+
+    @Test func aHoldWithALimitRunsToTheCountAfterTheRelease() async {
+        let hooked = HookedBackend(ScriptedBackend(capabilities: CameraModelTests.oneLens))
+        let model = await limitedModel(.five, backend: hooked)
+        await hooked.setOnCapture { [model] count in
+            if count == 2 { await model.shutter(.released, from: .onScreen) }
+        }
+        await model.shutter(.pressed, from: .onScreen)?.value
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .countReached, saved: 5))
+    }
+
+    /// What stops a limited burst early.
+    enum SecondPress: CaseIterable, Sendable {
+        case onScreen, hardware, assistiveTap, stopBurst
+    }
+
+    @Test(arguments: SecondPress.allCases)
+    func aSecondPressStopsALimitedBurstAfterThePhotoBeingTaken(_ second: SecondPress) async {
+        let hooked = HookedBackend(ScriptedBackend(capabilities: CameraModelTests.oneLens))
+        let model = await limitedModel(.ten, backend: hooked)
+        await hooked.setOnCapture { [model] count in
+            guard count == 4 else { return }
+            switch second {
+            case .onScreen:
+                await model.shutter(.pressed, from: .onScreen)
+                await model.shutter(.released, from: .onScreen)
+            case .hardware:
+                await model.shutter(.pressed, from: .hardware)
+                await model.shutter(.released, from: .hardware)
+            case .assistiveTap: await model.send(.capture)
+            case .stopBurst: await model.send(.drive(.stopBurst))
+            }
+        }
+        let work = model.shutter(.pressed, from: .hardware)
+        model.shutter(.released, from: .hardware)
+        await work?.value
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 4), "every photo taken is saved")
+        #expect(model.drive.lastBurst?.limit == 10)
+        #expect(model.drive.lastBurst?.hasSummary == true, "4 of 10")
+    }
+
+    @Test func aPressBeforeTheLimitedBurstBeginsStopsIt() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await limitedModel(.three, backend: backend)
+        let work = model.shutter(.pressed, from: .onScreen)
+        model.shutter(.released, from: .onScreen)
+        #expect(model.shutter(.pressed, from: .hardware) == nil)
+        await work?.value
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 0))
+        #expect(await backend.captureRequests.isEmpty)
+    }
+
+    @Test func assistiveActivationAndStartBurstTakeTheCount() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await limitedModel(.three, backend: backend)
+        await model.send(.capture)
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .countReached, saved: 3))
+        #expect(model.drive.lastBurst?.start == .limited)
+        await model.send(.drive(.startBurst))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .countReached, saved: 3))
+        #expect(await backend.captureRequests.count == 6)
+    }
+
+    @Test func withTheLimitOffATapTakesOnePhotoAsBefore() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await limitedModel(.off, backend: backend)
+        let work = model.shutter(.pressed, from: .onScreen)
+        model.shutter(.released, from: .onScreen)
+        await work?.value
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 1))
+        #expect(model.drive.lastBurst?.start == .held && model.drive.lastBurst?.limit == nil)
+        await model.send(.capture)
+        #expect(model.drive.lastBurst?.start == .counted)
+        #expect(await backend.captureRequests.count == 2)
+    }
+
+    @Test func aLimitOfFiftyEndsByItsCountNotTheCap() async {
+        let model = await limitedModel(.fifty)
+        await model.send(.capture)
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .countReached, saved: 50))
+        #expect(model.drive.lastBurst?.limit == 50)
+        #expect(model.drive.lastBurst?.hasSummary == true)
+    }
+
+    @Test func aLimitAboveWhatStorageAllowsStopsForStorage() async {
+        let reader = FakeStatusReader(bytes: 0)
+        let model = await limitedModel(.twenty, reader: reader)
+        let perPhoto = PhotoSizeEstimate.bytes(for: Self.wide, settings: model.saveSettings)
+        reader.bytes = perPhoto * 3
+        reader.shrinkPerRead = perPhoto / 2
+        await model.send(.capture)
+        #expect(model.drive.lastBurst?.end == .storageFull)
+        #expect(model.drive.lastBurst?.limit == 20)
+        #expect((model.drive.lastBurst?.saved ?? 0) > 0)
+    }
+
+    @Test func aRunningBurstKeepsItsCountWhenTheLimitChanges() async {
+        let hooked = HookedBackend(ScriptedBackend(capabilities: CameraModelTests.oneLens))
+        let model = await limitedModel(.five, backend: hooked)
+        await hooked.setOnCapture { [model] count in
+            // A preset or Settings changes the limit while Burst is selected.
+            if count == 2 { await model.send(.drive(.setBurstLimit(.three))) }
+        }
+        await model.send(.capture)
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .countReached, saved: 5))
+        await model.send(.capture)
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .countReached, saved: 3))
+    }
+
+    @Test func aPressWithALimitCancelsATimerFromElsewhere() async {
+        let ticker = Ticker()
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = CameraModel(backend: backend, saver: CameraModelTests.saver(), sleep: { _ in await ticker.sleep() })
+        await model.send(.start)
+        await model.send(.drive(.setMode(.burst)))
+        await model.send(.drive(.setBurstLimit(.ten)))
+        await model.send(.drive(.startTimer(seconds: 3)))
+        #expect(model.shutter(.pressed, from: .hardware) == nil)
+        #expect(!model.drive.countdown.isRunning)
+        model.shutter(.released, from: .hardware)
+        #expect(model.drive.lastBurst == nil)
+        #expect(await backend.captureRequests.isEmpty)
+        await tick(ticker)
+    }
+
+    @Test func siriAndShortcutsKeepTheirOwnCount() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await limitedModel(.ten, backend: backend)
+        await model.takeBurst(frames: 3)
+        #expect(model.drive.lastBurst?.start == .counted)
+        #expect(model.drive.lastBurst?.limit == nil)
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .countReached, saved: 3))
+    }
+
     // MARK: - Start Burst
 
     @Test(arguments: [

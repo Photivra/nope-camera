@@ -290,6 +290,27 @@ struct WatchTests {
         #expect(await backend.captureRequests.count == 1)
     }
 
+    /// Owner decision 9 (docs/plans/1.0.0-finish.md, section 6): the Burst Limit doesn't change
+    /// the Apple Watch shutter. It sends `PhotoShortcut(delaySeconds:appliesBracketInApp: true)`
+    /// with a count of 1, which takes one photo whatever the drive mode, also in Burst with a
+    /// limit of 10.
+    @Test func theWatchShutterTakesOnePhotoInBurstWithABurstLimit() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await makeModel(backend)
+        await model.send(.drive(.setMode(.burst)))
+        await model.send(.drive(.setBurstLimit(.ten)))
+        let inbox = ShortcutInbox(sleep: ShortcutTests.neverTimesOut)
+        let shortcuts = Task { await model.serveShortcuts(from: inbox) }
+        defer { shortcuts.cancel() }
+        let link = FakeWatchLink()
+        let server = WatchCommandServer(model: model, inbox: inbox, link: link)
+        _ = await server.reply(to: WatchMessageCoding.encode(.takePhoto(delay: .none)))
+        await waitOrFail("the watch hears the result") { !link.sent.isEmpty }
+        #expect(link.sent.first?.result == .saved(isSigned: false))
+        #expect(await backend.captureRequests.count == 1)
+        #expect(model.drive.lastBurst == nil, "no burst was taken")
+    }
+
     @Test func aDelayRunsThePhonesSelfTimer() async {
         let ticker = Ticker()
         let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)

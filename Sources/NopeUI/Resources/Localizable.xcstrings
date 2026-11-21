@@ -70,11 +70,15 @@
       }
     },
     "%lld of %lld" : {
-      "comment" : "Caption in the Last Photo viewer: the position of the photo shown among the photos taken since nope. opened, such as 3 of 5. Shown only when there is more than one photo.",
+      "comment" : "Caption in the Last Photo viewer: the position of the photo shown among the photos taken since nope. opened, such as 3 of 5. Shown only when there is more than one photo. Also the burst card on the camera while a burst with a Burst Limit runs: the photos taken so far of the photos it will take, such as 3 of 10 (issue #121).",
       "extractionState" : "manual"
     },
     "%lld photos saved" : {
       "comment" : "Card on the camera after an exposure bracket or a burst: how many separate photos were saved to the photo library.",
+      "extractionState" : "manual"
+    },
+    "A press takes %lld photos. Press again to stop." : {
+      "comment" : "Burst card on the camera, before a burst, with a Burst Limit: one press of the shutter or a volume button takes this many photos, and a second press stops early. The number is the limit, 3 to 50. Draft wording for the Honesty review (issue #121).",
       "extractionState" : "manual"
     },
     "App Store" : {
@@ -245,8 +249,20 @@
         }
       }
     },
+    "Burst started, %lld photos." : {
+      "comment" : "Announced to VoiceOver when a burst with a Burst Limit starts. The number is the photos it will take, 3 to 50. Draft wording for the Honesty review (issue #121).",
+      "extractionState" : "manual"
+    },
+    "Burst, fast, %lld photos." : {
+      "comment" : "VoiceOver value of the shutter in burst mode at the Fast speed with a Burst Limit: one press takes this many photos. The number is the limit, 3 to 50. Draft wording for the Honesty review (issue #121).",
+      "extractionState" : "manual"
+    },
     "Burst, fast." : {
       "comment" : "VoiceOver value of the shutter in burst mode at the Fast speed: photos are taken as fast as the camera is ready while the shutter is held.",
+      "extractionState" : "manual"
+    },
+    "Burst, slow, %lld photos." : {
+      "comment" : "VoiceOver value of the shutter in burst mode at the Slow speed (up to 2 photos a second) with a Burst Limit: one press takes this many photos. The number is the limit, 3 to 50. Draft wording for the Honesty review (issue #121).",
       "extractionState" : "manual"
     },
     "Burst, slow." : {
@@ -297,6 +313,10 @@
       "comment" : "VoiceOver hint of the shutter in burst mode: a double tap takes one photo; a double tap and hold takes photos until the finger lifts.",
       "extractionState" : "manual"
     },
+    "Double tap to take %lld photos. Double tap again to stop." : {
+      "comment" : "VoiceOver hint of the shutter in burst mode with a Burst Limit: a double tap takes this many photos, and a second double tap stops the burst early. The number is the limit, 3 to 50. Draft wording for the Honesty review (issue #121).",
+      "extractionState" : "manual"
+    },
     "Drive strip: Bracket" : {
       "comment" : "Drive mode word in the strip above the shutter: one press takes an exposure bracket, several separate photos at different exposures. A short word; the strip holds six.",
       "extractionState" : "manual",
@@ -339,6 +359,10 @@
     },
     "Fast burst" : {
       "comment" : "Burst card on the camera, before a burst: the speed in use. Photos are taken as fast as the camera is ready.",
+      "extractionState" : "manual"
+    },
+    "Fast burst · %lld photos" : {
+      "comment" : "Burst card on the camera, before a burst, with a Burst Limit: the speed in use and the photos one press takes. Photos are taken as fast as the camera is ready. The number is the limit, 3 to 50. Draft wording for the Honesty review (issue #121).",
       "extractionState" : "manual"
     },
     "Focus %@" : {
@@ -807,6 +831,10 @@
       "comment" : "In the photo details: the EXIF exposure program Portrait mode.",
       "extractionState" : "manual"
     },
+    "Press to stop" : {
+      "comment" : "Burst card on the camera while a burst with a Burst Limit runs: a second press of the shutter or a volume button stops it after the photo being taken. Draft wording for the Honesty review (issue #121).",
+      "extractionState" : "manual"
+    },
     "Rate or Review" : {
       "comment" : "Link on the About screen that opens the App Store's page for writing a rating or review of the app. A label, not a request: it names what the page offers.",
       "extractionState" : "manual"
@@ -937,6 +965,10 @@
     },
     "Show Value, %@" : {
       "comment" : "VoiceOver label of a Show Value button in the photo details. The placeholder is the row's title, such as Location.",
+      "extractionState" : "manual"
+    },
+    "Slow burst · %lld photos" : {
+      "comment" : "Burst card on the camera, before a burst, with a Burst Limit: the speed in use (up to 2 photos a second) and the photos one press takes. The number is the limit, 3 to 50. Draft wording for the Honesty review (issue #121).",
       "extractionState" : "manual"
     },
     "Slow burst: up to %lld a second" : {

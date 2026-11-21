@@ -113,7 +113,13 @@ extension CameraModel {
         case .timer(let delay): startTimer(seconds: delay.seconds)
         // A press that reports no phases (assistive activation, Space, an interface without a
         // held shutter) takes one photo; holding the shutter takes a burst (`.shutter`).
-        case .burst: await takeBurst(frames: 1)
+        case .burst:
+            if let limit = drive.burstLimit.frameCount {
+                // With a Burst Limit, a press takes the count (issue #121).
+                await takeBurst(frames: limit, start: .limited)
+            } else {
+                await takeBurst(frames: 1)
+            }
         case .interval: await send(.manual(.startInterval))
         }
     }
@@ -133,14 +139,20 @@ extension CameraModel {
         case .shutter(let phase): await handleShutter(phase, from: .onScreen, press: nil)?.value
         case .startBurst: await startBurst()
         case .setBurstSpeed(let speed): drive.setBurstSpeed(speed)
+        case .setBurstLimit(let limit): drive.setBurstLimit(limit)
         }
     }
 
     /// Starts a burst that needs no holding (docs/design/BURST.md, 3.1), in burst mode with the
-    /// astro helper off, when a photo can be taken and nothing runs.
+    /// astro helper off, when a photo can be taken and nothing runs. With a Burst Limit it is the
+    /// same as a press: the limit's count (issue #121).
     private func startBurst() async {
         guard drive.mode == .burst, !astro.isOn, canCapture, !drive.isBusy, !drive.isBurstPrepared else { return }
-        await takeBurst(start: .started)
+        if let limit = drive.burstLimit.frameCount {
+            await takeBurst(frames: limit, start: .limited)
+        } else {
+            await takeBurst(start: .started)
+        }
     }
 
     /// A shutter moved: the on-screen shutter in burst mode, or a hardware shutter button. Call
@@ -220,7 +232,18 @@ extension CameraModel {
             return nil
         }
         // Outside a held burst a shutter acts when it comes up.
-        guard isBurstShutter, !drive.isBusy, !drive.isBurstPrepared else { return nil }
+        guard isBurstShutter else { return nil }
+        if let limit = drive.burstLimit.frameCount {
+            // With a Burst Limit a press takes the count, and a second press stops it after the
+            // photo being taken, as a press stops the self-timer (issue #121).
+            guard !drive.isBusy, !drive.isBurstPrepared else {
+                if drive.countdown.isRunning { drive.countdown.cancel() } else { drive.requestBurstStop() }
+                return nil
+            }
+            drive.prepareBurst(start: .limited, limit: limit)
+            return Task { await takeBurst(frames: limit, start: .limited, isPrepared: true) }
+        }
+        guard !drive.isBusy, !drive.isBurstPrepared else { return nil }
         drive.prepareBurst(start: .held)
         return Task { await takeBurst(start: .held, isPrepared: true) }
     }
@@ -249,11 +272,12 @@ extension CameraModel {
         }
         // Coming up, or cancelled, ends what the press started. A held burst ends by itself once
         // no shutter is down (``DriveModel/isBurstStopRequested``), so a second button's release
-        // doesn't end it; any other burst stops. A countdown started another way (such as by
-        // Siri) is cancelled as the shutter would.
+        // doesn't end it; a limited one runs on to its count (issue #121); any other burst stops.
+        // A countdown started another way (such as by Siri) is cancelled as the shutter would,
+        // unless a limit is set, where the press already did.
         if let burst = drive.burstProgress {
-            if burst.start != .held { drive.requestBurstStop() }
-        } else if !drive.isBurstPrepared {
+            if burst.start != .held, burst.start != .limited { drive.requestBurstStop() }
+        } else if !drive.isBurstPrepared, drive.burstLimit.frameCount == nil {
             drive.countdown.cancel()
         }
         return nil
@@ -299,16 +323,17 @@ extension CameraModel {
     ///
     /// - Parameters:
     ///   - frames: The most frames to take: ``DriveModel/maximumBurstFrames`` for a held or
-    ///     started burst, 1 for a press that reports no phases, or the count a Siri or Shortcuts
-    ///     request asked for (issue #62).
+    ///     started burst, 1 for a press that reports no phases, the count a Siri or Shortcuts
+    ///     request asked for (issue #62), or the Burst Limit's count (issue #121).
     ///   - start: Who begins the burst.
     ///   - isPrepared: Whether a shutter press already asked for it (`DriveModel.prepareBurst`),
     ///     so a stop asked for since then still applies.
     func takeBurst(frames: Int = DriveModel.maximumBurstFrames, start: BurstStart = .counted, isPrepared: Bool = false) async {
-        let end: BurstEnd = frames < DriveModel.maximumBurstFrames ? .countReached : .limitReached
+        // A Burst Limit of 50 ends by its count, not as the cap (docs/design/finish-1.0.md, 5.2).
+        let end: BurstEnd = start == .limited || frames < DriveModel.maximumBurstFrames ? .countReached : .limitReached
         let speed: BurstSpeed = start == .counted ? .fast : burstSpeed
         let lensID = selectedLensID
-        if !isPrepared { drive.prepareBurst(start: start) }
+        if !isPrepared { drive.prepareBurst(start: start, limit: start == .limited ? frames : nil) }
         let began = await takeFrames(
             limit: frames, tracker: drive, stopsOnLowBattery: false, endAtLimit: end,
             minimumInterval: speed.minimumFrameInterval)

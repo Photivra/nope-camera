@@ -326,7 +326,12 @@ work. In burst mode a press requests the first photo at once and starts a burst 
 ends after the photo being taken, so a tap gives one photo. Outside burst mode a hardware button takes a photo on release,
 as the system Camera app does. `.drive(.startBurst)` starts a burst that needs no holding
 (`BurstStart.started`), for Start Burst, the VoiceOver action and Voice Control; the shutter,
-`.drive(.stopBurst)` or a hardware release ends it.
+`.drive(.stopBurst)` or a hardware release ends it. With a Burst Limit
+(`.drive(.setBurstLimit(_:))`, from `NopeSettings.burstLimit`; issue #121) a press, assistive
+activation and Start Burst take that many photos instead (`BurstStart.limited`, with the count
+in `BurstProgress.limit` and `BurstResult.limit`): coming up doesn't end it, a second press stops
+it after the photo being taken, and reaching the count ends it as `BurstEnd.countReached`. Siri
+and Shortcuts keep their own count.
 
 A burst is single frames through `capturePhoto`, each saved through the same `PhotoSaver` as any
 photo (allowlist, read-back, a signature per file); nothing is merged. Each frame is saved while

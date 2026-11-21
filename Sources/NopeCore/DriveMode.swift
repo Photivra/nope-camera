@@ -85,6 +85,12 @@ public enum BurstStart: Hashable, Sendable {
     /// A set number of photos: a Siri or Shortcuts request (issue #62), or one photo for a press
     /// of the shutter that reports no phases (``CameraIntent/capture``). Always at ``BurstSpeed/fast``.
     case counted
+
+    /// A press of the shutter (on screen, a hardware button, assistive activation or Start
+    /// Burst) with a Burst Limit set (``DriveModel/burstLimit``, issue #121): it takes the
+    /// limit's count of photos at the session's speed and doesn't end when the shutter comes
+    /// up. A second press, Stop Burst or the other stops (storage, the camera) end it early.
+    case limited
 }
 
 /// A request about the drive mode, the self-timer or a burst, sent as ``CameraIntent/drive(_:)``.
@@ -125,6 +131,14 @@ public enum DriveIntent: Equatable, Sendable {
     ///
     /// - Parameter speed: The speed.
     case setBurstSpeed(BurstSpeed)
+
+    /// Use the person's Burst Limit (``NopeSettings/burstLimit``, issue #121): with a limit, a
+    /// press of the shutter in burst mode takes that many photos, and a second press stops it
+    /// early. Send it when the camera screen appears and whenever the setting changes. A
+    /// running burst keeps the count it began with. Siri and Shortcuts keep their own count.
+    ///
+    /// - Parameter limit: The limit, or ``BurstLimit/off``.
+    case setBurstLimit(BurstLimit)
 }
 
 /// The progress of a running burst, or of an astro run.
@@ -146,6 +160,10 @@ public struct BurstProgress: Equatable, Sendable {
     /// can't start until they are.
     public let isSaving: Bool
 
+    /// The photos the press asked for with a Burst Limit set (``BurstStart/limited``), for "3 of
+    /// 10"; `nil` for every other burst.
+    public let limit: Int?
+
     /// Creates a progress value.
     ///
     /// - Parameters:
@@ -154,12 +172,31 @@ public struct BurstProgress: Equatable, Sendable {
     ///   - start: Who began the burst.
     ///   - rate: The measured photos a second, or `nil`.
     ///   - isSaving: Whether only saving is left.
-    public init(taken: Int, saved: Int, start: BurstStart = .started, rate: Double? = nil, isSaving: Bool = false) {
+    ///   - limit: The photos a limited burst asked for, or `nil`.
+    public init(
+        taken: Int, saved: Int, start: BurstStart = .started, rate: Double? = nil, isSaving: Bool = false,
+        limit: Int? = nil
+    ) {
         self.taken = taken
         self.saved = saved
         self.start = start
         self.rate = rate
         self.isSaving = isSaving
+        self.limit = limit
+    }
+
+    /// The same progress with some values changed.
+    ///
+    /// - Parameters:
+    ///   - taken: The frames taken so far.
+    ///   - saved: The frames saved so far.
+    ///   - rate: The measured photos a second.
+    ///   - isSaving: Whether only saving is left.
+    /// - Returns: The new progress.
+    func with(taken: Int? = nil, saved: Int? = nil, rate: Double?? = nil, isSaving: Bool? = nil) -> BurstProgress {
+        BurstProgress(
+            taken: taken ?? self.taken, saved: saved ?? self.saved, start: start, rate: rate ?? self.rate,
+            isSaving: isSaving ?? self.isSaving, limit: limit)
     }
 }
 
@@ -171,9 +208,10 @@ public enum BurstEnd: Equatable, Sendable {
     /// The burst reached ``DriveModel/maximumBurstFrames``, or an astro run took all its frames.
     case limitReached
 
-    /// The burst took the number of frames a Siri or Shortcuts request asked for (issue #62),
-    /// fewer than ``DriveModel/maximumBurstFrames``. Siri reports the result, so an interface
-    /// needn't announce it.
+    /// The burst took the number of frames asked for: a Siri or Shortcuts request's count (issue
+    /// #62), fewer than ``DriveModel/maximumBurstFrames``, which Siri reports, so an interface
+    /// needn't announce it; or a Burst Limit's count (``BurstStart/limited``, issue #121), also
+    /// 50, which an interface shows as "10 of 10 photos saved".
     case countReached
 
     /// The next frame wouldn't fit in the device's free storage (issue #44).
@@ -211,6 +249,10 @@ public struct BurstResult: Equatable, Sendable {
     /// ``duration``; `nil` under three photos (docs/design/BURST.md, 3.3).
     public let rate: Double?
 
+    /// The photos a press with a Burst Limit asked for (``BurstStart/limited``), for "4 of 10
+    /// photos saved"; `nil` for every other burst.
+    public let limit: Int?
+
     /// Creates a result.
     ///
     /// - Parameters:
@@ -220,9 +262,10 @@ public struct BurstResult: Equatable, Sendable {
     ///   - start: Who began the burst.
     ///   - duration: The time from the first photo to the last, in the clock's units.
     ///   - rate: The photos a second, or `nil`.
+    ///   - limit: The photos a limited burst asked for, or `nil`.
     public init(
         end: BurstEnd, saved: Int, taken: Int? = nil, start: BurstStart = .started, duration: Duration = .zero,
-        rate: Double? = nil
+        rate: Double? = nil, limit: Int? = nil
     ) {
         self.end = end
         self.saved = saved
@@ -230,13 +273,20 @@ public struct BurstResult: Equatable, Sendable {
         self.start = start
         self.duration = duration
         self.rate = rate
+        self.limit = limit
     }
 
     /// Whether an interface shows a summary of this burst ("12 photos saved", the time and the
     /// rate) until the next action: a burst of two photos or more that the person ended, not a
-    /// Siri or Shortcuts count and not a failure. A burst of one photo is a photo.
+    /// Siri or Shortcuts count and not a failure. A burst of one photo is a photo. A burst with a
+    /// Burst Limit has one whenever it saved a photo and reached its count or was stopped: the
+    /// person asked for a count, so the summary says how many of it were saved ("4 of 10").
     public var hasSummary: Bool {
-        end == .stopped && start != .counted && saved >= 2
+        switch start {
+        case .counted: false
+        case .limited: (end == .stopped || end == .countReached) && saved >= 1
+        case .held, .started: end == .stopped && saved >= 2
+        }
     }
 }
 
@@ -271,6 +321,12 @@ public final class DriveModel {
     /// the selected lens uses.
     public private(set) var burstSpeed = BurstSpeed.fast
 
+    /// The person's Burst Limit (``NopeSettings/burstLimit``, issue #121), as the interface last
+    /// sent it with ``DriveIntent/setBurstLimit(_:)``: ``BurstLimit/off`` until then. With a
+    /// limit, a press of the shutter in burst mode takes ``BurstLimit/frameCount`` photos
+    /// (``BurstStart/limited``).
+    public private(set) var burstLimit = BurstLimit.standard
+
     /// The photos a second measured at Fast in this session's bursts, by lens: the last whole
     /// burst of three photos or more on each. Not stored. It decides whether Slow is offered
     /// (``offersSlowBurst(on:)``).
@@ -293,6 +349,9 @@ public final class DriveModel {
 
     /// Who began the burst that is about to start or runs.
     private var start = BurstStart.counted
+
+    /// The photos a limited burst that is about to start or runs asked for, or `nil`.
+    private var limit: Int?
 
     /// Whether a press has asked for a burst that hasn't begun yet: the press is handled at once
     /// and the burst starts in a task just after (issue #100), so a second press in between
@@ -376,6 +435,13 @@ public final class DriveModel {
         self.mode = mode
     }
 
+    /// Keeps the person's Burst Limit for the next burst; a running one keeps its count.
+    ///
+    /// - Parameter limit: The limit.
+    func setBurstLimit(_ limit: BurstLimit) {
+        burstLimit = limit
+    }
+
     /// Chooses the burst speed for the session, unless a countdown or burst runs.
     ///
     /// - Parameter speed: The speed.
@@ -407,9 +473,13 @@ public final class DriveModel {
     /// until it begins or ``abandonPreparedBurst()`` says it won't. A stop asked for in between
     /// (``requestBurstStop()``) applies to it.
     ///
-    /// - Parameter start: Who begins it.
-    func prepareBurst(start: BurstStart) {
+    /// - Parameters:
+    ///   - start: Who begins it.
+    ///   - limit: The photos a limited burst asks for, for its progress and result; `nil` for
+    ///     the others.
+    func prepareBurst(start: BurstStart, limit: Int? = nil) {
         self.start = start
+        self.limit = limit
         isStopRequestedByPerson = false
         isBurstPrepared = true
     }
@@ -426,7 +496,7 @@ public final class DriveModel {
         lastBurst = nil
         firstPhotoTime = nil
         recentPhotoTimes = []
-        burstProgress = BurstProgress(taken: 0, saved: 0, start: start)
+        burstProgress = BurstProgress(taken: 0, saved: 0, start: start, limit: limit)
     }
 
     /// Asks the running burst to stop after the frame being taken.
@@ -442,23 +512,19 @@ public final class DriveModel {
         if firstPhotoTime == nil { firstPhotoTime = time }
         recentPhotoTimes.append(time)
         if recentPhotoTimes.count > Self.rateWindow { recentPhotoTimes.removeFirst() }
-        burstProgress = BurstProgress(
-            taken: progress.taken + 1, saved: progress.saved, start: progress.start,
-            rate: Self.rate(photos: recentPhotoTimes.count, first: recentPhotoTimes.first, last: recentPhotoTimes.last))
+        burstProgress = progress.with(
+            taken: progress.taken + 1,
+            rate: .some(Self.rate(photos: recentPhotoTimes.count, first: recentPhotoTimes.first, last: recentPhotoTimes.last)))
     }
 
     /// Counts a frame saved.
     func recordSaved() {
-        burstProgress = burstProgress.map {
-            BurstProgress(taken: $0.taken, saved: $0.saved + 1, start: $0.start, rate: $0.rate, isSaving: $0.isSaving)
-        }
+        burstProgress = burstProgress.map { $0.with(saved: $0.saved + 1) }
     }
 
     /// Marks the burst as taking no more photos: only the last ones are being saved.
     func beginSaving() {
-        burstProgress = burstProgress.map {
-            BurstProgress(taken: $0.taken, saved: $0.saved, start: $0.start, rate: $0.rate, isSaving: true)
-        }
+        burstProgress = burstProgress.map { $0.with(isSaving: true) }
     }
 
     /// Marks the burst as ended.
@@ -470,7 +536,8 @@ public final class DriveModel {
         let duration = firstPhotoTime.flatMap { first in last.map { $0 - first } } ?? .zero
         lastBurst = BurstResult(
             end: end, saved: burstProgress?.saved ?? 0, taken: taken, start: burstProgress?.start ?? start,
-            duration: duration, rate: Self.rate(photos: taken, first: firstPhotoTime, last: last))
+            duration: duration, rate: Self.rate(photos: taken, first: firstPhotoTime, last: last),
+            limit: burstProgress?.limit ?? limit)
         burstProgress = nil
         isStopRequestedByPerson = false
     }

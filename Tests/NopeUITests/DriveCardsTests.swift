@@ -10,12 +10,12 @@ struct DriveCardsTests {
     /// The card for a state; every value not given is idle.
     private func card(
         mode: DriveMode = .single, countdown: Int? = nil, burst: BurstProgress? = nil, endedBurst: BurstResult? = nil,
-        burstSpeed: BurstSpeed = .fast, interval: IntervalProgress? = nil, isAstroOn: Bool = false, astroRun: AstroRun? = nil,
-        estimate: AstroEstimate? = nil, showsControls: Bool = true
+        burstSpeed: BurstSpeed = .fast, burstLimit: Int? = nil, interval: IntervalProgress? = nil, isAstroOn: Bool = false,
+        astroRun: AstroRun? = nil, estimate: AstroEstimate? = nil, showsControls: Bool = true
     ) -> ModeCardState? {
         ModeCardState.resolve(
             mode: mode, countdownRemaining: countdown, burst: burst, endedBurst: endedBurst, burstSpeed: burstSpeed,
-            intervalProgress: interval,
+            burstLimit: burstLimit, intervalProgress: interval,
             intervalSettings: .standard, isAstroOn: isAstroOn, astroRun: astroRun, astroStartDelay: .tenSeconds,
             astroEstimate: estimate, showsControls: showsControls)
     }
@@ -30,6 +30,22 @@ struct DriveCardsTests {
         #expect(card(mode: .burst, burstSpeed: .slow) == .burstIdle(.slow))
         #expect(card(mode: .burst, showsControls: false) == nil)
         #expect(!ModeCardState.burstIdle(.fast).isRunning)
+    }
+
+    @Test func aBurstLimitShowsInTheIdleCard() {
+        #expect(card(mode: .burst, burstLimit: 10) == .burstIdle(.fast, limit: 10))
+        #expect(card(mode: .burst, burstSpeed: .slow, burstLimit: 3) == .burstIdle(.slow, limit: 3))
+        #expect(card(mode: .burst, burstLimit: 10, showsControls: false) == nil)
+        let running = BurstProgress(taken: 3, saved: 2, start: .limited, limit: 10)
+        #expect(card(mode: .burst, burst: running, burstLimit: 10) == .burstRunning(running))
+        let ended = BurstResult(end: .countReached, saved: 10, start: .limited, limit: 10)
+        #expect(card(mode: .burst, endedBurst: ended, burstLimit: 10) == .burstEnded(ended))
+    }
+
+    @MainActor
+    @Test func aLimitedBurstKeepsItsSummary() {
+        #expect(ModeCardState.showsEnd(BurstResult(end: .countReached, saved: 10, start: .limited, limit: 10)))
+        #expect(ModeCardState.showsEnd(BurstResult(end: .stopped, saved: 1, start: .limited, limit: 10)))
     }
 
     @Test func burstCardsResolveRunningThenSavingThenEndedThenIdle() {

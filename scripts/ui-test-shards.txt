@@ -60,6 +60,8 @@
 5 2 NopeAppUITests/testBurstLimitPresetRoundTrip 130e 130e
 1 1 NopeAppUITests/testBurstLimitRow 300e 300e
 2 3 NopeAppUITests/testBurstLimitRowAtTheLargestTextSizeAndRightToLeft 280e 280e
+2 4 NopeAppUITests/testBurstLimitSecondPressStopsEarly 56e 56e
+4 3 NopeAppUITests/testBurstLimitTapRunsToTheCount 52e 52e
 3 4 NopeAppUITests/testBurstNightModeIsAllRed 67e 70e
 3 4 NopeAppUITests/testBurstOnIPad 58e 58e
 6 3 NopeAppUITests/testBurstRightToLeft 43e 46e
