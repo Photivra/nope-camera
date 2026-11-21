@@ -260,6 +260,14 @@ extension NopeAppUITests {
         XCTAssertTrue(row.label.contains("Hidden"), row.label)
         XCTAssertFalse(row.label.contains("0.5°"), row.label)
         try audit(app, afterScrolling: true, checksDynamicType: false)
+        // With the taller summary card the swipes can leave the button just under the sheet's
+        // navigation bar, where a tap lands on the bar: bring it down first.
+        let window = app.windows.firstMatch
+        if show.frame.minY < window.frame.minY + 150 {
+            window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4))
+                .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6)))
+        }
+        XCTAssertTrue(show.isHittable)
         show.tap()
         XCTAssertTrue(element(app, containing: "0.5°").waitForExistence(timeout: 5))
         XCTAssertFalse(show.exists)
