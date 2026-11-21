@@ -109,6 +109,7 @@ Languages: 1.0.0 ships in English only (issue #86); Spanish (es, with es-419 ove
 - Deprecated 0.3.0 wrappers left for the 1.0.0 chunks, now unused (issue #74, chunk Z): `QuickControlsTray`, `IntervalProgressView`, `SelectableCapsuleStyle`, the `DarkBacking` modifier and `darkBacking()`, `pillShape()`, and the `CameraStyle` sizes `cornerRadius`, `minimumTarget` and `targetSpacing` (use `NopeRadius`, `NopeSize` and `NopeSpace`).
 
 ### Fixed
+- Live Activity count updates are limited on the monotonic clock (issue #125): setting the device's clock back no longer stops count updates until the clock catches up. The coordinator also listens for the system's clock-change notice (`NSSystemClockDidChange`) and sends a countdown's end or a timed series' time again at once (`LiveActivityCoordinator.clockChanged(_:)`).
 - An interval series whose last photo fails ends as Stopped, not Finished (issue #105), also when the failure comes at or after a timed series' end; only a time that was up while the series waited for the camera finishes it. The Live Activity's outcome says stopped too.
 - Fifth code review of 1.0.0:
   - Night Mode rows in settings pages and sheets are darker: `#1C0000` on a black page, where the night red is 5.0:1 (it was 4.74:1 on the `#2C0000` rows of a sheet, which the iOS 26.5 accessibility audit reported as "Contrast nearly passed"). `NopeForm` and `NopeList` wrap the system's `Form` and `List`, with the new token `NopeColor.nightRowUnderMultiply` (`docs/design/tokens.md`, "Night mode rows"); outside night mode nothing changes.

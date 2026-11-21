@@ -165,6 +165,13 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         }
     }
 
+    /// Whether the content holds a date iOS draws from: a countdown's end (``countdownEnd``) or a
+    /// timed series' time (``seriesTime``). Such content is sent again when the device's clock
+    /// changes (``LiveActivityCoordinator/clockChanged(_:)``).
+    public var hasDates: Bool {
+        countdownEnd != nil || seriesTime != nil
+    }
+
     /// Whether the activity shows the time left of an interval series that stops after a time,
     /// with a progress bar by time (``seriesTime``): while the series runs or is paused.
     public var showsTimeLeft: Bool {

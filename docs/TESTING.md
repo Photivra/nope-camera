@@ -1682,6 +1682,9 @@ system's clocks.
   Power Mode on. Record each time to the shutter sound (or the haptic) and the numbers shown.
   Expected: about 10 s each time, with no drift from one run to the next; a number may be
   skipped only if the phone was held up for more than a second.
+- Live Activity and the device's clock (#125): start the 10-minute timed series above, go to the
+  Lock Screen, and set the time an hour forward and then back as above. Expected: after each change
+  the activity's time left is right again at once, and its counts still update.
 
 ### Shared settings, the Night Mode control and the Lock Screen camera on a device
 

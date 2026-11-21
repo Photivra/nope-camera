@@ -554,8 +554,11 @@ foreground, so it starts when the run starts while the app is active (`isActive`
 `active`); the content counts an inactive app (Control Center or a system alert over it) as in the
 foreground (`isInForeground`, any phase but `background`), since the camera keeps taking photos
 then; while the app is in the foreground a change of the
-counts alone is sent at most every 30 seconds, and phase changes and the content at the moment
-the app leaves are sent at once; countdowns are drawn by the system from their end time. Updates
+counts alone is sent at most every 30 seconds, measured on the monotonic clock (issue #125), and
+phase changes and the content at the moment the app leaves are sent at once; countdowns and a
+timed series' time are drawn by the system from their dates, so when the system says the device's
+clock changed (`NSSystemClockDidChange`) the coordinator sends content with dates again at once
+(`clockChanged(_:)`), worked out from the monotonic clock. Updates
 are local only: no push type, no push token, no network. The coordinator also asks iOS for time to
 finish saving (`BackgroundTimeRequesting`, `UIApplication.beginBackgroundTask`) while photos are
 still being taken or saved out of the foreground. When the app leaves the foreground the camera
