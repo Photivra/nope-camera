@@ -53,7 +53,7 @@ struct SetFocusRangeIntent: AppIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let choice = range.choice
         let question = AssistantQuestions.focusRange(named: String(localized: range.localizedStringResource))
-        let answer = await gate.answer(.setFocusRange, question: question, intent: self, opensApp: true) {
+        let answer = try await gate.answer(.setFocusRange, question: question, intent: self, opensApp: true) {
             AssistantAnswer(await inbox.submit(.setFocusRange(choice)))
         }
         return .result(dialog: IntentDialog(answer.sentence))
@@ -152,7 +152,7 @@ struct SetPhotoSizeIntent: AppIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let request = PhotoSizeShortcut(lensKind: lens?.kind, size: size.size)
         let question = AssistantQuestions.photoSize(named: String(localized: size.localizedStringResource), lens: lens?.kind)
-        let answer = await gate.answer(.setPhotoSize, question: question, intent: self, opensApp: true) {
+        let answer = try await gate.answer(.setPhotoSize, question: question, intent: self, opensApp: true) {
             AssistantAnswer(await inbox.submit(.setPhotoSize(request)))
         }
         return .result(dialog: IntentDialog(answer.sentence))
@@ -232,7 +232,7 @@ struct SetFastShutterIntent: AppIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let fastShutter = choice.fastShutter
         let question = AssistantQuestions.fastShutter(named: String(localized: choice.localizedStringResource))
-        let answer = await gate.answer(.setFastShutter, question: question, intent: self, opensApp: false) {
+        let answer = try await gate.answer(.setFastShutter, question: question, intent: self, opensApp: false) {
             settings.setFastShutter(fastShutter)
             return AssistantAnswer(
                 LocalizedStringResource("Fast Shutter is set.", comment: "Siri's answer after nope.'s Fast Shutter setting was changed."))
@@ -330,7 +330,7 @@ struct SetFaceDetectionIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let isOn = isOn
-        let answer = await gate.answer(.setFocusOnFaces, question: AssistantQuestions.focusOnFaces(isOn: isOn), intent: self, opensApp: false) {
+        let answer = try await gate.answer(.setFocusOnFaces, question: AssistantQuestions.focusOnFaces(isOn: isOn), intent: self, opensApp: false) {
             settings.setFollowsFaces(isOn)
             return AssistantAnswer(
                 isOn

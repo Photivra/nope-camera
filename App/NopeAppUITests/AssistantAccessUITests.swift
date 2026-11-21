@@ -265,7 +265,8 @@ extension NopeAppUITests {
             "lens-ultraWide", Self.assistantOnEveryAction + ["-NopeSimulatedAssistantAnswer", "cancel"])
         let answer = assistantAnswer(app)
         XCTAssertTrue(answer.waitForExistence(timeout: 30))
-        XCTAssertEqual(answer.label, "Cancelled. Nothing changed.")
+        // The system answers a cancelled question; the app adds no answer of its own (issue #126).
+        XCTAssertEqual(answer.label, "No answer: the question was cancelled.")
         XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "assistant.notice").firstMatch.exists)
         openAssistantAccessPage(app)
         let line = settingsElement(app, "settings.assistantAccess.session.line")

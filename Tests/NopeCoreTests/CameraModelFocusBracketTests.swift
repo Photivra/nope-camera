@@ -915,6 +915,18 @@ struct CameraModelFocusBracketTests {
         #expect(await task.value == .cancelled)
     }
 
+    @Test func takeBracketWithTypeFocusAfterALongDelayIsAnsweredWhenTheTimerStarts() async {
+        // Issue #126: a delay over ten seconds is answered as the timer starts.
+        let (model, backend) = await makeModel(sleep: { _ in try await Task.sleep(for: .seconds(3600)) }, turnOn: false)
+        let request = BracketShortcut(type: .focus, focusFrameCount: 3, frameCount: 3, step: 1, delaySeconds: 20)
+        let outcome = await model.perform(
+            .takeBracket(request), inbox: ShortcutInbox(sleep: ShortcutTests.neverTimesOut), settings: nil, presets: nil)
+        #expect(outcome == .timerStarted(seconds: 20))
+        #expect(model.drive.countdown.isRunning)
+        #expect(await backend.captures == 0)
+        model.drive.countdown.cancel()
+    }
+
     // MARK: - Fourth review of 1.0.0
 
     @Test(arguments: [true, false])

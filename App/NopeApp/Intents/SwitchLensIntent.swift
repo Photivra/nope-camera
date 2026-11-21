@@ -52,7 +52,7 @@ struct SwitchLensIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let kind = lens.kind
-        let answer = await gate.answer(.switchLens, question: AssistantQuestions.switchLens(kind), intent: self, opensApp: true) {
+        let answer = try await gate.answer(.switchLens, question: AssistantQuestions.switchLens(kind), intent: self, opensApp: true) {
             AssistantAnswer(await inbox.submit(.selectLens(kind)))
         }
         return .result(dialog: IntentDialog(answer.sentence))

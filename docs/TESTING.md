@@ -1237,7 +1237,14 @@ the request through the Assistant Access check and the same `ShortcutInbox` the 
 (`AssistantGate`, issue #82) and shows what Siri would say. Access is off by default, so
 `ShortcutUITests` launch with `-NopeSettings.assistantAccess YES -NopeSettings.assistantAsk never`;
 `-NopeSimulatedAssistantAnswer cancel` cancels the question that Every Action and Only Before a
-Photo ask (it is confirmed otherwise). `AssistantAccessUITests.swift` covers the Settings page
+Photo ask (it is confirmed otherwise); a cancelled question gets no answer from the app, so the
+result reads "No answer: the question was cancelled." `TakePhotoIntentUITests.swift` (iOS 27 only)
+runs the real Take Photo intent through the system's App Intents runner (`AppIntentsTesting`)
+instead: access off, on with Never, on with Every Action (the runner confirms the question), a
+40-second delay answered when the timer starts, and the app closed. The runner refuses an app
+built with `CODE_SIGNING_ALLOWED=NO` ("Unable to run internal tests on a Customer build"), so
+these tests are skipped in such a build and run with the Simulator's own signing (leave the
+setting out). `AssistantAccessUITests.swift` covers the Settings page
 (off and on, Ask First while off, the largest text size, right to left, night mode all red with
 the iPad window corner excluded, search, the Lock Screen camera's read-only row) and the requests
 through the check: every action refused while access is off with the refusal card and its count,
@@ -1666,7 +1673,7 @@ result, the device and the iOS version here. A check that fails changes the desi
 | 1 | A gated intent starts in the background and moves to the foreground only after the check and the question (`supportedModes` `[.background, .foreground(.dynamic)]`, `continueInForeground`): with access off, "Take a photo with nope." answers without opening the app; a cancelled question doesn't open it either; after Confirm, `continueInForeground` opens it | Go back to `openAppWhenRun`: the app opens, then refuses or asks | Not run |
 | 2 | `requestConfirmation`, from an intent started in the background mode, shows and speaks the question, the line under it ("You can change this in nope. › Settings › Privacy.") and the custom buttons (Take Photo, Switch Lens, Apply Preset, Cancel) in Siri and in Shortcuts, before the app opens, and throws on Cancel | The app's own card on the camera (design, 5.5); drop the line if only it fails | Not run |
 | 3 | An unattended Shortcuts automation stops at the question and doesn't run the action | Every Action and Only Before a Photo must refuse when no person can answer | Not run |
-| 4 | After Cancel, Siri and Shortcuts show "Cancelled. Nothing changed." | No answer; nothing is claimed | Not run |
+| 4 | After Cancel, Siri and Shortcuts show "Cancelled. Nothing changed." | No answer; nothing is claimed. Adopted for 1.0.0 (owner decision, 2026-11-21, issue #126): the question's error passes to the system, which answers | Not run |
 | 5 | `authenticationPolicy = .requiresAuthentication` makes Siri ask for an unlock for every gated action, on the Lock Screen, through headphones and in a car; the app's own check (protected data unavailable) answers "Unlock this device to use nope.'s actions. Nothing changed." if a request still arrives locked. Record which of the two refuses on a locked phone: the app's fallback (`isProtectedDataAvailable`) lags a lock by some seconds and is always true without a passcode | The check refuses while the device is locked, by the app's own test (built) | Not run |
 | 6 | A result can carry one button that runs Open Assistant Access (Open Settings in the off answer). Not built: the off answer is the sentence alone, which names the path; the Open Assistant Access action exists in Shortcuts | Keep the sentence alone | Not run |
 | 7 | Camera-domain assistant schemas: what exists on iOS 26 and 27, and whether a conforming intent still runs `perform()` and can ask for confirmation. None is adopted | No schema is adopted | Not run |
@@ -1686,6 +1693,36 @@ Preset through Shortcuts with a preset that has Location and signing on while bo
 stay off; the answer says privacy settings weren't applied); a saved shortcut that names a
 saved preset while access is off; and a shortcut saved before 1.0.0 (it answers that access is
 off until it is turned on).
+
+### Siri on a device (issue #126)
+
+The report: iPhone 16 Pro Max, iOS 27, a Release build, the app open on the camera (Single, 1×,
+Auto, low light, "Hold it steady or use a tripod." showing). "Hey Siri, tell nope to take a photo"
+answered "Sorry, something's wrong. Please try again." and saved nothing. What the Simulator
+showed (`TakePhotoIntentUITests`, iOS 27.2, the system's App Intents runner, which confirms the
+question itself): before the fix, Take Photo with the app open saved one photo with access on and
+Never or Every Action, and answered with access off; a 40-second delay ended with the system's
+timeout after 31 seconds (`LNConnectionErrorDomain` 1014). The runner can't speak, so the spoken
+phrase, Siri's own question and the voice-only move to the foreground are checked here. Settings
+for each row are given; Assistant Access is in Settings › Privacy. Record Siri's exact words,
+whether a photo was saved, the device and the iOS version.
+
+| # | Say, with these settings | Expected | Result |
+| --- | --- | --- | --- |
+| S1 | "Take a photo with nope", app open on the camera, access on, Ask First Never | One photo saved; "Photo saved and signed." or "Photo saved. It isn't signed." | Not run |
+| S2 | "Tell nope to take a photo", the same | The same as S1 | Not run |
+| S3 | "Take a picture in nope" and "Tell nope to take a picture", the same | The same as S1 | Not run |
+| S4 | S2 with Ask First Every Action: answer Take Photo, then repeat and answer Cancel | Confirm: as S1. Cancel: nothing taken, the app gives no answer of its own; record what Siri says | Not run |
+| S5 | S2 with access off | "Assistant Access is off. You can turn it on in nope. › Settings › Privacy." | Not run |
+| S6 | S2 with the app closed (swiped away), access on, Never | The app opens on the camera and takes one photo; or "Open nope. to do this. Nothing changed." where Siri can't open it | Not run |
+| S7 | S2 with the phone locked, access on, Never | Siri asks to unlock (Assistant Access check 11); nothing is taken while locked | Not run |
+| S8 | "Take a photo in 10 seconds with nope", app open, access on, Never | The countdown runs on the camera; Siri answers after the photo, as S1 | Not run |
+| S9 | Shortcuts app: Take Photo with Custom Delay 40, app open, access on, Never | At once: "Timer started, 40 seconds. nope. shows the result."; Photos Saved 0; the photo is taken when the countdown ends | Not run |
+| S10 | S1 in low light with the steady hint showing | As S1, within Siri's time | Not run |
+
+If S1 works and S2 fails the same way as the report, the phrase or the name was the cause; if
+both fail, watch the device log while repeating S1 (Console on a Mac, the app's process and the
+App Intents subsystem) for the intent starting, an error or a timeout.
 
 ### Live Activity on a device
 

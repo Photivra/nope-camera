@@ -21,6 +21,10 @@
       "comment" : "A Siri phrase that takes an exposure bracket (several separate photos at different exposures) with nope. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
       "extractionState" : "manual"
     },
+    "Take a photo in ${applicationName}" : {
+      "comment" : "A Siri phrase that takes a photo with nope. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
+      "extractionState" : "manual"
+    },
     "Take a photo in ${delay} with ${applicationName}" : {
       "comment" : "A Siri phrase that takes a photo after a delay. ${delay} is \"3 Seconds\" or \"10 Seconds\"; ${applicationName} is the app's name, nope. Keep both placeholders unchanged.",
       "extractionState" : "manual"
@@ -29,8 +33,20 @@
       "comment" : "A Siri phrase that takes a photo with nope. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
       "extractionState" : "manual"
     },
+    "Take a picture in ${applicationName}" : {
+      "comment" : "A Siri phrase that takes a photo with nope. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
+      "extractionState" : "manual"
+    },
     "Take a picture with ${applicationName}" : {
       "comment" : "Another Siri phrase that takes a photo with nope. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
+      "extractionState" : "manual"
+    },
+    "Tell ${applicationName} to take a photo" : {
+      "comment" : "A Siri phrase that takes a photo with nope. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
+      "extractionState" : "manual"
+    },
+    "Tell ${applicationName} to take a picture" : {
+      "comment" : "A Siri phrase that takes a photo with nope. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
       "extractionState" : "manual"
     },
     "Turn off night mode in ${applicationName}" : {

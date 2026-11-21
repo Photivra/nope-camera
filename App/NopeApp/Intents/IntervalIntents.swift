@@ -82,7 +82,7 @@ struct StartIntervalIntent: AppIntent {
         let series = IntervalShortcut(
             intervalSeconds: intervalSeconds.map(Double.init), count: count,
             durationSeconds: durationMinutes.map { Double($0) * 60 })
-        let answer = await gate.answer(
+        let answer = try await gate.answer(
             .startInterval, question: AssistantQuestions.startInterval(series), intent: self, opensApp: true
         ) {
             AssistantAnswer(await inbox.submit(.startInterval(series)))
@@ -121,7 +121,7 @@ struct StopIntervalIntent: AppIntent {
     /// - Returns: The outcome, said by Siri or shown by Shortcuts.
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let answer = await gate.answer(.stopInterval, question: AssistantQuestions.stopInterval, intent: self, opensApp: false) {
+        let answer = try await gate.answer(.stopInterval, question: AssistantQuestions.stopInterval, intent: self, opensApp: false) {
             AssistantAnswer(await inbox.submit(.stopInterval))
         }
         return .result(dialog: IntentDialog(answer.sentence))

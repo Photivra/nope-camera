@@ -121,8 +121,8 @@
     "10 Seconds" : {
       "comment" : "A choice of the Delay setting of nope.'s Take Photo action, also said to Siri."
     },
-    "A delay in seconds, up to a minute. It replaces the Delay choice." : {
-      "comment" : "Explains the Custom Delay setting of nope.'s Take Photo action. \"Delay\" is the name of the other setting."
+    "A delay in seconds, up to a minute. It replaces the Delay choice. Over 10 seconds, the action ends when the timer starts, and Photos Saved is 0." : {
+      "comment" : "Explains the Custom Delay setting of nope.'s Take Photo action. \"Delay\" is the name of the other setting; \"Photos Saved\" is the name of the action's result in the Shortcuts app."
     },
     "A photo wasn't saved. Open nope. for details." : {
       "comment" : "Live Activity: a photo couldn't be taken or saved; nope. says why. Keep \"nope.\" unchanged."
