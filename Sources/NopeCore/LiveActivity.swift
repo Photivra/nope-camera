@@ -78,7 +78,7 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
     /// When an interval series that stops after a time started and when it ends, or `nil`. The
     /// system counts down to the end and fills the progress bar by time on screen, so the content
     /// isn't updated for it. The time keeps running while the series is paused
-    /// (``IntervalProgress/timeSpan``).
+    /// (``IntervalProgress/timeSpan(date:now:)``).
     public var seriesTime: ClosedRange<Date>?
 
     /// The photos saved so far.

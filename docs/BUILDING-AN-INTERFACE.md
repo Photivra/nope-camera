@@ -58,8 +58,9 @@ exposure modes, bracketing and interval shooting (which, unlike the other manual
 in full auto too; the `.interval` drive mode starts a series from the shutter, and a bracket that
 is on (`CameraModel.isBracketOn`) is what the shutter takes in Single or with the self-timer). A
 series stops after a number of photos or a time (`IntervalSettings.stopAfter`); for a timed one
-show the time left from `intervalProgress.secondsLeft(at:)` (its end is fixed on the wall clock
-and keeps running while the series is paused), and while `intervalBlocker` is set, disable Start
+show the time left from `intervalProgress.secondsLeft(at: model.clock.now())` and the end time
+from `endDate(clock: model.clock)` (its end is a moment of the monotonic clock, keeps running
+while the series is paused, and doesn't move when the device's time is changed), and while `intervalBlocker` is set, disable Start
 and say why. Send `.manual(...)` intents to change them; the
 model keeps the combination valid for the lens. Offer "All Auto" whenever
 `manual.settings.isAutomatic` is false. The full-auto aids (tap to focus and the lock, exposure

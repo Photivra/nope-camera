@@ -586,8 +586,9 @@ public final class ManualControlsModel {
     /// can't be taken for another reason (the camera stopped for good, or the photo failed) ends
     /// the series, and the camera says why.
     ///
-    /// A series that stops after a time ends at a fixed time on the wall clock, set when it
-    /// starts: it takes no photo whose interval would end at or after that time, and when the
+    /// A series that stops after a time ends at a fixed moment of the monotonic clock
+    /// (``IntervalProgress/deadline``), set when it starts, so a change of the device's time
+    /// doesn't move it: it takes no photo whose interval would end at or after that time, and when the
     /// time is up while it waits for the camera, `capture` returns `false` and the series ends
     /// as finished.
     ///
@@ -595,11 +596,12 @@ public final class ManualControlsModel {
     private func startInterval(capture: @escaping @MainActor () async -> Bool) {
         guard intervalProgress == nil else { return }
         let series = interval
-        let start = clock.date()
-        let timeSpan = series.stopAfter == .time ? start...start.addingTimeInterval(series.duration) : nil
+        let duration: Duration? = series.stopAfter == .time ? .seconds(series.duration) : nil
+        let deadline = duration.map { clock.now() + $0 }
         lastIntervalEnd = nil
         intervalProgress = IntervalProgress(
-            taken: 0, total: series.stopAfter == .numberOfPhotos ? series.count : nil, timeSpan: timeSpan)
+            taken: 0, total: series.stopAfter == .numberOfPhotos ? series.count : nil, deadline: deadline,
+            duration: duration)
         intervalTask = Task {
             var taken = 0
             var isFinished = false
@@ -612,7 +614,7 @@ public final class ManualControlsModel {
                 }
                 taken += 1
                 intervalProgress = intervalProgress?.with(taken: taken)
-                guard hasTimeForAnotherPhoto(series, taken: taken, timeSpan: timeSpan) else {
+                guard hasTimeForAnotherPhoto(series, taken: taken, deadline: deadline) else {
                     isFinished = true
                     break
                 }
@@ -634,17 +636,17 @@ public final class ManualControlsModel {
     /// - Parameters:
     ///   - series: The series' settings.
     ///   - taken: The photos taken so far.
-    ///   - timeSpan: When a series that stops after a time started and ends, or `nil`.
+    ///   - deadline: When a series that stops after a time ends, on the monotonic clock, or `nil`.
     /// - Returns: Whether to wait the interval and take another photo.
-    private func hasTimeForAnotherPhoto(_ series: IntervalSettings, taken: Int, timeSpan: ClosedRange<Date>?) -> Bool {
-        guard let timeSpan else { return taken < series.count }
-        return clock.date().addingTimeInterval(series.interval) < timeSpan.upperBound
+    private func hasTimeForAnotherPhoto(_ series: IntervalSettings, taken: Int, deadline: ContinuousClock.Instant?) -> Bool {
+        guard let deadline else { return taken < series.count }
+        return clock.now() + .seconds(series.interval) < deadline
     }
 
-    /// Whether the running series stops after a time and that time is up.
+    /// Whether the running series stops after a time and that time is up, on the monotonic clock.
     var isIntervalTimeUp: Bool {
-        guard let end = intervalProgress?.timeSpan?.upperBound else { return false }
-        return clock.date() >= end
+        guard let deadline = intervalProgress?.deadline else { return false }
+        return clock.now() >= deadline
     }
 
     /// Marks the running series as paused or running again, for the camera screen and the Live

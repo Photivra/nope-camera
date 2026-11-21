@@ -255,12 +255,15 @@ when the camera opens and when the option changes.
   burst runs (`CameraModel.intervalBlocker`).
 - **Stop After** (`IntervalSettings.stopAfter`): a series stops after a number of photos (the
   default) or after a time, 1 minute to 24 hours (`.time`, `IntervalSettings.duration`). A timed
-  series fixes its end on the wall clock when it starts (`IntervalProgress.timeSpan`, read from
-  `CameraModel`'s `currentDate`), and the time keeps running while the series is paused, so
-  "1 hour from 8:41 PM" ends at 9:41 PM however long the app was away. It takes no photo whose
-  interval would end at or after the end; when the end passes while the series waits for the
-  camera, the wait wakes (`intervalEndSleep`, a one-shot wait only while it waits) and the series
-  ends without another photo. `ManualControlsModel.lastIntervalEnd` says whether the last series
+  series fixes its end when it starts, as a moment of the monotonic clock
+  (`IntervalProgress.deadline`, from `CameraModel.clock`, issue #106). The time keeps running
+  while the series is paused and while the device sleeps, so "1 hour from 8:41 PM" ends at
+  9:41 PM however long the app was away, and a change of the device's time doesn't make it end
+  early or late. The end is shown as a date only when it is shown: `IntervalProgress.endDate(clock:)`
+  and `timeSpan(date:now:)` (for the Live Activity) count it from now's date and the time left.
+  It takes no photo whose interval would end at or after the end; when the end passes while the
+  series waits for the camera, a wait on the clock until the end wakes it (only while it waits)
+  and the series ends without another photo. `ManualControlsModel.lastIntervalEnd` says whether the last series
   finished (its count or its time) or was stopped early; a stop, a failed or unsaved photo and a
   camera that stops end a timed series as they end a counted one. The interval must be shorter
   than the time (`IntervalBlocker.intervalNotShorterThanTime`); the sheet then disables Start, the

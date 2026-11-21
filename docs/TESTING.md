@@ -1233,9 +1233,9 @@ After picker, the hours and minutes, "At most", the check that the interval is s
 time, the idle and running cards, audited at the default and largest text sizes, right to left
 and in night mode). The request logic (counts, lenses, the light, interval shooting,
 requests without a camera screen) is unit tested in `ShortcutTests`; a timed series (its end on
-the wall clock, pausing, ending early, presets and the duration of Start Interval Shooting) in
-`IntervalTimeTests`, with a scripted wall clock (`CameraModel(currentDate:)`) and wait for the
-end (`intervalEndSleep`).
+the monotonic clock, a change of the device's time, pausing, ending early, presets and the
+duration of Start Interval Shooting) in `IntervalTimeTests`, with a `FakeClock` passed as the
+model's `NopeClock`.
 
 ## Launch screen
 
@@ -1651,6 +1651,20 @@ and the time iOS gives to finish saving is enough for a burst's frames.
   stay readable.
 - With Live Activities turned off for nope. in the Settings app, the switch isn't offered.
 - Network capture during these checks shows no traffic (`docs/SECURITY_AUDIT.md`, check 8).
+
+### Clock and interval series on a device (issues #105, #106, #107, #122, #123, #125)
+
+Pending verification. On the release build, on an iPhone, with Settings › Camera › Live Activity
+on. The rules are unit tested with a fake clock (`IntervalTimeTests`, `IntervalScheduleTests`,
+`DriveTests`, `LiveActivityTests`, `NopeClockTests`); these checks confirm them against the
+system's clocks.
+
+- Timed series and the device's clock (#106): start a 10-minute series (Interval, Stop After:
+  Time, 10 s apart) and time it with a stopwatch on another device. After 3 minutes turn off
+  Settings › General › Date & Time › Set Automatically and set the time an hour forward; after
+  5 minutes set it two hours back. Expected: the series still ends 10 minutes after it began, the
+  card's time left follows the stopwatch, and a photo is still taken every 10 seconds. Turn Set
+  Automatically back on afterwards.
 
 ### Shared settings, the Night Mode control and the Lock Screen camera on a device
 

@@ -366,9 +366,10 @@ public struct IntervalSettings: Equatable, Sendable {
         /// The series ends once ``IntervalSettings/count`` photos are taken. The default.
         case numberOfPhotos
 
-        /// The series ends once ``IntervalSettings/duration`` has passed since it started, by the
-        /// clock on the wall: the time keeps running while the series is paused, so a series of
-        /// one hour started at 8:41 PM ends at 9:41 PM (``IntervalProgress/timeSpan``).
+        /// The series ends once ``IntervalSettings/duration`` has passed since it started, on the
+        /// monotonic clock: the time keeps running while the series is paused and while the
+        /// device sleeps, so a series of one hour started at 8:41 PM ends at 9:41 PM, and a change
+        /// of the device's time doesn't make it end early or late (``IntervalProgress/deadline``).
         case time
     }
 
@@ -528,10 +529,16 @@ public struct IntervalProgress: Equatable, Sendable {
     /// (an interruption, heat, or starting again). It continues when both are back.
     public let isPaused: Bool
 
-    /// When a series that stops after a time started and when it ends, or `nil` for a series
-    /// that stops after a number of photos. The end is fixed when the series starts: the time
-    /// keeps running while the series is paused (``IntervalSettings/StopAfter/time``).
-    public let timeSpan: ClosedRange<Date>?
+    /// When a series that stops after a time ends, on the monotonic clock (``NopeClock/now``), or
+    /// `nil` for a series that stops after a number of photos. It is set when the series starts
+    /// and keeps running while the series is paused and while the device sleeps
+    /// (``IntervalSettings/StopAfter/time``); a change of the device's time doesn't move it
+    /// (issue #106). Show it as a date with ``endDate(clock:)``.
+    public let deadline: ContinuousClock.Instant?
+
+    /// How long a series that stops after a time runs, or `nil` for a series that stops after a
+    /// number of photos.
+    public let duration: Duration?
 
     /// Creates a progress value.
     ///
@@ -539,34 +546,66 @@ public struct IntervalProgress: Equatable, Sendable {
     ///   - taken: The photos taken so far.
     ///   - total: The photos in the series, or `nil` for a series that stops after a time.
     ///   - isPaused: Whether the series is paused.
-    ///   - timeSpan: When a series that stops after a time started and ends, or `nil`.
-    public init(taken: Int, total: Int?, isPaused: Bool = false, timeSpan: ClosedRange<Date>? = nil) {
+    ///   - deadline: When a series that stops after a time ends, on the monotonic clock, or `nil`.
+    ///   - duration: How long a series that stops after a time runs, or `nil`.
+    public init(
+        taken: Int, total: Int?, isPaused: Bool = false, deadline: ContinuousClock.Instant? = nil, duration: Duration? = nil
+    ) {
         self.taken = taken
         self.total = total
         self.isPaused = isPaused
-        self.timeSpan = timeSpan
+        self.deadline = deadline
+        self.duration = duration
+    }
+
+    /// Whether the series stops after a time.
+    public var isTimed: Bool {
+        deadline != nil
     }
 
     /// The time left of a series that stops after a time, in seconds, never less than 0, or
     /// `nil` for a series that stops after a number of photos.
     ///
-    /// - Parameter now: The current time.
+    /// - Parameter now: The current moment of the monotonic clock (``NopeClock/now``).
     /// - Returns: The seconds until the end, or `nil`.
-    public func secondsLeft(at now: Date) -> Double? {
-        timeSpan.map { Swift.max($0.upperBound.timeIntervalSince(now), 0) }
+    public func secondsLeft(at now: ContinuousClock.Instant) -> Double? {
+        deadline.map { Swift.max(($0 - now) / .seconds(1), 0) }
     }
 
     /// How much of the series is done, from 0 to 1: by time for a series that stops after a
     /// time, otherwise by the photos taken.
     ///
-    /// - Parameter now: The current time.
+    /// - Parameter now: The current moment of the monotonic clock (``NopeClock/now``).
     /// - Returns: The share done.
-    public func fractionDone(at now: Date) -> Double {
-        if let timeSpan {
-            let length = timeSpan.upperBound.timeIntervalSince(timeSpan.lowerBound)
-            return (now.timeIntervalSince(timeSpan.lowerBound) / Swift.max(length, 1)).limited(to: 0...1)
+    public func fractionDone(at now: ContinuousClock.Instant) -> Double {
+        if let deadline, let duration {
+            let elapsed = duration - (deadline - now)
+            return (elapsed / Swift.max(duration, .seconds(1))).limited(to: 0...1)
         }
         return (Double(taken) / Double(Swift.max(total ?? 1, 1))).limited(to: 0...1)
+    }
+
+    /// When a series that stops after a time ends, as a date on the wall clock for showing it
+    /// ("Ends at 9:41 PM") and for the Live Activity: now's date plus the time left, worked out
+    /// at each call, so it follows a change of the device's time without moving the end.
+    ///
+    /// - Parameter clock: The camera model's clock (``CameraModel/clock``).
+    /// - Returns: The end's date, or `nil` for a series that stops after a number of photos.
+    public func endDate(clock: NopeClock) -> Date? {
+        deadline.map { clock.date(of: $0) }
+    }
+
+    /// When a series that stops after a time started and ends, as dates on the wall clock, worked
+    /// out from now's date: the Live Activity draws its time left and bar from them.
+    ///
+    /// - Parameters:
+    ///   - date: The wall clock's date now.
+    ///   - now: The monotonic clock's moment now.
+    /// - Returns: The span, or `nil` for a series that stops after a number of photos.
+    public func timeSpan(date: Date, now: ContinuousClock.Instant) -> ClosedRange<Date>? {
+        guard let deadline, let duration else { return nil }
+        let end = date.addingTimeInterval((deadline - now) / .seconds(1))
+        return end.addingTimeInterval(-(duration / .seconds(1)))...end
     }
 
     /// This progress, marked as paused or running.
@@ -574,7 +613,7 @@ public struct IntervalProgress: Equatable, Sendable {
     /// - Parameter isPaused: Whether the series is paused.
     /// - Returns: The progress.
     func with(isPaused: Bool) -> IntervalProgress {
-        IntervalProgress(taken: taken, total: total, isPaused: isPaused, timeSpan: timeSpan)
+        IntervalProgress(taken: taken, total: total, isPaused: isPaused, deadline: deadline, duration: duration)
     }
 
     /// This progress with another count of photos taken, running.
@@ -582,7 +621,7 @@ public struct IntervalProgress: Equatable, Sendable {
     /// - Parameter taken: The photos taken so far.
     /// - Returns: The progress.
     func with(taken: Int) -> IntervalProgress {
-        IntervalProgress(taken: taken, total: total, timeSpan: timeSpan)
+        IntervalProgress(taken: taken, total: total, deadline: deadline, duration: duration)
     }
 }
 

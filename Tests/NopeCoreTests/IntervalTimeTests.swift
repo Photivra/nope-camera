@@ -89,21 +89,46 @@ struct IntervalTimeTests {
     }
 
     @Test func progressMeasuresTimeLeftAndShareDone() {
-        let start = Self.start
-        let timed = IntervalProgress(taken: 3, total: nil, timeSpan: start...start.addingTimeInterval(600))
-        #expect(timed.secondsLeft(at: start.addingTimeInterval(150)) == 450)
-        #expect(timed.secondsLeft(at: start.addingTimeInterval(900)) == 0)
-        #expect(timed.fractionDone(at: start.addingTimeInterval(150)) == 0.25)
-        #expect(timed.fractionDone(at: start.addingTimeInterval(-10)) == 0)
-        #expect(timed.fractionDone(at: start.addingTimeInterval(900)) == 1)
-        #expect(timed.with(isPaused: true) == IntervalProgress(taken: 3, total: nil, isPaused: true, timeSpan: timed.timeSpan))
-        #expect(timed.with(isPaused: true).with(taken: 4) == IntervalProgress(taken: 4, total: nil, timeSpan: timed.timeSpan))
+        let start = ContinuousClock.now
+        let timed = IntervalProgress(taken: 3, total: nil, deadline: start + .seconds(600), duration: .seconds(600))
+        #expect(timed.isTimed)
+        #expect(timed.secondsLeft(at: start + .seconds(150)) == 450)
+        #expect(timed.secondsLeft(at: start + .seconds(900)) == 0)
+        #expect(timed.fractionDone(at: start + .seconds(150)) == 0.25)
+        #expect(timed.fractionDone(at: start - .seconds(10)) == 0)
+        #expect(timed.fractionDone(at: start + .seconds(900)) == 1)
+        #expect(
+            timed.with(isPaused: true)
+                == IntervalProgress(taken: 3, total: nil, isPaused: true, deadline: timed.deadline, duration: timed.duration))
+        #expect(
+            timed.with(isPaused: true).with(taken: 4)
+                == IntervalProgress(taken: 4, total: nil, deadline: timed.deadline, duration: timed.duration))
 
         let counted = IntervalProgress(taken: 3, total: 10)
+        #expect(!counted.isTimed)
         #expect(counted.secondsLeft(at: start) == nil)
-        #expect(counted.timeSpan == nil)
+        #expect(counted.deadline == nil)
+        #expect(counted.endDate(clock: .system) == nil)
+        #expect(counted.timeSpan(date: Self.start, now: start) == nil)
         #expect(counted.fractionDone(at: start) == 0.3)
         #expect(IntervalProgress(taken: 0, total: nil).fractionDone(at: start) == 0)
+    }
+
+    @Test func theEndIsShownAsADateOfTheWallClockNow() {
+        let clock = FakeClock(date: Self.start)
+        let timed = IntervalProgress(taken: 1, total: nil, deadline: clock.now + .seconds(600), duration: .seconds(600))
+        #expect(timed.endDate(clock: clock.clock) == Self.start.addingTimeInterval(600))
+        #expect(timed.timeSpan(date: clock.date, now: clock.now) == Self.start...Self.start.addingTimeInterval(600))
+        clock.advance(by: 60)
+        clock.moveDate(by: -3600)
+        // The device's clock was set back an hour: the end is shown an hour earlier, nine minutes
+        // from now, and the time left is the same.
+        #expect(timed.endDate(clock: clock.clock) == Self.start.addingTimeInterval(600 - 3600))
+        #expect(
+            timed.timeSpan(date: clock.date, now: clock.now)
+                == Self.start.addingTimeInterval(-3600)...Self.start.addingTimeInterval(600 - 3600))
+        #expect(timed.secondsLeft(at: clock.now) == 540)
+        #expect(timed.fractionDone(at: clock.now) == 0.1)
     }
 
     // MARK: - Running to the time
@@ -113,7 +138,8 @@ struct IntervalTimeTests {
         let (model, backend, events) = await makeModel(clock: clock)
         await startTimedSeries(model, duration: 150)
         let span = Self.start...Self.start.addingTimeInterval(150)
-        #expect(model.manual.intervalProgress?.timeSpan == span)
+        #expect(model.manual.intervalProgress?.deadline == clock.start + .seconds(150))
+        #expect(model.manual.intervalProgress?.duration == .seconds(150))
         #expect(model.manual.intervalProgress?.total == nil)
         await waitUntil { model.manual.intervalProgress?.taken == 1 }
         #expect(model.manual.lastIntervalEnd == nil)
@@ -123,7 +149,7 @@ struct IntervalTimeTests {
 
         await pass(60, on: clock)
         await waitUntil { model.manual.intervalProgress?.taken == 2 }
-        #expect(model.manual.intervalProgress?.secondsLeft(at: clock.date) == 90)
+        #expect(model.manual.intervalProgress?.secondsLeft(at: clock.now) == 90)
         await pass(60, on: clock)
         // The third photo at 2 minutes is the last: another minute would reach 2.5 minutes.
         await waitUntil { model.manual.intervalProgress == nil }
@@ -155,6 +181,33 @@ struct IntervalTimeTests {
         await waitUntil { model.manual.intervalProgress == nil }
         #expect(await backend.captures == 1)
         #expect(model.manual.lastIntervalEnd == .finished)
+        await finish(backend, events)
+    }
+
+    // MARK: - The device's time changes (issue #106)
+
+    @Test func changingTheDevicesTimeDoesNotMoveTheEnd() async {
+        let clock = FakeClock(date: Self.start)
+        let (model, backend, events) = await makeModel(clock: clock)
+        await startTimedSeries(model, duration: 600)
+        await waitUntil { model.manual.intervalProgress?.taken == 1 }
+        // An hour forward, then two hours back: the series still takes a photo each minute and
+        // ends ten minutes after it began.
+        await waitForSleeps(clock)
+        clock.moveDate(by: 3600)
+        await pass(60, on: clock)
+        await waitUntil { model.manual.intervalProgress?.taken == 2 }
+        #expect(model.manual.intervalProgress != nil, "an hour forward doesn't end it")
+        await waitForSleeps(clock)
+        clock.moveDate(by: -7200)
+        for photo in 3...10 {
+            await pass(60, on: clock)
+            await waitUntil { model.manual.intervalProgress?.taken == photo || model.manual.intervalProgress == nil }
+        }
+        await waitUntil { model.manual.intervalProgress == nil }
+        #expect(await backend.captures == 10)
+        #expect(model.manual.lastIntervalEnd == .finished)
+        #expect(clock.seconds(at: clock.now) == 540, "the last photo was at nine minutes")
         await finish(backend, events)
     }
 
@@ -207,7 +260,7 @@ struct IntervalTimeTests {
 
     // MARK: - Pausing: the time keeps running
 
-    @Test func aPauseKeepsTheEndOnTheWallClock() async {
+    @Test func aPauseKeepsTheEnd() async {
         let clock = FakeClock(date: Self.start)
         let (model, backend, events) = await makeModel(clock: clock)
         await startTimedSeries(model, duration: 600)
@@ -225,8 +278,8 @@ struct IntervalTimeTests {
         await model.send(.setInForeground(true))
         await waitUntil { model.manual.intervalProgress?.taken == 2 }
         #expect(model.manual.intervalProgress?.isPaused == false)
-        #expect(model.manual.intervalProgress?.timeSpan == Self.start...Self.start.addingTimeInterval(600))
-        #expect(model.manual.intervalProgress?.secondsLeft(at: clock.date) == 240)
+        #expect(model.manual.intervalProgress?.deadline == clock.start + .seconds(600))
+        #expect(model.manual.intervalProgress?.secondsLeft(at: clock.now) == 240)
         await model.send(.manual(.stopInterval))
         #expect(await backend.captures == 2)
         await finish(backend, events)
@@ -276,6 +329,41 @@ struct IntervalTimeTests {
     }
 
     @Test func anEarlyWakeBeforeTheTimeKeepsWaiting() async {
+        let fake = FakeClock(date: Self.start)
+        let wakes = WaitCounter()
+        // The first wait for the end returns at once, as a wait can end early; the others wait.
+        var clock = fake.clock
+        clock.sleep = { deadline in
+            await wakes.add()
+            if await wakes.count == 2 { return }
+            try await fake.sleep(until: deadline)
+        }
+        let backend = PausingBackend(ScriptedManualBackend(lenses: [ManualFixtures.wide]))
+        let model = CameraModel(
+            backend: backend, saver: CameraModelTests.saver(), clock: clock, deviceStatusReader: FakeStatusReader(bytes: nil))
+        model.pauseAfterErrorSleep = {}
+        await model.send(.start)
+        let events = Task { await model.observeEvents() }
+        await startTimedSeries(model, duration: 600)
+        await waitUntil { model.manual.intervalProgress?.taken == 1 }
+        await waitForSleeps(fake)
+        backend.inner.emitEvent(.interrupted(.inUseElsewhere))
+        await waitUntil { model.sessionStatus == .interrupted(.inUseElsewhere) }
+        fake.advance(by: 60)
+        await waitUntil { model.manual.intervalProgress?.isPaused == true }
+        await eventually { await wakes.count == 3 }
+        await waitForSleeps(fake)
+        #expect(fake.requestedWakes.map { fake.seconds(at: $0) } == [60, 600], "it waits for the end again")
+        #expect(model.manual.intervalProgress?.isPaused == true)
+        #expect(await backend.captures == 1)
+
+        backend.inner.emitEvent(.interruptionEnded)
+        await waitUntil { model.manual.intervalProgress?.taken == 2 }
+        await model.send(.manual(.stopInterval))
+        await finish(backend, events)
+    }
+
+    @Test func settingTheDevicesTimeWhilePausedKeepsOneWaitForTheEnd() async {
         let clock = FakeClock(date: Self.start)
         let (model, backend, events) = await makeModel(clock: clock)
         await startTimedSeries(model, duration: 600)
@@ -286,17 +374,14 @@ struct IntervalTimeTests {
         clock.advance(by: 60)
         await waitUntil { model.manual.intervalProgress?.isPaused == true }
         await waitForSleeps(clock)
-        // The device's clock is set back five minutes: the wake comes before the end on the wall.
         clock.moveDate(by: -300)
-        clock.advance(by: 540)
-        await waitForSleeps(clock)
-        #expect(clock.requestedWakes.count == 3, "a second wait for the end")
-        #expect(model.manual.intervalProgress?.isPaused == true)
+        clock.advance(by: 539)
+        #expect(model.manual.intervalProgress?.secondsLeft(at: clock.now) == 1)
+        clock.advance(by: 1)
+        await waitUntil { model.manual.intervalProgress == nil }
+        #expect(clock.requestedWakes.map { clock.seconds(at: $0) } == [60, 600])
+        #expect(model.manual.lastIntervalEnd == .finished)
         #expect(await backend.captures == 1)
-
-        backend.inner.emitEvent(.interruptionEnded)
-        await waitUntil { model.manual.intervalProgress?.taken == 2 }
-        await model.send(.manual(.stopInterval))
         await finish(backend, events)
     }
 
@@ -392,7 +477,7 @@ struct IntervalTimeTests {
         let started = await shortcuts.run(.startInterval(IntervalShortcut(intervalSeconds: 5, durationSeconds: 1800)), on: model)
         #expect(started == .intervalStarted)
         #expect(model.manual.interval == IntervalSettings(interval: 5, count: 10, stopAfter: .time, duration: 1800))
-        #expect(model.manual.intervalProgress?.timeSpan != nil)
+        #expect(model.manual.intervalProgress?.isTimed == true)
         await waitUntil { model.manual.intervalProgress?.taken == 1 }
         #expect(await backend.captureCount == 1)
         #expect(await shortcuts.run(.stopInterval, on: model) == .intervalStopped)

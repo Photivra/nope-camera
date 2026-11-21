@@ -22,7 +22,8 @@ extension CameraModel {
     /// - Parameters:
     ///   - kind: The kind of the activity already shown, or `nil`.
     ///   - isInForeground: Whether the app is in the foreground.
-    ///   - now: The current time, to say when a countdown ends.
+    ///   - now: The wall clock's date now, which the dates of a countdown's end and a timed
+    ///     series' time are counted from; the time left is measured on ``clock``.
     /// - Returns: The content, without night mode (the coordinator adds it).
     public func liveActivityContent(
         continuing kind: LiveActivityContent.Kind?, isInForeground: Bool, now: Date
@@ -30,7 +31,7 @@ extension CameraModel {
         if let progress = manual.intervalProgress {
             return LiveActivityContent(
                 kind: .interval, phase: isInForeground && !progress.isPaused ? .running : .paused, taken: progress.taken,
-                total: progress.total, seriesTime: progress.timeSpan)
+                total: progress.total, seriesTime: progress.timeSpan(date: now, now: clock.now()))
         }
         if let progress = astro.progress {
             return LiveActivityContent(
