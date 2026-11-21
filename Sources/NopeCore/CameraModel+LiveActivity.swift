@@ -47,12 +47,13 @@ extension CameraModel {
             return LiveActivityContent(
                 kind: .burst, phase: isInForeground ? .running : .saving, taken: progress.taken, saved: progress.saved)
         }
-        if let remaining = drive.countdown.remainingSeconds {
+        if let deadline = drive.countdown.deadline {
             // A focus bracket's start delay is the bracket's own, so its Stop is offered then too.
             let kind: LiveActivityContent.Kind = astro.isOn ? .astro : bracketing.isFocusOn ? .focusBracket : .timer
             let total = kind == .astro ? astro.frameCount : kind == .focusBracket ? bracketing.focus.frameCount : nil
             return LiveActivityContent(
-                kind: kind, phase: .countingDown, total: total, countdownEnd: now.addingTimeInterval(Double(remaining)))
+                kind: kind, phase: .countingDown, total: total,
+                countdownEnd: now.addingTimeInterval((deadline - clock.now()) / .seconds(1)))
         }
         if kind == .timer, captureStatus == .capturing || captureStatus == .saving {
             return LiveActivityContent(kind: .timer, phase: captureStatus == .capturing ? .running : .saving, taken: 1)

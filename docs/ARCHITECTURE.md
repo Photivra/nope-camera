@@ -306,7 +306,10 @@ outside burst mode, assistive activation, the Space bar); `CameraModel` applies 
 Single takes one photo; a timer mode starts `drive.countdown` (`Countdown`, 3 or 10 seconds),
 which takes one photo at zero; burst takes one photo (a burst of one). While a countdown or burst
 runs, the same intent stops it (`canPressShutter`). `.drive(.startTimer(seconds:))` starts a
-countdown of any length, for Siri and Shortcuts (issue #62).
+countdown of any length, for Siri and Shortcuts (issue #62). A countdown counts to a fixed
+deadline on `CameraModel.clock` (`Countdown.deadline`, issue #122): it shows the whole seconds left,
+rounded up, waits until the next whole second before the deadline, and fires when it is reached,
+so a late wake skips a number rather than making the photo late.
 
 Shutters that report how they move send `ShutterPhase` values: the app maps the hardware
 buttons' capture event phases to `.drive(.hardwareButton(_:))`, and the interface sends the

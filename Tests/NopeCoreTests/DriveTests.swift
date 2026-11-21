@@ -237,6 +237,83 @@ struct DriveTests {
         countdown.cancel()
     }
 
+    // MARK: - Countdown to a fixed deadline (issue #122)
+
+    @Test func aCountdownWhoseTicksWakeLateStillFiresAtItsDeadline() async {
+        let clock = FakeClock()
+        clock.lateness = .milliseconds(300)
+        let countdown = Countdown(clock: clock.clock)
+        var firedAt: Double?
+        var shown: [Int] = []
+        countdown.start(seconds: 10) { firedAt = clock.seconds(at: clock.now) }
+        shown.append(countdown.remainingSeconds ?? 0)
+        while firedAt == nil {
+            await waitUntil { clock.pendingSleeps > 0 || firedAt != nil }
+            guard firedAt == nil else { break }
+            clock.advanceToNextWake()
+            await waitUntil { clock.pendingSleeps > 0 || firedAt != nil }
+            if let remaining = countdown.remainingSeconds { shown.append(remaining) }
+        }
+        // Each wait is for the next whole second before the deadline, not a second after the
+        // last wake: the delays don't add up.
+        #expect(clock.requestedWakes.map { clock.seconds(at: $0) } == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        #expect(firedAt == 10.3, "late only by the last wake, not by ten of them")
+        #expect(shown == [10, 9, 8, 7, 6, 5, 4, 3, 2, 1])
+        #expect(!countdown.isRunning)
+        #expect(countdown.deadline == nil)
+    }
+
+    @Test func aWakeMoreThanASecondLateSkipsANumberAndKeepsTheDeadline() async {
+        let clock = FakeClock()
+        let countdown = Countdown(clock: clock.clock)
+        var firedAt: Double?
+        countdown.start(seconds: 5) { firedAt = clock.seconds(at: clock.now) }
+        #expect(countdown.deadline.map { clock.seconds(at: $0) } == 5)
+        await waitForSleeps(clock)
+        clock.advance(by: 2.5)
+        await waitUntil { countdown.remainingSeconds == 3 }
+        #expect(countdown.remainingSeconds == 3, "4 is skipped")
+        await waitForSleeps(clock)
+        #expect(clock.requestedWakes.map { clock.seconds(at: $0) } == [1, 3])
+        clock.advance(by: 2.5)
+        await waitUntil { firedAt != nil }
+        #expect(firedAt == 5, "on time")
+        #expect(clock.requestedWakes.map { clock.seconds(at: $0) } == [1, 3])
+    }
+
+    @Test func cancellingDuringALateTickDoesNotFire() async {
+        let clock = FakeClock()
+        clock.lateness = .milliseconds(300)
+        let countdown = Countdown(clock: clock.clock)
+        var fired = false
+        countdown.start(seconds: 3) { fired = true }
+        await waitForSleeps(clock)
+        clock.advance(by: 1.1)
+        countdown.cancel()
+        #expect(countdown.deadline == nil)
+        #expect(clock.pendingSleeps == 0, "the wait ends when it is cancelled")
+        clock.advance(by: 5)
+        await settle()
+        #expect(!fired)
+        #expect(countdown.remainingSeconds == nil)
+    }
+
+    @Test func aCountdownEndsWhereTheLiveActivityDrawsIt() async {
+        let clock = FakeClock(date: Date(timeIntervalSince1970: 1000))
+        let model = CameraModel(
+            backend: ScriptedBackend(capabilities: CameraModelTests.oneLens), saver: CameraModelTests.saver(),
+            clock: clock.clock)
+        await model.send(.start)
+        await model.send(.drive(.startTimer(seconds: 10)))
+        await waitForSleeps(clock)
+        clock.advance(by: 1.4)
+        await waitUntil { model.drive.countdown.remainingSeconds == 9 }
+        // The end is the deadline's date, not now plus the whole seconds shown.
+        let content = model.liveActivityContent(continuing: nil, isInForeground: true, now: clock.date)
+        #expect(content?.countdownEnd == Date(timeIntervalSince1970: 1010))
+        await model.send(.drive(.cancelTimer))
+    }
+
     @Test func zeroSecondsDoesNothing() {
         let countdown = Countdown(sleep: { _ in })
         countdown.start(seconds: 0) {}

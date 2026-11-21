@@ -1678,6 +1678,10 @@ system's clocks.
   than the interval" instead of the countdown, VoiceOver announces it once, and no photo is taken
   twice (ten photos, each starting as the one before is saved). Check the line in Night Mode (red
   only), at the largest text size and right to left.
+- Self-timer (#122): start a 10 s timer and a stopwatch together, five times, once with Low
+  Power Mode on. Record each time to the shutter sound (or the haptic) and the numbers shown.
+  Expected: about 10 s each time, with no drift from one run to the next; a number may be
+  skipped only if the phone was held up for more than a second.
 
 ### Shared settings, the Night Mode control and the Lock Screen camera on a device
 
