@@ -267,15 +267,23 @@ struct PhotoDetailsSections: View {
     /// - Parameter processing: The processing.
     /// - Returns: The text, from `Honesty.xcstrings`.
     static func processing(_ processing: PhotoDetails.Processing) -> Text {
+        Text(verbatim: processingText(processing))
+    }
+
+    /// What processing a file went through, in plain words, as a string for the summary's rows.
+    ///
+    /// - Parameter processing: The processing.
+    /// - Returns: The words, from `Honesty.xcstrings`.
+    static func processingText(_ processing: PhotoDetails.Processing) -> String {
         switch processing {
         case .none:
-            Text("The RAW sensor data as the camera delivered it. nope. didn't develop it.", tableName: "Honesty", bundle: .module, comment: "In the photo details, the processing of the RAW (DNG) file: nope. didn't develop or change it. Must not claim more than the English: it doesn't say the phone did nothing. Keep nope. unchanged.")
+            String(localized: "The RAW sensor data as the camera delivered it. nope. didn't develop it.", table: "Honesty", bundle: .module, comment: "In the photo details, the processing of the RAW (DNG) file: nope. didn't develop or change it. Must not claim more than the English: it doesn't say the phone did nothing. Keep nope. unchanged.")
         case .developed(.standard):
-            Text("Developed by nope. from the RAW, Standard look", tableName: "Honesty", bundle: .module, comment: "In the photo details, the processing of a HEIF or JPEG file: nope. developed it from the RAW with the Standard look (one overall tone curve). Keep nope. unchanged.")
+            String(localized: "Developed by nope. from the RAW, Standard look", table: "Honesty", bundle: .module, comment: "In the photo details, the processing of a HEIF or JPEG file: nope. developed it from the RAW with the Standard look (one overall tone curve). Keep nope. unchanged.")
         case .developed(.flat):
-            Text("Developed by nope. from the RAW, Flat look", tableName: "Honesty", bundle: .module, comment: "In the photo details, the processing of a HEIF or JPEG file: nope. developed it from the RAW with the Flat look (no contrast curve). Keep nope. unchanged.")
+            String(localized: "Developed by nope. from the RAW, Flat look", table: "Honesty", bundle: .module, comment: "In the photo details, the processing of a HEIF or JPEG file: nope. developed it from the RAW with the Flat look (no contrast curve). Keep nope. unchanged.")
         case .byDevice:
-            Text("Processed by the phone's camera: this lens can't save RAW", tableName: "Honesty", bundle: .module, comment: "In the photo details, the processing of the fallback file of a lens without RAW: the phone's camera processed it.")
+            String(localized: "Processed by the phone's camera: this lens can't save RAW", table: "Honesty", bundle: .module, comment: "In the photo details, the processing of the fallback file of a lens without RAW: the phone's camera processed it.")
         }
     }
 

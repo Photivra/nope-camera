@@ -1,10 +1,20 @@
 import NopeCore
 import SwiftUI
 
-/// The summary at the top of What's in This Photo (`docs/design/BUILD-SPEC.md`, 3.15, group 0):
-/// the formats, the lens, the pixel size and total size, then four lines with symbols: what kind
-/// of photo it is, the signature, how many optional details the files hold, and whether they hold
-/// a location. One section with one row, read by VoiceOver as one element.
+/// The summary at the top of What's in This Photo (`docs/design/BUILD-SPEC.md`, 3.15, group 0;
+/// issue #118, `docs/design/finish-1.0.md`, section 3): one group built like the groups under it.
+///
+/// - The head: the formats as the title, then the lens and time, then the pixel size and total
+///   size, all on the leading edge. One VoiceOver element, with the identifier
+///   `PhotoDetails.summary`.
+/// - One row for each fact, always in this order: what kind of file it is, the signature, the
+///   optional details, the location (``rows(of:)``). Each symbol is centered in a column of one
+///   width that grows with the text size, so the words of every row start on the same line. Each
+///   row is one VoiceOver element, read once and in order; a warning row begins with "Warning".
+///
+/// Color: amber with the triangle for a warning, teal for the one verified fact (signed), the
+/// secondary color for the rest. A warning is always told by its triangle and its words too, so
+/// night mode's red loses nothing.
 struct PhotoSummaryCard: View {
     /// The photo.
     let photo: SavedPhoto
@@ -18,6 +28,11 @@ struct PhotoSummaryCard: View {
     /// When the shutter took it, from the session's photo list (`SessionPhoto.takenAt`), or
     /// `nil` when the session has no record of it.
     let takenAt: Date?
+
+    /// The width of the symbol column: 28 points at the default text size, a little wider than
+    /// the widest symbol used (the triangle and the bullet list at body size), growing with the
+    /// text.
+    @ScaledMetric(relativeTo: .body) private var symbolColumn: CGFloat = 28
 
     /// Creates the card.
     ///
@@ -33,68 +48,41 @@ struct PhotoSummaryCard: View {
         self.takenAt = takenAt
     }
 
-    /// The card.
+    /// The group: the head, then a row for each fact.
     var body: some View {
         Section {
-            VStack(alignment: .leading, spacing: NopeSpace.xs) {
-                ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .firstTextBaseline) {
-                        formats
-                        Spacer(minLength: NopeSpace.xs)
-                        caption
-                    }
-                    VStack(alignment: .leading, spacing: NopeSpace.xxs) {
-                        formats
-                        caption
-                    }
-                }
-                if let size = sizeLine {
-                    size
-                        .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(CameraStyle.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                kindLine
-                line(
-                    Text(verbatim: CaptureMessages.message(for: details.signature)),
-                    symbol: PhotoDetailsSections.signatureSymbol(details.signature),
-                    style: PhotoDetailsSections.signatureStyle(details.signature))
-                line(Self.detailsCount(details.optionalDetailCount), symbol: "list.bullet", style: AnyShapeStyle(CameraStyle.secondaryText))
-                if details.holdsLocation {
-                    line(
-                        Text("Location is in the files", tableName: "Honesty", bundle: .module, comment: "Summary line in the photo details: the saved files hold the location where the photo was taken (GPS). Shown with a warning symbol. Draft wording for the Honesty review."),
-                        symbol: "exclamationmark.triangle.fill", style: AnyShapeStyle(CameraStyle.warning))
-                } else {
-                    line(
-                        Text("No location in the files", tableName: "Honesty", bundle: .module, comment: "Summary line in the photo details: the saved files hold no location. Draft wording for the Honesty review."),
-                        symbol: "location.slash", style: AnyShapeStyle(CameraStyle.secondaryText))
-                }
+            head
+            ForEach(Self.rows(of: details)) { row in
+                RowView(row: row, symbolColumn: symbolColumn)
             }
-            .accessibilityElement(children: .combine)
-            .accessibilityIdentifier("PhotoDetails.summary")
         }
     }
 
-    /// The formats, as a list such as "RAW (DNG) and HEIF".
-    private var formats: some View {
-        Text(verbatim: photo.formats.map(FormatsSettingsView.name(of:)).formatted(.list(type: .and)))
-            .font(.title3.weight(.semibold))
-            .fixedSize(horizontal: false, vertical: true)
-    }
+    // MARK: - The head
 
-    /// The lens and the time, such as "1× · 2:41 PM", as the Last Photo viewer's caption shows
-    /// them (`docs/design/BUILD-SPEC.md`, 3.15, group 0, and section 6, item 15; decision P3):
-    /// from the session's photo list, even when the files hold neither. Each part is left out
-    /// when it isn't known, and the caption with both.
-    @ViewBuilder private var caption: some View {
-        if let text = Self.caption(lens: lens, takenAt: takenAt) {
-            Text(verbatim: text)
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(CameraStyle.secondaryText)
+    /// The formats, the lens and time, and the sizes, on the leading edge.
+    private var head: some View {
+        VStack(alignment: .leading, spacing: NopeSpace.xxs) {
+            Text(verbatim: photo.formats.map(FormatsSettingsView.name(of:)).formatted(.list(type: .and)))
+                .font(.title3.weight(.semibold))
+            Group {
+                if let caption = Self.caption(lens: lens, takenAt: takenAt) {
+                    Text(verbatim: caption)
+                }
+                sizeLine
+            }
+            .font(.subheadline.monospacedDigit())
+            .foregroundStyle(CameraStyle.secondaryText)
         }
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("PhotoDetails.summary")
     }
 
-    /// The caption's words: the lens and the time, joined as the viewer's caption joins them.
+    /// The caption's words: the lens and the time, such as "1× · 2:41 PM", joined as the
+    /// viewer's caption joins them (`docs/design/BUILD-SPEC.md`, 3.15, group 0, and section 6,
+    /// item 15; decision P3): from the session's photo list, even when the files hold neither.
     ///
     /// - Parameters:
     ///   - lens: The lens, or `nil`.
@@ -106,7 +94,7 @@ struct PhotoSummaryCard: View {
     }
 
     /// The pixel size and the total size of the files, such as "4032 × 3024 pixels · 26.9 MB".
-    private var sizeLine: Text? {
+    private var sizeLine: Text {
         let total = details.files.reduce(0) { $0 + $1.byteCount }.formatted(.byteCount(style: .file))
         guard let pixels = details.files.lazy.compactMap(PhotoDetailsText.pixels(of:)).first else {
             return Text(verbatim: total)
@@ -116,24 +104,144 @@ struct PhotoSummaryCard: View {
             comment: "Summary in the photo details: the photo's size in pixels, then the total size of its files, such as 4032 × 3024 pixels · 26.9 MB. Keep the separator.")
     }
 
-    /// What kind of photo it is: a processed fallback (with the warning symbol), or the RAW and
-    /// the copies developed from it.
-    @ViewBuilder private var kindLine: some View {
-        if details.files.contains(where: { $0.processing == .byDevice }) {
-            line(PhotoDetailsSections.processing(.byDevice), symbol: "exclamationmark.triangle.fill", style: AnyShapeStyle(CameraStyle.warning))
-        } else {
-            line(Self.kind(of: details), symbol: "camera", style: AnyShapeStyle(CameraStyle.secondaryText))
+    // MARK: - The rows
+
+    /// One fact of the summary: its symbol and color, its words and, for some, a second line
+    /// that says why.
+    struct Row: Identifiable, Equatable {
+        /// Which fact; also the row's order.
+        enum Fact: String, Equatable {
+            /// What kind of file it is.
+            case kind
+            /// The signature.
+            case signature
+            /// How many optional details the files hold.
+            case details
+            /// Whether the files hold the location.
+            case location
+        }
+
+        /// The symbol's color.
+        enum Tone: Equatable {
+            /// The secondary color: plain information.
+            case plain
+            /// Teal: the one verified fact, signed.
+            case fact
+            /// Amber, with the triangle: a warning.
+            case warning
+        }
+
+        /// Which fact.
+        let id: Fact
+        /// The SF Symbol name, hidden from VoiceOver.
+        let symbol: String
+        /// The symbol's color.
+        let tone: Tone
+        /// The words.
+        let title: String
+        /// The second line in the secondary style, or `nil`.
+        let detail: String?
+
+        /// What VoiceOver reads for the row: the words and the second line, with "Warning"
+        /// first for a warning.
+        var spokenLabel: String {
+            let words = detail.map { detail in
+                String(
+                    format: String(
+                        localized: "Summary row: %@, %@", defaultValue: "%1$@, %2$@", bundle: .module,
+                        comment: "VoiceOver label of a row in the summary of What's in This Photo that has a second line: the row's words, then the second line, such as Not signed, Signing is off in Settings. Keep both placeholders."),
+                    title, detail)
+            } ?? title
+            guard tone == .warning else { return words }
+            return String(
+                localized: "Warning, \(words)", bundle: .module,
+                comment: "VoiceOver label of a warning row in the summary of What's in This Photo: the word Warning, then the row's words, such as Warning, Location is in the files.")
         }
     }
 
-    /// A line with its symbol, which is hidden from VoiceOver: the words carry the state.
+    /// The summary's rows, always in this order: what kind of file, the signature, the optional
+    /// details, the location (`docs/design/finish-1.0.md`, 3.2).
     ///
-    /// - Parameters:
-    ///   - text: The words.
-    ///   - symbol: The SF Symbol name.
-    ///   - style: The symbol's color.
-    private func line(_ text: Text, symbol: String, style: AnyShapeStyle) -> some View {
-        SymbolLine(text: text, symbol: symbol, style: style)
+    /// - Parameter details: The photo's details.
+    /// - Returns: The four rows.
+    static func rows(of details: PhotoDetails) -> [Row] {
+        [kindRow(of: details), signatureRow(details.signature), detailsRow(details.optionalDetailCount), locationRow(details.holdsLocation)]
+    }
+
+    /// What kind of file it is: processed by the device (a warning, with the reason), or the
+    /// RAW and the copies developed from it.
+    ///
+    /// - Parameter details: The details.
+    /// - Returns: The row.
+    static func kindRow(of details: PhotoDetails) -> Row {
+        guard details.files.contains(where: { $0.processing == .byDevice }) else {
+            return Row(id: .kind, symbol: "camera", tone: .plain, title: kind(of: details), detail: nil)
+        }
+        return Row(
+            id: .kind, symbol: "exclamationmark.triangle.fill", tone: .warning,
+            title: String(localized: "Processed by this iPhone", table: "Honesty", bundle: .module, comment: "Summary row in the photo details: the phone's camera processed this photo, because the lens can't save RAW. Shown with a warning symbol. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft wording for the Honesty review."),
+            detail: String(localized: "This lens can't save RAW", table: "Honesty", bundle: .module, comment: "Second line of the summary row Processed by this iPhone in the photo details: why the photo was processed. RAW is a file format name. Draft wording for the Honesty review."))
+    }
+
+    /// The signature: Signed; or Not signed with the reason, a warning unless signing is off by
+    /// the person's choice (`docs/design/BUILD-SPEC.md`, 3.9).
+    ///
+    /// - Parameter signature: The photo's signature status.
+    /// - Returns: The row.
+    static func signatureRow(_ signature: SignatureStatus) -> Row {
+        let symbol = PhotoDetailsSections.signatureSymbol(signature)
+        let notSigned = String(
+            localized: "Summary row: Not signed", defaultValue: "Not signed", table: "Honesty", bundle: .module,
+            comment: "Summary row in the photo details: the photo has no Content Credentials signature. A second line says why. Honesty wording: never imply the photo is signed. Draft wording for the Honesty review.")
+        let reason: String
+        switch signature {
+        case .signed:
+            return Row(
+                id: .signature, symbol: symbol, tone: .fact,
+                title: String(
+                    localized: "Summary row: Signed", defaultValue: "Signed", table: "Honesty", bundle: .module,
+                    comment: "Summary row in the photo details, with a seal: every file of the photo has a Content Credentials signature. Draft wording for the Honesty review."),
+                detail: nil)
+        case .unsigned(.turnedOff):
+            return Row(
+                id: .signature, symbol: symbol, tone: .plain, title: notSigned,
+                detail: String(localized: "Signing is off in Settings", table: "Honesty", bundle: .module, comment: "Second line of the summary row Not signed in the photo details: the person turned the Sign Each Photo setting off. Not a warning. Draft wording for the Honesty review."))
+        case .unsigned(.failed):
+            reason = String(localized: "The signature couldn't be made", table: "Honesty", bundle: .module, comment: "Second line of the summary row Not signed in the photo details: signing was on, but creating the Content Credentials signature failed, so the photo was saved without one. Shown as a warning. Draft wording for the Honesty review.")
+        case .unsigned(.unavailable):
+            reason = String(localized: "This version of the app can't sign photos", table: "Honesty", bundle: .module, comment: "Second line of the summary row Not signed in the photo details: signing was on, but this build of the app has no signer. Shown as a warning. Draft wording for the Honesty review.")
+        case .unsigned(.signedFileFailedCheck):
+            reason = String(localized: "The signed file didn't pass the check", table: "Honesty", bundle: .module, comment: "Second line of the summary row Not signed in the photo details: a signed file failed the app's read-back check, so the unsigned file, which passed, was saved instead. Shown as a warning. Draft wording for the Honesty review.")
+        }
+        return Row(id: .signature, symbol: symbol, tone: .warning, title: notSigned, detail: reason)
+    }
+
+    /// How many optional details the files hold, the location not counted.
+    ///
+    /// - Parameter count: The count.
+    /// - Returns: The row.
+    static func detailsRow(_ count: Int) -> Row {
+        let title =
+            count == 0
+            ? String(localized: "No optional details in the files", table: "Honesty", bundle: .module, comment: "Summary line in the photo details: the saved files hold none of the optional details (date, camera, lens and so on). Draft wording for the Honesty review.")
+            : String(localized: "\(count) optional details in the files", table: "Honesty", bundle: .module, comment: "Summary line in the photo details: how many of the optional details (date, camera, lens and so on) the saved files hold. The location is not counted: it has its own line. Draft wording for the Honesty review.")
+        return Row(id: .details, symbol: "list.bullet", tone: .plain, title: title, detail: nil)
+    }
+
+    /// Whether the files hold the location: a warning when they do.
+    ///
+    /// - Parameter holdsLocation: Whether the files hold it.
+    /// - Returns: The row.
+    static func locationRow(_ holdsLocation: Bool) -> Row {
+        holdsLocation
+            ? Row(
+                id: .location, symbol: "exclamationmark.triangle.fill", tone: .warning,
+                title: String(localized: "Location is in the files", table: "Honesty", bundle: .module, comment: "Summary line in the photo details: the saved files hold the location where the photo was taken (GPS). Shown with a warning symbol. Draft wording for the Honesty review."),
+                detail: nil)
+            : Row(
+                id: .location, symbol: "location.slash", tone: .plain,
+                title: String(localized: "No location in the files", table: "Honesty", bundle: .module, comment: "Summary line in the photo details: the saved files hold no location. Draft wording for the Honesty review."),
+                detail: nil)
     }
 
     /// The kind of a photo with RAW: one frame of sensor data, and the copies developed from it.
@@ -141,30 +249,62 @@ struct PhotoSummaryCard: View {
     ///
     /// - Parameter details: The details.
     /// - Returns: The sentence, from `Honesty.xcstrings`.
-    static func kind(of details: PhotoDetails) -> Text {
+    static func kind(of details: PhotoDetails) -> String {
         let copies = details.files.filter { if case .developed = $0.processing { true } else { false } }
         guard details.rawFile != nil else {
-            return PhotoDetailsSections.processing(copies.first?.processing ?? .developed(.standard))
+            return PhotoDetailsSections.processingText(copies.first?.processing ?? .developed(.standard))
         }
         let names = copies.map { FormatsSettingsView.name(of: $0.format) }.formatted(.list(type: .and))
         switch copies.count {
         case 0:
-            return Text("RAW: one frame of sensor data", tableName: "Honesty", bundle: .module, comment: "Summary line in the photo details: the photo is a RAW file, one frame of the sensor's data. It must not be read as 'no processing': it says only what the file is. RAW is a file format name. Draft wording for the Honesty review.")
+            return String(localized: "RAW: one frame of sensor data", table: "Honesty", bundle: .module, comment: "Summary line in the photo details: the photo is a RAW file, one frame of the sensor's data. It must not be read as 'no processing': it says only what the file is. RAW is a file format name. Draft wording for the Honesty review.")
         case 1:
-            return Text("RAW: one frame of sensor data, and a \(names) copy developed by nope.", tableName: "Honesty", bundle: .module, comment: "Summary line in the photo details: a RAW file, one frame of the sensor's data, and one copy (the placeholder is its format, such as HEIF) that nope. developed from it. RAW is a file format name. Keep nope. unchanged. Draft wording for the Honesty review.")
+            return String(localized: "RAW: one frame of sensor data, and a \(names) copy developed by nope.", table: "Honesty", bundle: .module, comment: "Summary line in the photo details: a RAW file, one frame of the sensor's data, and one copy (the placeholder is its format, such as HEIF) that nope. developed from it. RAW is a file format name. Keep nope. unchanged. Draft wording for the Honesty review.")
         default:
-            return Text("RAW: one frame of sensor data, and \(names) copies developed by nope.", tableName: "Honesty", bundle: .module, comment: "Summary line in the photo details: a RAW file, one frame of the sensor's data, and copies (the placeholder lists their formats, such as HEIF and JPEG) that nope. developed from it. RAW is a file format name. Keep nope. unchanged. Draft wording for the Honesty review.")
+            return String(localized: "RAW: one frame of sensor data, and \(names) copies developed by nope.", table: "Honesty", bundle: .module, comment: "Summary line in the photo details: a RAW file, one frame of the sensor's data, and copies (the placeholder lists their formats, such as HEIF and JPEG) that nope. developed from it. RAW is a file format name. Keep nope. unchanged. Draft wording for the Honesty review.")
         }
     }
 
-    /// How many optional details the files hold, the location not counted.
-    ///
-    /// - Parameter count: The count.
-    /// - Returns: The sentence, from `Honesty.xcstrings`, with its plural rule.
-    static func detailsCount(_ count: Int) -> Text {
-        count == 0
-            ? Text("No optional details in the files", tableName: "Honesty", bundle: .module, comment: "Summary line in the photo details: the saved files hold none of the optional details (date, camera, lens and so on). Draft wording for the Honesty review.")
-            : Text("\(count) optional details in the files", tableName: "Honesty", bundle: .module, comment: "Summary line in the photo details: how many of the optional details (date, camera, lens and so on) the saved files hold. The location is not counted: it has its own line. Draft wording for the Honesty review.")
+    /// One row: the symbol centered in the symbol column, then the words and the second line,
+    /// read by VoiceOver as one element.
+    private struct RowView: View {
+        /// The row.
+        let row: Row
+
+        /// The symbol column's width.
+        let symbolColumn: CGFloat
+
+        /// The row.
+        var body: some View {
+            HStack(alignment: .firstTextBaseline, spacing: NopeSpace.s) {
+                Image(systemName: row.symbol)
+                    .foregroundStyle(style)
+                    .frame(width: symbolColumn)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: NopeSpace.xxs) {
+                    Text(verbatim: row.title)
+                    if let detail = row.detail {
+                        Text(verbatim: detail)
+                            .font(.subheadline)
+                            .foregroundStyle(CameraStyle.secondaryText)
+                    }
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(verbatim: row.spokenLabel))
+            .accessibilityIdentifier("PhotoDetails.summary.\(row.id.rawValue)")
+        }
+
+        /// The symbol's color.
+        private var style: AnyShapeStyle {
+            switch row.tone {
+            case .plain: AnyShapeStyle(CameraStyle.secondaryText)
+            case .fact: AnyShapeStyle(CameraStyle.fact)
+            case .warning: AnyShapeStyle(CameraStyle.warning)
+            }
+        }
     }
 }
 

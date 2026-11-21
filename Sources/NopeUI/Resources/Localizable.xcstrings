@@ -887,6 +887,18 @@
       "comment" : "Row in the photo details: where the subject is in the picture, as two to four numbers in pixels, as written in the file.",
       "extractionState" : "manual"
     },
+    "Summary row: %@, %@" : {
+      "comment" : "VoiceOver label of a row in the summary of What's in This Photo that has a second line: the row's words, then the second line, such as Not signed, Signing is off in Settings. Keep both placeholders.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
     "Switch Lenses" : {
       "comment" : "Value of the Pinch setting: a pinch on the camera picture moves to the next longer or wider rear lens. Not a zoom.",
       "extractionState" : "manual"
@@ -992,6 +1004,10 @@
           }
         }
       }
+    },
+    "Warning, %@" : {
+      "comment" : "VoiceOver label of a warning row in the summary of What's in This Photo: the word Warning, then the row's words, such as Warning, Location is in the files.",
+      "extractionState" : "manual"
     },
     "White Level" : {
       "comment" : "Row in the photo details: the RAW file's white level values, as numbers.",

@@ -890,6 +890,36 @@
         }
       }
     },
+    "Processed by this iPhone" : {
+      "comment" : "Summary row in the photo details: the phone's camera processed this photo, because the lens can't save RAW. Shown with a warning symbol. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft wording for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Processed by this iPad"
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Processed by this iPhone"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Processed by this device"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Processed marker: spoken value" : {
       "comment" : "VoiceOver value of the Processed marker on the camera, read before the format, for example \"Processed: no RAW on this lens, HEIF\". RAW is a file format name. Not the title-case chip text \"Processed: No RAW on This Lens\", which has its own key. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual",
@@ -998,6 +1028,10 @@
       "comment" : "Status in the Last Photo viewer, with a seal: every file of the photo shown has a Content Credentials signature. A short form of \"Saved and signed.\". Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
+    "Signing is off in Settings" : {
+      "comment" : "Second line of the summary row Not signed in the photo details: the person turned the Sign Each Photo setting off. Not a warning. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
     "Signing Is Your Choice" : {
       "comment" : "Honesty heading: photos are signed with Content Credentials only when the person turns signing on. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
@@ -1033,6 +1067,30 @@
     "Sub-Second Time" : {
       "comment" : "Metadata item: fractions of a second in the time taken. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
+    },
+    "Summary row: Not signed" : {
+      "comment" : "Summary row in the photo details: the photo has no Content Credentials signature. A second line says why. Honesty wording: never imply the photo is signed. Draft wording for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not signed"
+          }
+        }
+      }
+    },
+    "Summary row: Signed" : {
+      "comment" : "Summary row in the photo details, with a seal: every file of the photo has a Content Credentials signature. Draft wording for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signed"
+          }
+        }
+      }
     },
     "Tells editors which pixels are red, green and blue. Without it, the RAW has no color." : {
       "comment" : "Why the color filter pattern is always saved. RAW is a file format name. Honesty wording: a fluent human must review every translation before release.",
@@ -1092,8 +1150,16 @@
       "comment" : "Honesty heading: the camera sensor's unique noise fingerprint. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
+    "The signature couldn't be made" : {
+      "comment" : "Second line of the summary row Not signed in the photo details: signing was on, but creating the Content Credentials signature failed, so the photo was saved without one. Shown as a warning. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
     "The signature lets anyone check that a file hasn't changed since nope. saved it. It doesn't show who took the photo or on which device." : {
       "comment" : "In the photo details, under a signed photo: what the Content Credentials signature shows and doesn't show. Keep nope. unchanged. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "The signed file didn't pass the check" : {
+      "comment" : "Second line of the summary row Not signed in the photo details: a signed file failed the app's read-back check, so the unsigned file, which passed, was saved instead. Shown as a warning. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
     "This Build and the Source" : {
@@ -1108,8 +1174,16 @@
       "comment" : "Explains why the RAW format can't be chosen on this device. RAW is a file format name. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
+    "This lens can't save RAW" : {
+      "comment" : "Second line of the summary row Processed by this iPhone in the photo details: why the photo was processed. RAW is a file format name. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
     "This lens can't save unprocessed RAW. Its photos have some device processing." : {
       "comment" : "Explains the no-RAW fallback. Must not claim more than the English: the photo IS processed by the device.",
+      "extractionState" : "manual"
+    },
+    "This version of the app can't sign photos" : {
+      "comment" : "Second line of the summary row Not signed in the photo details: signing was on, but this build of the app has no signer. Shown as a warning. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
     "Time Zone" : {
