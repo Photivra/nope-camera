@@ -20,7 +20,7 @@ extension EnvironmentValues {
 /// - Screen: Start in Clean View, Viewfinder Overlays, Show Processed Marker, Night Mode, Keep
 ///   Night Mode After Astro (where the device offers Astro), Red Viewfinder, Keep Screen On and
 ///   Dim After (not in the Lock Screen camera), Live Activity;
-/// - More: Accessibility, Honesty, About and Licenses.
+/// - More: How to Use nope. (issue #117), Accessibility, Honesty, About and Licenses.
 ///
 /// A row is shown or not by the device only; no row appears or disappears when a setting
 /// changes, so focus never moves by itself. Each page row shows its value, and a value that
@@ -269,7 +269,7 @@ public struct SettingsScreen: View {
         case .honesty:
             HonestyScreen(closeUpLensLabel: DeviceCapabilities(lenses: lenses).closeUpFocusLens.flatMap(LensName.magnificationLabel(for:)))
         case .about:
-            AboutScreen()
+            AboutScreen(lenses: lenses)
         }
     }
 
@@ -429,9 +429,10 @@ public struct SettingsScreen: View {
         }
     }
 
-    /// Accessibility, Honesty and About.
+    /// How to Use nope. (issue #117), Accessibility, Honesty and About.
     private var moreSection: some View {
         Section {
+            GuideRow(id: .howToUse, lenses: lenses)
             pageRow(.accessibility, value: nil)
             pageRow(.honesty, value: nil)
             pageRow(.about, value: nil)

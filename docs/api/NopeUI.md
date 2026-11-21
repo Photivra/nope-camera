@@ -10,7 +10,7 @@ internal, declared in `Sources/NopeUI/AboutScreen.swift`
 @MainActor struct AboutScreen
 ```
 
-About and licenses: the version, the GPL-3.0-only license text, the project's notices
+About and licenses: the version, the How to Use nope. row (issue #117), the GPL-3.0-only license text, the project's notices
 (including the Adobe DNG notice) and where the source code is.
 
 The license and notice texts are bundled copies of the repository's `LICENSE` and `NOTICE`
@@ -61,15 +61,28 @@ internal, declared in `Sources/NopeUI/AboutScreen.swift`
 The notice Adobe's DNG specification patent license requires, quoted exactly
 (AGENTS.md, "Third-party licenses").
 
-## `AboutScreen/init()`
+## `AboutScreen/init(lenses:)`
 
 internal, declared in `Sources/NopeUI/AboutScreen.swift`
 
 ```swift
-@MainActor init()
+@MainActor init(lenses: [Lens] = [])
 ```
 
 Creates the About screen.
+
+- Parameter lenses: The device's lenses, or none when not known.
+
+## `AboutScreen/lenses`
+
+internal, declared in `Sources/NopeUI/AboutScreen.swift`
+
+```swift
+@MainActor let lenses: [Lens]
+```
+
+The device's lenses, for the how-to-use guide its How to Use nope. row opens, or none when
+not known.
 
 ## `AboutScreen/privacyPolicyAddress`
 
@@ -6302,6 +6315,18 @@ Whether a disabled custom button is drawn at ``NopeMotion/disabledOpacity``. `tr
 default; the lens controls set it `false` while a photo is still too short to dim them
 (``LensBusyState/isDrawnDimmed``), so they are disabled but drawn as before.
 
+## `EnvironmentValues/guideInvitation`
+
+public, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+var guideInvitation: GuideInvitation? { get set }
+```
+
+The invitation to the how-to-use guide (issue #117), or `nil` where the camera shows no
+invitation card: the Lock Screen camera, previews and tests. The app sets it. The guide
+itself opens from Settings and About either way.
+
 ## `EnvironmentValues/isNightMode`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -8917,6 +8942,872 @@ let style: GridStyle
 ```
 
 The style.
+
+## `GuideCard`
+
+internal, declared in `Sources/NopeUI/GuideCard.swift`
+
+```swift
+@MainActor struct GuideCard
+```
+
+The invitation to the how-to-use guide on the camera (issue #117; `docs/design/finish-1.0.md`,
+2.1; figures `guide-invite` and `guide-invite-night`): "How to use nope.", a capsule Open and
+a round Dismiss with an ✕, both 44-point targets.
+
+It sits on the picture's lower edge, in the stack of the drive cards and hints, with their
+backing and radius, so it covers no control and never stands between the person and the
+shutter. When it shows is `GuideInvitation.showsCard(_:)`. Open and Dismiss are both final.
+VoiceOver reads it as one group after the picture's own elements, and it doesn't take focus
+when it appears. When the name and buttons don't fit on one line (the largest text sizes, long
+languages), the buttons move under the name.
+
+## `GuideCard/body`
+
+internal, declared in `Sources/NopeUI/GuideCard.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The card.
+
+## `GuideCard/dismiss`
+
+internal, declared in `Sources/NopeUI/GuideCard.swift`
+
+```swift
+@MainActor let dismiss: () -> Void
+```
+
+Hides the card for good.
+
+## `GuideCard/init(open:dismiss:)`
+
+internal, declared in `Sources/NopeUI/GuideCard.swift`
+
+```swift
+@MainActor init(open: @escaping () -> Void, dismiss: @escaping () -> Void)
+```
+
+Creates the card.
+
+- Parameters:
+  - open: Opens the guide (and answers the invitation).
+  - dismiss: Hides the card for good.
+
+## `GuideCard/open`
+
+internal, declared in `Sources/NopeUI/GuideCard.swift`
+
+```swift
+@MainActor let open: () -> Void
+```
+
+Opens the guide.
+
+## `GuideFigure`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor struct GuideFigure
+```
+
+A guide page's picture: the camera control the page talks about, drawn by the camera's own
+view on a black panel, or a symbol. Decoration only: hidden from VoiceOver and not touchable.
+
+## `GuideFigure/body`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The panel and its picture.
+
+## `GuideFigure/init(page:lenses:)`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor init(page: GuidePage, lenses: GuideLenses)
+```
+
+Creates the picture.
+
+- Parameters:
+  - page: The page.
+  - lenses: What the device's cameras are.
+
+## `GuideFigure/lenses`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor let lenses: GuideLenses
+```
+
+What the device's cameras are.
+
+## `GuideFigure/page`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor let page: GuidePage
+```
+
+The page.
+
+## `GuideLenses`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+struct GuideLenses
+```
+
+What the device's cameras are, for the lens page's sentence and picture: nothing a device
+lacks is named.
+
+## `GuideLenses/hasFrontCamera`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+let hasFrontCamera: Bool
+```
+
+Whether the device has a front camera, so Switch Camera is shown.
+
+## `GuideLenses/init(_:)`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+init(_ lenses: [Lens])
+```
+
+Reads the device's lenses.
+
+- Parameter lenses: The device's lenses (`DeviceCapabilities/lenses`), or none when they
+  aren't known yet; the guide then describes a device with two or more rear lenses and a
+  front camera, as most have, and shows RAW.
+
+## `GuideLenses/offersLensChoice`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+var offersLensChoice: Bool { get }
+```
+
+Whether the lens buttons offer a choice: two or more rear lenses, or the lenses aren't
+known.
+
+## `GuideLenses/rear`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+let rear: [Lens]
+```
+
+The rear lenses, in display order.
+
+## `GuideLenses/supportsBayerRAW`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+let supportsBayerRAW: Bool
+```
+
+Whether any lens saves Bayer RAW, for the picture of the format status.
+
+## `GuidePage`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+enum GuidePage
+```
+
+One page of the how-to-use guide (issue #117; `docs/design/finish-1.0.md`, section 2.2): one
+idea, in a title, one or two short sentences and, for the two key ideas, a link to the full
+explanation in Settings.
+
+The pages follow the owner's list for 1.0.0 (2026-11-21): shooting, the two key ideas
+(unprocessed photos and privacy) right after it, then lenses, Auto and manual, drive modes
+and Q. The words describe only what ships, and name nothing a device may lack: the lens
+sentence depends on the device's lenses, and the drive sentence names only Single, Timer
+and Burst, which every device offers. Q is described as it is: a button that opens the
+Quick Menu (its tiles are fixed; nothing here changes them).
+
+## `GuidePage/autoAndManual`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+case autoAndManual
+```
+
+Auto and Manual.
+
+## `GuidePage/driveModes`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+case driveModes
+```
+
+The drive modes.
+
+## `GuidePage/id`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+var id: `Self` { get }
+```
+
+The page itself, so the pages can be listed with `ForEach`.
+
+## `GuidePage/lenses`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+case lenses
+```
+
+The lens buttons and Switch Camera.
+
+## `GuidePage/link`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+var link: (title: LocalizedStringResource, destination: SettingsID)? { get }
+```
+
+The page's link into Settings: its words and the page it opens, or `nil`.
+
+## `GuidePage/next`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+var next: GuidePage? { get }
+```
+
+The page after this one, or `nil` on the last.
+
+## `GuidePage/number`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+var number: Int { get }
+```
+
+The page's number, from 1.
+
+## `GuidePage/previous`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+var previous: GuidePage? { get }
+```
+
+The page before this one, or `nil` on the first.
+
+## `GuidePage/privacy`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+case privacy
+```
+
+The second key idea: no internet, and the person chooses each photo's details.
+
+## `GuidePage/quickMenu`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+case quickMenu
+```
+
+Q and Settings.
+
+## `GuidePage/takePhoto`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+case takePhoto
+```
+
+How to take a photo.
+
+## `GuidePage/text(lenses:)`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+func text(lenses: GuideLenses) -> LocalizedStringResource
+```
+
+The page's text.
+
+- Parameter lenses: What the device has, for the lens page.
+- Returns: The text.
+
+## `GuidePage/title`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+var title: LocalizedStringResource { get }
+```
+
+The page's title.
+
+## `GuidePage/unprocessed`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+case unprocessed
+```
+
+The first key idea: as little processing as the camera allows.
+
+## `GuideRow`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor struct GuideRow
+```
+
+The How to Use nope. row of Settings › More and of About: opens the guide at its first page.
+
+## `GuideRow/body`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The row: the guide's title and a chevron, as the page rows beside it.
+
+## `GuideRow/id`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor let id: SettingsID
+```
+
+The row's identifier: ``SettingsID/howToUse`` or ``SettingsID/aboutHowToUse``.
+
+## `GuideRow/init(id:lenses:)`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor init(id: SettingsID, lenses: [Lens])
+```
+
+Creates the row.
+
+- Parameters:
+  - id: The row's identifier.
+  - lenses: The device's lenses, or none when not known.
+
+## `GuideRow/lenses`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor let lenses: [Lens]
+```
+
+The device's lenses, or none when not known.
+
+## `GuideSheet`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor struct GuideSheet
+```
+
+Presents the how-to-use guide as a sheet, and opens Settings at a link's page once the guide
+has closed.
+
+## `GuideSheet/body(content:)`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content with the guide's sheet.
+
+- Parameter content: The view that presents the guide.
+
+## `GuideSheet/init(isPresented:lenses:)`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor init(isPresented: Binding<Bool>, lenses: [Lens])
+```
+
+Creates the modifier.
+
+- Parameters:
+  - isPresented: Whether the guide is shown.
+  - lenses: The device's lenses, or none when not known.
+
+## `GuideSheet/isPresented`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@Binding @MainActor var isPresented: Bool { get nonmutating set }
+```
+
+Whether the guide is shown.
+
+## `GuideSheet/lenses`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor let lenses: [Lens]
+```
+
+The device's lenses, or none when not known.
+
+## `GuideText`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+enum GuideText
+```
+
+The guide's words, as resources. Page 2 and 3 make the app's key claims, so their titles and
+texts are in the `Honesty` table. Every string is a draft for the Honesty review
+(`docs/design/finish-1.0.md`, section 8).
+
+## `GuideText/aboutProcessing`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let aboutProcessing: LocalizedStringResource
+```
+
+"About processing".
+
+## `GuideText/announcement(for:)`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static func announcement(for page: GuidePage) -> String
+```
+
+What VoiceOver hears when a page shows: "Page 2 of 7: Photos as the camera took them".
+
+- Parameter page: The page.
+- Returns: The announcement.
+
+## `GuideText/autoAndManualText`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let autoAndManualText: LocalizedStringResource
+```
+
+Page 5's text.
+
+## `GuideText/autoAndManualTitle`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let autoAndManualTitle: LocalizedStringResource
+```
+
+"Auto and manual".
+
+## `GuideText/back`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let back: LocalizedStringResource
+```
+
+"Back".
+
+## `GuideText/bundle`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let bundle: LocalizedStringResource.BundleDescription
+```
+
+The module's bundle, for the resources.
+
+## `GuideText/cardTitle`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let cardTitle: LocalizedStringResource
+```
+
+"How to use nope.": the card's name on the camera.
+
+## `GuideText/close`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let close: LocalizedStringResource
+```
+
+"Close".
+
+## `GuideText/dismiss`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let dismiss: LocalizedStringResource
+```
+
+"Dismiss".
+
+## `GuideText/done`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let done: LocalizedStringResource
+```
+
+"Done".
+
+## `GuideText/driveModesText`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let driveModesText: LocalizedStringResource
+```
+
+Page 6's text.
+
+## `GuideText/driveModesTitle`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let driveModesTitle: LocalizedStringResource
+```
+
+"One photo or a series".
+
+## `GuideText/hidesCard`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let hidesCard: LocalizedStringResource
+```
+
+"Hides this card.".
+
+## `GuideText/lensesText(_:)`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static func lensesText(_ lenses: GuideLenses) -> LocalizedStringResource
+```
+
+Page 4's text for the device's lenses: only what the device has is named.
+
+- Parameter lenses: What the device has.
+- Returns: The text.
+
+## `GuideText/lensesTitle`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let lensesTitle: LocalizedStringResource
+```
+
+"Lenses".
+
+## `GuideText/linkHint`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let linkHint: LocalizedStringResource
+```
+
+"Opens Settings.".
+
+## `GuideText/next`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let next: LocalizedStringResource
+```
+
+"Next".
+
+## `GuideText/open`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let open: LocalizedStringResource
+```
+
+"Open".
+
+## `GuideText/opensGuide`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let opensGuide: LocalizedStringResource
+```
+
+"Opens the guide.".
+
+## `GuideText/pageNumber(_:of:)`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static func pageNumber(_ number: Int, of total: Int) -> LocalizedStringResource
+```
+
+"2 of 7".
+
+- Parameters:
+  - number: The page's number, from 1.
+  - total: The number of pages.
+- Returns: The page number as shown.
+
+## `GuideText/privacyText`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let privacyText: LocalizedStringResource
+```
+
+Page 3's text.
+
+## `GuideText/privacyTitle`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let privacyTitle: LocalizedStringResource
+```
+
+"Private by design".
+
+## `GuideText/processed`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let processed: LocalizedStringResource
+```
+
+"Processed", the camera's marker on a device without Bayer RAW, for page 2's picture.
+
+## `GuideText/quickMenuText`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let quickMenuText: LocalizedStringResource
+```
+
+Page 7's text.
+
+## `GuideText/quickMenuTitle`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let quickMenuTitle: LocalizedStringResource
+```
+
+"Q and Settings".
+
+## `GuideText/spokenPageNumber(_:of:)`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static func spokenPageNumber(_ number: Int, of total: Int) -> LocalizedStringResource
+```
+
+"Page 2 of 7".
+
+- Parameters:
+  - number: The page's number, from 1.
+  - total: The number of pages.
+- Returns: The page number as VoiceOver reads it.
+
+## `GuideText/takePhotoText`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let takePhotoText: LocalizedStringResource
+```
+
+Page 1's text.
+
+## `GuideText/takePhotoTitle`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let takePhotoTitle: LocalizedStringResource
+```
+
+"Take a photo".
+
+## `GuideText/title`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let title: LocalizedStringResource
+```
+
+"How to Use nope.": the guide's title, and the rows that open it.
+
+## `GuideText/unprocessedText`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let unprocessedText: LocalizedStringResource
+```
+
+Page 2's text.
+
+## `GuideText/unprocessedTitle`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let unprocessedTitle: LocalizedStringResource
+```
+
+"Photos as the camera took them".
+
+## `GuideView`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor struct GuideView
+```
+
+The how-to-use guide (issue #117; `docs/design/finish-1.0.md`, section 2.2): seven short
+pages in a sheet, one idea each, opened from the camera's invitation card and from the How to
+Use nope. rows in Settings and About.
+
+Each page has a picture, a title (a heading), its text and, for the two key ideas, a link
+that closes the guide and opens Settings at the full explanation. The pictures are the camera's
+own controls (the shutter, the lens buttons, Auto, the drive words, Q) or a symbol, drawn by
+the same views the camera uses, so no picture carries baked-in text and each follows text size,
+language and night mode. They are decoration: hidden from VoiceOver and not buttons.
+
+Moving: Back and Next (Done on the last page) under the page, with the page number between
+them, and Close in the bar. A horizontal swipe moves between pages too; the arrow keys and
+Escape work from a keyboard. Nothing advances by itself. Pages cross-fade with Reduce Motion
+and slide otherwise; Back and Next follow the layout direction. At large text sizes the page
+scrolls and the buttons stay pinned under it. Moving to a page announces its number and title
+to VoiceOver.
+
+## `GuideView/body`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The page, the pinned buttons and the bar.
+
+## `GuideView/init(lenses:openLink:)`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor init(lenses: [Lens], openLink: @escaping (SettingsID) -> Void)
+```
+
+Creates the guide at its first page.
+
+- Parameters:
+  - lenses: The device's lenses (`DeviceCapabilities/lenses`), or none when not known.
+  - openLink: Called with a Settings page when a link is chosen.
+
+## `GuideView/lenses`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor let lenses: GuideLenses
+```
+
+What the device's cameras are.
+
+## `GuideView/openLink`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor let openLink: (SettingsID) -> Void
+```
+
+Called with a page of Settings when a link is chosen: the presenter closes the guide and
+opens Settings there.
 
 ## `HiddenValueRow`
 
@@ -13992,6 +14883,40 @@ internal, declared in `Sources/NopeUI/NightModeRows.swift`
 Creates the form.
 
 - Parameter content: The form's sections and rows.
+
+## `NopeGuideNextStyle`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor struct NopeGuideNextStyle
+```
+
+Next and Done in the guide: the filled capsule of the screen's one primary action, at its
+natural width (``NopePrimaryActionStyle`` is full width).
+
+## `NopeGuideNextStyle/init()`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the style. It holds no state.
+
+## `NopeGuideNextStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The button, in the system's prominent style.
+
+- Parameter configuration: The button's label, role and action.
 
 ## `NopeHaptic`
 
@@ -21912,6 +22837,17 @@ case about
 
 The About and Licenses row and page.
 
+## `SettingsID/aboutHowToUse`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case aboutHowToUse
+```
+
+The How to Use nope. row on About and Licenses (issue #117), which opens the same guide as
+``howToUse``. Search doesn't list it: the row in More has the keywords.
+
 ## `SettingsID/accessibility`
 
 public, declared in `Sources/NopeUI/SettingsSearch.swift`
@@ -22298,6 +23234,16 @@ The entry Lenses Never Switch on Their Own, on the Honesty page, which the camer
 close-up hint opens (docs/design/device-feedback-1.0.md, section 3). Search doesn't list
 it: the Honesty row has its keywords.
 
+## `SettingsID/howToUse`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case howToUse
+```
+
+The How to Use nope. row (issue #117), first in More: opens the how-to-use guide.
+
 ## `SettingsID/jpegCompression`
 
 public, declared in `Sources/NopeUI/SettingsSearch.swift`
@@ -22366,7 +23312,7 @@ public, declared in `Sources/NopeUI/SettingsSearch.swift`
 case more
 ```
 
-The More group: Accessibility, Honesty, About.
+The More group: How to Use nope., Accessibility, Honesty, About.
 
 ## `SettingsID/navigationPath`
 
@@ -22898,7 +23844,7 @@ navigation stack, opened from the camera (`docs/design/BUILD-SPEC.md`, 3.10;
 - Screen: Start in Clean View, Viewfinder Overlays, Show Processed Marker, Night Mode, Keep
   Night Mode After Astro (where the device offers Astro), Red Viewfinder, Keep Screen On and
   Dim After (not in the Lock Screen camera), Live Activity;
-- More: Accessibility, Honesty, About and Licenses.
+- More: How to Use nope. (issue #117), Accessibility, Honesty, About and Licenses.
 
 A row is shown or not by the device only; no row appears or disappears when a setting
 changes, so focus never moves by itself. Each page row shows its value, and a value that
@@ -23722,6 +24668,16 @@ static let honestyCloseUpFocus: LocalizedStringResource
 
 "Lenses Never Switch on Their Own": the Honesty entry on close-up focus, its heading and
 its name in Settings (docs/design/device-feedback-1.0.md, section 3).
+
+## `SettingsText/howToUse`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let howToUse: LocalizedStringResource
+```
+
+"How to Use nope.": the guide's title, on its rows in More and About (issue #117).
 
 ## `SettingsText/jpegCompression`
 
@@ -26556,6 +27512,21 @@ The ready camera applies it to the picture and focus peaking, and ``CameraScreen
 live viewfinder it draws behind the interface, so all three stay aligned. The layout frame doesn't change, so the caller clips it.
 
 - Parameter model: The camera model.
+
+## `View/guideSheet(isPresented:lenses:)`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+@MainActor func guideSheet(isPresented: Binding<Bool>, lenses: [Lens]) -> some View
+
+```
+
+Presents the how-to-use guide while `isPresented` is `true`.
+
+- Parameters:
+  - isPresented: Whether the guide is shown.
+  - lenses: The device's lenses, or none when not known.
 
 ## `View/hardScrollEdges()`
 

@@ -62,6 +62,10 @@ struct NopeApp: App {
         session: assistantSession, settings: sharedSettings,
         deviceIsLocked: { !UIApplication.shared.isProtectedDataAvailable })
 
+    /// The invitation to the how-to-use guide (issue #117): one Boolean in the settings' store on
+    /// the device, outside the settings themselves, so Factory Defaults doesn't bring the card back.
+    private static let guideInvitation = GuideInvitation(settings: sharedSettings)
+
     /// The link to the Apple Watch app (issue #63), whose commands go through ``shortcuts``.
     private static let watchSession = PhoneWatchSession()
 
@@ -172,6 +176,8 @@ struct NopeApp: App {
         // The Assistant Access hints, cards and session list (issue #82). The simulated Lock Screen
         // camera has none, as the capture extension has none.
         .environment(\.assistantSession, Self.simulatesLockScreenCamera ? nil : Self.assistantSession)
+        // The how-to-use guide's invitation card (issue #117). The Lock Screen camera shows none.
+        .environment(\.guideInvitation, Self.simulatesLockScreenCamera ? nil : Self.guideInvitation)
         .modifier(FollowsWindowSizeClasses())
         // Settings and the screens that aren't the camera follow the system's light or dark setting.
         .modifier(ProvidesSystemAppearance())

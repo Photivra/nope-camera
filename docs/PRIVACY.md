@@ -271,6 +271,15 @@ Shortcuts app and other assistants that run App Intents may use the app's action
 - **Outside the app's control:** photos saved to Photos, what a person lets an assistant see on
   the screen, and opening the app are the system's.
 
+## The how-to-use guide (issue #117)
+
+Whether the guide's invitation card on the camera was answered (Open, Dismiss, or the guide
+opened from Settings or About) is one Boolean, `NopeGuide.invitationAnswered`, in the app's
+settings store on the device. It is not a count, a date or a record of which pages were read,
+and it is never sent. It is outside the settings snapshot and presets, so the Lock Screen camera
+doesn't receive it and Factory Defaults doesn't change it. Nothing about the guide's use is
+stored otherwise.
+
 ## Content Credentials (signing)
 
 The app signs each saved file (DNG, HEIF, JPEG) with C2PA Content Credentials

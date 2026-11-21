@@ -1,3 +1,4 @@
+import NopeCore
 import SwiftUI
 
 extension EnvironmentValues {
@@ -9,7 +10,7 @@ extension EnvironmentValues {
     @Entry public var appStoreID: String? = AboutScreen.appStoreID
 }
 
-/// About and licenses: the version, the GPL-3.0-only license text, the project's notices
+/// About and licenses: the version, the How to Use nope. row (issue #117), the GPL-3.0-only license text, the project's notices
 /// (including the Adobe DNG notice) and where the source code is.
 ///
 /// The license and notice texts are bundled copies of the repository's `LICENSE` and `NOTICE`
@@ -82,8 +83,16 @@ struct AboutScreen: View {
     /// (AGENTS.md, "Third-party licenses").
     static let dngNotice = "This product includes DNG technology under license by Adobe."
 
+    /// The device's lenses, for the how-to-use guide its How to Use nope. row opens, or none when
+    /// not known.
+    let lenses: [Lens]
+
     /// Creates the About screen.
-    init() {}
+    ///
+    /// - Parameter lenses: The device's lenses, or none when not known.
+    init(lenses: [Lens] = []) {
+        self.lenses = lenses
+    }
 
     /// The form.
     var body: some View {
@@ -94,6 +103,9 @@ struct AboutScreen: View {
                 } label: {
                     Text("Version", bundle: .module, comment: "Label for the app's version number.")
                 }
+                // The guide's own title, as in Settings › More, so the two rows read the same
+                // (owner decision 6 for issue #117).
+                GuideRow(id: .aboutHowToUse, lenses: lenses)
             } header: {
                 Text(verbatim: "Photivra Nope Camera")
             }

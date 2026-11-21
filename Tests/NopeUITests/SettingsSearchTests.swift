@@ -50,7 +50,7 @@ struct SettingsSearchTests {
         #expect(SettingsID.privacy.scrollTarget == .details)
         #expect(SettingsID.camera.scrollTarget == .fastShutter)
         #expect(SettingsID.screen.scrollTarget == .startInCleanView)
-        #expect(SettingsID.more.scrollTarget == .accessibility)
+        #expect(SettingsID.more.scrollTarget == .howToUse)
         #expect(SettingsID.copies.navigationPath == [.copies])
         #expect(SettingsID.copies.scrollTarget == nil)
         #expect(SettingsID.detailsLocation.navigationPath == [.details])

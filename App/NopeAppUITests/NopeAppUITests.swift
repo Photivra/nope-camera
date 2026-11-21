@@ -632,6 +632,7 @@ final class NopeAppUITests: XCTestCase {
                 || Self.isTextCutByAPopover(issue, in: app)
                 || Self.isEnlargedPastTheLowerEdge(issue, of: scrollFrame)
                 || Self.isIgnored(issue, in: app, afterScrolling: afterScrolling)
+                || Self.isGuidePictureText(issue, in: app)
                 || (sideways && Self.isTurnedTextFinding(issue))
         }
         // A check whose every finding is ignored isn't run: the contrast check after a scroll and

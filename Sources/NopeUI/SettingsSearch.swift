@@ -23,7 +23,7 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
     case camera = "settings.camera"
     /// The Screen group: what the screen shows.
     case screen = "settings.screen"
-    /// The More group: Accessibility, Honesty, About.
+    /// The More group: How to Use nope., Accessibility, Honesty, About.
     case more = "settings.more"
 
     // The Presets row and its page.
@@ -153,6 +153,8 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
 
     // More.
 
+    /// The How to Use nope. row (issue #117), first in More: opens the how-to-use guide.
+    case howToUse = "settings.howToUse"
     /// The Accessibility row and page.
     case accessibility = "settings.accessibility"
     /// The Honesty row and page.
@@ -170,6 +172,9 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
     /// The Rate or Review link, last on About and Licenses, shown only once the app has an App
     /// Store ID (`docs/store/STORE-PAGE-PLAN.md`, section 12).
     case rateOrReview = "settings.about.rateOrReview"
+    /// The How to Use nope. row on About and Licenses (issue #117), which opens the same guide as
+    /// ``howToUse``. Search doesn't list it: the row in More has the keywords.
+    case aboutHowToUse = "settings.about.howToUse"
 
     /// The identifier of an optional detail's switch on Details in Each Photo, or `nil` for an
     /// item Settings doesn't offer (`MetadataItem/isOfferedInSettings`).
@@ -200,7 +205,7 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
         case .photos, .privacy, .camera, .screen, .more, .presets, .formats, .copies, .photoSize, .mirrorFrontCamera,
             .details, .signEachPhoto, .assistantAccess, .fastShutter, .focusOnFaces, .pinch, .burstLimit, .startInCleanView,
             .overlays, .showProcessedMarker, .nightMode, .keepNightModeAfterAstro, .redViewfinder, .keepScreenOn,
-            .dimAfter, .liveActivity, .accessibility, .honesty, .about:
+            .dimAfter, .liveActivity, .howToUse, .accessibility, .honesty, .about:
             nil
         case .assistantAccessSwitch, .assistantAsk: .assistantAccess
         case .honestyCloseUpFocus: .honesty
@@ -216,7 +221,7 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
         case .overlaysGrid, .overlaysGridStyle, .overlaysLevel, .overlaysFocusPeaking, .overlaysHistogram,
             .overlaysLiveReadout, .overlaysKeepReadout:
             .overlays
-        case .license, .noticesAndTrademarks, .rateOrReview: .about
+        case .license, .noticesAndTrademarks, .rateOrReview, .aboutHowToUse: .about
         }
     }
 
@@ -243,7 +248,8 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
             .showProcessedMarker, .nightMode, .keepNightModeAfterAstro, .redViewfinder, .keepScreenOn, .dimAfter,
             .liveActivity:
             .screen
-        case .more, .accessibility, .honesty, .honestyCloseUpFocus, .about, .license, .noticesAndTrademarks, .rateOrReview:
+        case .more, .howToUse, .accessibility, .honesty, .honestyCloseUpFocus, .about, .license, .noticesAndTrademarks,
+            .rateOrReview, .aboutHowToUse:
             .more
         case .presets, .factoryDefaults, .saveCurrentSettings: nil
         }
@@ -265,7 +271,7 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
         case .privacy: .details
         case .camera: .fastShutter
         case .screen: .startInCleanView
-        case .more: .accessibility
+        case .more: .howToUse
         default: opensPage == nil ? self : nil
         }
     }
@@ -570,6 +576,8 @@ enum SettingsText {
     static let license = LocalizedStringResource("License", bundle: bundle, comment: "Title of the screen showing the full license text.")
     /// "Notices and Trademarks".
     static let noticesAndTrademarks = LocalizedStringResource("Notices and Trademarks", bundle: bundle, comment: "Row and screen title for the copyright, trademark and third-party notices.")
+    /// "How to Use nope.": the guide's title, on its rows in More and About (issue #117).
+    static let howToUse = GuideText.title
     /// "Rate or Review".
     static let rateOrReview = LocalizedStringResource("Rate or Review", bundle: bundle, comment: "Link on the About screen that opens the App Store's page for writing a rating or review of the app. A label, not a request: it names what the page offers.")
 
@@ -645,6 +653,7 @@ enum SettingsText {
         case .license: license
         case .noticesAndTrademarks: noticesAndTrademarks
         case .rateOrReview: rateOrReview
+        case .howToUse, .aboutHowToUse: howToUse
         }
     }
 
@@ -703,6 +712,8 @@ enum SettingsText {
             LocalizedStringResource("Search keywords: Live Activity", defaultValue: "Lock Screen, Dynamic Island", bundle: bundle, comment: "Settings search keywords for Live Activity, separated by commas. Not shown on screen. Lock Screen and Dynamic Island are iOS names: use the names iOS shows in this language.")
         case .honesty:
             LocalizedStringResource("Search keywords: Honesty", defaultValue: "close-up, macro, close, near, blurry, soft, lens", bundle: bundle, comment: "Settings search keywords for the Honesty page, separated by commas. Not shown on screen: the page explains why nope. never changes lenses for a close-up. Keep nope. unchanged if it appears.")
+        case .howToUse:
+            LocalizedStringResource("Search keywords: How to Use nope.", defaultValue: "help, guide, how, instructions, tutorial, start", bundle: bundle, comment: "Settings search keywords for the How to Use nope. row, which opens the app's how-to-use guide, separated by commas. Not shown on screen: list the words people in your language would type to find help on using the app.")
         case .rateOrReview:
             LocalizedStringResource("Search keywords: Rate or Review", defaultValue: "rate, review, rating, feedback, App Store", bundle: bundle, comment: "Settings search keywords for the Rate or Review link on the About screen, separated by commas. Not shown on screen. App Store is Apple's name: use its name in the language's iOS.")
         case .showProcessedMarker:
@@ -974,7 +985,7 @@ enum SettingsSearch {
 
     /// The items search lists: every row and page, without the group headers.
     static let searchable: [SettingsID] = SettingsID.allCases.filter {
-        ![.photos, .privacy, .camera, .screen, .more, .honestyCloseUpFocus].contains($0)
+        ![.photos, .privacy, .camera, .screen, .more, .honestyCloseUpFocus, .aboutHowToUse].contains($0)
     }
 
     /// The words of a search, split at white space.

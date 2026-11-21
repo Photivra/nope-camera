@@ -330,6 +330,18 @@
       "comment" : "Footer of the Bracket group in the photo details of a focus bracket's frame. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English: no distance is known, and the values are in memory only.",
       "extractionState" : "manual"
     },
+    "Guide picture: Processed" : {
+      "comment" : "The camera's format status, shown in the how-to-use guide's picture on a device whose lenses can't save RAW. Use the same translation as the camera's \"Processed\" marker. Must not claim more than the English.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Processed"
+          }
+        }
+      }
+    },
     "HEIF with some device processing" : {
       "comment" : "Spoken format name for the no-RAW fallback. HEIF is a file format name.",
       "extractionState" : "manual"
@@ -606,12 +618,20 @@
       "comment" : "First-run statement 3 of 3. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release. \"Collects\" matches the Honesty heading No Data Collected: nope. keeps settings and presets on the device, but sends nothing. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
+    "nope. never connects to the internet, and you choose which details each photo keeps." : {
+      "comment" : "Page 3 of the how-to-use guide. Keep \"nope.\" unchanged. Must not claim more than the English: the app makes no network connections, and the person chooses the photo's optional details in Details in Each Photo. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
     "nope. never writes this." : {
       "comment" : "Compare view, for a metadata item only the phone-processed version holds and that no nope. setting can turn on: nope.'s allowlist never writes it. Keep \"nope.\" unchanged. Must not claim more than the English.",
       "extractionState" : "manual"
     },
     "nope. on Apple Watch sends only your commands, such as the shutter and the delay, to nope. on your iPhone, and gets back only short status, such as \"Saved and signed\". No photos or photo details go to the watch. watchOS and iOS carry these messages between your paired devices in their own way; nope. opens no network connection." : {
       "comment" : "Claim 19 in docs/research/privacy-claims.md; issue #63. Apple Watch, iPhone, watchOS and iOS are Apple's names. \"Saved and signed\" is the watch app's own result text; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English. Don't name a transport: Apple doesn't document how the system carries these messages. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "nope. saves each photo with as little processing as the camera allows, so it can look flatter or noisier at first." : {
+      "comment" : "Page 2 of the how-to-use guide. Keep \"nope.\" unchanged. Must not claim more than the English: as little processing as the camera allows, never none. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "nope. takes single RAW frames one after another and saves each one as its own photo. It doesn't stack, merge or process them: stack them in other software." : {
@@ -844,6 +864,10 @@
       "comment" : "Issue #80; docs/PRIVACY.md, \"Content Credentials\". Sign Each Photo is the name of nope.'s own switch; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release. The signature certifies its own key, so it doesn't prove that nope. made the file. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
+    "Photos as the camera took them" : {
+      "comment" : "Title of page 2 of the how-to-use guide: photos are saved with as little processing as possible. A heading. Must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
     "Photos may privately compare landmark regions with Apple's servers (Enhanced Visual Search). You can turn it off in Settings › Apps › Photos." : {
       "comment" : "Claim 10 in docs/research/privacy-claims.md. Keep \"may\": it is not verified whether it is on by default. Use the names iOS shows in this language. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
@@ -888,6 +912,10 @@
     },
     "Preview Not Kept" : {
       "comment" : "Title in the Last Photo viewer when the preview of the photo shown was released from memory, so only its small thumbnail is left. Honesty wording. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Private by design" : {
+      "comment" : "Title of page 3 of the how-to-use guide: the app's privacy. A heading. Must not claim more than the English. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "Processed" : {

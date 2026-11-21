@@ -2457,6 +2457,44 @@ with Keep Screen On on and the camera showing:
 6. VoiceOver reads the note with the row, and with Never also the cost; changing the choice
    doesn't move focus. With Reduce Motion on, the dimming still fades as Keep Screen On's does.
 
+### The how-to-use guide on a device (issue #117)
+
+Not yet checked on a device. The invitation's rules are covered by `GuideInvitationTests` (when
+the card shows, what puts it away, the answer kept across a relaunch and Factory Defaults), the
+pages and words by `GuideTests`, and the card, every page, both links, the Settings and About
+rows, search, the largest text size, right to left and Night Mode by `GuideUITests.swift`, with
+audits. The UI tests' settings start with the invitation answered; `-NopeSimulatedGuideCard`
+shows the card. The audit's "Potentially inaccessible text" finding with no element is set aside
+while the guide is open (`isGuidePictureText`): it is the text of a page's picture, the camera's
+own controls drawn as decoration and hidden from VoiceOver by design. On a phone and an iPad:
+
+1. A fresh install: after the first-run screen and camera access, the card shows on the picture
+   once the camera is live, and not over the start indicator. A photo taken with the shutter, a
+   volume button and the Camera Control while it shows is saved, and the card stays.
+2. Dismiss, then close and reopen the app: the card doesn't come back. Factory Defaults
+   (Settings › Presets) doesn't bring it back either. An app updated from a build without the
+   guide shows the card once.
+3. Open: the guide opens at page 1; after Close the card is gone, and stays gone after a
+   relaunch. Opening the guide from Settings or About on a fresh install also removes the card.
+4. The Lock Screen camera never shows the card; its Settings row opens the guide.
+5. VoiceOver: the card is read after the picture's elements and doesn't take focus when it
+   appears; Open's and Dismiss's hints are read. In the guide each title is a heading, a page
+   reads title, text, link, then Back, "Page 2 of 7", Next, and moving to a page announces
+   "Page 2 of 7: Photos as the camera took them". The pictures are not read.
+6. Voice Control: "Tap Open", "Tap Dismiss", "Tap Next", "Tap Back", "Tap Done", "Tap Close",
+   "Tap About processing" and "Tap Details in Each Photo" work.
+7. Switch Control and a hardware keyboard reach every button; the left and right arrows move
+   between pages (swapped right to left) and Escape closes the guide.
+8. The largest text size: the card's name wraps and its buttons move under it; each page
+   scrolls with Back, the page number and Next in reach.
+9. Reduce Motion: pages cross-fade. Night Mode: the card and every page are red on black, and
+   the links are underlined.
+10. iPad in both orientations and in Split View, and the iPhone Duo's inner display: the guide
+    is a form sheet with the text at a readable width, and the card sits on the picture in the
+    column layout.
+11. Each page's words against the device: page 4 names only the lenses it has, and pages 5 to 7
+    match the controls on the camera (Auto, the drive words, Q).
+
 ### Burst Limit setting on a device (issue #121)
 
 The setting alone (Settings › Camera › Burst Limit) is covered by `NopeSettingsTests`,

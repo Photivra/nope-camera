@@ -171,10 +171,17 @@ enum SimulatedCameraLaunch {
     /// signing messages pass it.
     static let signingArgument = "-NopeSimulatedSigning"
 
+    /// The launch argument that leaves the how-to-use guide's invitation card unanswered in the
+    /// emptied settings store, so the camera shows it: `-NopeSimulatedGuideCard`. Without it the
+    /// invitation starts answered, so the card doesn't change the camera of the other UI tests
+    /// (issue #117).
+    static let guideCardArgument = "-NopeSimulatedGuideCard"
+
     /// An emptied settings store for a UI test launch, or `nil` without a scenario, so UI tests
     /// always start from the default settings and never change the real ones. With
     /// ``signingArgument``, signing is turned on in it; with `-NopeSimulatedSaveSettings <base64 json>`
-    /// (``SimulatedFileTags/saveSettingsArgument``), the save settings are that JSON.
+    /// (``SimulatedFileTags/saveSettingsArgument``), the save settings are that JSON. The guide's
+    /// invitation is answered unless ``guideCardArgument`` is given.
     @MainActor static func settingsStore() -> UserDefaults? {
         let arguments = ProcessInfo.processInfo.arguments
         guard arguments.contains(argument), let store = UserDefaults(suiteName: settingsSuiteName) else { return nil }
@@ -185,6 +192,7 @@ enum SimulatedCameraLaunch {
             store.set(Data(base64Encoded: arguments[index + 1]), forKey: SimulatedFileTags.saveSettingsKey)
         }
         if arguments.contains(signingArgument) { NopeSettings(defaults: store).setSignsPhotos(true) }
+        if !arguments.contains(guideCardArgument) { GuideInvitation(defaults: store).dismiss() }
         return store
     }
 

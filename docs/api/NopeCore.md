@@ -12494,6 +12494,204 @@ case thirds
 
 Two lines each way, at thirds: the default.
 
+## `GuideCardContext`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+struct GuideCardContext
+```
+
+What the camera shows, for when the guide's invitation card may show
+(``GuideInvitation/showsCard(_:)``).
+
+## `GuideCardContext/init(camera:showsOtherCard:)`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+@MainActor init(camera: CameraModel, showsOtherCard: Bool)
+```
+
+Reads the context from the camera.
+
+- Parameters:
+  - camera: The camera model.
+  - showsOtherCard: Whether the interface shows another card on the picture's lower edge.
+
+## `GuideCardContext/init(isCameraLive:isCleanView:isRunning:showsOtherCard:)`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+init(isCameraLive: Bool, isCleanView: Bool = false, isRunning: Bool = false, showsOtherCard: Bool = false)
+```
+
+Creates a context from plain values.
+
+- Parameters:
+  - isCameraLive: Whether the picture is live.
+  - isCleanView: Whether the camera is in clean view.
+  - isRunning: Whether a countdown or series is going.
+  - showsOtherCard: Whether another card shows on the picture's lower edge.
+
+## `GuideCardContext/isCameraLive`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+var isCameraLive: Bool
+```
+
+Whether the picture is live: the camera is ready, its first start has ended, and its
+session runs (not interrupted, paused for heat or failed).
+
+## `GuideCardContext/isCleanView`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+var isCleanView: Bool
+```
+
+Whether the camera is in clean view.
+
+## `GuideCardContext/isRunning`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+var isRunning: Bool
+```
+
+Whether a countdown, burst, interval series, astro run or bracket is going.
+
+## `GuideCardContext/showsOtherCard`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+var showsOtherCard: Bool
+```
+
+Whether another card of the picture's lower edge shows: a drive mode's card, an open dial
+or a hint. It takes the invitation's place while it shows.
+
+## `GuideInvitation`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+@MainActor final class GuideInvitation
+```
+
+The invitation to the how-to-use guide (issue #117; `docs/design/finish-1.0.md`, section 2):
+a small card on the camera, "How to use nope.", with Open and Dismiss.
+
+The card shows from the first time the camera is live until the person presses Open or
+Dismiss, or opens the guide another way (from Settings or About). Either is final: the card
+doesn't come back on this device. Nothing takes it away on a timer or after a number of
+launches (owner decision 3), and Factory Defaults doesn't bring it back (decision 4); the
+guide itself can always be opened again from Settings and About.
+
+Privacy rule (AGENTS.md, "No network, no analytics"): the one stored value is a Boolean in the
+app's own settings store on the device. It isn't a count or a date, and it is never sent. It
+is kept under a key outside ``SharedSettingsStore/keyPrefix``: it is the app's state, not a
+setting, so presets, Factory Defaults and the Lock Screen camera's snapshot don't carry it.
+
+When the card may show on the camera is ``showsCard(_:)``: never over the first start, clean
+view, a countdown or series, or a paused camera, and it gives way to the other cards of the
+picture's lower edge.
+
+```swift
+let invitation = GuideInvitation(settings: settings)
+if invitation.showsCard(GuideCardContext(camera: model, showsOtherCard: false)) {
+    // Show the card; Open calls invitation.guideOpened(), Dismiss invitation.dismiss().
+}
+```
+
+## `GuideInvitation/answeredKey`
+
+internal, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+nonisolated static let answeredKey: String
+```
+
+The store key: whether the invitation was answered, a Boolean.
+
+## `GuideInvitation/dismiss()`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+@MainActor func dismiss()
+```
+
+Records the card's Dismiss: the card doesn't show again. The guide stays in Settings and
+About. Side effect: stores one Boolean on the device.
+
+## `GuideInvitation/guideOpened()`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+@MainActor func guideOpened()
+```
+
+Records that the guide was opened, from the card's Open or from Settings or About: the
+card is answered and doesn't show again. Side effect: stores one Boolean on the device.
+
+## `GuideInvitation/init(defaults:)`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+@MainActor init(defaults: UserDefaults)
+```
+
+Loads the invitation's answer.
+
+- Parameter defaults: The store, normally the settings' store. Tests pass one of their own.
+
+## `GuideInvitation/init(settings:)`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+@MainActor convenience init(settings: NopeSettings)
+```
+
+Loads the invitation's answer from the settings' store.
+
+- Parameter settings: The person's settings, whose store keeps the answer.
+
+## `GuideInvitation/isAnswered`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+@MainActor var isAnswered: Bool { get set }
+```
+
+Whether the person answered the invitation: pressed Open or Dismiss, or opened the guide
+from Settings or About. `false` on a new install and after an update from a build without
+the guide, so everyone sees the card once.
+
+## `GuideInvitation/showsCard(_:)`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+@MainActor func showsCard(_ context: GuideCardContext) -> Bool
+```
+
+Whether the card shows on the camera now.
+
+- Parameter context: What the camera shows.
+- Returns: `true` while the invitation is unanswered, the picture is live, the controls are
+  shown, nothing runs and no other card of the picture's lower edge is shown.
+
 ## `GuideLine`
 
 public, declared in `Sources/NopeCore/GridGeometry.swift`

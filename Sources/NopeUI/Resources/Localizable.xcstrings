@@ -70,7 +70,7 @@
       }
     },
     "%lld of %lld" : {
-      "comment" : "Caption in the Last Photo viewer: the position of the photo shown among the photos taken since nope. opened, such as 3 of 5. Shown only when there is more than one photo. Also the burst card on the camera while a burst with a Burst Limit runs: the photos taken so far of the photos it will take, such as 3 of 10 (issue #121).",
+      "comment" : "Caption in the Last Photo viewer: the position of the photo shown among the photos taken since nope. opened, such as 3 of 5. Shown only when there is more than one photo. Also the burst card on the camera while a burst with a Burst Limit runs: the photos taken so far of the photos it will take, such as 3 of 10 (issue #121). Also the page number under the how-to-use guide, between Back and Next, such as 2 of 7 (issue #117).",
       "extractionState" : "manual"
     },
     "%lld photos saved" : {
@@ -81,12 +81,20 @@
       "comment" : "Burst card on the camera, before a burst, with a Burst Limit: one press of the shutter or a volume button takes this many photos, and a second press stops early. The number is the limit, 3 to 50. Draft wording for the Honesty review (issue #121).",
       "extractionState" : "manual"
     },
+    "About processing" : {
+      "comment" : "Link on page 2 of the how-to-use guide: closes the guide and opens the Honesty page in Settings, which explains what nope. does and doesn't process.",
+      "extractionState" : "manual"
+    },
     "App Store" : {
       "comment" : "Section header on the About screen above the Rate or Review row. App Store is Apple's name; use its name in the language's iOS.",
       "extractionState" : "manual"
     },
     "As fast as the camera is ready" : {
       "comment" : "Detail of the Fast burst speed in the Burst menu. It makes no claim about a rate.",
+      "extractionState" : "manual"
+    },
+    "Auto and manual" : {
+      "comment" : "Title of page 5 of the how-to-use guide: full auto and the manual controls. A heading.",
       "extractionState" : "manual"
     },
     "Battery at %@. Charge the device soon to keep taking photos. Keep Screen On is not used now." : {
@@ -281,6 +289,10 @@
       "comment" : "Button in the Last Photo viewer that closes the viewer and returns to the camera. Drawn as an X where Last Photo is.",
       "extractionState" : "manual"
     },
+    "Closes the guide and opens Settings." : {
+      "comment" : "VoiceOver hint of a link in the how-to-use guide: the guide closes and the app's Settings open at the page the link names.",
+      "extractionState" : "manual"
+    },
     "Closest" : {
       "comment" : "Label under the leading end of the focus bracket's track: the closest the lens focuses (position 0).",
       "extractionState" : "manual"
@@ -449,8 +461,112 @@
       "comment" : "Footer under The Frames in Bracket Settings: the frames are planned from the camera's current reading, and the shutter speed changes first.",
       "extractionState" : "manual"
     },
+    "Guide card: Dismiss" : {
+      "comment" : "VoiceOver and Voice Control name of the round ✕ button on the camera's how-to-use card. It hides the card for good; the guide stays in Settings.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dismiss"
+          }
+        }
+      }
+    },
+    "Guide card: How to use nope." : {
+      "comment" : "Name of the small card on the camera that offers the how-to-use guide, with Open and Dismiss beside it. Keep \"nope.\" unchanged: it is the app's name. Sentence case, unlike the guide's title. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How to use nope."
+          }
+        }
+      }
+    },
+    "Guide card: Open" : {
+      "comment" : "Button on the camera's how-to-use card: opens the guide. A short word.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open"
+          }
+        }
+      }
+    },
+    "Guide: Back" : {
+      "comment" : "Button under a page of the how-to-use guide: shows the page before.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        }
+      }
+    },
+    "Guide: Close" : {
+      "comment" : "VoiceOver and Voice Control name of the ✕ button that closes the how-to-use guide.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "Guide: Done" : {
+      "comment" : "Button under the last page of the how-to-use guide, in Next's place: closes the guide.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "Guide: Lenses" : {
+      "comment" : "Title of page 4 of the how-to-use guide: the lens buttons. A heading.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lenses"
+          }
+        }
+      }
+    },
+    "Guide: Next" : {
+      "comment" : "Button under a page of the how-to-use guide: shows the next page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next"
+          }
+        }
+      }
+    },
+    "Hides this card. The guide stays in Settings." : {
+      "comment" : "VoiceOver hint of the Dismiss button on the camera's how-to-use card. Settings is the name of the app's settings screen.",
+      "extractionState" : "manual"
+    },
     "Hold the shutter. A tap takes one photo." : {
       "comment" : "Burst card on the camera, before a burst: what the shutter does in burst mode.",
+      "extractionState" : "manual"
+    },
+    "How to Use nope." : {
+      "comment" : "Title of the how-to-use guide, and of the rows in Settings and About that open it. Keep \"nope.\" unchanged: it is the app's name. Title case. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "In Burst, one press takes this many photos; press again to stop early. Off: a tap takes one photo, and holding takes photos until you let go." : {
@@ -489,6 +605,14 @@
       "comment" : "Shown when the shutter was pressed with an exposure bracket on, but the camera had not yet measured the exposure the bracket's photos are planned around (for example just after switching lenses), so nothing was taken.",
       "extractionState" : "manual"
     },
+    "nope. uses this device's one camera." : {
+      "comment" : "Page 4 of the how-to-use guide, on a device with only one camera. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
+    },
+    "One photo or a series" : {
+      "comment" : "Title of page 6 of the how-to-use guide: the drive modes. A heading.",
+      "extractionState" : "manual"
+    },
     "Opens Bracket Settings." : {
       "comment" : "VoiceOver hint on the selected Bracket word of the drive strip above the shutter: activating it again opens Bracket Settings.",
       "extractionState" : "manual"
@@ -501,8 +625,20 @@
       "comment" : "Footer under the Rate or Review row on the About screen: the row leaves the app, and anything written there can be read by anyone. App Store is Apple's name; use its name in the language's iOS.",
       "extractionState" : "manual"
     },
+    "Opens the guide." : {
+      "comment" : "VoiceOver hint of the Open button on the camera's how-to-use card, and of the How to Use nope. rows in Settings and About.",
+      "extractionState" : "manual"
+    },
     "Order" : {
       "comment" : "Picker in Bracket Settings, and a setting of the Take Bracket action: the order in which the frames are taken.",
+      "extractionState" : "manual"
+    },
+    "Page %lld of %lld" : {
+      "comment" : "VoiceOver reading of the how-to-use guide's page number, such as \"Page 2 of 7\".",
+      "extractionState" : "manual"
+    },
+    "Page %lld of %lld: %@" : {
+      "comment" : "What VoiceOver says when a page of the how-to-use guide shows: the page's number, of how many, then the page's title, such as \"Page 2 of 7: Photos as the camera took them\".",
       "extractionState" : "manual"
     },
     "Photo Format sheet: Formats for Other Lenses" : {
@@ -831,8 +967,16 @@
       "comment" : "In the photo details: the EXIF exposure program Portrait mode.",
       "extractionState" : "manual"
     },
+    "Press the shutter or a volume button. Photos are saved to the Photos app." : {
+      "comment" : "Page 1 of the how-to-use guide. The shutter is the large round button; the volume buttons are the device's own. Photos is the name of Apple's app: use its name in the language's iOS.",
+      "extractionState" : "manual"
+    },
     "Press to stop" : {
       "comment" : "Burst card on the camera while a burst with a Burst Limit runs: a second press of the shutter or a volume button stops it after the photo being taken. Draft wording for the Honesty review (issue #121).",
+      "extractionState" : "manual"
+    },
+    "Q and Settings" : {
+      "comment" : "Title of page 7 of the how-to-use guide. Q is the letter on the Quick Menu button, the same in every language; Settings is the app's settings screen.",
       "extractionState" : "manual"
     },
     "Rate or Review" : {
@@ -903,6 +1047,18 @@
         }
       }
     },
+    "Search keywords: How to Use nope." : {
+      "comment" : "Settings search keywords for the How to Use nope. row, which opens the app's how-to-use guide, separated by commas. Not shown on screen: list the words people in your language would type to find help on using the app.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "help, guide, how, instructions, tutorial, start"
+          }
+        }
+      }
+    },
     "Search keywords: Rate or Review" : {
       "comment" : "Settings search keywords for the Rate or Review link on the About screen, separated by commas. Not shown on screen. App Store is Apple's name: use its name in the language's iOS.",
       "extractionState" : "manual",
@@ -967,6 +1123,10 @@
       "comment" : "VoiceOver label of a Show Value button in the photo details. The placeholder is the row's title, such as Location.",
       "extractionState" : "manual"
     },
+    "Single, Timer, Burst and the other modes choose what a press does: one photo, a timer or a series." : {
+      "comment" : "Page 6 of the how-to-use guide. Single, Timer and Burst are drive mode words on the camera; use the same translations.",
+      "extractionState" : "manual"
+    },
     "Slow burst · %lld photos" : {
       "comment" : "Burst card on the camera, before a burst, with a Burst Limit: the speed in use (up to 2 photos a second) and the photos one press takes. The number is the limit, 3 to 50. Draft wording for the Honesty review (issue #121).",
       "extractionState" : "manual"
@@ -1015,6 +1175,10 @@
         }
       }
     },
+    "Switch Camera turns to the front camera and back." : {
+      "comment" : "Page 4 of the how-to-use guide, on a device with one rear lens and a front camera. Switch Camera is the name of the round button with arrows; use its translation.",
+      "extractionState" : "manual"
+    },
     "Switch Lenses" : {
       "comment" : "Value of the Pinch setting: a pinch on the camera picture moves to the next longer or wider rear lens. Not a zoom.",
       "extractionState" : "manual"
@@ -1023,12 +1187,32 @@
       "comment" : "VoiceOver More Content label on the Every Tag page: the tag's number, such as 0x829A.",
       "extractionState" : "manual"
     },
+    "Take a photo" : {
+      "comment" : "Title of page 1 of the how-to-use guide. A heading.",
+      "extractionState" : "manual"
+    },
     "Taking %lld frames" : {
       "comment" : "Bracket card on the camera, and announced to VoiceOver, while the camera takes the frames of an exposure bracket. The number is the count of frames, 3, 5 or 7.",
       "extractionState" : "manual"
     },
     "Taking a focus bracket. Press to stop." : {
       "comment" : "VoiceOver value of the shutter while a focus bracket runs: pressing the shutter stops it after the current frame.",
+      "extractionState" : "manual"
+    },
+    "Tap a lens to switch to it." : {
+      "comment" : "Page 4 of the how-to-use guide, on a device with two or more rear lenses and no front camera.",
+      "extractionState" : "manual"
+    },
+    "Tap a lens to switch to it. Switch Camera turns to the front camera and back." : {
+      "comment" : "Page 4 of the how-to-use guide, on a device with two or more rear lenses and a front camera. Switch Camera is the name of the round button with arrows; use its translation.",
+      "extractionState" : "manual"
+    },
+    "Tap Auto to set the exposure and focus yourself. Tap Manual to go back to full auto." : {
+      "comment" : "Page 5 of the how-to-use guide. Auto and Manual are the words the Manual Controls button shows on the camera; use the same translations.",
+      "extractionState" : "manual"
+    },
+    "Tap Q to open the Quick Menu. Everything else is in Settings." : {
+      "comment" : "Page 7 of the how-to-use guide. Q is the letter on the button, the same in every language; Quick Menu is the button's name; Settings is the app's settings screen. Describe Q only as a button that opens the menu.",
       "extractionState" : "manual"
     },
     "Tap the farthest thing you want sharp, or move the slider." : {

@@ -412,7 +412,10 @@ MASVS-STORAGE-2, MASVS-PRIVACY-2.
   Issue #82 adds the Assistant Access and Ask First settings and a count of
   confirmed assistant requests for its one-time tip (`NopeAssistant.confirmedCount` in `UserDefaults`). That
   count is the one allowed counter: a number only, kept on the device, removed by Factory
-  Defaults, with no dates or request contents. Issue #97 adds one Boolean.
+  Defaults, with no dates or request contents. Issue #97 adds one Boolean. Issue #117 adds one
+  Boolean, `NopeGuide.invitationAnswered`: whether the how-to-use guide's invitation card was
+  answered (Open, Dismiss or the guide opened). It isn't a count or a date, is outside the
+  settings snapshot and presets, and Factory Defaults leaves it (owner decision).
 
 ### 13. Logging
 

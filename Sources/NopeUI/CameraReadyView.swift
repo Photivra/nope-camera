@@ -80,7 +80,7 @@ struct CameraReadyView: View {
     /// Whether a sheet, popover or full-screen cover opened here is over the camera.
     private var presentsOwnSheet: Bool {
         showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || showsIntervalSettings
-            || showsBracketSettings || showsPresets || model.comparison.isPresented || model.isViewerOpen
+            || showsBracketSettings || showsPresets || showsGuide || model.comparison.isPresented || model.isViewerOpen
     }
 
     /// Whether night mode is on, so the sheets opened here are red too.
@@ -168,6 +168,16 @@ struct CameraReadyView: View {
 
     /// Whether the presets sheet is shown (issue #72).
     @State private var showsPresets = false
+
+    /// Whether the how-to-use guide is shown, from its invitation card (issue #117).
+    @State private var showsGuide = false
+
+    /// The invitation to the how-to-use guide, or `nil` where the camera shows none (the Lock
+    /// Screen camera).
+    @Environment(\.guideInvitation) private var guideInvitation
+
+    /// What assistants did since the app opened, for the hint that takes the guide card's place.
+    @Environment(\.assistantSession) private var assistantSession
 
     /// Whether the Interval sheet is shown (the selected Interval word, or the interval card).
     @State private var showsIntervalSettings = false
@@ -364,6 +374,8 @@ struct CameraReadyView: View {
                     .presentationSizing(.page)
             }
         }
+        // The how-to-use guide, from its invitation card (issue #117).
+        .guideSheet(isPresented: $showsGuide, lenses: lenses)
         .onChange(of: presentsOwnSheet) { _, isPresenting in presentsSheet(isPresenting) }
         // Keep Screen On is used only while no sheet is over the camera (SeriesScreen).
         .preference(key: CameraCoveredPreference.self, value: presentsOwnSheet)
@@ -566,6 +578,7 @@ struct CameraReadyView: View {
             if showsControls, showsExposureDial {
                 AutoExposureDial(model: model) { showsExposureDial = false }
             }
+            guideCard
             if showsControls {
                 manualControlsButton(.row)
                 LensRows(lenses: lenses, selectedID: model.selectedLensID) { select($0) }
@@ -1011,12 +1024,36 @@ struct CameraReadyView: View {
                 }
             }
             modeCards
+            guideCard
             if showsControls, model.manual.isEnabled, !hidesReadouts {
                 // Each readout is a tile with its own backing (docs/design/screens/camera-manual).
                 ManualReadoutRow(model: model, openControl: $openControl, showsProTools: $showsProTools)
             }
         }
         .padding(rotation.isSideways ? 0 : NopeSpace.xs)
+    }
+
+    /// The invitation to the how-to-use guide (issue #117), while `GuideInvitation.showsCard(_:)`
+    /// says so. It never covers a control: it is one more card of the picture's lower edge.
+    @ViewBuilder private var guideCard: some View {
+        if let guideInvitation,
+            guideInvitation.showsCard(GuideCardContext(camera: model, showsOtherCard: showsOtherBottomCard))
+        {
+            GuideCard {
+                showsGuide = true
+            } dismiss: {
+                guideInvitation.dismiss()
+            }
+        }
+    }
+
+    /// Whether a card, dial or hint shows on the picture's lower edge, which takes the guide
+    /// card's place while it shows (docs/design/finish-1.0.md, 2.1): a drive mode's card, an open
+    /// dial, or a hint (hold steady, close-up, comparison, an assistant's action).
+    private var showsOtherBottomCard: Bool {
+        ModeCardState.current(model, endedBurst: nil, showsControls: showsControls) != nil
+            || openControl != nil || showsExposureDial || model.showsSteadyHint || model.closeUpLens != nil
+            || model.comparisonAppliesToNextPhoto || assistantSession?.notice != nil
     }
 
     /// The running or chosen mode's card (BUILD-SPEC.md, 3.5, ``ModeCards``).
