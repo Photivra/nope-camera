@@ -3,8 +3,9 @@ import Observation
 
 /// What came of one photo of an interval series (`CameraModel.takeIntervalPhoto()`).
 enum IntervalPhotoOutcome: Equatable, Sendable {
-    /// The photo was taken and saved.
-    case taken
+    /// The photo was taken and saved. `startedAt` is when it really started, on the monotonic
+    /// clock, after any wait for the camera: the next photo is due one interval later.
+    case taken(startedAt: ContinuousClock.Instant)
 
     /// The series stops after a time, and the time was up while the photo waited for the camera:
     /// the series finished.
@@ -593,22 +594,32 @@ public final class ManualControlsModel {
 
     // MARK: - Interval shooting
 
-    /// Starts an interval series: takes a photo, waits ``interval``, and repeats until
-    /// ``IntervalSettings/count`` photos are taken, the time is up (``IntervalSettings/StopAfter/time``),
-    /// or the series is stopped. Only photos taken and saved are counted: `capture` waits while
-    /// the series is paused (``setIntervalPaused(_:)``) instead of skipping a photo. A photo that
-    /// can't be taken for another reason (the camera stopped for good, or the photo failed) ends
-    /// the series, and the camera says why.
+    /// Starts an interval series: takes a photo, and starts the next one ``interval`` after the
+    /// last one started, until ``IntervalSettings/count`` photos are taken, the time is up
+    /// (``IntervalSettings/StopAfter/time``), or the series is stopped. Only photos taken and
+    /// saved are counted: `capture` waits while the series is paused (``setIntervalPaused(_:)``)
+    /// instead of skipping a photo. A photo that can't be taken for another reason (the camera
+    /// stopped for good, or the photo failed) ends the series, and the camera says why.
+    ///
+    /// Photos are spaced start to start on the monotonic clock (issue #123, owner decision):
+    /// - The next photo starts one interval after the moment the last one really started
+    ///   (``IntervalPhotoOutcome/taken(startedAt:)``), so the time a photo takes to be exposed and
+    ///   saved doesn't stretch the series.
+    /// - A photo that takes longer than the interval makes the next one start as soon as it is
+    ///   saved, and the series is marked behind schedule (``IntervalProgress/isBehindSchedule``)
+    ///   until a photo fits its interval again. No photo is taken twice to catch up: the schedule
+    ///   continues from each photo's own start.
+    /// - A series paused past a start takes that photo when it resumes, and continues from it.
     ///
     /// A series that stops after a time ends at a fixed moment of the monotonic clock
     /// (``IntervalProgress/deadline``), set when it starts, so a change of the device's time
-    /// doesn't move it: it takes no photo whose interval would end at or after that time, and when
-    /// the time is up while it waits for the camera, `capture` says so and the series ends as
-    /// finished. A photo that fails ends any series as stopped, also one that fails at or after
-    /// the end (issue #105).
+    /// doesn't move it: it takes another photo while the next start is before that moment, and
+    /// when the time is up while it waits for the camera, `capture` says so and the series ends
+    /// as finished. A photo that fails ends any series as stopped, also one that fails at or
+    /// after the end (issue #105).
     ///
-    /// - Parameter capture: Takes one photo and says whether it was taken and saved, the time
-    ///   was up while it waited, or it failed.
+    /// - Parameter capture: Takes one photo and says whether it was taken and saved (and when it
+    ///   started), the time was up while it waited, or it failed.
     private func startInterval(capture: @escaping @MainActor () async -> IntervalPhotoOutcome) {
         guard intervalProgress == nil else { return }
         let series = interval
@@ -624,20 +635,24 @@ public final class ManualControlsModel {
             while true {
                 let outcome = await capture()
                 guard !Task.isCancelled else { return }
-                guard outcome == .taken else {
+                guard case .taken(let started) = outcome else {
                     // Only a time that was up while the series waited finishes it; a photo that
                     // failed stops it, also when it failed at or after the end (issue #105).
                     isFinished = outcome == .timeUp
                     break
                 }
                 taken += 1
-                intervalProgress = intervalProgress?.with(taken: taken)
-                guard hasTimeForAnotherPhoto(series, taken: taken, deadline: deadline) else {
+                let nextStart = started + .seconds(series.interval)
+                let isBehind = clock.now() >= nextStart
+                intervalProgress = intervalProgress?.with(taken: taken, nextPhotoStart: nextStart, isBehindSchedule: isBehind)
+                guard hasTimeForAnotherPhoto(series, taken: taken, nextStart: nextStart, deadline: deadline) else {
                     isFinished = true
                     break
                 }
+                // Behind schedule, the next photo starts at once.
+                guard !isBehind else { continue }
                 do {
-                    try await clock.sleep(seconds: series.interval)
+                    try await clock.sleep(nextStart)
                 } catch {
                     return
                 }
@@ -649,16 +664,28 @@ public final class ManualControlsModel {
     }
 
     /// Whether a series takes another photo after this one: fewer than its count are taken, or,
-    /// for a series that stops after a time, the next interval ends before the time is up.
+    /// for a series that stops after a time, the next photo's start is before the end.
     ///
     /// - Parameters:
     ///   - series: The series' settings.
     ///   - taken: The photos taken so far.
+    ///   - nextStart: When the next photo is due to start, on the monotonic clock.
     ///   - deadline: When a series that stops after a time ends, on the monotonic clock, or `nil`.
-    /// - Returns: Whether to wait the interval and take another photo.
-    private func hasTimeForAnotherPhoto(_ series: IntervalSettings, taken: Int, deadline: ContinuousClock.Instant?) -> Bool {
+    /// - Returns: Whether to take another photo.
+    private func hasTimeForAnotherPhoto(
+        _ series: IntervalSettings, taken: Int, nextStart: ContinuousClock.Instant, deadline: ContinuousClock.Instant?
+    ) -> Bool {
         guard let deadline else { return taken < series.count }
-        return clock.now() + .seconds(series.interval) < deadline
+        return nextStart < deadline
+    }
+
+    /// Whether the manual shutter time is longer than the series' interval, so its photos follow
+    /// one another rather than keep to the interval (decision 10 of the 1.0.0 plan): an interface
+    /// says so in Interval Shooting before the series starts. Only a shutter set by hand is known
+    /// in advance; in full auto, or with an automatic shutter, it is `false`.
+    public var isShutterLongerThanInterval: Bool {
+        guard isEnabled, let shutter = settings.shutter else { return false }
+        return shutter > interval.interval
     }
 
     /// Whether the running series stops after a time and that time is up, on the monotonic clock.

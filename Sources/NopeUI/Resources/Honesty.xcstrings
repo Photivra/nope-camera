@@ -1617,6 +1617,42 @@
     "Opens in your browser." : {
       "comment" : "Footer under the Privacy Policy row on the About screen, and the row's VoiceOver hint: the policy opens in the browser, not in the app. Draft for the Honesty review.",
       "extractionState" : "manual"
+    },
+    "Each photo takes longer than the interval" : {
+      "comment" : "Interval card on the camera while a series runs: the last photo took longer to take and save than the time between photo starts, so the next photo starts as soon as the camera is ready instead of on schedule. No photo is skipped or taken twice. Must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "The shutter time is longer than the interval, so photos follow one another." : {
+      "comment" : "Under the rows of Interval Shooting, before a series starts, when the shutter time set by hand is longer than the time between photo starts: each photo starts as soon as the one before it is saved, so the photos can't keep to the interval. Must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Takes %lld photos, starting one every %@." : {
+      "comment" : "Under the rows of Interval Shooting: how the series' photos are spaced. Each photo starts one interval after the last one started, however long a photo takes to be taken and saved. The number is a count of photos, at least 2; the placeholder is a duration formatted by the system, such as \"10 seconds\". Must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Takes %lld photo, starting one every %@."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Takes %lld photos, starting one every %@."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Takes photos for %@, starting one every %@." : {
+      "comment" : "Under the rows of Interval Shooting, for a series that stops after a time: how long it runs and how its photos are spaced. Each photo starts one interval after the last one started. Both placeholders are durations formatted by the system, such as \"1 hour, 30 minutes\" and \"10 seconds\". Must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual"
     }
   },
   "version" : "1.0"

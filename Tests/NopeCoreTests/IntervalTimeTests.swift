@@ -101,8 +101,8 @@ struct IntervalTimeTests {
             timed.with(isPaused: true)
                 == IntervalProgress(taken: 3, total: nil, isPaused: true, deadline: timed.deadline, duration: timed.duration))
         #expect(
-            timed.with(isPaused: true).with(taken: 4)
-                == IntervalProgress(taken: 4, total: nil, deadline: timed.deadline, duration: timed.duration))
+            timed.with(isPaused: true).with(taken: 4, nextPhotoStart: start, isBehindSchedule: false)
+                == IntervalProgress(taken: 4, total: nil, deadline: timed.deadline, duration: timed.duration, nextPhotoStart: start))
 
         let counted = IntervalProgress(taken: 3, total: 10)
         #expect(!counted.isTimed)

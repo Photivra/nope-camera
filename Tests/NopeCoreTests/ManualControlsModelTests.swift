@@ -502,7 +502,8 @@ struct ManualControlsModelTests {
         await send(model, .setInterval(IntervalSettings(interval: 60, count: 5)), .startInterval)
         var iterator = gate.stream.makeAsyncIterator()
         await iterator.next()
-        #expect(model.manual.intervalProgress == IntervalProgress(taken: 1, total: 5))
+        #expect(model.manual.intervalProgress?.taken == 1)
+        #expect(model.manual.intervalProgress?.total == 5)
         await send(model, .stopInterval)
         #expect(model.manual.intervalProgress == nil)
         for _ in 0..<20 { await Task.yield() }
@@ -514,7 +515,7 @@ struct ManualControlsModelTests {
         await send(model, .setInterval(IntervalSettings(interval: 1, count: 4)))
         await model.manual.handle(.startInterval) { [model] in
             await model.send(.manual(.stopInterval))
-            return .taken
+            return .taken(startedAt: model.clock.now())
         }
         for _ in 0..<20 { await Task.yield() }
         #expect(model.manual.intervalProgress == nil)

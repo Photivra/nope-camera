@@ -385,7 +385,7 @@ public struct IntervalSettings: Equatable, Sendable {
     /// The time a series runs for until another is chosen, in seconds: 1 hour.
     public static let standardDuration: Double = 3600
 
-    /// The time from one photo to the next, in seconds.
+    /// The time from the start of one photo to the start of the next, in seconds.
     public let interval: Double
 
     /// How many photos the series takes when it stops after a number of photos.
@@ -397,7 +397,7 @@ public struct IntervalSettings: Equatable, Sendable {
     /// How long the series runs when it stops after a time, in seconds.
     public let duration: Double
 
-    /// The default series: 10 photos, 10 seconds apart.
+    /// The default series: 10 photos, starting one every 10 seconds.
     public static let standard = IntervalSettings(interval: 10, count: 10)
 
     /// Creates interval settings, moving each value into its allowed range.
@@ -460,10 +460,10 @@ public struct IntervalSettings: Equatable, Sendable {
     }
 
     /// The most photos the series can take: ``count``, or for a series that stops after a time,
-    /// one photo at the start and one after each whole interval that starts before the time is
-    /// up. Each photo also takes time to be taken and saved before the next interval starts
-    /// (`ManualControlsModel`), so a timed series usually takes fewer; an interface says "at
-    /// most".
+    /// one photo at the start and one at each start, an interval apart, before the time is up.
+    /// Photos are spaced start to start (`ManualControlsModel`, issue #123), so the series takes
+    /// this many while each photo fits its interval; a photo that takes longer delays the ones
+    /// after it, so an interface says "at most".
     public var maximumPhotoCount: Int {
         switch stopAfter {
         case .numberOfPhotos: count
@@ -540,6 +540,17 @@ public struct IntervalProgress: Equatable, Sendable {
     /// number of photos.
     public let duration: Duration?
 
+    /// When the next photo is due to start, on the monotonic clock: one interval after the last
+    /// photo started (issue #123), or `nil` before the first photo is taken. An interface counts
+    /// "Next photo in" down to it. It may be past: the photo is then being taken, waits for the
+    /// camera, or starts at once because the series is behind schedule.
+    public let nextPhotoStart: ContinuousClock.Instant?
+
+    /// Whether the last photo took longer than the interval, so the next one starts as soon as it
+    /// was saved instead of on schedule. It is cleared once a photo fits its interval again. An
+    /// interface says "Each photo takes longer than the interval" in place of the countdown.
+    public let isBehindSchedule: Bool
+
     /// Creates a progress value.
     ///
     /// - Parameters:
@@ -548,14 +559,19 @@ public struct IntervalProgress: Equatable, Sendable {
     ///   - isPaused: Whether the series is paused.
     ///   - deadline: When a series that stops after a time ends, on the monotonic clock, or `nil`.
     ///   - duration: How long a series that stops after a time runs, or `nil`.
+    ///   - nextPhotoStart: When the next photo is due to start, on the monotonic clock, or `nil`.
+    ///   - isBehindSchedule: Whether the last photo took longer than the interval.
     public init(
-        taken: Int, total: Int?, isPaused: Bool = false, deadline: ContinuousClock.Instant? = nil, duration: Duration? = nil
+        taken: Int, total: Int?, isPaused: Bool = false, deadline: ContinuousClock.Instant? = nil, duration: Duration? = nil,
+        nextPhotoStart: ContinuousClock.Instant? = nil, isBehindSchedule: Bool = false
     ) {
         self.taken = taken
         self.total = total
         self.isPaused = isPaused
         self.deadline = deadline
         self.duration = duration
+        self.nextPhotoStart = nextPhotoStart
+        self.isBehindSchedule = isBehindSchedule
     }
 
     /// Whether the series stops after a time.
@@ -613,15 +629,22 @@ public struct IntervalProgress: Equatable, Sendable {
     /// - Parameter isPaused: Whether the series is paused.
     /// - Returns: The progress.
     func with(isPaused: Bool) -> IntervalProgress {
-        IntervalProgress(taken: taken, total: total, isPaused: isPaused, deadline: deadline, duration: duration)
+        IntervalProgress(
+            taken: taken, total: total, isPaused: isPaused, deadline: deadline, duration: duration,
+            nextPhotoStart: nextPhotoStart, isBehindSchedule: isBehindSchedule)
     }
 
-    /// This progress with another count of photos taken, running.
+    /// This progress after another photo was taken, running.
     ///
-    /// - Parameter taken: The photos taken so far.
+    /// - Parameters:
+    ///   - taken: The photos taken so far.
+    ///   - nextPhotoStart: When the next photo is due to start, on the monotonic clock.
+    ///   - isBehindSchedule: Whether the photo took longer than the interval.
     /// - Returns: The progress.
-    func with(taken: Int) -> IntervalProgress {
-        IntervalProgress(taken: taken, total: total, deadline: deadline, duration: duration)
+    func with(taken: Int, nextPhotoStart: ContinuousClock.Instant, isBehindSchedule: Bool) -> IntervalProgress {
+        IntervalProgress(
+            taken: taken, total: total, deadline: deadline, duration: duration, nextPhotoStart: nextPhotoStart,
+            isBehindSchedule: isBehindSchedule)
     }
 }
 

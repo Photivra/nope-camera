@@ -57,6 +57,8 @@ struct IntervalSection: View {
                 if manual.intervalProgress == nil, let blocker = model.intervalBlocker {
                     Self.reason(blocker)
                 }
+                Text(verbatim: Self.scheduleSentence(settings, shutterIsLonger: manual.isShutterLongerThanInterval))
+                    .accessibilityIdentifier("IntervalSchedule")
                 if settings.stopAfter == .time {
                     Text(
                         "The time keeps running while the series is paused, so the series ends on time.", bundle: .module,
@@ -131,7 +133,7 @@ struct IntervalSection: View {
             HStack(alignment: .firstTextBaseline, spacing: NopeSpace.s) {
                 Text("Photos", bundle: .module, comment: "Picker for how many photos an interval series takes.")
                 Spacer(minLength: NopeSpace.s)
-                Text("At most \(settings.maximumPhotoCount)", bundle: .module, comment: "The most photos an interval series that stops after a time can take: one at the start and one after each interval that starts before the time is up. Saving each photo adds time, so it usually takes fewer. The number is a count of photos, at least 2.")
+                Text("At most \(settings.maximumPhotoCount)", bundle: .module, comment: "The most photos an interval series that stops after a time can take: one at the start and one each interval after, while the next start is before the time is up. A photo that takes longer than the interval delays the ones after it, so it can take fewer. The number is a count of photos, at least 2.")
                     // The primary color: the secondary one failed the contrast audit in night mode.
                     .multilineTextAlignment(.trailing)
             }
@@ -169,6 +171,38 @@ struct IntervalSection: View {
             Text("Number of Photos", bundle: .module, comment: "Choice of the Stop After picker of interval shooting: the series stops once it has taken the chosen number of photos.")
         case .time:
             Text("Time", bundle: .module, comment: "Choice of the Stop After picker of interval shooting: the series stops once the chosen hours and minutes have passed.")
+        }
+    }
+
+    /// The sentence under the rows that says how the photos are spaced: start to start
+    /// (issue #123). "Takes 10 photos, starting one every 10 seconds.", or for a series that stops
+    /// after a time, "Takes photos for 1 hour, starting one every 10 seconds.". When the shutter
+    /// set by hand is longer than the interval, the app knows before the series starts that the
+    /// photos can't keep to it, and says so instead (decision 10 of the 1.0.0 plan).
+    ///
+    /// - Parameters:
+    ///   - settings: The series.
+    ///   - shutterIsLonger: Whether the manual shutter time is longer than the interval
+    ///     (`ManualControlsModel.isShutterLongerThanInterval`).
+    /// - Returns: The sentence.
+    static func scheduleSentence(_ settings: IntervalSettings, shutterIsLonger: Bool) -> String {
+        if shutterIsLonger {
+            return String(
+                localized: "The shutter time is longer than the interval, so photos follow one another.", table: "Honesty",
+                bundle: .module,
+                comment: "Under the rows of Interval Shooting, before a series starts, when the shutter time set by hand is longer than the time between photo starts: each photo starts as soon as the one before it is saved, so the photos can't keep to the interval. Must not claim more than the English. Draft for the Honesty review.")
+        }
+        let interval = ModeCardText.spokenDuration(settings.interval)
+        switch settings.stopAfter {
+        case .numberOfPhotos:
+            return String(
+                localized: "Takes \(settings.count) photos, starting one every \(interval).", table: "Honesty", bundle: .module,
+                comment: "Under the rows of Interval Shooting: how the series' photos are spaced. Each photo starts one interval after the last one started, however long a photo takes to be taken and saved. The number is a count of photos, at least 2; the placeholder is a duration formatted by the system, such as \"10 seconds\". Must not claim more than the English. Draft for the Honesty review.")
+        case .time:
+            return String(
+                localized: "Takes photos for \(ModeCardText.spokenDuration(settings.duration)), starting one every \(interval).",
+                table: "Honesty", bundle: .module,
+                comment: "Under the rows of Interval Shooting, for a series that stops after a time: how long it runs and how its photos are spaced. Each photo starts one interval after the last one started. Both placeholders are durations formatted by the system, such as \"1 hour, 30 minutes\" and \"10 seconds\". Must not claim more than the English. Draft for the Honesty review.")
         }
     }
 

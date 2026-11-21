@@ -73,4 +73,31 @@ struct IntervalTimeCardTests {
         #expect(state == .intervalRunning(progress))
         #expect(IntervalTimeCard<EmptyView>.refreshSeconds == 60)
     }
+
+    // MARK: - Start to start (issue #123)
+
+    @Test func theSettingsSayPhotosStartOneEveryInterval() {
+        #expect(
+            IntervalSection.scheduleSentence(.standard, shutterIsLonger: false)
+                == "Takes 10 photos, starting one every 10 seconds.")
+        let timed = IntervalSettings(interval: 10, count: 10, stopAfter: .time, duration: 5400)
+        #expect(
+            IntervalSection.scheduleSentence(timed, shutterIsLonger: false)
+                == "Takes photos for 1 hour, 30 minutes, starting one every 10 seconds.")
+        #expect(
+            IntervalSection.scheduleSentence(.standard, shutterIsLonger: true)
+                == "The shutter time is longer than the interval, so photos follow one another.")
+    }
+
+    @Test func theCardCountsToTheNextStartOrSaysPhotosTakeLonger() {
+        #expect(NextPhotoTiming(IntervalProgress(taken: 0, total: 10)) == nil, "no time before the first photo")
+        let start = Self.instant + .seconds(10)
+        let onTime = IntervalProgress(taken: 1, total: 10, nextPhotoStart: start)
+        #expect(NextPhotoTiming(onTime) == NextPhotoTiming(due: start))
+        #expect(NextPhotoTiming(onTime)?.secondsLeft(at: Self.instant + .seconds(2)) == 8, "8 when a 2-second photo is saved")
+        let behind = IntervalProgress(taken: 1, total: 10, nextPhotoStart: start, isBehindSchedule: true)
+        #expect(NextPhotoTiming(behind)?.isBehindSchedule == true)
+        #expect(NextPhotoTiming(behind)?.secondsLeft(at: Self.instant) == nil, "no countdown while behind")
+        #expect(ModeCardText.behindScheduleString == "Each photo takes longer than the interval")
+    }
 }

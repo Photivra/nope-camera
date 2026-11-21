@@ -311,31 +311,45 @@ enum ModeCardState: Equatable {
     }
 }
 
-/// When an interval series' next photo is due, for the running card's "Next photo in 6s".
+/// When an interval series' next photo is due, for the running card's "Next photo in 6s", or that
+/// the series is behind schedule.
 ///
-/// `NopeCore` doesn't publish the time of the next photo, so the card counts from the moment the
-/// count of photos taken last changed, by the series' interval, on the monotonic clock
-/// (``NopeClock/now``), so a change of the device's time doesn't move it (issue #106). The
-/// interval is the one set now, which is the series' own unless it was changed in Interval
-/// Settings while the series runs (the change applies to the next series). Until the card sees a
-/// photo counted, and while the series is paused, it shows no time rather than a guessed one.
+/// `NopeCore` publishes the next photo's start (`IntervalProgress.nextPhotoStart`): one interval
+/// after the last photo started, on the monotonic clock, so neither the time a photo takes nor a
+/// change of the device's time moves it (issues #106, #123). Until the first photo is taken, and
+/// while the series is paused, the card shows no time rather than a guessed one.
 struct NextPhotoTiming: Equatable {
     /// When the next photo is due, on the monotonic clock.
     let due: ContinuousClock.Instant
 
+    /// Whether the last photo took longer than the interval, so the next starts at once.
+    let isBehindSchedule: Bool
+
     /// Creates the timing.
     ///
-    /// - Parameter due: When the next photo is due, on the monotonic clock.
-    init(due: ContinuousClock.Instant) {
+    /// - Parameters:
+    ///   - due: When the next photo is due, on the monotonic clock.
+    ///   - isBehindSchedule: Whether the last photo took longer than the interval.
+    init(due: ContinuousClock.Instant, isBehindSchedule: Bool = false) {
         self.due = due
+        self.isBehindSchedule = isBehindSchedule
+    }
+
+    /// The timing of a running series, or `nil` before its first photo.
+    ///
+    /// - Parameter progress: The series' progress.
+    init?(_ progress: IntervalProgress) {
+        guard let due = progress.nextPhotoStart else { return nil }
+        self.init(due: due, isBehindSchedule: progress.isBehindSchedule)
     }
 
     /// The whole seconds until the next photo, rounded up, or `nil` once it is due (it is being
-    /// taken or waits for the camera).
+    /// taken or waits for the camera) or the series is behind schedule.
     ///
     /// - Parameter now: The current moment of the monotonic clock.
     /// - Returns: The seconds left, at least 1, or `nil`.
     func secondsLeft(at now: ContinuousClock.Instant) -> Int? {
+        guard !isBehindSchedule else { return nil }
         let left = (due - now) / .seconds(1)
         guard left > 0 else { return nil }
         return Int(left.rounded(.up))
@@ -471,6 +485,15 @@ enum ModeCardText {
         } else {
             Text("\(progress.taken) of \(total) photos taken", bundle: .module, comment: "Interval shooting progress: how many photos of the series are taken so far. Both numbers are counts of photos; the second is at least 2.")
         }
+    }
+
+    /// "Each photo takes longer than the interval": the interval card's second line, in place of
+    /// the countdown, while photos take longer than the interval (issue #123). Plain text, not a
+    /// warning: the series keeps going.
+    static var behindScheduleString: String {
+        String(
+            localized: "Each photo takes longer than the interval", table: "Honesty", bundle: .module,
+            comment: "Interval card on the camera while a series runs: the last photo took longer to take and save than the time between photo starts, so the next photo starts as soon as the camera is ready instead of on schedule. No photo is skipped or taken twice. Must not claim more than the English. Draft for the Honesty review.")
     }
 
     /// "Next photo in 6s" (BUILD-SPEC.md, figure drive-interval-running).
@@ -704,9 +727,6 @@ struct ModeCards: View {
     /// The last bracket saved, whose card shows until the next action.
     @State private var savedBracket: BracketCardState?
 
-    /// When the running series' last photo was counted, for "Next photo in".
-    @State private var nextPhoto: NextPhotoTiming?
-
     /// Creates the cards.
     ///
     /// - Parameters:
@@ -760,12 +780,10 @@ struct ModeCards: View {
         .onChange(of: model.selectedLensID) { savedBracket = nil }
         .onChange(of: model.astro.isOn) { savedBracket = nil }
         .bracketFeedback(model)
-        .onChange(of: model.manual.intervalProgress?.taken) { _, taken in
-            guard let taken, taken > 0 else {
-                nextPhoto = nil
-                return
-            }
-            nextPhoto = NextPhotoTiming(due: model.clock.now() + .seconds(model.manual.interval.interval))
+        // VoiceOver hears once that photos take longer than the interval, when it first applies
+        // (docs/design/finish-1.0.md, section 7); the card's line says it while it lasts.
+        .onChange(of: model.manual.intervalProgress?.isBehindSchedule == true) { _, isBehind in
+            if isBehind { AccessibilityNotification.Announcement(ModeCardText.behindScheduleString).post() }
         }
     }
 
@@ -814,13 +832,13 @@ struct ModeCards: View {
                 title: ModeCardText.intervalSummary(settings), detail: ModeCardText.intervalIdleDetail(settings),
                 name: ModeCardText.intervalSettings, action: openIntervalSettings)
         case .intervalRunning(let progress) where progress.isTimed:
-            IntervalTimeCard(progress: progress, nextPhoto: nextPhoto, clock: model.clock) {
+            IntervalTimeCard(progress: progress, nextPhoto: NextPhotoTiming(progress), clock: model.clock) {
                 stopButton(ModeCardText.stopInterval) { send(.manual(.stopInterval)) }
             }
         case .intervalRunning(let progress):
             ModeCard(
                 title: ModeCardText.intervalProgress(progress),
-                detail: progress.isPaused ? nil : nextPhoto.map { NextPhotoDetail(timing: $0, clock: model.clock) },
+                detail: progress.isPaused ? nil : NextPhotoTiming(progress).map { NextPhotoDetail(timing: $0, clock: model.clock) },
                 fractionDone: progress.fractionDone(at: model.clock.now())
             ) {
                 stopButton(ModeCardText.stopInterval) { send(.manual(.stopInterval)) }
@@ -955,7 +973,8 @@ struct IntervalTimeDetail: View {
     }
 }
 
-/// "Next photo in 6s", counting down each second until the photo is due.
+/// "Next photo in 6s", counting down each second until the photo is due, or "Each photo takes
+/// longer than the interval" while the series is behind schedule (issue #123).
 struct NextPhotoDetail: View {
     /// When the next photo is due.
     let timing: NextPhotoTiming
@@ -973,13 +992,18 @@ struct NextPhotoDetail: View {
         self.clock = clock
     }
 
-    /// The seconds left, or nothing once the photo is due.
+    /// The seconds left, or nothing once the photo is due; behind schedule, a plain line that says
+    /// photos take longer than the interval.
     var body: some View {
-        // Redrawn once a second, on the second before the photo is due, and only while a series
-        // runs and this card is on screen. The seconds are read from the monotonic clock.
-        TimelineView(.periodic(from: clock.date(of: timing.due), by: 1)) { _ in
-            if let seconds = timing.secondsLeft(at: clock.now()) {
-                ModeCardText.nextPhoto(in: seconds)
+        if timing.isBehindSchedule {
+            Text(verbatim: ModeCardText.behindScheduleString)
+        } else {
+            // Redrawn once a second, on the second before the photo is due, and only while a series
+            // runs and this card is on screen. The seconds are read from the monotonic clock.
+            TimelineView(.periodic(from: clock.date(of: timing.due), by: 1)) { _ in
+                if let seconds = timing.secondsLeft(at: clock.now()) {
+                    ModeCardText.nextPhoto(in: seconds)
+                }
             }
         }
     }

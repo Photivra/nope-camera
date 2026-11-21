@@ -1669,6 +1669,15 @@ system's clocks.
   photo make saving fail (turn off the app's Photos access in the Settings app, or fill the
   storage). Expected: the camera says why the photo wasn't saved, and the card and the Live
   Activity end as Stopped, never Finished.
+- Start to start (#123): with Manual Controls on, set the shutter to 2 s and an interval series
+  of 10 photos every 10 s. Expected: "Takes 10 photos, starting one every 10 seconds." under the
+  rows; the photos' times (Photos › Info, or the camera's own photo details) are 10 s apart, the
+  card reads "Next photo in 8s" just after each save, and the series ends about 92 s after it
+  started. Then set the shutter to 15 s: before Start, "The shutter time is longer than the
+  interval, so photos follow one another."; while it runs, the card says "Each photo takes longer
+  than the interval" instead of the countdown, VoiceOver announces it once, and no photo is taken
+  twice (ten photos, each starting as the one before is saved). Check the line in Night Mode (red
+  only), at the largest text size and right to left.
 
 ### Shared settings, the Night Mode control and the Lock Screen camera on a device
 

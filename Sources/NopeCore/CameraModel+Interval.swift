@@ -45,15 +45,17 @@ extension CameraModel {
     /// the photo the shutter took just before the series started) or the compare view is open.
     /// A photo cut short by a pause is taken again after it.
     ///
-    /// - Returns: ``IntervalPhotoOutcome/taken`` when the photo was taken and saved;
+    /// - Returns: ``IntervalPhotoOutcome/taken(startedAt:)`` when the photo was taken and saved,
+    ///   with the moment it started;
     ///   ``IntervalPhotoOutcome/timeUp`` when the series' time was up while it waited; otherwise
     ///   ``IntervalPhotoOutcome/failed``: the camera stopped for good, or the photo failed for
     ///   another reason (the camera says why). A stopped series is cancelled and ignores it.
     func takeIntervalPhoto() async -> IntervalPhotoOutcome {
         while await waitForIntervalPhoto() {
             guard canCapture else { return .failed }
+            let started = clock.now()
             await capture()
-            guard case .failed = captureStatus else { return .taken }
+            guard case .failed = captureStatus else { return .taken(startedAt: started) }
             guard await failureWasAPause() else { return .failed }
         }
         return manual.isIntervalTimeUp ? .timeUp : .failed
