@@ -281,8 +281,12 @@ decision, issue #80): a signed file shows that it was made by Photivra Nope Came
 version (the claim generator, below), so signing is the person's choice, and the switch's
 explanation says so. A value the person already saved is kept; a fresh install and Factory
 Defaults start with it off. If signing fails, the photo is saved unsigned and the screen says
-so; a "Not Signed" warning then stays on the camera until a photo is signed again. Signing that
-is off is not a warning: the message after each photo says the photo isn't signed.
+so. The camera then shows a "Not Signed" warning after a photo that could not be signed, until
+the next photo is signed or signing is turned off. The warning follows only the last press that
+saved photos (one photo, or a bracket's or burst's frames): it shows while signing is on and any
+of that press's photos isn't signed, so turning signing on again before the next photo brings it
+back, and a press that saves nothing leaves it as it is. Signing that is off is not a warning:
+the message after each photo says the photo isn't signed.
 
 **What it proves.** The signature proves the file hasn't changed since the app signed it. It
 doesn't prove who took the photo or on which device. Each file is signed with a new key and a
