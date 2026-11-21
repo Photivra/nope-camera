@@ -55,7 +55,7 @@ struct ApplyPresetIntent: AppIntent {
         let choice = PresetChoice(identifier: preset.id)
         // The name shown is the entity's: Factory Defaults' fixed name, or the person's own text.
         let name = choice == .factoryDefaults ? nil : String(localized: preset.name)
-        let answer = await gate.answer(
+        let answer = try await gate.answer(
             .applyPreset, question: AssistantQuestions.applyPreset(named: name), intent: self, opensApp: true
         ) {
             guard let choice else { return AssistantAnswer(.presetUnavailable) }

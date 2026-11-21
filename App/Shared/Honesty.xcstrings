@@ -13,6 +13,10 @@
       "comment" : "Live Activity, after photos were saved without a Content Credentials signature because the person turned signing off in the app's settings. Honesty wording: never imply a photo is signed.",
       "extractionState" : "manual"
     },
+    "Open nope. to do this. Nothing changed." : {
+      "comment" : "Siri's answer when an action of nope. needs its camera, nope. isn't on screen, and Siri can't open it from this request; nothing was taken or changed. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
     "Signed." : {
       "comment" : "Live Activity, after photos were saved: every saved photo has a Content Credentials signature. Honesty wording: says only that they are signed.",
       "extractionState" : "manual"
@@ -29,9 +33,29 @@
       "comment" : "Siri's answer when Assistant Access is off: the action was refused and nothing changed. Assistant Access, Settings and Privacy are names in nope.'s Settings. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.",
       "extractionState" : "manual"
     },
-    "Cancelled. Nothing changed." : {
-      "comment" : "Siri's answer after the person cancelled nope.'s question before an action. Draft for the Honesty review. Must not claim more than the English.",
-      "extractionState" : "manual"
+    "Timer started, %lld seconds. nope. shows the result." : {
+      "comment" : "Siri's answer when a photo was asked for with a delay longer than Siri waits: the self-timer started, and nope. takes the photo when it ends and shows the result on its camera screen. The number is the delay in seconds, more than 10. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English: it doesn't say a photo was taken.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Timer started, %lld second. nope. shows the result."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Timer started, %lld seconds. nope. shows the result."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Unlock this device to use nope.'s actions. Nothing changed." : {
       "comment" : "Siri's answer when an action was asked for while the iPhone or iPad is locked; nothing was taken or changed. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.",

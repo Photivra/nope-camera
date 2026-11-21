@@ -73,7 +73,8 @@ extension WatchResult {
     ///
     /// The watch asks only for a photo, so the outcomes of other requests (a lens, the light, an
     /// interval series, a bracket, the focus range, a photo size, a preset) can't happen; they would be
-    /// reported as not saved.
+    /// reported as not saved. Nor can ``ShortcutOutcome/timerStarted(seconds:)``: the watch's
+    /// delays are the self-timer's, at most ``PhotoShortcut/longestDelayAnsweredAfterPhoto``.
     ///
     /// - Parameter outcome: How the request ended.
     init(_ outcome: ShortcutOutcome) {
@@ -84,7 +85,7 @@ extension WatchResult {
             .intervalStarted, .intervalBlockedByAstro, .intervalNotShorterThanTime, .intervalStopped, .noIntervalRunning,
             .bracketUnavailable, .focusBracketUnavailable, .focusBracketStopped, .focusBracketBlockedByAstro, .savedSome,
             .focusRangeSet,
-            .focusRangeUnavailable, .photoSizeSet, .noPhotoSizeChoice, .presetApplied, .presetUnavailable:
+            .focusRangeUnavailable, .photoSizeSet, .noPhotoSizeChoice, .presetApplied, .presetUnavailable, .timerStarted:
             self = .notSaved
         case .cancelled: self = .cancelled
         case .busy, .busyWithEarlierRequest, .lensBusy: self = .busy

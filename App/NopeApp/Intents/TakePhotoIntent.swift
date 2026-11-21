@@ -38,8 +38,8 @@ struct TakePhotoIntent: AppIntent {
         title: LocalizedStringResource(
             "Custom Delay", comment: "A setting of nope.'s Take Photo action: a delay in seconds that you type."),
         description: LocalizedStringResource(
-            "A delay in seconds, up to a minute. It replaces the Delay choice.",
-            comment: "Explains the Custom Delay setting of nope.'s Take Photo action. \"Delay\" is the name of the other setting."),
+            "A delay in seconds, up to a minute. It replaces the Delay choice. Over 10 seconds, the action ends when the timer starts, and Photos Saved is 0.",
+            comment: "Explains the Custom Delay setting of nope.'s Take Photo action. \"Delay\" is the name of the other setting; \"Photos Saved\" is the name of the action's result in the Shortcuts app."),
         // A compile-time constant: PhotoShortcut.maximumDelaySeconds, which also checks the value.
         inclusiveRange: (1, 60))
     var customDelaySeconds: Int?
@@ -81,13 +81,18 @@ struct TakePhotoIntent: AppIntent {
 
     /// Hands the request to the camera screen and says how it ended.
     ///
+    /// A delay over ``PhotoShortcut/longestDelayAnsweredAfterPhoto`` is answered when the timer
+    /// starts, because Siri doesn't wait that long; the photo is taken when it ends (issue #126).
+    ///
     /// - Returns: The outcome, said by Siri or shown by Shortcuts, and the number of photos
-    ///   saved ("Photos Saved"; 0 when none was).
+    ///   saved ("Photos Saved"; 0 when none was, or when the answer came as the timer started).
+    /// - Throws: The system's error when the question wasn't confirmed, or when the app couldn't
+    ///   be brought on screen (``AssistantGate/answer(_:question:intent:opensApp:run:)``).
     @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<Int> & ProvidesDialog {
         let photo = PhotoShortcut(
             timer: delay.timer, customDelaySeconds: customDelaySeconds, lensKind: lens?.kind, count: count)
-        let answer = await gate.answer(.takePhoto, question: AssistantQuestions.takePhoto(photo), intent: self, opensApp: true) {
+        let answer = try await gate.answer(.takePhoto, question: AssistantQuestions.takePhoto(photo), intent: self, opensApp: true) {
             AssistantAnswer(await inbox.submit(.takePhoto(photo)))
         }
         return .result(value: answer.photosSaved, dialog: IntentDialog(answer.sentence))

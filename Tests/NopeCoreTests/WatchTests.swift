@@ -209,7 +209,7 @@ struct WatchTests {
             .lensUnavailable, .lensSelected(.wide), .lightOn, .lightOff, .noLight, .lightUnavailable,
             .intervalStarted, .intervalBlockedByAstro, .intervalNotShorterThanTime, .intervalStopped, .noIntervalRunning,
             .bracketUnavailable, .focusBracketBlockedByAstro, .savedSome(saved: 1, total: 3), .focusRangeSet(.closeUp),
-            .focusRangeUnavailable, .photoSizeSet, .noPhotoSizeChoice, .presetUnavailable,
+            .focusRangeUnavailable, .photoSizeSet, .noPhotoSizeChoice, .presetUnavailable, .timerStarted(seconds: 20),
             .presetApplied(PresetApplyResult(choice: .factoryDefaults, name: nil, isApplied: true, notices: [])),
         ]
         for outcome in otherRequests { #expect(WatchResult(outcome) == .notSaved) }

@@ -57,7 +57,7 @@ struct SetNightModeIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let isOn = isOn
-        let answer = await gate.answer(.setNightMode, question: AssistantQuestions.nightMode(isOn: isOn), intent: self, opensApp: false) {
+        let answer = try await gate.answer(.setNightMode, question: AssistantQuestions.nightMode(isOn: isOn), intent: self, opensApp: false) {
             settings.setNightMode(isOn)
             return AssistantAnswer(
                 isOn

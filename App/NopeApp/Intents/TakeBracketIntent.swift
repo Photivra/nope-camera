@@ -123,7 +123,7 @@ struct TakeBracketIntent: AppIntent {
         let request = BracketShortcut(
             type: type.type, focusFrameCount: focusFrames, focusRange: range.range, frameCount: frames.count,
             step: step.stops, order: order.order, delaySeconds: delay.timer?.seconds ?? 0, lensKind: lens?.kind)
-        let answer = await gate.answer(
+        let answer = try await gate.answer(
             .takeBracket, question: AssistantQuestions.takeBracket(request), intent: self, opensApp: true
         ) {
             AssistantAnswer(await inbox.submit(.takeBracket(request)))

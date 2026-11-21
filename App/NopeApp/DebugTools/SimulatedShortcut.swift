@@ -115,14 +115,31 @@ enum SimulatedShortcut {
     static func run(with inbox: ShortcutInbox, gate: AssistantGate) async {
         let requests = requests
         guard !requests.isEmpty, result.message == nil else { return }
-        var answer: AssistantAnswer?
+        var message: String?
         for request in requests {
-            answer = await gate.answer(action(for: request), confirm: { confirms }, openApp: {}) {
-                AssistantAnswer(await inbox.submit(request))
+            do {
+                let answer = try await gate.answer(
+                    action(for: request), confirm: { if !confirms { throw SimulatedCancel() } }, openApp: {}
+                ) {
+                    AssistantAnswer(await inbox.submit(request))
+                }
+                message = String(localized: answer.sentence)
+            } catch {
+                // The system says a cancelled question in its own words; the app gives no answer
+                // (issue #126). The UI tests read this marker instead.
+                message = Self.cancelledMarker
             }
         }
-        if let answer { result.message = String(localized: answer.sentence) }
+        if let message { result.message = message }
     }
+
+    /// What the result shows when the simulated question was cancelled: the request ended with
+    /// the question's error, and the app gave no answer. Debug only, not user-facing.
+    static let cancelledMarker = "No answer: the question was cancelled."
+
+    /// The error a cancelled simulated question throws, as `requestConfirmation` throws on
+    /// Cancel.
+    struct SimulatedCancel: Error {}
 
     /// Shows what Siri would say, for the UI tests to read.
     struct ResultView: View {

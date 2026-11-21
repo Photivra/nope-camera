@@ -33,6 +33,10 @@ enum ShortcutDialog {
             LocalizedStringResource(
                 "The timer was cancelled. No photo was taken.",
                 comment: "Siri's answer when the self-timer was cancelled on the phone before the photo.")
+        case .timerStarted(let seconds):
+            LocalizedStringResource(
+                "Timer started, \(seconds) seconds. nope. shows the result.", table: "Honesty",
+                comment: "Siri's answer when a photo was asked for with a delay longer than Siri waits: the self-timer started, and nope. takes the photo when it ends and shows the result on its camera screen. The number is the delay in seconds, more than 10. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English: it doesn't say a photo was taken.")
         case .busy:
             LocalizedStringResource(
                 "nope. is already taking a photo.",

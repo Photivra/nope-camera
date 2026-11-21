@@ -37,7 +37,7 @@ struct TurnOnLightIntent: AppIntent {
     /// - Returns: The outcome, said by Siri or shown by Shortcuts.
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let answer = await gate.answer(.turnOnLight, question: AssistantQuestions.light(isOn: true), intent: self, opensApp: true) {
+        let answer = try await gate.answer(.turnOnLight, question: AssistantQuestions.light(isOn: true), intent: self, opensApp: true) {
             AssistantAnswer(await inbox.submit(.setLight(isOn: true)))
         }
         return .result(dialog: IntentDialog(answer.sentence))
@@ -74,7 +74,7 @@ struct TurnOffLightIntent: AppIntent {
     /// - Returns: The outcome, said by Siri or shown by Shortcuts.
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let answer = await gate.answer(.turnOffLight, question: AssistantQuestions.light(isOn: false), intent: self, opensApp: false) {
+        let answer = try await gate.answer(.turnOffLight, question: AssistantQuestions.light(isOn: false), intent: self, opensApp: false) {
             AssistantAnswer(await inbox.submit(.setLight(isOn: false)))
         }
         return .result(dialog: IntentDialog(answer.sentence))

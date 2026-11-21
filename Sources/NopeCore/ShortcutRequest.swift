@@ -70,9 +70,31 @@ public enum ShortcutRequest: Equatable, Sendable {
 /// is.
 public struct PhotoShortcut: Equatable, Sendable {
     /// The longest delay a request may ask for, in seconds. A product choice for issue #62, not
-    /// a platform limit: Siri waits for the result, and a minute keeps that wait short. Longer
-    /// requests are shortened to it.
+    /// a platform limit. Longer requests are shortened to it. A delay over
+    /// ``longestDelayAnsweredAfterPhoto`` is answered when the timer starts, because Siri and
+    /// Shortcuts don't wait that long (issue #126).
     public static let maximumDelaySeconds = 60
+
+    /// The longest delay, in seconds, after which the answer still waits for the photo; a longer
+    /// one is answered when the timer starts (``ShortcutOutcome/timerStarted(seconds:)``; owner
+    /// decision, 2026-11-21, issue #126).
+    ///
+    /// iOS gives an App Intent that runs in the background about 30 seconds
+    /// ([Apple: LongRunningIntent](https://developer.apple.com/documentation/appintents/longrunningintent)).
+    /// Measured on the iOS 27.2 Simulator: Take Photo with a 40-second delay, run by the system's
+    /// App Intents runner, ended with a timeout after 31 seconds (`TakePhotoIntentUITests`).
+    /// Ten seconds, the self-timer's longest, leaves the rest for the question, the camera's
+    /// start, a long exposure in low light and the save.
+    public static let longestDelayAnsweredAfterPhoto = 10
+
+    /// Whether a request with this delay is answered when its timer starts rather than after
+    /// its photos: a delay over ``longestDelayAnsweredAfterPhoto``.
+    ///
+    /// - Parameter delaySeconds: The delay in seconds.
+    /// - Returns: `true` when the answer comes as the timer starts.
+    public static func answersWhenTimerStarts(delaySeconds: Int) -> Bool {
+        delaySeconds > longestDelayAnsweredAfterPhoto
+    }
 
     /// The delay before the photo, in seconds, from 0 (none) to ``maximumDelaySeconds``. A delay
     /// runs the self-timer, with its countdown on screen and announced.
@@ -322,6 +344,12 @@ public enum ShortcutOutcome: Equatable, Sendable {
 
     /// The countdown was cancelled on the device, so no photo was taken. Say so.
     case cancelled
+
+    /// The self-timer started, with a delay over ``PhotoShortcut/longestDelayAnsweredAfterPhoto``,
+    /// so the request is answered now and the photos are taken when it ends, as with the
+    /// camera's own self-timer; the app shows their result (issue #126). `seconds` is the delay.
+    /// Say that the timer started and for how long; claim nothing about the photo.
+    case timerStarted(seconds: Int)
 
     /// A photo, countdown, burst, interval series or astro run was already in progress. Say so;
     /// nothing changed.

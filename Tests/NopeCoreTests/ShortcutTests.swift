@@ -823,4 +823,56 @@ struct ShortcutTests {
         let denied = await makeModel(ScriptedBackend(permission: .denied, capabilities: CameraModelTests.oneLens))
         #expect(await run(.setPhotoSize(front), on: denied, settings: settings) == .cameraUnavailable(.permissionDenied))
     }
+
+    // MARK: - Delays longer than Siri waits (issue #126)
+
+    @Test func onlyADelayOverTenSecondsIsAnsweredWhenTheTimerStarts() {
+        #expect(PhotoShortcut.longestDelayAnsweredAfterPhoto == 10)
+        #expect(!PhotoShortcut.answersWhenTimerStarts(delaySeconds: 0))
+        #expect(!PhotoShortcut.answersWhenTimerStarts(delaySeconds: 10))
+        #expect(PhotoShortcut.answersWhenTimerStarts(delaySeconds: 11))
+        #expect(PhotoShortcut.answersWhenTimerStarts(delaySeconds: PhotoShortcut.maximumDelaySeconds))
+        #expect(ShortcutOutcome.timerStarted(seconds: 20).photosSaved == 0)
+    }
+
+    @Test func aLongDelayIsAnsweredWhenTheTimerStartsAndThePhotoIsTakenAfterIt() async {
+        let ticker = Ticker()
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await makeModel(backend, sleep: { _ in await ticker.sleep() })
+        let inbox = ShortcutInbox(sleep: Self.neverTimesOut)
+        let server = Task { await model.serveShortcuts(from: inbox) }
+        defer { server.cancel() }
+        await waitUntil { inbox.isServed }
+        let before = model.captureStatus
+        // The answer comes before any second of the countdown has passed.
+        #expect(await inbox.submit(.takePhoto(PhotoShortcut(delaySeconds: 12))) == .timerStarted(seconds: 12))
+        #expect(model.drive.countdown.remainingSeconds == 12)
+        #expect(await backend.captureRequests.isEmpty)
+        // Another request while the countdown runs is told the camera is busy.
+        #expect(await inbox.submit(.takePhoto(PhotoShortcut())) == .busy)
+        for remaining in stride(from: 12, to: 0, by: -1) {
+            await waitUntil { model.drive.countdown.remainingSeconds == remaining }
+            await tick(ticker)
+        }
+        // The photo is taken when the timer ends, as with the camera's own self-timer.
+        await waitUntil { model.captureStatus != before && !model.isTakingPhoto }
+        #expect(await backend.captureRequests.count == 1)
+    }
+
+    @Test func aTenSecondDelayStillWaitsForThePhoto() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await makeModel(backend)
+        #expect(await run(.takePhoto(PhotoShortcut(delaySeconds: 10)), on: model) == .saved(isSigned: false))
+        #expect(await backend.captureRequests.count == 1)
+    }
+
+    @Test func aLongDelayBeforeABracketIsAnsweredWhenTheTimerStarts() async {
+        let (model, backend) = await makeBracketModel(sleep: { _ in try await Task.sleep(for: .seconds(3600)) })
+        let outcome = await run(.takeBracket(BracketShortcut(frameCount: 3, step: 1, delaySeconds: 30)), on: model)
+        #expect(outcome == .timerStarted(seconds: 30))
+        #expect(model.drive.countdown.isRunning)
+        #expect(await backend.brackets.isEmpty)
+        model.drive.countdown.cancel()
+    }
 }
+

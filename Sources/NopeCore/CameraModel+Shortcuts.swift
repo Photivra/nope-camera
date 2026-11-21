@@ -96,6 +96,7 @@ extension CameraModel {
             return outcome(of: captureStatus, planned: planned())
         }
         startTimer(seconds: photo.delaySeconds) { [weak self] in await self?.takeShortcutPhotos(photo) }
+        if let started = timerStartedAnswer(delaySeconds: photo.delaySeconds) { return started }
         return await outcomeAfterCountdown(since: before, inbox: inbox, planned: planned)
     }
 
@@ -117,6 +118,20 @@ extension CameraModel {
         await send(.selectLens(lens.id))
         if let problem = await cameraProblem(inbox: inbox) { return .cameraUnavailable(problem) }
         return nil
+    }
+
+    /// The answer as a request's self-timer starts, for a delay too long for Siri and Shortcuts
+    /// to wait (``PhotoShortcut/answersWhenTimerStarts(delaySeconds:)``, issue #126), or `nil`
+    /// to wait for the photos. The photos are then taken when the timer ends, as with the
+    /// camera's own self-timer, and the camera shows their result.
+    ///
+    /// Called right after ``startTimer(seconds:shot:)``, whose own check (``canCapture`` and no
+    /// countdown or burst) the caller has already passed, so the countdown runs.
+    ///
+    /// - Parameter delaySeconds: The request's delay in seconds.
+    /// - Returns: ``ShortcutOutcome/timerStarted(seconds:)``, or `nil`.
+    private func timerStartedAnswer(delaySeconds: Int) -> ShortcutOutcome? {
+        PhotoShortcut.answersWhenTimerStarts(delaySeconds: delaySeconds) ? .timerStarted(seconds: delaySeconds) : nil
     }
 
     /// Waits for a self-timer a request started, then for its photos, and reports how it ended.
@@ -179,6 +194,7 @@ extension CameraModel {
             return outcome(of: captureStatus, planned: planned())
         }
         startTimer(seconds: request.delaySeconds) { [weak self] in await self?.capture(onceBracket: bracket) }
+        if let started = timerStartedAnswer(delaySeconds: request.delaySeconds) { return started }
         return await outcomeAfterCountdown(since: before, inbox: inbox, planned: planned)
     }
 
@@ -190,7 +206,8 @@ extension CameraModel {
     ///
     /// The answer comes from the bracket this request began, never from an earlier one: a
     /// countdown that was cancelled, or a bracket that didn't begin, answers as such, with no
-    /// photos saved.
+    /// photos saved. A delay too long for Siri to wait is answered as the timer starts
+    /// (``ShortcutOutcome/timerStarted(seconds:)``).
     ///
     /// - Parameters:
     ///   - request: The request's frames, range and delay.
@@ -210,6 +227,7 @@ extension CameraModel {
             guard await takeFocusBracket(settings) else { return outcome(of: captureStatus) }
         } else {
             startTimer(seconds: request.delaySeconds) { [weak self] in await self?.takeFocusBracket(settings) }
+            if let started = timerStartedAnswer(delaySeconds: request.delaySeconds) { return started }
             let counted = await outcomeAfterCountdown(since: before, inbox: inbox)
             // Cancelled, or not begun at zero: the countdown's own answer.
             guard bracketing.runCount != runsBefore else { return counted }
