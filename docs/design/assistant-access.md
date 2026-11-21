@@ -151,7 +151,7 @@ Each is a whole sentence with placeholders, formatted by the system (numbers, du
 ### 5.3 After the answer
 
 - **Confirmed.** The action runs as it does today and answers with today's sentence ("Photo saved. It isn't signed."). An action that needs the camera opens the app at this point, not before.
-- **Cancelled, or the question was dismissed or timed out.** Nothing changes and the app is not opened. Where the system lets the app answer, it says "Cancelled. Nothing changed." (section 14, check 4).
+- **Cancelled, or the question was dismissed or timed out.** Nothing changes and the app is not opened. The app adds no answer of its own: the question's error passes to the system, which answers (issue #126, owner decision of 2026-11-21; section 14, check 4).
 - **No one there.** An automation that runs unattended cannot answer, so it stops at the question. The page says so. A person who wants unattended automations chooses Never, knowing what that allows.
 
 ### 5.4 Timing
@@ -380,7 +380,7 @@ US English. Drafts for the owner's Honesty review; none ships until reviewed. Al
 | 15 | The off answer | Assistant Access is off. You can turn it on in nope. › Settings › Privacy. |
 | 16 | Its button | Open Settings |
 | 17 | Under each question | You can change this in nope. › Settings › Privacy. |
-| 18 | After Cancel | Cancelled. Nothing changed. |
+| 18 | After Cancel | None: the app adds no answer, and the system answers (issue #126, owner decision of 2026-11-21) |
 | 19 | Preset answer | "%@" applied, except its privacy settings. You can undo it in Presets. |
 | 20 | Hint caption | Siri or Shortcuts |
 | 21 | Refusal card | Assistant Access is off. nope. refused %lld requests since it opened. (with the singular form) |

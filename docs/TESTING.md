@@ -16,6 +16,7 @@ scripts/test-dump-tags.sh   # macOS only: the tag dumper's TIFF walker
 scripts/test-check-file-compat.sh
 scripts/test-check-launch-screen.sh && scripts/check-launch-screen.sh   # add a built .app to check its Info.plist
 scripts/test-check-app-store-id.sh
+scripts/test-count-design-screens.sh   # the design screen counts (docs/design/README.md)
 ```
 
 Before the release build, `scripts/check-app-store-id.sh` must pass: it fails while
@@ -419,6 +420,12 @@ picture, turned to the new side. A turn the app never shows fails the test; it i
 so a sideways layout can't go untested while the run stays green. The one exception is the
 iPhone Duo Simulator, whose outer display doesn't pass the turn to the app: the test is skipped
 there, CI doesn't use it, and the turned layout is checked on a device ("iPhone Duo").
+
+A UI test that waits for something to change uses `waitUntil(timeout:poll:_:)`
+(`UITestSupport.swift`, issue #124), which checks a condition every 0.2 seconds against a
+deadline on the monotonic clock (`ContinuousClock`), never a `Date()` deadline: a change of the
+Simulator's or device's time can't cut the wait short or stretch it. The camera probe of the
+Debug tools (`CameraProbeHelpers.swift`) waits the same way.
 
 The night mode checks (`nonRedPixels`) count every sampled pixel that isn't red or black. On
 iPad they leave out the window's bottom trailing corner (`windowCorner(_:)`, 40 points), where

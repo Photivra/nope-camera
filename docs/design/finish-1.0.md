@@ -97,6 +97,8 @@ Built for 1.0.0 (wave 1, group D) with the owner's decisions 1 and 2 of 2026-11-
 
 The iPhone Duo's inner display held like a book is 635 pt tall inside the safe area ([duo.html](duo.html)), so at the 600 pt threshold it gets 16 pt too, not 8 as 1.4 says; this was not checked on the Duo Simulator.
 
+The 25 `camera-*` figures on the 402 × 874 pt frame are redrawn with the rule (at integration of wave 1): with their 59 pt top inset they have 13 pt of spare height, so the drive strip moves down 5 pt (top 695 to 700 pt) and the shutter row starts 5 pt lower and is 5 pt shorter (96 pt instead of 101), which puts the shutter 2.5 pt lower. The lens row and the picture are unchanged. Not redrawn: `camera-small` (the 4.7-inch figure; `spacing-small` shows the change there), and the 121 other figures drawn on the same frame with the old rows (`assistant-*`, `bracket-*`, `burst-*`, `drive-*`, `feedback-*`, `keep-*`, `landscape-*`, `launch-*`, `lock-*`, `manual-*`, `permission-*`, `q-*`, `rtl-*`, `scope-*`, `sheet-*`, `viewer-*`), which are off by the same 5 pt.
+
 ## 2. The how-to-use guide (issue 117)
 
 Decided by the owner: the camera opens ready to shoot with a small card, "How to use nope.", that can be opened or dismissed; it never covers the shutter or blocks a photo; the guide can be opened any time from Settings and About; dismissing is stored on the device only; iPhone and iPad only, with one page about the Apple Watch remote; a few short screens, one idea each; the two key ideas in one sentence each with a link for more; only shipped behavior; built last.
