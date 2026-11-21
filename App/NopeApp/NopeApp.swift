@@ -208,6 +208,11 @@ struct NopeApp: App {
                 }
             Task { await model.send(.drive(.hardwareButton(phase))) }
         }
+        // After a relaunch during Astro (off at every launch), night mode stays as it was, so the
+        // screen opens red in the dark; it becomes the person's (owner decision, 2026-11-18). Only
+        // the app does this, never the Lock Screen camera, whose camera screen must leave the
+        // app's record alone (issue #108); the simulated Lock Screen camera skips it too.
+        .task { if !Self.simulatesLockScreenCamera { model.forgetNightModeFromAstroAtLaunch(settings: settings) } }
         .environment(\.seriesScreenKeeper, screenKeeper)
         // Keep Screen On (issue #97): offered here, where the app has a keeper, and told about
         // touches and VoiceOver focus changes.

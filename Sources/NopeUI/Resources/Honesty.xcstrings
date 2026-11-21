@@ -386,8 +386,8 @@
       "comment" : "Honesty heading: what the Keep Screen On switch does to the screen, the battery and locking. Keep Screen On is the name of nope.'s own switch; use its translation. Draft wording for the Honesty review (issue #97). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
-    "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims after 2 minutes without a touch (30 seconds in Low Power Mode). After 30 minutes without a touch or a photo, the phone's Auto-Lock applies again. While the screen is on, the phone is unlocked. The side button always locks it." : {
-      "comment" : "Issue #97; docs/design/keep-screen-on.md, wording 7. Keep Screen On is the name of nope.'s own switch; Low Power Mode and Auto-Lock are Apple's names: use the names iOS shows in this language. Must not claim more than the English. Draft wording for the Honesty review. Honesty wording: a fluent human must review every translation before release. \"dims\" without a level: a screen that is already darker isn't changed (SeriesScreenKeeper). Draft for the Honesty review. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. iPhone has a side button and iPad a top button.",
+    "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims after the time chosen in Dim After without a touch, 2 minutes unless you change it. With Never it doesn't dim, which uses more battery and can warm the phone; it still dims after 30 seconds in Low Power Mode and when the phone is hot. After 30 minutes without a touch or a photo, the phone's Auto-Lock applies again. While the screen is on, the phone is unlocked. The side button always locks it." : {
+      "comment" : "Issues #97 and #119; docs/design/keep-screen-on.md, wording 7, and docs/design/finish-1.0.md, 4.4. Keep Screen On, Dim After and Never are the names of nope.'s own switch, menu and choice; Low Power Mode and Auto-Lock are Apple's names: use the names iOS shows in this language. Must not claim more than the English. Draft wording for the Honesty review.",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -396,19 +396,19 @@
               "ipad" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims after 2 minutes without a touch (30 seconds in Low Power Mode). After 30 minutes without a touch or a photo, the iPad's Auto-Lock applies again. While the screen is on, the iPad is unlocked. The top button always locks it."
+                  "value" : "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims after the time chosen in Dim After without a touch, 2 minutes unless you change it. With Never it doesn't dim, which uses more battery and can warm the iPad; it still dims after 30 seconds in Low Power Mode and when the iPad is hot. After 30 minutes without a touch or a photo, the iPad's Auto-Lock applies again. While the screen is on, the iPad is unlocked. The top button always locks it."
                 }
               },
               "iphone" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims after 2 minutes without a touch (30 seconds in Low Power Mode). After 30 minutes without a touch or a photo, the phone's Auto-Lock applies again. While the screen is on, the phone is unlocked. The side button always locks it."
+                  "value" : "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims after the time chosen in Dim After without a touch, 2 minutes unless you change it. With Never it doesn't dim, which uses more battery and can warm the phone; it still dims after 30 seconds in Low Power Mode and when the phone is hot. After 30 minutes without a touch or a photo, the phone's Auto-Lock applies again. While the screen is on, the phone is unlocked. The side button always locks it."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims after 2 minutes without a touch (30 seconds in Low Power Mode). After 30 minutes without a touch or a photo, the device's Auto-Lock applies again. While the screen is on, the device is unlocked. Its lock button always locks it."
+                  "value" : "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims after the time chosen in Dim After without a touch, 2 minutes unless you change it. With Never it doesn't dim, which uses more battery and can warm the device; it still dims after 30 seconds in Low Power Mode and when the device is hot. After 30 minutes without a touch or a photo, the device's Auto-Lock applies again. While the screen is on, the device is unlocked. Its lock button always locks it."
                 }
               }
             }
@@ -507,6 +507,36 @@
     "Manifest SHA-256, %@" : {
       "comment" : "Voice Control name of the Manifest SHA-256 row of one file in the photo details. The placeholder is the file's format, such as RAW (DNG). SHA-256 is a standard name; keep it unchanged.",
       "extractionState" : "manual"
+    },
+    "Never uses more battery and can warm the phone. The screen still dims in Low Power Mode and when the phone is hot." : {
+      "comment" : "Added to the note under the Dim After menu when Never is chosen. Never is the menu choice; Low Power Mode is Apple's name: use the name iOS shows in this language. The catalog has device variants (phone, iPad, device). \"Hot\" means the device's own heat warning level (serious), not the weather. Must not claim more than the English. Draft wording for the Honesty review (issue #119).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Never uses more battery and can warm the iPad. The screen still dims in Low Power Mode and when the iPad is hot."
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Never uses more battery and can warm the phone. The screen still dims in Low Power Mode and when the phone is hot."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Never uses more battery and can warm the device. The screen still dims in Low Power Mode and when the device is hot."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "New photos include where they were taken: latitude, longitude and altitude. You can turn Location off under Details in Each Photo in Settings." : {
       "comment" : "Explanation of the Location On chip on the camera: new photos include their location. Details in Each Photo is the name of nope.'s own settings page; use its translation. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
@@ -1206,8 +1236,8 @@
       "comment" : "Claim 14 in docs/research/privacy-claims.md. Options is Apple's button name in the share sheet: use the name iOS shows in this language. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
-    "While the camera is showing, the screen stays on for 30 minutes after your last touch or photo, and dims after 2 minutes. Uses more battery. Not used while Battery Low shows." : {
-      "comment" : "Explains the Keep Screen On switch. Battery Low is the camera's warning; use its translation. Must not claim more than the English: the screen dims sooner in Low Power Mode, and after 30 minutes the phone's Auto-Lock applies again. Draft wording for the Honesty review (issue #97). Honesty wording: a fluent human must review every translation before release.",
+    "While the camera is showing, the screen stays on for 30 minutes after your last touch or photo. Uses more battery. Not used while Battery Low shows." : {
+      "comment" : "Explains the Keep Screen On switch. Battery Low is the camera's warning; use its translation. Must not claim more than the English: after 30 minutes the phone's Auto-Lock applies again; when the screen dims is the Dim After menu below it. Draft wording for the Honesty review (issues #97 and #119).",
       "extractionState" : "manual"
     },
     "With Compare on, nope. takes a second photo with the phone's processing, only to show it next to yours. That photo is never saved, signed or shared, and it is discarded when you close the comparison. Only your nope. photo goes to Photos." : {

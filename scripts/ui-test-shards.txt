@@ -57,6 +57,9 @@
 3 5 NopeAppUITests/testBurstHoldTakesPhotosUntilRelease 43e 43e
 2 2 NopeAppUITests/testBurstIdleCardShowsSpeedAndStart 30e 32e
 6 5 NopeAppUITests/testBurstLargestText 54e 51e
+5 2 NopeAppUITests/testBurstLimitPresetRoundTrip 130e 130e
+1 1 NopeAppUITests/testBurstLimitRow 300e 300e
+2 3 NopeAppUITests/testBurstLimitRowAtTheLargestTextSizeAndRightToLeft 280e 280e
 3 4 NopeAppUITests/testBurstNightModeIsAllRed 67e 70e
 3 4 NopeAppUITests/testBurstOnIPad 58e 58e
 6 3 NopeAppUITests/testBurstRightToLeft 43e 46e
@@ -120,6 +123,9 @@
 6 2 NopeAppUITests/testDetailsSummaryForDefaultPhoto 74e 95e
 1 3 NopeAppUITests/testDeviceWithoutRAWAtTheLargestTextSize 21 22
 1 1 NopeAppUITests/testDeviceWithoutRAWShowsTheFallbackChip 35 27
+1 1 NopeAppUITests/testDimAfterNeverDoesNotDim 50e 50e
+6 5 NopeAppUITests/testDimAfterRow 300e 300e
+5 2 NopeAppUITests/testDimAfterRowAtTheLargestTextSizeAndRightToLeft 280e 280e
 3 3 NopeAppUITests/testDimLightSaysHoldItSteady 37 33
 6 1 NopeAppUITests/testDriveCardsAtTheLargestTextSize 47e 45e
 1 3 NopeAppUITests/testDriveCardsNightMode 58e 55e
@@ -254,6 +260,7 @@
 2 1 NopeAppUITests/testNoPillRepeatsManualControlsOrTheDriveStrip 56e 57e
 2 1 NopeAppUITests/testNotSignedOnlyWhenSigningFailed 51e 52e
 5 1 NopeAppUITests/testOneLongPinchCrossesThreeLenses 34e 48e
+6 5 NopeAppUITests/testOnlyTheAppForgetsThatAstroTurnedNightModeOn 300e 300e
 6 3 NopeAppUITests/testOpenPhotosAtTheLargestTextSizeRightToLeftAndInNightMode 78e 79e
 6 1 NopeAppUITests/testOpenPhotosBeforeTheFirstPhoto 52e 55e
 5 4 NopeAppUITests/testOpenPhotosIsNotOfferedWhereItCantBeUsed 62e 64e
@@ -330,6 +337,8 @@
 1 3 NopeAppUITests/testSettingsScreensPassAccessibilityAudits 221e 219e
 5 1 NopeAppUITests/testSettingsScreensPassAccessibilityAuditsInTheLightSetting 222e 220e
 1 1 NopeAppUITests/testSettingsSearchFindsAssistantAccessByKeyword 62e 58e
+4 4 NopeAppUITests/testSettingsSearchFindsBurstLimit 190e 190e
+4 3 NopeAppUITests/testSettingsSearchFindsDimAfter 150e 150e
 6 2 NopeAppUITests/testSettingsSearchFindsEveryRootRowByName 86e 90e
 4 4 NopeAppUITests/testSettingsSearchFindsKeepScreenOn 60e 58e
 5 5 NopeAppUITests/testSettingsSearchFindsLevelByTap 38e 40e

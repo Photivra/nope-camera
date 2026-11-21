@@ -172,8 +172,9 @@ public final class CameraModel {
     /// the camera starts with a lens. Empty by default: every lens at its default size.
     public private(set) var photoSizes: [Lens.ID: PhotoDimensions] = [:]
 
-    /// The last heat level the backend reported.
-    private var heatLevel: HeatLevel = .nominal
+    /// The last heat level the backend reported. Keep Screen On reads it, to dim sooner when the
+    /// phone is hot (``KeepScreenOnConditions/heatLevel``, issue #119).
+    public private(set) var heatLevel: HeatLevel = .nominal
 
     /// The hardware the model asks for permission, capabilities and photos.
     let backend: any CaptureBackend

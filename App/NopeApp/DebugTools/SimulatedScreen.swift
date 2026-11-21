@@ -12,7 +12,8 @@ import UIKit
 ///   in memory (``Screen``), so a test can start below ``SeriesScreenKeeper/dimmedBrightness``
 ///   (issue #99). The idle timer is still the system's.
 /// - `-NopeKeepScreenOnSeconds <dim>,<lowPowerDim>,<limit>`: Keep Screen On's times, in seconds,
-///   instead of ``KeepScreenOnRule/standard``.
+///   instead of ``KeepScreenOnRule/standard``; `<dim>` is used for every Dim After choice but
+///   Never (issue #119).
 enum SimulatedScreen {
     /// The brightness launch argument.
     static let brightnessArgument = "-NopeSimulatedBrightness"

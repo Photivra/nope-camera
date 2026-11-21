@@ -26,9 +26,11 @@ struct SettingsPresetsTests {
         "isNightModeOn": { $0.setNightMode(true) },
         "tintsViewfinderInNightMode": { $0.setTintsViewfinderInNightMode(true) },
         "keepsScreenOn": { $0.setKeepsScreenOn(true) },
+        "dimAfter": { $0.setDimAfter(.never) },
         "keepsNightModeAfterAstro": { $0.setKeepsNightModeAfterAstro(true) },
         "followsFaces": { $0.setFollowsFaces(true) },
         "pinch": { $0.setPinch(.off) },
+        "burstLimit": { $0.setBurstLimit(.ten) },
         "showsProcessedMarker": { $0.setShowsProcessedMarker(false) },
         "showsLiveActivity": { $0.setShowsLiveActivity(true) },
         "photoSizes": {

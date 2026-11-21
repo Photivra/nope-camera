@@ -85,7 +85,8 @@ struct SeriesScreen: ViewModifier {
             isSwitchOn: settings.keepsScreenOn, isActive: scenePhase == .active,
             isCameraInFront: !showsSettings && !isCoveredByCamera, isCameraRunning: model.sessionStatus == .running,
             isBatteryLow: model.deviceStatus.batteryWarning != nil,
-            isLowPowerMode: model.deviceStatus.battery?.isLowPowerMode == true)
+            isLowPowerMode: model.deviceStatus.battery?.isLowPowerMode == true, dimAfter: settings.dimAfter,
+            heatLevel: model.heatLevel)
     }
 
     /// The content with the dimming button over it.

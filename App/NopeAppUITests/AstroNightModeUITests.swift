@@ -170,4 +170,28 @@ extension NopeAppUITests {
         XCTAssertFalse(nightModeTileIsOn(rightToLeft), "night mode went off")
         try audit(rightToLeft)
     }
+
+    /// Issue #108: only the app forgets, at launch, that Astro turned night mode on. Each launch
+    /// starts as if the app had been left with Astro on: night mode on, and the record that
+    /// Astro turned it on. The app forgets the record, so leaving Astro keeps night mode on; the
+    /// Lock Screen camera (simulated: XCTest can't launch the capture extension) leaves the
+    /// record alone, so leaving Astro there still turns night mode off.
+    @MainActor
+    func testOnlyTheAppForgetsThatAstroTurnedNightModeOn() throws {
+        let leftInAstro = Self.nightModeOn + ["-NopeAstro.isNightModeFromAstro", "YES"]
+        let app = launch("manual", extraArguments: leftInAstro)
+        XCTAssertTrue(nightModeTileIsOn(app))
+        chooseAstro(app)
+        leaveAstro(app)
+        XCTAssertTrue(nightModeTileIsOn(app), "the app forgot the record at launch: night mode is the person's")
+        app.terminate()
+
+        // The flag last: it takes no value.
+        let lockScreen = launch("manual", extraArguments: leftInAstro + ["-NopeSimulatedLockScreenCamera"])
+        XCTAssertTrue(nightModeTileIsOn(lockScreen))
+        chooseAstro(lockScreen)
+        leaveAstro(lockScreen)
+        XCTAssertFalse(nightModeTileIsOn(lockScreen), "the Lock Screen camera left the record: night mode went off")
+        try audit(lockScreen)
+    }
 }
