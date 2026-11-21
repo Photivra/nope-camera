@@ -2226,6 +2226,32 @@ on the smallest iPhone). Also: a series (interval or Astro) with the screen alre
 darker shows no Brighten Screen cover (issue #99), and Every Tag in What's in This Photo shows the
 red field in Night Mode (issue #98).
 
+### Dim After on a device (issue #119)
+
+Not yet checked on a device. Dim After (Settings › Screen, under Keep Screen On) is covered by
+`KeepScreenOnTests` with a fake screen and clock (each choice, Never, Low Power Mode and the
+serious heat level, Battery Low, the limit, an unknown stored value, presets and Factory
+Defaults) and by `KeepScreenOnUITests.swift` (the row, the menu, the note for each choice,
+Never not dimming, search, the largest text size, right to left and Night Mode, with audits).
+In the UI tests `-NopeKeepScreenOnSeconds <dim>,<lowPowerDim>,<limit>` gives every choice but
+Never the same `<dim>`. The Simulator has no Low Power Mode or heat, so these need a phone,
+with Keep Screen On on and the camera showing:
+
+1. Each choice, 1, 2 and 5 minutes, against a stopwatch: the Brighten Screen cover comes at
+   that time after the last touch or photo, and not before.
+2. Never for 30 minutes without a touch: the screen keeps its brightness, and Auto-Lock applies
+   at 30 minutes. Note the battery level and how warm the phone feels (or the thermal state in
+   Xcode's energy gauge) before and after. This is the evidence for the note "Never uses more
+   battery and can warm the phone." in the Honesty review.
+3. Never with Low Power Mode on: the screen dims after 30 seconds.
+4. Never while the phone is hot (the serious thermal state, for example after a long 4K video
+   in the Camera app in the sun, read in Xcode's energy gauge): the screen dims after
+   30 seconds. Record how the state was reached.
+5. Never during an interval series and an Astro run: the screen still dims at once when the
+   series starts.
+6. VoiceOver reads the note with the row, and with Never also the cost; changing the choice
+   doesn't move focus. With Reduce Motion on, the dimming still fades as Keep Screen On's does.
+
 ### Pinch to switch lenses on a device (issue #95)
 
 The step logic, where a pinch is used, the settling and the setting are unit tested

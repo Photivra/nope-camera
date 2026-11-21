@@ -144,6 +144,8 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
     case redViewfinder = "settings.redViewfinder"
     /// The Keep Screen On switch.
     case keepScreenOn = "settings.keepScreenOn"
+    /// The Dim After menu (issue #119), under Keep Screen On.
+    case dimAfter = "settings.dimAfter"
     /// The Live Activity switch.
     case liveActivity = "settings.liveActivity"
 
@@ -196,7 +198,7 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
         case .photos, .privacy, .camera, .screen, .more, .presets, .formats, .copies, .photoSize, .mirrorFrontCamera,
             .details, .signEachPhoto, .assistantAccess, .fastShutter, .focusOnFaces, .pinch, .startInCleanView,
             .overlays, .showProcessedMarker, .nightMode, .keepNightModeAfterAstro, .redViewfinder, .keepScreenOn,
-            .liveActivity, .accessibility, .honesty, .about:
+            .dimAfter, .liveActivity, .accessibility, .honesty, .about:
             nil
         case .assistantAccessSwitch, .assistantAsk: .assistantAccess
         case .honestyCloseUpFocus: .honesty
@@ -236,7 +238,8 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
         case .camera, .fastShutter, .focusOnFaces, .pinch: .camera
         case .screen, .startInCleanView, .overlays, .overlaysGrid, .overlaysGridStyle, .overlaysLevel,
             .overlaysFocusPeaking, .overlaysHistogram, .overlaysLiveReadout, .overlaysKeepReadout,
-            .showProcessedMarker, .nightMode, .keepNightModeAfterAstro, .redViewfinder, .keepScreenOn, .liveActivity:
+            .showProcessedMarker, .nightMode, .keepNightModeAfterAstro, .redViewfinder, .keepScreenOn, .dimAfter,
+            .liveActivity:
             .screen
         case .more, .accessibility, .honesty, .honestyCloseUpFocus, .about, .license, .noticesAndTrademarks, .rateOrReview:
             .more
@@ -544,6 +547,8 @@ enum SettingsText {
     static let redViewfinder = LocalizedStringResource("Red Viewfinder", bundle: bundle, comment: "Switch: in night mode, the live camera picture on screen is shown in red too.")
     /// "Keep Screen On".
     static let keepScreenOn = LocalizedStringResource("Keep Screen On", bundle: bundle, comment: "Switch and its Voice Control name: while the camera is showing, the screen doesn't lock by itself for up to 30 minutes after the last touch or photo. Draft wording for the Honesty review.")
+    /// "Dim After" (issue #119).
+    static let dimAfter = LocalizedStringResource("Dim After", bundle: bundle, comment: "Menu in Settings › Screen, under Keep Screen On, and its Voice Control name: how long the screen waits without a touch or photo before it dims (1, 2 or 5 minutes, or Never). Draft wording for the Honesty review (issue #119).")
     /// "Live Activity".
     static let liveActivity = LocalizedStringResource("Live Activity", bundle: bundle, comment: "Switch and its Voice Control name: shows interval shooting, astro frames, a burst or the self-timer on the Lock Screen and in the Dynamic Island. Live Activity is the name of the iOS feature: use its name in the language's iOS.")
     /// "Accessibility".
@@ -626,6 +631,7 @@ enum SettingsText {
         case .keepNightModeAfterAstro: keepNightModeAfterAstro
         case .redViewfinder: redViewfinder
         case .keepScreenOn: keepScreenOn
+        case .dimAfter: dimAfter
         case .liveActivity: liveActivity
         case .accessibility: accessibility
         case .honesty: honesty
@@ -684,6 +690,8 @@ enum SettingsText {
             LocalizedStringResource("Search keywords: Start in Clean View", defaultValue: "hide controls, minimal", bundle: bundle, comment: "Settings search keywords for Start in Clean View, separated by commas. Not shown on screen.")
         case .keepScreenOn:
             LocalizedStringResource("Search keywords: Keep Screen On", defaultValue: "awake, auto-lock, sleep, lock, dim, tripod, battery", bundle: bundle, comment: "Settings search keywords for Keep Screen On, separated by commas. Not shown on screen: list the words people in your language would type to keep the screen from locking or sleeping. Auto-Lock is the name of the iOS setting: use its name in the language's iOS.")
+        case .dimAfter:
+            LocalizedStringResource("Search keywords: Dim After", defaultValue: "dim, brightness, bright, never, battery, heat, warm", bundle: bundle, comment: "Settings search keywords for Dim After, separated by commas. Not shown on screen: list the words people in your language would type to stop the screen from dimming, or to find what it costs in battery and heat.")
         case .liveActivity:
             LocalizedStringResource("Search keywords: Live Activity", defaultValue: "Lock Screen, Dynamic Island", bundle: bundle, comment: "Settings search keywords for Live Activity, separated by commas. Not shown on screen. Lock Screen and Dynamic Island are iOS names: use the names iOS shows in this language.")
         case .honesty:
@@ -948,7 +956,7 @@ enum SettingsSearch {
             case .showProcessedMarker: offersProcessedMarker
             case .liveActivity: offersLiveActivity
             case .keepNightModeAfterAstro: offersAstro
-            case .keepScreenOn: offersKeepScreenOn
+            case .keepScreenOn, .dimAfter: offersKeepScreenOn
             case .pinch: offersPinch
             case .assistantAccess, .assistantAccessSwitch, .assistantAsk: offersAssistantAccessPage
             case .rateOrReview: offersRateOrReview

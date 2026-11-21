@@ -17,7 +17,7 @@ extension NopeAppUITests {
         "settings.presets", "settings.formats", "settings.copies", "settings.mirrorFrontCamera",
         "settings.details", "settings.signEachPhoto", "settings.assistantAccess", "settings.fastShutter", "settings.focusOnFaces",
         "settings.startInCleanView", "settings.overlays", "settings.nightMode", "settings.redViewfinder",
-        "settings.keepScreenOn", "settings.accessibility", "settings.honesty", "settings.about",
+        "settings.keepScreenOn", "settings.dimAfter", "settings.accessibility", "settings.honesty", "settings.about",
     ]
 
     /// Opens Settings: from the Settings button where there is one, otherwise from Q.

@@ -250,9 +250,9 @@ struct HonestyScreen: View {
             HonestyStatement(
                 title: Text("Keep Screen On", tableName: "Honesty", bundle: .module, comment: "Honesty heading: what the Keep Screen On switch does to the screen, the battery and locking. Keep Screen On is the name of nope.'s own switch; use its translation. Draft wording for the Honesty review."),
                 text: Text(
-                    "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims after 2 minutes without a touch (30 seconds in Low Power Mode). After 30 minutes without a touch or a photo, the phone's Auto-Lock applies again. While the screen is on, the phone is unlocked. The side button always locks it.",
+                    "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims after the time chosen in Dim After without a touch, 2 minutes unless you change it. With Never it doesn't dim, which uses more battery and can warm the phone; it still dims after 30 seconds in Low Power Mode and when the phone is hot. After 30 minutes without a touch or a photo, the phone's Auto-Lock applies again. While the screen is on, the phone is unlocked. The side button always locks it.",
                     tableName: "Honesty", bundle: .module,
-                    comment: "Issue #97; docs/design/keep-screen-on.md, wording 7. Keep Screen On is the name of nope.'s own switch; Low Power Mode and Auto-Lock are Apple's names: use the names iOS shows in this language. Must not claim more than the English. Draft wording for the Honesty review."))
+                    comment: "Issues #97 and #119; docs/design/keep-screen-on.md, wording 7, and docs/design/finish-1.0.md, 4.4. Keep Screen On, Dim After and Never are the names of nope.'s own switch, menu and choice; Low Power Mode and Auto-Lock are Apple's names: use the names iOS shows in this language. Must not claim more than the English. Draft wording for the Honesty review."))
         } header: {
             Text("What iOS May Still Do", tableName: "Honesty", bundle: .module, comment: "Honesty section header: things iOS does that the app can't change. iOS is a product name.")
         }

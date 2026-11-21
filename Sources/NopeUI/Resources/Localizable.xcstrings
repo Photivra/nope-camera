@@ -45,6 +45,30 @@
       "comment" : "Focus bracket card while the start delay counts down, second line: the number of frames and the focus positions, on the lens's own scale from 0 to 1.",
       "extractionState" : "manual"
     },
+    "%lld Minutes" : {
+      "comment" : "Dim After menu choice: the screen dims after this many minutes without a touch or photo. The number is a count of minutes, with plural variants.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Minute"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Minutes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld of %lld" : {
       "comment" : "Caption in the Last Photo viewer: the position of the photo shown among the photos taken since nope. opened, such as 3 of 5. Shown only when there is more than one photo.",
       "extractionState" : "manual"
@@ -236,6 +260,22 @@
     "Darkest First" : {
       "comment" : "Choice of the bracket's Order: the darkest frame first, then brighter ones.",
       "extractionState" : "manual"
+    },
+    "Dim After" : {
+      "comment" : "Menu in Settings › Screen, under Keep Screen On, and its Voice Control name: how long the screen waits without a touch or photo before it dims (1, 2 or 5 minutes, or Never). Draft wording for the Honesty review (issue #119).",
+      "extractionState" : "manual"
+    },
+    "Dim After: Never" : {
+      "comment" : "Dim After menu choice: Keep Screen On never dims the screen by itself (it still dims in Low Power Mode and when the phone is hot). Draft wording for the Honesty review (issue #119).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never"
+          }
+        }
+      }
     },
     "Double tap for one photo. Double tap and hold for a burst." : {
       "comment" : "VoiceOver hint of the shutter in burst mode: a double tap takes one photo; a double tap and hold takes photos until the finger lifts.",
@@ -791,6 +831,18 @@
         }
       }
     },
+    "Search keywords: Dim After" : {
+      "comment" : "Settings search keywords for Dim After, separated by commas. Not shown on screen: list the words people in your language would type to stop the screen from dimming, or to find what it costs in battery and heat.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dim, brightness, bright, never, battery, heat, warm"
+          }
+        }
+      }
+    },
     "Search keywords: Rate or Review" : {
       "comment" : "Settings search keywords for the Rate or Review link on the About screen, separated by commas. Not shown on screen. App Store is Apple's name: use its name in the language's iOS.",
       "extractionState" : "manual",
@@ -1028,6 +1080,10 @@
           }
         }
       }
+    },
+    "With Keep Screen On, the screen dims after this long without a touch or photo." : {
+      "comment" : "Note under the Dim After menu in Settings › Screen. It begins with where the setting is used (Keep Screen On, the switch above it; use its translation). Draft wording for the Honesty review (issue #119).",
+      "extractionState" : "manual"
     },
     "Zoomed in." : {
       "comment" : "Part of the VoiceOver value of the photo in the Last Photo viewer while it is zoomed in.",

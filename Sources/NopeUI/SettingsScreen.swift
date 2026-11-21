@@ -18,8 +18,8 @@ extension EnvironmentValues {
 ///   group;
 /// - Camera: Fast Shutter, Focus on Faces, Pinch (with two or more rear lenses);
 /// - Screen: Start in Clean View, Viewfinder Overlays, Show Processed Marker, Night Mode, Keep
-///   Night Mode After Astro (where the device offers Astro), Red Viewfinder, Keep Screen On (not
-///   in the Lock Screen camera), Live Activity;
+///   Night Mode After Astro (where the device offers Astro), Red Viewfinder, Keep Screen On and
+///   Dim After (not in the Lock Screen camera), Live Activity;
 /// - More: Accessibility, Honesty, About and Licenses.
 ///
 /// A row is shown or not by the device only; no row appears or disappears when a setting
@@ -353,8 +353,8 @@ public struct SettingsScreen: View {
     }
 
     /// What the camera screen shows: clean view, overlays, the Processed marker, night mode,
-    /// whether night mode stays on after Astro, Red Viewfinder, Keep Screen On and the Live
-    /// Activity. Red
+    /// whether night mode stays on after Astro, Red Viewfinder, Keep Screen On with Dim After, and
+    /// the Live Activity. Red
     /// Viewfinder is always shown, so it can be set before going out in the dark.
     private var screenSection: some View {
         Section {
@@ -407,10 +407,11 @@ public struct SettingsScreen: View {
                     isOn: Binding(get: { settings.keepsScreenOn }, set: { settings.setKeepsScreenOn($0) }),
                     title: Text(SettingsText.keepScreenOn),
                     explanation: Text(
-                        "While the camera is showing, the screen stays on for 30 minutes after your last touch or photo, and dims after 2 minutes. Uses more battery. Not used while Battery Low shows.",
+                        "While the camera is showing, the screen stays on for 30 minutes after your last touch or photo. Uses more battery. Not used while Battery Low shows.",
                         tableName: "Honesty", bundle: .module,
-                        comment: "Explains the Keep Screen On switch. Battery Low is the camera's warning; use its translation. Must not claim more than the English: the screen dims sooner in Low Power Mode, and after 30 minutes the phone's Auto-Lock applies again. Draft wording for the Honesty review."))
+                        comment: "Explains the Keep Screen On switch. Battery Low is the camera's warning; use its translation. Must not claim more than the English: after 30 minutes the phone's Auto-Lock applies again; when the screen dims is the Dim After menu below it. Draft wording for the Honesty review (issues #97 and #119)."))
                 .settingsRow(.keepScreenOn)
+                DimAfterSettingRow(settings: settings)
             }
             if offersLiveActivity {
                 ExplainedToggle(

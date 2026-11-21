@@ -91,7 +91,8 @@ struct KeepScreenOnTests {
     // MARK: - The rule
 
     @Test func theStandardTimesAreTheDesigns() {
-        #expect(KeepScreenOnRule.standard.dimDelay == .seconds(120))
+        #expect(KeepScreenOnRule.standard.dimDelays == .standard)
+        #expect(KeepScreenOnRule.standard.dimDelays.delay(for: .twoMinutes) == .seconds(120))
         #expect(KeepScreenOnRule.standard.lowPowerDimDelay == .seconds(30))
         #expect(KeepScreenOnRule.standard.limit == .seconds(1800))
         #expect(!KeepScreenOnConditions.off.isUsed)
@@ -428,5 +429,193 @@ struct KeepScreenOnTests {
         defaults.set(false, forKey: "NopeSettings.keepsScreenOn")
         #expect(settings.reload())
         #expect(!settings.keepsScreenOn)
+    }
+
+    // MARK: - Dim After (issue #119)
+
+    @Test func theDimAfterChoicesAreTheDesigns() {
+        #expect(DimAfter.allCases == [.oneMinute, .twoMinutes, .fiveMinutes, .never])
+        #expect(DimAfter.allCases.map(\.rawValue) == ["oneMinute", "twoMinutes", "fiveMinutes", "never"])
+        #expect(DimAfter.standard == .twoMinutes, "today's 2 minutes, so nothing changes by default")
+        let delays = KeepScreenOnRule.DimDelays.standard
+        #expect(delays.delay(for: .oneMinute) == .seconds(60))
+        #expect(delays.delay(for: .twoMinutes) == .seconds(120))
+        #expect(delays.delay(for: .fiveMinutes) == .seconds(300))
+        #expect(delays.delay(for: .never) == nil)
+        #expect(KeepScreenOnConditions.hotHeatLevel == .serious)
+        #expect(KeepScreenOnConditions.off.dimAfter == .twoMinutes)
+        #expect(KeepScreenOnConditions.off.heatLevel == .nominal)
+        // A rule made with one delay dims after it for every choice but Never.
+        let one = KeepScreenOnRule(dimDelay: .seconds(3), lowPowerDimDelay: .seconds(1), limit: .seconds(10))
+        #expect(one.dimDelays == KeepScreenOnRule.DimDelays(oneMinute: .seconds(3), twoMinutes: .seconds(3), fiveMinutes: .seconds(3)))
+    }
+
+    @Test func eachChoiceDimsAtItsTime() {
+        let rule = KeepScreenOnRule.standard
+        let start = ContinuousClock.now
+        for (choice, seconds) in [(DimAfter.oneMinute, 60), (.twoMinutes, 120), (.fiveMinutes, 300)] {
+            let conditions = Self.conditions { $0.dimAfter = choice }
+            let at = { (elapsed: Int) in rule.decide(conditions, lastActivity: start, now: start + .seconds(elapsed)) }
+            #expect(at(0) == KeepScreenOnDecision(isUsed: true, keepsAwake: true, dims: false, nextChange: .seconds(seconds)), "\(choice)")
+            #expect(!at(seconds - 1).dims, "\(choice)")
+            #expect(
+                at(seconds) == KeepScreenOnDecision(isUsed: true, keepsAwake: true, dims: true, nextChange: .seconds(1800 - seconds)),
+                "\(choice)")
+            #expect(at(1800) == KeepScreenOnDecision(isUsed: true, keepsAwake: false, dims: true, nextChange: nil), "\(choice)")
+        }
+    }
+
+    @Test func neverKeepsTheBrightnessUntilTheLimit() {
+        let rule = KeepScreenOnRule.standard
+        let start = ContinuousClock.now
+        let never = Self.conditions { $0.dimAfter = .never }
+        let at = { (elapsed: Int) in rule.decide(never, lastActivity: start, now: start + .seconds(elapsed)) }
+        #expect(at(0) == KeepScreenOnDecision(isUsed: true, keepsAwake: true, dims: false, nextChange: .seconds(1800)))
+        #expect(at(300) == KeepScreenOnDecision(isUsed: true, keepsAwake: true, dims: false, nextChange: .seconds(1500)))
+        #expect(at(1799) == KeepScreenOnDecision(isUsed: true, keepsAwake: true, dims: false, nextChange: .seconds(1)))
+        // The 30-minute limit stays: Auto-Lock applies again, and the screen was never dimmed.
+        #expect(at(1800) == KeepScreenOnDecision(isUsed: true, keepsAwake: false, dims: false, nextChange: nil))
+    }
+
+    @Test func lowPowerModeAndHeatDimAfterThirtySecondsUnderEveryChoice() {
+        let rule = KeepScreenOnRule.standard
+        let start = ContinuousClock.now
+        let sooner: [(String, (inout KeepScreenOnConditions) -> Void)] = [
+            ("Low Power Mode", { $0.isLowPowerMode = true }),
+            ("serious heat", { $0.heatLevel = .serious }),
+            ("critical heat", { $0.heatLevel = .critical }),
+            ("both", { $0.isLowPowerMode = true; $0.heatLevel = .serious }),
+        ]
+        for choice in DimAfter.allCases {
+            for (name, change) in sooner {
+                let conditions = Self.conditions { $0.dimAfter = choice; change(&$0) }
+                #expect(rule.decide(conditions, lastActivity: start, now: start).nextChange == .seconds(30), "\(choice), \(name)")
+                #expect(!rule.decide(conditions, lastActivity: start, now: start + .seconds(29)).dims, "\(choice), \(name)")
+                let dimmed = rule.decide(conditions, lastActivity: start, now: start + .seconds(30))
+                #expect(dimmed == KeepScreenOnDecision(isUsed: true, keepsAwake: true, dims: true, nextChange: .seconds(1770)), "\(choice), \(name)")
+            }
+            // Below the serious heat level, the choice holds.
+            for heat in [HeatLevel.nominal, .fair] {
+                let conditions = Self.conditions { $0.dimAfter = choice; $0.heatLevel = heat }
+                #expect(!rule.decide(conditions, lastActivity: start, now: start + .seconds(30)).dims, "\(choice), \(heat)")
+            }
+        }
+    }
+
+    @Test func batteryLowAndTheLimitEndItUnderEveryChoice() {
+        let rule = KeepScreenOnRule.standard
+        let start = ContinuousClock.now
+        for choice in DimAfter.allCases {
+            let low = Self.conditions { $0.dimAfter = choice; $0.isBatteryLow = true }
+            #expect(rule.decide(low, lastActivity: start, now: start) == .unused, "\(choice)")
+            let atLimit = rule.decide(Self.conditions { $0.dimAfter = choice }, lastActivity: start, now: start + .seconds(1800))
+            #expect(atLimit.isUsed && !atLimit.keepsAwake && atLimit.nextChange == nil, "\(choice)")
+        }
+    }
+
+    @Test func theKeeperWithNeverKeepsTheScreenBrightThenLetsItLock() async {
+        let (keeper, screen, clock) = Self.keeper(brightness: 0.8)
+        keeper.update(isSeriesRunning: false, isInForeground: true, keepScreenOn: Self.conditions { $0.dimAfter = .never })
+        #expect(screen.isIdleTimerDisabled)
+        for _ in 0..<50 { await Task.yield() }
+        #expect(clock.waiting == 1, "one wake-up, for the limit")
+        await Self.advance(clock, by: .seconds(1799))
+        #expect(!keeper.isDimmed)
+        #expect(screen.brightnessChanges == 0)
+        await Self.advance(clock, by: .seconds(1))
+        #expect(!screen.isIdleTimerDisabled && !keeper.isKeepingAwake)
+        #expect(!keeper.isDimmed, "never dimmed")
+        #expect(screen.brightnessChanges == 0)
+        #expect(clock.waiting == 0)
+        clock.wakeAll()
+    }
+
+    @Test func theKeeperWithEachChoiceDimsAtItsTime() async {
+        for (choice, seconds) in [(DimAfter.oneMinute, 60), (.fiveMinutes, 300)] {
+            let (keeper, screen, clock) = Self.keeper(brightness: 0.8)
+            keeper.update(isSeriesRunning: false, isInForeground: true, keepScreenOn: Self.conditions { $0.dimAfter = choice })
+            await Self.advance(clock, by: .seconds(seconds - 1))
+            #expect(!keeper.isDimmed, "\(choice)")
+            await Self.advance(clock, by: .seconds(1))
+            #expect(keeper.isDimmed, "\(choice)")
+            #expect(screen.brightness == SeriesScreenKeeper.dimmedBrightness, "\(choice)")
+            clock.wakeAll()
+        }
+    }
+
+    @Test func theScreenDimsOnceThePhoneGetsHotEvenWithNever() async {
+        let (keeper, screen, clock) = Self.keeper(brightness: 0.8)
+        keeper.update(isSeriesRunning: false, isInForeground: true, keepScreenOn: Self.conditions { $0.dimAfter = .never })
+        await Self.advance(clock, by: .seconds(10))
+        // Hot after 10 seconds: dims 30 seconds after the last activity.
+        keeper.update(
+            isSeriesRunning: false, isInForeground: true,
+            keepScreenOn: Self.conditions { $0.dimAfter = .never; $0.heatLevel = .serious })
+        #expect(!keeper.isDimmed)
+        await Self.advance(clock, by: .seconds(19))
+        #expect(!keeper.isDimmed)
+        await Self.advance(clock, by: .seconds(1))
+        #expect(keeper.isDimmed)
+        // Cooler again: the screen stays dimmed until it is touched, then keeps its brightness.
+        keeper.update(isSeriesRunning: false, isInForeground: true, keepScreenOn: Self.conditions { $0.dimAfter = .never })
+        #expect(keeper.isDimmed)
+        keeper.brighten()
+        #expect(screen.brightness == 0.8)
+        await Self.advance(clock, by: .seconds(600))
+        #expect(!keeper.isDimmed)
+        clock.wakeAll()
+    }
+
+    @Test func theModelPublishesTheHeatLevelForKeepScreenOn() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await CameraModelTests.runningModel(backend)
+        #expect(model.heatLevel == .nominal)
+        backend.emit(.heat(.serious))
+        backend.finish()
+        await model.observeEvents()
+        #expect(model.heatLevel == .serious)
+        #expect(model.sessionStatus == .running, "serious heat doesn't pause the camera")
+    }
+
+    @Test func aSeriesStillDimsAtOnceWithNever() async {
+        // Decision 8 (docs/plans/1.0.0-finish.md, section 6): Dim After belongs to Keep Screen On.
+        let (keeper, screen, clock) = Self.keeper(brightness: 0.7)
+        keeper.update(isSeriesRunning: true, isInForeground: true, keepScreenOn: Self.conditions { $0.dimAfter = .never })
+        #expect(keeper.isDimmed)
+        #expect(screen.brightness == SeriesScreenKeeper.dimmedBrightness)
+        clock.wakeAll()
+    }
+
+    @Test func dimAfterIsTwoMinutesByDefaultAndStoredByName() {
+        let defaults = UserDefaults(suiteName: "KeepScreenOnTests.\(UUID().uuidString)")!
+        let settings = NopeSettings(defaults: defaults)
+        #expect(settings.dimAfter == .twoMinutes)
+        for choice in DimAfter.allCases {
+            settings.setDimAfter(choice)
+            #expect(settings.dimAfter == choice)
+            #expect(defaults.string(forKey: "NopeSettings.dimAfter") == choice.rawValue)
+            #expect(NopeSettings(defaults: defaults).dimAfter == choice)
+        }
+        // Another process's change is picked up by reload.
+        defaults.set("oneMinute", forKey: "NopeSettings.dimAfter")
+        #expect(settings.reload())
+        #expect(settings.dimAfter == .oneMinute)
+        // An unknown stored value, as from a later version, reads as 2 Minutes.
+        defaults.set("tenMinutes", forKey: "NopeSettings.dimAfter")
+        #expect(NopeSettings(defaults: defaults).dimAfter == .twoMinutes)
+        defaults.set(5, forKey: "NopeSettings.dimAfter")
+        #expect(NopeSettings(defaults: defaults).dimAfter == .twoMinutes)
+    }
+
+    @Test func dimAfterIsInPresetsAndFactoryDefaultsResetsIt() async throws {
+        let defaults = UserDefaults(suiteName: "KeepScreenOnTests.\(UUID().uuidString)")!
+        let settings = NopeSettings(defaults: defaults)
+        settings.setDimAfter(.never)
+        let presets = SettingsPresets(settings: settings)
+        let preset = try presets.saveCurrent(named: "Tripod", camera: nil)
+        _ = await presets.apply(.factoryDefaults, camera: nil, location: nil)
+        #expect(settings.dimAfter == .twoMinutes)
+        _ = await presets.apply(.saved(preset.id), camera: nil, location: nil)
+        #expect(settings.dimAfter == .never)
     }
 }

@@ -89,6 +89,13 @@ public final class NopeSettings {
     /// ``KeepScreenOnRule/limit``. The Lock Screen camera doesn't use it.
     public private(set) var keepsScreenOn: Bool
 
+    /// How long Keep Screen On waits without a touch or photo before it dims the screen (Dim
+    /// After, issue #119). ``DimAfter/standard`` (2 minutes) by default, so nothing changes for
+    /// anyone who doesn't choose. ``SeriesScreenKeeper`` applies it through
+    /// ``KeepScreenOnConditions/dimAfter``; Low Power Mode and heat still dim sooner, and a
+    /// series still dims at once.
+    public private(set) var dimAfter: DimAfter
+
     /// Whether a Live Activity shows a series and its saving on the Lock Screen and in the
     /// Dynamic Island (issue #64). Off by default.
     public private(set) var showsLiveActivity: Bool
@@ -155,6 +162,9 @@ public final class NopeSettings {
         tintsViewfinderInNightMode = defaults.bool(forKey: Key.tintsViewfinderInNightMode)
         // A missing value is the default, off; so is a preset saved before the setting existed.
         keepsScreenOn = defaults.bool(forKey: Key.keepsScreenOn)
+        // A missing value (settings or a preset from before the choice) or an unknown one is
+        // the default, 2 Minutes.
+        dimAfter = defaults.string(forKey: Key.dimAfter).flatMap(DimAfter.init(rawValue:)) ?? .standard
         // A missing value is the default, off: leaving Astro restores night mode.
         keepsNightModeAfterAstro = defaults.bool(forKey: Key.keepsNightModeAfterAstro)
         isNightModeFromAstro = defaults.bool(forKey: Key.isNightModeFromAstro)
@@ -472,6 +482,14 @@ public final class NopeSettings {
         defaults.set(isOn, forKey: Key.keepsScreenOn)
     }
 
+    /// Sets how long Keep Screen On waits before it dims the screen, and saves the change.
+    ///
+    /// - Parameter choice: The Dim After choice.
+    public func setDimAfter(_ choice: DimAfter) {
+        dimAfter = choice
+        defaults.set(choice.rawValue, forKey: Key.dimAfter)
+    }
+
     /// Turns the Live Activity on or off, and saves the change.
     ///
     /// - Parameter isOn: Whether a Live Activity shows a series and its saving.
@@ -501,6 +519,7 @@ public final class NopeSettings {
             update(\.isNightModeOn, from: stored),
             update(\.tintsViewfinderInNightMode, from: stored),
             update(\.keepsScreenOn, from: stored),
+            update(\.dimAfter, from: stored),
             update(\.keepsNightModeAfterAstro, from: stored),
             update(\.isNightModeFromAstro, from: stored),
             update(\.showsLiveActivity, from: stored),
@@ -660,6 +679,8 @@ public final class NopeSettings {
         static let tintsViewfinderInNightMode = "NopeSettings.tintsViewfinderInNightMode"
         /// Whether the screen stays on while the camera is showing, a Boolean.
         static let keepsScreenOn = "NopeSettings.keepsScreenOn"
+        /// How long Keep Screen On waits before it dims, a ``DimAfter`` raw value.
+        static let dimAfter = "NopeSettings.dimAfter"
         /// Whether night mode stays on after the astro helper ends, a Boolean.
         static let keepsNightModeAfterAstro = "NopeSettings.keepsNightModeAfterAstro"
         /// Whether the astro helper turned night mode on, a Boolean. Not a setting, so outside
