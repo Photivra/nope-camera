@@ -311,12 +311,19 @@ deadline on `CameraModel.clock` (`Countdown.deadline`, issue #122): it shows the
 rounded up, waits until the next whole second before the deadline, and fires when it is reached,
 so a late wake skips a number rather than making the photo late.
 
-Shutters that report how they move send `ShutterPhase` values: the app maps the hardware
-buttons' capture event phases to `.drive(.hardwareButton(_:))`, and the interface sends the
-on-screen shutter's touch as `.drive(.shutter(_:))` in burst mode only (docs/design/BURST.md).
-In burst mode a press requests the first photo at once and starts a burst with
-`BurstStart.held`; coming up, sliding off or a cancelled touch ends it after the photo being
-taken, so a tap gives one photo. Outside burst mode a hardware button takes a photo on release,
+Shutters that report how they move send `ShutterPhase` values through one synchronous entry,
+`CameraModel.shutter(_:from:press:)` (issue #100): the app passes the hardware buttons' capture
+event phases from `ShutterSource.hardware`, and the interface the on-screen shutter's touch from
+`ShutterSource.onScreen`, in burst mode only (docs/design/BURST.md). Both are called straight
+from the event, with no task in between, so they are handled in the order they happened; the
+hold changes at once and the work (a photo or a burst) starts in a task. Each press is numbered
+by its source and its release repeats the number, so a late press or release is dropped and a
+release that arrives before its press makes the press a tap (`ShutterHolds`). Each source has
+its own hold: a second button's press and release doesn't end a burst the first one holds.
+`.drive(.hardwareButton(_:))` and `.drive(.shutter(_:))` take the same path and wait for its
+work. In burst mode a press requests the first photo at once and starts a burst with
+`BurstStart.held`; once no shutter is down (coming up, sliding off or a cancelled touch) it
+ends after the photo being taken, so a tap gives one photo. Outside burst mode a hardware button takes a photo on release,
 as the system Camera app does. `.drive(.startBurst)` starts a burst that needs no holding
 (`BurstStart.started`), for Start Burst, the VoiceOver action and Voice Control; the shutter,
 `.drive(.stopBurst)` or a hardware release ends it.

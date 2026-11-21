@@ -279,13 +279,25 @@ public final class DriveModel {
     /// Whether the person asked the running burst to stop.
     private var isStopRequestedByPerson = false
 
+    /// The shutter presses that are down, by source, numbered (issue #100). The model records
+    /// each press and release here as it arrives, before any work starts.
+    var holds = ShutterHolds()
+
     /// Whether a shutter that starts a held burst is down now: the on-screen shutter in burst
-    /// mode or a hardware button. A held burst stops after its first photo once it is up, also
-    /// when it came up before the burst began.
-    private(set) var isShutterHeld = false
+    /// mode or a hardware button. A held burst stops after its first photo once no shutter is
+    /// down, also when it came up before the burst began. Each source has its own hold, so a
+    /// press and release of a second button doesn't end the first one's burst.
+    var isShutterHeld: Bool {
+        holds.isAnyHeld
+    }
 
     /// Who began the burst that is about to start or runs.
     private var start = BurstStart.counted
+
+    /// Whether a press has asked for a burst that hasn't begun yet: the press is handled at once
+    /// and the burst starts in a task just after (issue #100), so a second press in between
+    /// mustn't start a second burst.
+    private(set) var isBurstPrepared = false
 
     /// The time of the first photo of the running burst.
     private var firstPhotoTime: ContinuousClock.Instant?
@@ -391,23 +403,26 @@ public final class DriveModel {
         measuredFastRates[lensID] = rate
     }
 
-    /// Records that a shutter that starts a held burst went down or came up.
-    ///
-    /// - Parameter isHeld: Whether it is down.
-    func setShutterHeld(_ isHeld: Bool) {
-        isShutterHeld = isHeld
-    }
-
-    /// Sets who begins the next burst; ``beginBurst()`` uses it.
+    /// Sets who begins the next burst, which ``beginBurst()`` uses, and marks it as asked for
+    /// until it begins or ``abandonPreparedBurst()`` says it won't. A stop asked for in between
+    /// (``requestBurstStop()``) applies to it.
     ///
     /// - Parameter start: Who begins it.
     func prepareBurst(start: BurstStart) {
         self.start = start
+        isStopRequestedByPerson = false
+        isBurstPrepared = true
+    }
+
+    /// Forgets a burst that was asked for and could not begin.
+    func abandonPreparedBurst() {
+        isBurstPrepared = false
+        isStopRequestedByPerson = false
     }
 
     /// Marks a burst as started.
     func beginBurst() {
-        isStopRequestedByPerson = false
+        isBurstPrepared = false
         lastBurst = nil
         firstPhotoTime = nil
         recentPhotoTimes = []
@@ -416,7 +431,7 @@ public final class DriveModel {
 
     /// Asks the running burst to stop after the frame being taken.
     func requestBurstStop() {
-        guard burstProgress != nil else { return }
+        guard burstProgress != nil || isBurstPrepared else { return }
         isStopRequestedByPerson = true
     }
 

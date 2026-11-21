@@ -327,10 +327,7 @@ public final class CameraModel {
     /// it to Photos (which may show the add-only Photos prompt), or applies the drive mode
     /// (``pressShutter()``).
     public func send(_ intent: CameraIntent) async {
-        if intent.isActivity {
-            activityCount += 1
-            actionCount += 1
-        }
+        if intent.isActivity { countAction() }
         switch intent {
         case .start:
             await resolve(await backend.currentPermission())
@@ -377,6 +374,13 @@ public final class CameraModel {
             isViewerOpen = isOpen
         }
         await endStaleRangeEditing()
+    }
+
+    /// Counts one of the person's actions (``CameraIntent/isActivity``): in ``activityCount``
+    /// and ``actionCount``.
+    func countAction() {
+        activityCount += 1
+        actionCount += 1
     }
 
     /// Keeps the person's photo sizes, and reconfigures the camera when the selected lens's size

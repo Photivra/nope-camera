@@ -82,7 +82,9 @@ struct LockedCameraView: View {
                 case .ended: .released
                 default: .cancelled
                 }
-            Task { await model.send(.drive(.hardwareButton(phase))) }
+            // Straight to the model, with no task in between: the events arrive on the main
+            // actor in the order the system made them (issue #100).
+            model.shutter(phase, from: .hardware)
         }
         .onChange(of: settings.save, initial: true) { _, save in
             model.saveSettings = save

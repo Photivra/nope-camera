@@ -1,3 +1,4 @@
+import NopeCore
 import SwiftUI
 
 /// The shutter: a large round button, drawn because no system control exists for it.
@@ -41,15 +42,23 @@ struct ShutterButton: View {
     /// Called when the shutter is pressed.
     let action: () -> Void
 
-    /// Called with `true` when a touch goes down on the shutter and `false` when it comes up,
-    /// slides off or is cancelled; `nil` outside burst mode.
-    let onPressChange: ((Bool) -> Void)?
+    /// Called with ``NopeCore/ShutterPhase/pressed`` when a touch goes down on the shutter and
+    /// ``NopeCore/ShutterPhase/released`` when it comes up, slides off or is cancelled, with the
+    /// touch's number, which the release repeats (issue #100); `nil` outside burst mode.
+    let onPressChange: ((ShutterPhase, Int) -> Void)?
 
     /// Counts presses, to trigger the haptic.
     @State private var presses = 0
 
     /// Whether the current touch reported its press, so its action is skipped.
     @State private var pressWasReported = false
+
+    /// The number of the current or latest touch that reported its press, from ``pressCount``.
+    @State private var pressNumber = 0
+
+    /// The touches that reported a press since launch, so each press has a number no earlier
+    /// shutter used, also after the view is rebuilt (`CameraModel.shutter(_:from:press:)`).
+    @MainActor private static var pressCount = 0
 
     /// The shutter's diameter, in points.
     static var diameter: CGFloat { NopeSize.shutter }
@@ -62,10 +71,13 @@ struct ShutterButton: View {
     /// - Parameters:
     ///   - isEnabled: Whether a photo can be taken now.
     ///   - face: What the disc shows; the plain disc by default.
-    ///   - onPressChange: Reports the touch going down and coming up, in burst mode; `nil`
-    ///     otherwise.
+    ///   - onPressChange: Reports the touch going down and coming up with its number, in burst
+    ///     mode; `nil` otherwise.
     ///   - action: Called when the shutter is pressed.
-    init(isEnabled: Bool, face: Face = .photo, onPressChange: ((Bool) -> Void)? = nil, action: @escaping () -> Void) {
+    init(
+        isEnabled: Bool, face: Face = .photo, onPressChange: ((ShutterPhase, Int) -> Void)? = nil,
+        action: @escaping () -> Void
+    ) {
         self.isEnabled = isEnabled
         self.face = face
         self.onPressChange = onPressChange
@@ -107,6 +119,8 @@ struct ShutterButton: View {
     private func pressChanged(_ isPressed: Bool) {
         guard let onPressChange else { return }
         if isPressed {
+            Self.pressCount += 1
+            pressNumber = Self.pressCount
             pressWasReported = true
             presses += 1
         } else {
@@ -114,7 +128,7 @@ struct ShutterButton: View {
             // loop; it must still see the press as reported.
             DispatchQueue.main.async { pressWasReported = false }
         }
-        onPressChange(isPressed)
+        onPressChange(isPressed ? .pressed : .released, pressNumber)
     }
 }
 

@@ -129,8 +129,8 @@ extension CameraModel {
         case .startTimer(let seconds): startTimer(seconds: seconds)
         case .cancelTimer: drive.countdown.cancel()
         case .stopBurst: drive.requestBurstStop()
-        case .hardwareButton(let phase): await handleShutterPhase(phase, isOnScreen: false)
-        case .shutter(let phase): await handleShutterPhase(phase, isOnScreen: true)
+        case .hardwareButton(let phase): await handleShutter(phase, from: .hardware, press: nil)?.value
+        case .shutter(let phase): await handleShutter(phase, from: .onScreen, press: nil)?.value
         case .startBurst: await startBurst()
         case .setBurstSpeed(let speed): drive.setBurstSpeed(speed)
         }
@@ -139,32 +139,95 @@ extension CameraModel {
     /// Starts a burst that needs no holding (docs/design/BURST.md, 3.1), in burst mode with the
     /// astro helper off, when a photo can be taken and nothing runs.
     private func startBurst() async {
-        guard drive.mode == .burst, !astro.isOn, canCapture, !drive.isBusy else { return }
+        guard drive.mode == .burst, !astro.isOn, canCapture, !drive.isBusy, !drive.isBurstPrepared else { return }
         await takeBurst(start: .started)
     }
 
-    /// A shutter that reports how it moves. In burst mode a burst runs while it is held: its
-    /// first photo is requested when it goes down, and it ends when it comes up (also a burst
-    /// begun with Start Burst). In the other modes a hardware button acts as the shutter when it
-    /// comes up, as the system Camera app does (AVKit, `AVCaptureEventInteraction`, "Capture a
-    /// photo on press up"), and the on-screen shutter's phases are ignored: it sends
-    /// ``CameraIntent/capture`` instead.
+    /// A shutter moved: the on-screen shutter in burst mode, or a hardware shutter button. Call
+    /// it straight from the touch or the button's event, with no task in between, so presses and
+    /// releases are handled in the order they happened (issue #100). The hold changes at once;
+    /// the work (a photo, or a burst) starts in a task, which is returned.
+    ///
+    /// In burst mode a burst runs while the shutter is held: its first photo is requested when
+    /// it goes down, and it ends when no shutter is down any more (each source has its own
+    /// hold). In the other modes a hardware button acts as the shutter when it comes up, as the
+    /// system Camera app does (AVKit, `AVCaptureEventInteraction`, "Capture a photo on press
+    /// up"), and the on-screen shutter's phases are ignored: it sends ``CameraIntent/capture``
+    /// instead. ``DriveIntent/shutter(_:)`` and ``DriveIntent/hardwareButton(_:)`` come here too.
+    ///
+    /// A press is numbered by its source, and its release carries the same number. A press or
+    /// release that arrives late is dropped by its number, and a release that arrives before its
+    /// press makes that press a tap (``ShutterHolds``), so a tap can never leave a burst running.
+    ///
+    /// Counts as the person's action (``activityCount``), as an intent does.
+    ///
+    /// Side effects: may take photos and add them to Photos.
     ///
     /// - Parameters:
     ///   - phase: How the shutter moved.
-    ///   - isOnScreen: Whether it is the on-screen shutter rather than a hardware button.
-    private func handleShutterPhase(_ phase: ShutterPhase, isOnScreen: Bool) async {
+    ///   - source: Which shutter.
+    ///   - press: The number of the press, counted by its source from 1, which the release of
+    ///     that press repeats; `nil` for a caller that delivers in order and doesn't count: its
+    ///     press is the next one and its release ends the latest.
+    /// - Returns: The work the event started, or `nil` for none.
+    @discardableResult
+    public func shutter(_ phase: ShutterPhase, from source: ShutterSource, press: Int? = nil) -> Task<Void, Never>? {
+        countAction()
+        return handleShutter(phase, from: source, press: press)
+    }
+
+    /// Handles a shutter event without counting it as an action (see ``shutter(_:from:press:)``).
+    ///
+    /// - Parameters:
+    ///   - phase: How the shutter moved.
+    ///   - source: Which shutter.
+    ///   - press: The press's number, or `nil`.
+    /// - Returns: The work the event started, or `nil`.
+    func handleShutter(_ phase: ShutterPhase, from source: ShutterSource, press: Int?) -> Task<Void, Never>? {
+        guard phase == .pressed else {
+            guard drive.holds.release(press, from: source) == .current else { return nil }
+            return shutterCameUp(phase, from: source)
+        }
+        guard case .new(_, let isReleased) = drive.holds.press(press, from: source) else { return nil }
+        let work = shutterWentDown(from: source)
+        // Its release came first: the press is a tap.
+        guard isReleased, let release = shutterCameUp(.released, from: source) else { return work }
+        return Task {
+            await work?.value
+            await release.value
+        }
+    }
+
+    /// A shutter went down; its hold is recorded.
+    ///
+    /// - Parameter source: Which shutter.
+    /// - Returns: The burst it starts, or `nil`.
+    private func shutterWentDown(from source: ShutterSource) -> Task<Void, Never>? {
         // With the Last Photo viewer open, a hardware button's press closes it and takes no
         // photo, from its first phase to its last (BUILD-SPEC.md, decision V1): the framing is
         // hidden.
-        if !isOnScreen, isViewerOpen {
+        if source == .hardware, isViewerOpen || hardwarePressClosedViewer {
             isViewerOpen = false
-            hardwarePressClosedViewer = phase == .pressed
-            return
+            hardwarePressClosedViewer = true
+            return nil
         }
-        if !isOnScreen, hardwarePressClosedViewer {
-            hardwarePressClosedViewer = phase == .pressed
-            return
+        // Outside a held burst a shutter acts when it comes up.
+        guard isBurstShutter, !drive.isBusy, !drive.isBurstPrepared else { return nil }
+        drive.prepareBurst(start: .held)
+        return Task { await takeBurst(start: .held, isPrepared: true) }
+    }
+
+    /// A shutter came up, or its press was cancelled; its hold has ended.
+    ///
+    /// - Parameters:
+    ///   - phase: How it moved: ``ShutterPhase/released`` or ``ShutterPhase/cancelled``.
+    ///   - source: Which shutter.
+    /// - Returns: The photo it takes, or `nil`.
+    private func shutterCameUp(_ phase: ShutterPhase, from source: ShutterSource) -> Task<Void, Never>? {
+        if source == .hardware, isViewerOpen || hardwarePressClosedViewer {
+            isViewerOpen = false
+            hardwarePressClosedViewer = false
+            return nil
         }
         // Outside a held burst, a hardware button acts when it comes up, as a tap on the
         // on-screen shutter does. That includes a running interval series or astro run in Burst
@@ -173,22 +236,19 @@ extension CameraModel {
         // still stop it when it comes up.
         guard isBurstShutter else {
             let stopsASeries = manual.intervalProgress != nil || astro.isRunning || bracketing.isRunning
-            if !isOnScreen || stopsASeries, phase == .released { await pressShutter() }
-            return
+            guard source == .hardware || stopsASeries, phase == .released else { return nil }
+            return Task { await pressShutter() }
         }
-        guard phase != .pressed else {
-            drive.setShutterHeld(true)
-            if !drive.isBusy { await takeBurst(start: .held) }
-            return
-        }
-        drive.setShutterHeld(false)
-        // Coming up, or cancelled, ends what the press started; a countdown started another way
-        // (such as by Siri) is cancelled as the shutter would.
-        if drive.burstProgress != nil {
-            drive.requestBurstStop()
-        } else {
+        // Coming up, or cancelled, ends what the press started. A held burst ends by itself once
+        // no shutter is down (``DriveModel/isBurstStopRequested``), so a second button's release
+        // doesn't end it; any other burst stops. A countdown started another way (such as by
+        // Siri) is cancelled as the shutter would.
+        if let burst = drive.burstProgress {
+            if burst.start != .held { drive.requestBurstStop() }
+        } else if !drive.isBurstPrepared {
             drive.countdown.cancel()
         }
+        return nil
     }
 
     /// Starts the self-timer, which takes one photo when it reaches zero, or what `shot` takes.
@@ -234,14 +294,17 @@ extension CameraModel {
     ///     started burst, 1 for a press that reports no phases, or the count a Siri or Shortcuts
     ///     request asked for (issue #62).
     ///   - start: Who begins the burst.
-    func takeBurst(frames: Int = DriveModel.maximumBurstFrames, start: BurstStart = .counted) async {
+    ///   - isPrepared: Whether a shutter press already asked for it (`DriveModel.prepareBurst`),
+    ///     so a stop asked for since then still applies.
+    func takeBurst(frames: Int = DriveModel.maximumBurstFrames, start: BurstStart = .counted, isPrepared: Bool = false) async {
         let end: BurstEnd = frames < DriveModel.maximumBurstFrames ? .countReached : .limitReached
         let speed: BurstSpeed = start == .counted ? .fast : burstSpeed
         let lensID = selectedLensID
-        drive.prepareBurst(start: start)
+        if !isPrepared { drive.prepareBurst(start: start) }
         let began = await takeFrames(
             limit: frames, tracker: drive, stopsOnLowBattery: false, endAtLimit: end,
             minimumInterval: speed.minimumFrameInterval)
+        if !began { drive.abandonPreparedBurst() }
         // A press that could not begin a burst (the camera restarting after a lens change, a
         // photo still saving) leaves the previous burst in `lastBurst`; its rate belongs to the
         // lens that burst ran on, not to the one selected now.

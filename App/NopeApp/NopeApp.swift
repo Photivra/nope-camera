@@ -206,7 +206,9 @@ struct NopeApp: App {
                 case .ended: .released
                 default: .cancelled
                 }
-            Task { await model.send(.drive(.hardwareButton(phase))) }
+            // Straight to the model, with no task in between: the events arrive on the main
+            // actor in the order the system made them (issue #100).
+            model.shutter(phase, from: .hardware)
         }
         // After a relaunch during Astro (off at every launch), night mode stays as it was, so the
         // screen opens red in the dark; it becomes the person's (owner decision, 2026-11-18). Only

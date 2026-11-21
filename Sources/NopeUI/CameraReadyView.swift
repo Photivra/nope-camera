@@ -826,9 +826,11 @@ struct CameraReadyView: View {
     private var shutter: some View {
         ShutterButton(
             isEnabled: model.canPressShutter, face: shutterFace,
-            onPressChange: isBurstShutter ? { isPressed in
-                if isPressed { showsQuickMenu = false }
-                Task { await model.send(.drive(.shutter(isPressed ? .pressed : .released))) }
+            // Straight to the model, with no task in between, so a press and its release are
+            // handled in order (issue #100).
+            onPressChange: isBurstShutter ? { phase, press in
+                if phase == .pressed { showsQuickMenu = false }
+                model.shutter(phase, from: .onScreen, press: press)
             } : nil
         ) {
             showsQuickMenu = false

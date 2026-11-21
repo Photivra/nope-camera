@@ -156,7 +156,7 @@ struct BurstTests {
     @Test func aHeldBurstWhoseShutterCameUpEarlyTakesOnePhoto() {
         let drive = DriveModel(sleep: { _ in })
         #expect(!drive.isBurstStopRequested, "nothing runs")
-        drive.setShutterHeld(false)
+        #expect(!drive.isShutterHeld)
         drive.prepareBurst(start: .held)
         drive.beginBurst()
         #expect(!drive.isBurstStopRequested, "the first photo is always taken")
@@ -314,6 +314,117 @@ struct BurstTests {
         }
         #expect(model.astro.lastRun == BurstResult(end: .stopped, saved: 3))
         #expect(model.drive.lastBurst == nil, "no burst was taken")
+    }
+
+    // MARK: - One ordered path for press and release (issue #100)
+
+    @Test func pressesAndReleasesAreNumberedBySource() {
+        var holds = ShutterHolds()
+        #expect(!holds.isAnyHeld)
+        #expect(holds.press(nil, from: .onScreen) == .new(number: 1, isReleased: false))
+        #expect(holds.isHeld(.onScreen) && !holds.isHeld(.hardware))
+        // Each source counts its own presses.
+        #expect(holds.press(nil, from: .hardware) == .new(number: 1, isReleased: false))
+        #expect(holds.release(nil, from: .hardware) == .current)
+        #expect(holds.isAnyHeld, "the on-screen shutter is still down")
+        #expect(holds.press(1, from: .onScreen) == .stale, "a press is never counted twice")
+        #expect(holds.release(1, from: .onScreen) == .current)
+        #expect(!holds.isAnyHeld)
+        // A release that comes before its press.
+        #expect(holds.release(3, from: .onScreen) == .early)
+        #expect(!holds.isAnyHeld)
+        #expect(holds.press(3, from: .onScreen) == .new(number: 3, isReleased: true))
+        #expect(!holds.isAnyHeld)
+        #expect(holds.press(4, from: .onScreen) == .new(number: 4, isReleased: false))
+        #expect(holds.release(3, from: .onScreen) == .stale, "an old release can't end a newer press")
+        #expect(holds.isHeld(.onScreen))
+        // Without numbers, a release ends the latest press, also one that already ended.
+        #expect(holds.release(nil, from: .onScreen) == .current)
+        #expect(holds.release(nil, from: .onScreen) == .current)
+    }
+
+    @Test func aReleaseDeliveredBeforeItsPressLeavesNoHold() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await makeModel(backend: backend)
+        #expect(model.shutter(.released, from: .onScreen, press: 1) == nil)
+        await model.shutter(.pressed, from: .onScreen, press: 1)?.value
+        #expect(!model.drive.isShutterHeld)
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 1), "a tap: one photo")
+        #expect(await backend.captureRequests.count == 1)
+    }
+
+    @Test func aPressAndReleaseBeforeTheFirstPhotoTakeOnePhoto() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await makeModel(backend: backend)
+        let actions = model.actionCount
+        // Both arrive before the burst's task runs, as from one quick tap.
+        let work = model.shutter(.pressed, from: .onScreen)
+        #expect(model.drive.isShutterHeld)
+        #expect(model.shutter(.released, from: .onScreen) == nil)
+        #expect(!model.drive.isShutterHeld)
+        await work?.value
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 1))
+        #expect(await backend.captureRequests.count == 1)
+        #expect(model.actionCount == actions + 2, "each event is the person's action")
+    }
+
+    @Test func aSecondPressBeforeTheBurstBeginsStartsNoSecondBurst() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await makeModel(backend: backend)
+        let work = model.shutter(.pressed, from: .onScreen)
+        #expect(model.drive.isBurstPrepared)
+        #expect(model.shutter(.pressed, from: .hardware) == nil)
+        await model.send(.drive(.startBurst))
+        model.shutter(.released, from: .hardware)
+        model.shutter(.released, from: .onScreen)
+        await work?.value
+        #expect(!model.drive.isBurstPrepared)
+        #expect(await backend.captureRequests.count == 1)
+    }
+
+    @Test func aStaleReleaseFromAnEarlierPressDoesNotStopANewHold() async {
+        let hooked = HookedBackend(ScriptedBackend(capabilities: CameraModelTests.oneLens))
+        let model = await makeModel(backend: hooked)
+        model.shutter(.released, from: .onScreen, press: 1)
+        await model.shutter(.pressed, from: .onScreen, press: 1)?.value
+        #expect(model.drive.lastBurst?.saved == 1)
+        await hooked.setOnCapture { [model] count in
+            // The first burst took photo 1; this one starts at photo 2.
+            if count == 3 { await model.shutter(.released, from: .onScreen, press: 1) }
+            if count == 5 { await model.shutter(.released, from: .onScreen, press: 2) }
+        }
+        await model.shutter(.pressed, from: .onScreen, press: 2)?.value
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 4))
+    }
+
+    @Test func anOnScreenHoldOutlastsAHardwarePressAndRelease() async {
+        let hooked = HookedBackend(ScriptedBackend(capabilities: CameraModelTests.oneLens))
+        let model = await makeModel(backend: hooked)
+        await hooked.setOnCapture { [model] count in
+            if count == 2 {
+                let work = await model.shutter(.pressed, from: .hardware)
+                #expect(work == nil, "the burst runs already")
+                await model.shutter(.released, from: .hardware)
+            }
+            if count == 4 { await model.shutter(.released, from: .onScreen) }
+        }
+        await model.shutter(.pressed, from: .onScreen)?.value
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 4))
+        #expect(model.drive.lastBurst?.start == .held)
+    }
+
+    @Test func aPressThatCannotBeginABurstLeavesNothingPrepared() async {
+        let model = await makeModel()
+        model.captureStatus = .saving
+        await model.shutter(.pressed, from: .onScreen)?.value
+        #expect(!model.drive.isBurstPrepared)
+        #expect(model.drive.lastBurst == nil)
+        model.shutter(.released, from: .onScreen)
+        model.captureStatus = .idle
+        let work = model.shutter(.pressed, from: .onScreen)
+        model.shutter(.released, from: .onScreen)
+        await work?.value
+        #expect(model.drive.lastBurst?.saved == 1)
     }
 
     // MARK: - Start Burst
