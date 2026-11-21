@@ -88,6 +88,15 @@ The space under the shutter gets smaller by a third of the spare height (27 to 1
 - `CameraSpacingUITests`: on the largest and the standard iPhone simulators, the picture's frame is `width × 4/3` exactly as before, the three spaces match the table within 1 pt, and the lens controls and the drive strip's targets are at least 8 pt apart wherever the spare height is 2 pt or more. The sideways, iPad and largest-text tests stay.
 - Design figures `camera-*` are drawn on a 402 × 874 pt frame with a 59 pt top inset; they move by 4 or 5 pt. Redrawing them is part of the build's design refresh, not of this proposal.
 
+### 1.6 As built
+
+Built for 1.0.0 (wave 1, group D) with the owner's decisions 1 and 2 of 2026-11-21: mid-size iPhones gain only 2 to 5 pt and the smallest none, and the iPad column gets 16 pt around the shutter. Measured on the iOS 27.2 Simulators, the picture's frame is unchanged on every screen, and the insets of the table in 1.3 are confirmed for 375 × 667, 375 × 812, 393 × 852, 402 × 874 and 440 × 956. Two additions to the rule above, both found by measuring, keep every pair of rows' targets 8 pt apart (`NopeSize.targetGap`) without covering more of the picture:
+
+- **Less than 2 pt of spare height** (the 4.7 and 5.4-inch iPhones, where the rows overlay the picture): the lens controls move up by what is missing, inside the rows, which keep their height. On a 4.7-inch iPhone they are 4 pt below the backing's top edge instead of 6; on a 5.4-inch iPhone, where the backing covers 4 pt of the picture, they now start at the picture's lower edge (2 pt below it before). Figure `spacing-small`.
+- **A short shutter row** (under 92 pt): its contents move down so the shutter is 8 pt below the drive strip's targets. That is 4 pt on a 4.7-inch iPhone, where the shutter was 6 pt from the strip's targets, and 3 pt on a 393 × 852 pt iPhone (7.7 pt before); the shutter is then 4 and 5 pt above the safe area's lower edge.
+
+The iPhone Duo's inner display held like a book is 635 pt tall inside the safe area ([duo.html](duo.html)), so at the 600 pt threshold it gets 16 pt too, not 8 as 1.4 says; this was not checked on the Duo Simulator.
+
 ## 2. The how-to-use guide (issue 117)
 
 Decided by the owner: the camera opens ready to shoot with a small card, "How to use nope.", that can be opened or dismissed; it never covers the shutter or blocks a photo; the guide can be opened any time from Settings and About; dismissing is stored on the device only; iPhone and iPad only, with one page about the Apple Watch remote; a few short screens, one idea each; the two key ideas in one sentence each with a link for more; only shipped behavior; built last.
