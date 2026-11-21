@@ -16,7 +16,7 @@ private struct NoStatusReader: DeviceStatusReading {
 /// note. It is shown only where it works"). Hiding one never changes the person's choice: it
 /// comes back with the same value.
 @MainActor
-struct SettingScopeTests {
+struct SettingScopeViewTests {
     /// A wide lens with every manual control, the focus limits, a bracket, the ranges the astro
     /// helper needs, and a flash.
     static let wide = Lens(
@@ -52,7 +52,7 @@ struct SettingScopeTests {
     // MARK: - #91
 
     @Test func closeUpIsHiddenWhileFocusIsSetByHand() async {
-        let context = await Self.context(suite: "SettingScopeTests.closeUp")
+        let context = await Self.context(suite: "SettingScopeViewTests.closeUp")
         let model = context.model
         await model.send(.manual(.setEnabled(true)))
         await model.send(.auto(.setNearFocusLimit(true)))
@@ -71,7 +71,7 @@ struct SettingScopeTests {
     }
 
     @Test func farFocusIsHiddenWhileFocusIsSetByHandOrLocked() async {
-        let context = await Self.context(suite: "SettingScopeTests.farFocus")
+        let context = await Self.context(suite: "SettingScopeViewTests.farFocus")
         let model = context.model
         await model.send(.manual(.setEnabled(true)))
         #expect(Self.tile("farFocus", in: context)?.isOn == false)
@@ -95,7 +95,7 @@ struct SettingScopeTests {
     }
 
     @Test func closeUpShowsInFullAuto() async {
-        let context = await Self.context(suite: "SettingScopeTests.fullAuto")
+        let context = await Self.context(suite: "SettingScopeViewTests.fullAuto")
         #expect(Self.tile("closeUp", in: context)?.isOn == false)
         #expect(Self.tile("farFocus", in: context) == nil)
     }
@@ -109,7 +109,7 @@ struct SettingScopeTests {
     }
 
     @Test func flashIsHiddenInBurst() async {
-        let context = await Self.context(suite: "SettingScopeTests.burst")
+        let context = await Self.context(suite: "SettingScopeViewTests.burst")
         await Self.setFlash(.on, in: context)
         #expect(Self.tile("flash", in: context)?.isOn == true)
         #expect(Self.pills(context).contains("flash"))
@@ -125,7 +125,7 @@ struct SettingScopeTests {
     }
 
     @Test func flashAutoIsHiddenInBurstAndShownWithTheTimer() async {
-        let context = await Self.context(suite: "SettingScopeTests.auto")
+        let context = await Self.context(suite: "SettingScopeViewTests.auto")
         await Self.setFlash(.auto, in: context)
         await context.model.send(.drive(.setMode(.burst)))
         #expect(!Self.pills(context).contains("flash"))
@@ -135,7 +135,7 @@ struct SettingScopeTests {
     }
 
     @Test func flashIsHiddenWithABracket() async {
-        let context = await Self.context(suite: "SettingScopeTests.bracket")
+        let context = await Self.context(suite: "SettingScopeViewTests.bracket")
         await Self.setFlash(.on, in: context)
         await context.model.send(.manual(.setEnabled(true)))
         await context.model.send(.manual(.setBracket(BracketSettings(frameCount: 3, step: 1))))
@@ -146,7 +146,7 @@ struct SettingScopeTests {
     }
 
     @Test func flashIsHiddenWithAstro() async {
-        let context = await Self.context(suite: "SettingScopeTests.astro")
+        let context = await Self.context(suite: "SettingScopeViewTests.astro")
         await Self.setFlash(.on, in: context)
         await context.model.send(.astro(.setOn(true)))
         #expect(context.model.astro.isOn)
