@@ -7,8 +7,9 @@ import XCTest
 /// iPad and at the largest text size, each with an accessibility audit.
 ///
 /// The gaps are the design's, in points: 4 (`NopeSpace.xxs`), 8 (`NopeSpace.xs`), 12
-/// (`NopeSpace.s`), and 6 around the lens row, half of what the 56-point row leaves around a
-/// 44-point control (`CameraLayout.lensRowInset`).
+/// (`NopeSpace.s`), 6 between the picture and the lens row, half of what the 56-point row leaves
+/// around a 44-point control (`CameraLayout.lensRowInset`), and at least 8 between two rows'
+/// targets (`NopeSize.targetGap`; issue #116, docs/design/finish-1.0.md, section 1).
 extension NopeAppUITests {
     /// `NopeSpace.xs`: items on the picture are inset this far from its edges.
     private static let pictureInset: CGFloat = 8
@@ -16,9 +17,14 @@ extension NopeAppUITests {
     /// `CameraLayout.lensRowInset`: the gap above and below the lens row's controls.
     private static let lensRowGap: CGFloat = 6
 
-    /// The smallest gap between the drive strip and the shutter: half of what the 88-point
-    /// shutter row (`NopeSize.shutterRowMin`) leaves around the 76-point shutter.
-    private static let shutterRowGap: CGFloat = 6
+    /// The gap between the top of the rows and the lens row's controls where the rows overlay
+    /// the picture: the lens row's inset less the 2 points the controls move up to keep 8
+    /// points from the drive strip (`CameraLayout.lensRowLift(rowGap:)`).
+    private static let overlayLensRowGap: CGFloat = 4
+
+    /// The smallest gap between two rows' targets: the lens controls and the drive strip, the
+    /// drive strip and the shutter row (`NopeSize.targetGap`, issue #116).
+    private static let rowTargetGap: CGFloat = 8
 
     /// `NopeSpace.s`: the gap between the rows of the scrolling layout.
     private static let scrollingRowGap: CGFloat = 12
@@ -94,27 +100,27 @@ extension NopeAppUITests {
     }
 
     /// Checks the stacked layout's gaps: the status above the picture; the lens row 6 points
-    /// below the picture (or, where the rows overlay it, 6 points inside their band); the drive
-    /// strip 6 points below the lens row; the shutter at least 6 points below the strip; the
-    /// manual readouts 8 points inside the picture and above the rows; nothing overlapping.
+    /// below the picture (or, where the rows overlay it, 4 points inside their band); the drive
+    /// strip at least 8 points below the lens row; the shutter at least 8 points below the strip;
+    /// the manual readouts 8 points inside the picture and above the rows; nothing overlapping.
     @MainActor
     private func assertStackedSpacing(
         _ app: XCUIApplication, _ context: String, isSideways: Bool = false, file: StaticString = #filePath, line: UInt = #line
     ) {
         let rows = stackedRows(app)
-        let rowsOverlay = rows.lensRow.minY < rows.picture.maxY
+        let rowsOverlay = rows.lensRow.minY - Self.overlayLensRowGap < rows.picture.maxY - Self.rounding
         if !rowsOverlay {
             assertGap(rows.picture, above: rows.lensRow, atLeast: Self.lensRowGap, "\(context): the lens row touches the picture", file: file, line: line)
         }
-        assertGap(rows.lensRow, above: rows.strip, atLeast: Self.lensRowGap, "\(context): the drive strip touches the lens row", file: file, line: line)
-        assertGap(rows.strip, above: rows.shutter, atLeast: Self.shutterRowGap, "\(context): the shutter touches the drive strip", file: file, line: line)
+        assertGap(rows.lensRow, above: rows.strip, atLeast: Self.rowTargetGap, "\(context): the drive strip touches the lens row", file: file, line: line)
+        assertGap(rows.strip, above: rows.shutter, atLeast: Self.rowTargetGap, "\(context): the shutter touches the drive strip", file: file, line: line)
         let format = app.buttons["Photo Format"]
         if format.exists, !isSideways {
             XCTAssertLessThanOrEqual(format.frame.maxY, rows.picture.minY + Self.rounding, "\(context): the status runs onto the picture", file: file, line: line)
         }
         // The visible picture: above the rows where they overlay it.
         var visible = rows.picture
-        if rowsOverlay { visible.size.height = rows.lensRow.minY - Self.lensRowGap - visible.minY }
+        if rowsOverlay { visible.size.height = rows.lensRow.minY - Self.overlayLensRowGap - visible.minY }
         let readouts = ["Exposure Compensation", "ISO", "More Manual Controls"].map { app.buttons[$0].firstMatch }.filter(\.exists)
         for readout in readouts {
             assertInside(readout.frame, visible, inset: Self.pictureInset, "\(context): \(readout.label) is too close to the picture's edge", file: file, line: line)
@@ -172,7 +178,7 @@ extension NopeAppUITests {
             XCTAssertEqual(rows.picture, portraitPicture, "\(context): the picture moved when the iPhone turned")
             assertStackedSpacing(app, context, isSideways: true)
             var visible = rows.picture
-            if rows.lensRow.minY < rows.picture.maxY { visible.size.height = rows.lensRow.minY - Self.lensRowGap - visible.minY }
+            if rows.lensRow.minY - Self.overlayLensRowGap < rows.picture.maxY - Self.rounding { visible.size.height = rows.lensRow.minY - Self.overlayLensRowGap - visible.minY }
             for element in [app.buttons["Photo Format"].firstMatch, app.staticTexts["Single"].firstMatch] where element.exists {
                 assertInside(element.frame, visible, inset: Self.pictureInset, "\(context): \(element.label) is too close to the picture's edge")
             }
@@ -260,6 +266,235 @@ extension NopeAppUITests {
             assertGap(picture, above: first, atLeast: Self.scrollingRowGap, "the first row touches the picture")
         }
         try auditScrollingScreen(app, checksContrast: false)
+    }
+
+    // MARK: - The spare height shared between the rows (issue #116)
+
+    /// `NopeSize.minTarget`: the smallest target.
+    private static let minTarget: CGFloat = 44
+
+    /// `NopeSize.shutterRowMin`: the shutter row's smallest height.
+    private static let shutterRowMin: CGFloat = 88
+
+    /// `CameraLayout.minimumRowGap`, `maximumRowGap`: the row gap's first share and its cap.
+    private static let rowGapFirst: CGFloat = 2
+    private static let rowGapCap: CGFloat = 24
+
+    /// The status line's height (`NopeSize.statusRow`) at the default text size.
+    private static let statusRow: CGFloat = 44
+
+    /// The picture's top edge and the gap between the lens row and the drive strip, by screen
+    /// size, from docs/design/finish-1.0.md, 1.3, as measured on the iOS 27.2 Simulators: the
+    /// picture is where it was before issue #116, below the safe area's top inset and the status
+    /// line. Screens not listed are checked against the rule alone.
+    private static let designedRows: [(size: CGSize, pictureTop: CGFloat, rowGap: CGFloat)] = [
+        (CGSize(width: 375, height: 667), 64, 0),
+        (CGSize(width: 375, height: 812), 94, 0),
+        (CGSize(width: 393, height: 852), 103, 2),
+        (CGSize(width: 402, height: 874), 106, 4),
+        (CGSize(width: 390, height: 844), 91, 5),
+        (CGSize(width: 414, height: 896), 92, 11),
+        (CGSize(width: 430, height: 932), 103, 12),
+        (CGSize(width: 440, height: 956), 106, 15),
+        (CGSize(width: 428, height: 926), 91, 15),
+    ]
+
+    /// The gap the design gives a spare height (`CameraLayout.rowGap(spareHeight:)`).
+    private static func designedRowGap(spareHeight: CGFloat) -> CGFloat {
+        guard spareHeight > 0 else { return 0 }
+        let rest = max(spareHeight - rowGapFirst, 0) / 3
+        return min((min(spareHeight, rowGapFirst) + rest).rounded(.down), rowGapCap)
+    }
+
+    /// The frames of every target in the stacked layout's rows, by name.
+    @MainActor
+    private func stackedTargets(_ app: XCUIApplication) -> (lensRow: [(String, CGRect)], strip: [(String, CGRect)], shutterRow: [(String, CGRect)]) {
+        func frames(_ names: [String]) -> [(String, CGRect)] {
+            names.map { (name: $0, element: app.buttons[$0].firstMatch) }
+                .filter { $0.element.exists && !$0.element.frame.isEmpty }
+                .map { ($0.name, $0.element.frame) }
+        }
+        return (
+            frames(["ManualControlsButton", "Ultra Wide", "Wide", "Telephoto", "Switch Camera"]),
+            frames(["Single", "Timer", "Burst", "Bracket", "Interval", "Astro"]),
+            frames(["openPhotos", "Last Photo", "Take Photo", "quickMenuButton"])
+        )
+    }
+
+    /// Waits up to ten seconds until the camera has finished appearing: the shutter is drawn at
+    /// its full 76 points and its frame stops changing. On a busy Simulator the screen was still
+    /// growing into place after the usual pause (a 30 × 15 point Manual Controls button, right
+    /// to left on a 402 × 874 point iPhone).
+    @MainActor
+    private func waitUntilCameraIsInPlace(_ app: XCUIApplication) {
+        let shutter = app.buttons["Take Photo"]
+        let clock = ContinuousClock()
+        let deadline = clock.now + .seconds(10)
+        var last = CGRect.null
+        while clock.now < deadline {
+            let frame = shutter.exists ? shutter.frame : .null
+            if frame.width >= 76 - Self.rounding, frame == last { return }
+            last = frame
+            _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Camera in place")], timeout: 0.5)
+        }
+    }
+
+    /// Records the measured rows of the stacked layout with a screenshot, so the run's result
+    /// bundle holds the numbers and the picture of each case.
+    @MainActor
+    private func recordRows(_ app: XCUIApplication, _ context: String, _ summary: String) {
+        XCTContext.runActivity(named: "\(context): \(summary)") { activity in
+            let shot = XCTAttachment(screenshot: app.screenshot())
+            shot.name = "spacing \(context)"
+            shot.lifetime = .keepAlways
+            activity.add(shot)
+        }
+    }
+
+    /// Checks issue #116's rule in the stacked layout: the picture is the window's width and
+    /// 4:3, where it was; every target in the rows is at least 44 points and 8 points from the
+    /// targets of the next row; the gap between the lens row and the drive strip is the one
+    /// the spare height gives (the design's table where the screen is listed); and the shutter
+    /// row takes the rest, with the shutter centered where it has 8 points above it.
+    @MainActor
+    private func assertRowsShareTheSpareHeight(
+        _ app: XCUIApplication, _ context: String, file: StaticString = #filePath, line: UInt = #line
+    ) {
+        let window = app.windows.firstMatch.frame
+        let rows = stackedRows(app)
+        let targets = stackedTargets(app)
+        XCTAssertFalse(targets.lensRow.isEmpty || targets.strip.isEmpty, "\(context): the rows aren't shown", file: file, line: line)
+        // The picture keeps its size.
+        XCTAssertEqual(rows.picture.minX, window.minX, accuracy: Self.rounding, "\(context): the picture moved sideways", file: file, line: line)
+        XCTAssertEqual(rows.picture.width, window.width, accuracy: Self.rounding, "\(context): the picture isn't the window's width", file: file, line: line)
+        XCTAssertEqual(rows.picture.height, rows.picture.width * 4 / 3, accuracy: Self.rounding, "\(context): the picture isn't 4:3", file: file, line: line)
+        // Every target is at least 44 points, and 8 points from the next row's targets.
+        for (name, frame) in targets.lensRow + targets.strip + targets.shutterRow {
+            XCTAssertGreaterThanOrEqual(min(frame.width, frame.height), Self.minTarget - Self.rounding, "\(context): \(name) \(frame) is smaller than 44 points", file: file, line: line)
+        }
+        let lens = targets.lensRow.map(\.1).reduce(CGRect.null) { $0.union($1) }
+        let strip = targets.strip.map(\.1).reduce(CGRect.null) { $0.union($1) }
+        for (name, frame) in targets.shutterRow {
+            assertGap(strip, above: frame, atLeast: Self.rowTargetGap, "\(context): \(name) is closer than 8 points to the drive strip", file: file, line: line)
+        }
+        assertGap(lens, above: strip, atLeast: Self.rowTargetGap, "\(context): the lens controls are closer than 8 points to the drive strip", file: file, line: line)
+        // The shares of the spare height. The shutter row starts at the strip's lower edge. Where
+        // the shutter has more than 8 points above it, it is centered in the row, so the row's
+        // height, and with it the spare height, follows from where the shutter is; a shorter row
+        // moves it down to keep 8 points above it.
+        let shutter = rows.shutter
+        let aboveShutter = shutter.minY - strip.maxY
+        let isCentered = aboveShutter > Self.rowTargetGap + Self.rounding / 2
+        // The rows overlay the picture when their top edge, 4 points above the lens controls
+        // there, is above the picture's lower edge (on a 5.4-inch iPhone by 4 points).
+        let rowsOverlay = lens.minY - Self.overlayLensRowGap < rows.picture.maxY - Self.rounding
+        let gap = strip.minY - lens.maxY - Self.lensRowGap
+        let shutterRow = 2 * aboveShutter + shutter.height
+        let spare = rowsOverlay || !isCentered ? 0 : max(shutterRow - Self.shutterRowMin + gap, 0)
+        let summary = String(
+            format: "window %.0f × %.0f, picture %.1f to %.1f (%.1f × %.1f), lens controls %.1f to %.1f, drive strip %.1f to %.1f, shutter %.1f to %.1f; lens-to-strip %.1f, strip-to-shutter %.1f, rows %@, spare %@, row gap %.1f",
+            window.width, window.height, rows.picture.minY, rows.picture.maxY, rows.picture.width, rows.picture.height, lens.minY,
+            lens.maxY, strip.minY, strip.maxY, shutter.minY, shutter.maxY, strip.minY - lens.maxY, shutter.minY - strip.maxY,
+            rowsOverlay ? "over the picture" : "below the picture", isCentered ? String(format: "%.1f", spare) : "under 6", max(gap, 0))
+        recordRows(app, context, summary)
+        if rowsOverlay {
+            // No spare height: the lens controls move up 2 points inside the rows instead, and the
+            // shutter row is at its smallest with the shutter 8 points below the strip.
+            XCTAssertEqual(strip.minY - lens.maxY, Self.rowTargetGap, accuracy: Self.rounding, "\(context): \(summary)", file: file, line: line)
+            XCTAssertEqual(shutter.minY - strip.maxY, Self.rowTargetGap, accuracy: Self.rounding, "\(context): \(summary)", file: file, line: line)
+        } else {
+            assertGap(rows.picture, above: lens, atLeast: Self.lensRowGap, "\(context): the lens row touches the picture", file: file, line: line)
+            if isCentered {
+                XCTAssertEqual(gap, Self.designedRowGap(spareHeight: spare), accuracy: Self.rounding, "\(context): \(summary)", file: file, line: line)
+            }
+        }
+        let size = CGSize(width: min(window.width, window.height), height: max(window.width, window.height))
+        if let designed = Self.designedRows.first(where: { $0.size == size }) {
+            XCTAssertEqual(rows.picture.minY, designed.pictureTop, accuracy: Self.rounding, "\(context): the picture moved: \(summary)", file: file, line: line)
+            if !rowsOverlay {
+                XCTAssertEqual(gap, designed.rowGap, accuracy: Self.rounding, "\(context): not the design's gap: \(summary)", file: file, line: line)
+            }
+        }
+        assertNoOverlap(app, context, file: file, line: line)
+    }
+
+    /// Issue #116 on iPhone: the spare height below the picture is shared between the gap under
+    /// the lens row and the shutter row; the picture keeps its size and place; every target is 44
+    /// points and 8 points from the next row. Checked in full auto, with manual controls on,
+    /// sideways both ways, right to left and in night mode, each with an accessibility audit.
+    @MainActor
+    func testCameraRowsShareTheSpareHeight() throws {
+        guard !isPad else { throw XCTSkip("The stacked layout is the iPhone's; testCameraColumnGivesTheShutterRoom checks the column.") }
+        let cases: [(name: String, arguments: [String], turns: Bool)] = [
+            ("full auto", [], true),
+            ("manual", Self.spacingManualOn, false),
+            ("right to left", Self.rightToLeft, false),
+            ("night mode", ["-NopeSettings.isNightModeOn", "YES"], false),
+        ]
+        for testCase in cases {
+            let app = launch("manual", extraArguments: testCase.arguments)
+            XCTAssertTrue(app.buttons["ManualControlsButton"].waitForExistence(timeout: 20))
+            settle()
+            waitUntilCameraIsInPlace(app)
+            assertRowsShareTheSpareHeight(app, testCase.name)
+            try audit(app)
+            guard testCase.turns else { continue }
+            let portraitPicture = app.otherElements["Viewfinder"].frame
+            for orientation in [UIDeviceOrientation.landscapeLeft, .landscapeRight] {
+                try turnSideways(app, to: orientation)
+                let context = "\(testCase.name), sideways \(orientation.rawValue)"
+                XCTAssertEqual(app.otherElements["Viewfinder"].frame, portraitPicture, "\(context): the picture moved when the iPhone turned")
+                assertRowsShareTheSpareHeight(app, context)
+            }
+            XCUIDevice.shared.orientation = .portrait
+        }
+    }
+
+    /// Issue #116 on iPad (the column layout): in a window at least 600 points tall Q and Last
+    /// Photo are 16 points from the shutter, in portrait and landscape, also right to left and in
+    /// night mode; the picture is 4:3 and beside the column; nothing overlaps.
+    @MainActor
+    func testCameraColumnGivesTheShutterRoom() throws {
+        guard isPad else { throw XCTSkip("The column layout is checked on iPad.") }
+        let cases: [(name: String, arguments: [String])] = [
+            ("full auto", []), ("right to left", Self.rightToLeft), ("night mode", ["-NopeSettings.isNightModeOn", "YES"]),
+        ]
+        for testCase in cases {
+            try checkColumnShutterRoom(launch("manual", extraArguments: testCase.arguments), testCase.name)
+        }
+    }
+
+    /// The column's checks of ``testCameraColumnGivesTheShutterRoom()`` in portrait and landscape.
+    @MainActor
+    private func checkColumnShutterRoom(_ app: XCUIApplication, _ name: String) throws {
+        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 30))
+        for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
+            XCUIDevice.shared.orientation = orientation
+            Thread.sleep(forTimeInterval: 1.5)
+            settle()
+            waitUntilCameraIsInPlace(app)
+            let context = "iPad \(name) \(orientation.rawValue)"
+            let window = app.windows.firstMatch.frame
+            let picture = app.otherElements["Viewfinder"].frame
+            let quick = app.buttons["quickMenuButton"].frame
+            let shutter = app.buttons["Take Photo"].frame
+            let photos = app.buttons["openPhotos"].exists ? app.buttons["openPhotos"].frame : app.buttons["Last Photo"].firstMatch.frame
+            let gap: CGFloat = window.height >= 600 ? 16 : Self.rowTargetGap
+            let summary = String(
+                format: "window %.0f × %.0f, picture %.1f × %.1f, Q to shutter %.1f, shutter to Last Photo %.1f", window.width, window.height,
+                picture.width, picture.height, shutter.minY - quick.maxY, photos.minY - shutter.maxY)
+            recordRows(app, context, summary)
+            XCTAssertEqual(shutter.minY - quick.maxY, gap, accuracy: Self.rounding, "\(context): \(summary)")
+            XCTAssertEqual(photos.minY - shutter.maxY, gap, accuracy: Self.rounding, "\(context): \(summary)")
+            let ratio = max(picture.width, picture.height) / min(picture.width, picture.height)
+            XCTAssertEqual(ratio, 4 / 3, accuracy: 0.01, "\(context): the picture isn't 4:3: \(summary)")
+            // Beside the column: right to left, the column is on the left.
+            let besideColumn = picture.maxX <= quick.minX - Self.pictureInset + Self.rounding || picture.minX >= quick.maxX + Self.pictureInset - Self.rounding
+            XCTAssertTrue(besideColumn, "\(context): the picture runs under the column: \(picture), Q \(quick)")
+            assertNoOverlap(app, context)
+            try audit(app)
+        }
+        XCUIDevice.shared.orientation = .portrait
     }
 
     /// Waits until an element is gone.

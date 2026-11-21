@@ -112,6 +112,95 @@ enum CameraLayout: Equatable {
         (NopeSize.lensRow - NopeSize.minTarget) / 2
     }
 
+    /// The height left in the stacked layout once the status line, the whole 4:3 picture, the
+    /// lens row, the drive strip and the shutter row at its smallest have their place, in points
+    /// (docs/design/finish-1.0.md, 1.2, "Spare height"); zero when the rows overlay the picture
+    /// (``bandsOverlayPicture(in:bandsHeight:)``) or nothing is left.
+    ///
+    /// `bandsHeight` must be the rows' own height, without the gap ``rowGap(spareHeight:)``
+    /// puts between them, or the gap would feed back into the height it is worked out from.
+    ///
+    /// - Parameters:
+    ///   - space: The space between the status line and the shutter row at its smallest.
+    ///   - bandsHeight: The height of the lens row and drive strip together, without the gap.
+    /// - Returns: The spare height, in points.
+    static func spareHeight(in space: CGSize, bandsHeight: CGFloat) -> CGFloat {
+        guard !bandsOverlayPicture(in: space, bandsHeight: bandsHeight) else { return 0 }
+        return max(space.height - pictureHeight(forWidth: space.width) - bandsHeight, 0)
+    }
+
+    /// The smallest gap between the lens row and the drive strip, in points: what the lens row's
+    /// own 6 points below its controls (``lensRowInset``) lack of the 8 points between two
+    /// targets (``NopeSize/targetGap``), so 2 points.
+    static var minimumRowGap: CGFloat {
+        max(NopeSize.targetGap - lensRowInset, 0)
+    }
+
+    /// The largest gap between the lens row and the drive strip, in points (``NopeSpace/l``,
+    /// docs/design/finish-1.0.md, 1.2).
+    static var maximumRowGap: CGFloat { NopeSpace.l }
+
+    /// The gap the spare height adds between the lens row and the drive strip, in points (issue
+    /// #116; docs/design/finish-1.0.md, 1.2): the first 2 points of the spare height
+    /// (``minimumRowGap``), which bring the lens controls 8 points from the drive strip's
+    /// targets, then a third of the rest, rounded down to a whole point, and never more than 24
+    /// points (``maximumRowGap``). The shutter row takes what is left. The picture keeps its size.
+    ///
+    /// For example, a 440 × 956 point iPhone has 41 spare points and gets a 15-point gap; a
+    /// 393 × 852 point iPhone has 3 and gets 2.
+    ///
+    /// - Parameter spareHeight: The spare height (``spareHeight(in:bandsHeight:)``), in points.
+    /// - Returns: The gap, in whole points; zero when there is no spare height.
+    static func rowGap(spareHeight: CGFloat) -> CGFloat {
+        guard spareHeight > 0 else { return 0 }
+        let first = min(spareHeight, minimumRowGap)
+        let rest = max(spareHeight - minimumRowGap, 0) / 3
+        return min((first + rest).rounded(.down), maximumRowGap)
+    }
+
+    /// How far the lens row's controls move up, toward the picture, so they stay 8 points from
+    /// the drive strip's targets when the spare height gives less than 2 points of gap
+    /// (``minimumRowGap``), in points: the 2 points on a screen where the rows overlay the
+    /// picture (a 4.7 or 5.4-inch iPhone). The rows take no more height than before, so the
+    /// picture is covered no further; the controls are then 4 points below the rows' top edge.
+    ///
+    /// - Parameter rowGap: The gap from ``rowGap(spareHeight:)``, in points.
+    /// - Returns: The points taken from above the lens row's controls, from 0 to 2.
+    static func lensRowLift(rowGap: CGFloat) -> CGFloat {
+        max(minimumRowGap - rowGap, 0)
+    }
+
+    /// The space the shutter row's contents move down by, in points, so the shutter stays 8
+    /// points (``NopeSize/targetGap``) below the drive strip's targets when the row is too short
+    /// to center the shutter with 8 points above it: 4 points in a row at its smallest, 88
+    /// points (``NopeSize/shutterRowMin``), which leaves the shutter 8 points below the strip
+    /// and 4 above the safe area's lower edge. Zero once the row is 92 points or taller.
+    ///
+    /// - Parameter shutterRowHeight: The shutter row's height, in points.
+    /// - Returns: The space added above the row's contents, in points.
+    static func shutterRowTopPadding(shutterRowHeight: CGFloat) -> CGFloat {
+        let roomAbove = NopeSize.targetGap - (shutterRowHeight - NopeSize.shutter) / 2
+        return min(max(2 * roomAbove, 0), shutterRowHeight - NopeSize.shutter)
+    }
+
+    /// The smallest height of the column layout at which Q, the shutter and Last Photo get 16
+    /// points around the shutter instead of 8, in points (docs/design/finish-1.0.md, 1.4): a
+    /// full-size iPad window has it in both orientations; a short window, such as the iPhone
+    /// Duo's inner display held like a book, keeps 8.
+    static var roomyColumnMinHeight: CGFloat { 600 }
+
+    /// The gap above and below the shutter in the column layout, in points (issue #116;
+    /// docs/design/finish-1.0.md, 1.4): 16 (``NopeSpace/m``) when the column is at least
+    /// ``roomyColumnMinHeight`` tall, otherwise 8 (``NopeSpace/xs``). The column sits beside the
+    /// picture, so the gap costs the picture nothing.
+    ///
+    /// - Parameter columnHeight: The column's height, in points: the window's, inside the safe
+    ///   area.
+    /// - Returns: The gap, in points.
+    static func columnShutterGap(columnHeight: CGFloat) -> CGFloat {
+        columnHeight >= roomyColumnMinHeight ? NopeSpace.m : NopeSpace.xs
+    }
+
     /// The height of the whole portrait 4:3 picture at a width.
     ///
     /// - Parameter width: The picture's width, in points.

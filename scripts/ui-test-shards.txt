@@ -69,7 +69,9 @@
 4 4 NopeAppUITests/testBurstTapTakesOnePhoto 36e 38e
 5 2 NopeAppUITests/testBurstVoiceOverValueHintAndAction 34e 34e
 3 1 NopeAppUITests/testButtonTypesPassAccessibilityAudits 181e 32e
+5 5 NopeAppUITests/testCameraColumnGivesTheShutterRoom 1e 360e
 3 5 NopeAppUITests/testCameraRightToLeftWithAPhotoAndWarnings 30 27
+6 5 NopeAppUITests/testCameraRowsShareTheSpareHeight 340e 1e
 5 3 NopeAppUITests/testCameraSheetsStayDarkInTheLightSetting 92 103
 1 5 NopeAppUITests/testCameraShellAtTheLargestTextSize 37e 43e
 2 4 NopeAppUITests/testCameraShellNightMode 37e 42e

@@ -718,6 +718,30 @@ a preset round trip, and that a series doesn't dim a screen already at 10% or da
 clock.
 Every new screen and state adds an audit.
 
+### Space between the camera's rows (issue #116)
+
+`CameraSpacingUITests.swift` measures the camera's layout from the frames the accessibility tree
+reports (rounded to about half a point, so each check allows 1 point):
+
+- `testCameraRowsShareTheSpareHeight` (iPhone): in full auto, with manual controls on, sideways
+  both ways, right to left and in night mode, the picture is the window's width and 4:3 and
+  doesn't move; every target in the lens row, the drive strip and the shutter row is at least
+  44 points and at least 8 points from the next row's targets; the gap between the lens row and
+  the drive strip is the one the spare height gives (`CameraLayout.rowGap(spareHeight:)`); and
+  on the screen sizes in `docs/design/finish-1.0.md`, section 1.3, the picture's top edge and the
+  gap match the table. Each case is recorded in the result bundle with its measurements and a
+  screenshot ("spacing …" attachments).
+- `testCameraColumnGivesTheShutterRoom` (iPad): Q and Last Photo are 16 points from the shutter
+  in a window at least 600 points tall, in portrait and landscape, right to left and in night
+  mode; the picture is 4:3 and beside the column.
+- `CameraShellTests` checks the rule itself for each screen size of the design, with the
+  safe-area insets measured on the iOS 27.2 Simulators.
+
+Run them on the smallest iPhone (iPhone SE, 3rd generation: the rows overlay the picture), a
+6.1 to 6.3-inch iPhone (iPhone 16 or 17), the largest (iPhone 17 Pro Max) and an iPad. Within
+the drive strip the targets touch, and within the lens group they are 4 points apart
+(`NopeSpace.xxs`), as the design specifies; the 8-point rule is between rows.
+
 ## Documentation
 
 ```sh

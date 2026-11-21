@@ -89,8 +89,15 @@ struct CameraReadyView: View {
     /// The space the screen has.
     @State private var size = CGSize.zero
 
-    /// The height of the lens row and drive strip, measured.
+    /// The height of the lens row and drive strip, measured with the gap between them: what Q's
+    /// panel covers.
     @State private var bandsHeight: CGFloat = 0
+
+    /// The height of the lens row's controls, measured without the row's insets.
+    @State private var lensControlsHeight: CGFloat = NopeSize.minTarget
+
+    /// The height of the drive strip, measured.
+    @State private var driveStripHeight: CGFloat = NopeSize.driveRow
 
     /// The height of the stacked layout's status line, measured.
     @State private var statusLineHeight: CGFloat = CameraLayout.topBarHeight
@@ -399,10 +406,12 @@ struct CameraReadyView: View {
 
     /// Status line, picture with the rows, shutter row (iPhone).
     ///
-    /// When the picture and the rows fit one above the other, the shutter row takes the height
-    /// that is left, with the shutter centered in it (docs/design/tokens.md, `shutterRowMin`:
-    /// 101 points on a 402 × 874 point screen); otherwise it keeps its smallest height and the
-    /// rows overlay the picture.
+    /// When the picture and the rows fit one above the other, the spare height is shared between
+    /// the gap under the lens row (``CameraLayout/rowGap(spareHeight:)``) and the shutter row,
+    /// which takes the rest with the shutter centered in it (issue #116;
+    /// docs/design/finish-1.0.md, 1.2: 94 points on a 402 × 874 point screen); otherwise the
+    /// shutter row keeps its smallest height and the rows overlay the picture. The picture keeps
+    /// its size either way.
     private var stacked: some View {
         VStack(spacing: 0) {
             statusLine
@@ -430,9 +439,39 @@ struct CameraReadyView: View {
                 // Q's panel covers the lens row and the drive strip, never the shutter row.
                 .overlay(alignment: .bottom) { quickMenu(rotation.isSideways ? .sideways : .stacked) }
             shutterRow(quickSize: NopeSize.quick)
+                // Keeps the shutter 8 points below the drive strip's targets where the row is too
+                // short to center it with that gap (a 4.7-inch iPhone).
+                .padding(.top, showsControls ? CameraLayout.shutterRowTopPadding(shutterRowHeight: stackedShutterRowHeight) : 0)
                 .frame(minHeight: CameraLayout.shutterRowHeight, maxHeight: bandsOverlayPicture ? nil : .infinity)
                 .padding(.horizontal, NopeSpace.xl)
         }
+    }
+
+    /// The height of the lens row and the drive strip without the gap between them, in points:
+    /// zero in clean view, where they are hidden. Worked out from the measured controls and
+    /// strip rather than from the stack that holds the gap, so the gap doesn't feed back into
+    /// the spare height it comes from (docs/design/finish-1.0.md, 1.5).
+    private var stackedRowsHeight: CGFloat {
+        guard showsControls else { return 0 }
+        let lensRow = max(lensControlsHeight + 2 * CameraLayout.lensRowInset, NopeSize.lensRow)
+        return lensRow + max(driveStripHeight, NopeSize.driveRow)
+    }
+
+    /// The spare height of the stacked layout (``CameraLayout/spareHeight(in:bandsHeight:)``).
+    private var stackedSpareHeight: CGFloat {
+        CameraLayout.spareHeight(in: stackedMiddleSpace, bandsHeight: stackedRowsHeight)
+    }
+
+    /// The gap between the lens row and the drive strip (``CameraLayout/rowGap(spareHeight:)``):
+    /// zero in clean view.
+    private var stackedRowGap: CGFloat {
+        showsControls ? CameraLayout.rowGap(spareHeight: stackedSpareHeight) : 0
+    }
+
+    /// The shutter row's height in the stacked layout, in points: its smallest height and the
+    /// spare height the row gap leaves.
+    private var stackedShutterRowHeight: CGFloat {
+        CameraLayout.shutterRowHeight + max(stackedSpareHeight - stackedRowGap, 0)
     }
 
     /// The space between the status line and the shutter row at its smallest height, in the
@@ -444,7 +483,7 @@ struct CameraReadyView: View {
     /// Whether the lens row and drive strip overlay the bottom of the picture in the stacked
     /// layout (``CameraLayout/bandsOverlayPicture(in:bandsHeight:)``).
     private var bandsOverlayPicture: Bool {
-        CameraLayout.bandsOverlayPicture(in: stackedMiddleSpace, bandsHeight: bandsHeight)
+        CameraLayout.bandsOverlayPicture(in: stackedMiddleSpace, bandsHeight: stackedRowsHeight)
     }
 
     /// How far the lens row and drive strip reach up over the picture in the stacked layout, in
@@ -453,7 +492,7 @@ struct CameraReadyView: View {
     /// they never run under the rows (a 4.7-inch iPhone).
     private var rowsOverPicture: CGFloat {
         guard layout == .stacked else { return 0 }
-        return CameraLayout.rowsOverPicture(in: stackedMiddleSpace, bandsHeight: bandsHeight)
+        return CameraLayout.rowsOverPicture(in: stackedMiddleSpace, bandsHeight: stackedRowsHeight)
     }
 
     /// The rows in a scroll view, with a shorter picture (accessibility text sizes).
@@ -574,8 +613,11 @@ struct CameraReadyView: View {
     /// halves around the shutter share the height equally, so the shutter stays centered and
     /// nothing scrolls under it, even in a short window such as the unfolded inner display of an
     /// iPhone Duo held like a book.
+    ///
+    /// Q and Last Photo are 16 points from the shutter in a column at least 600 points tall, 8 in
+    /// a shorter one (``CameraLayout/columnShutterGap(columnHeight:)``, issue #116).
     private var controlColumn: some View {
-        VStack(spacing: NopeSpace.xs) {
+        VStack(spacing: CameraLayout.columnShutterGap(columnHeight: size.height)) {
             VStack(spacing: NopeSpace.xs) {
                 if showsControls {
                     SettingsButton(action: openSettings)
@@ -652,19 +694,31 @@ struct CameraReadyView: View {
         }
     }
 
-    /// The lens row and the drive strip of the stacked layout; nothing in clean view.
+    /// The lens row and the drive strip of the stacked layout, with the gap the spare height
+    /// gives between them (``CameraLayout/rowGap(spareHeight:)``); nothing in clean view.
+    ///
+    /// The lens controls are always at least 8 points from the drive strip's targets
+    /// (``NopeSize/targetGap``): where the spare height gives less than 2 points, as where the
+    /// rows overlay the picture, the controls move up by what is missing
+    /// (``CameraLayout/lensRowLift(rowGap:)``) and the rows keep their height.
     @ViewBuilder private var rows: some View {
         if showsControls {
+            let lift = CameraLayout.lensRowLift(rowGap: stackedRowGap)
             VStack(spacing: 0) {
                 lensRow
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { lensControlsHeight = $0 }
                     // The lens row's controls keep the design's gap from the picture above and the
                     // drive strip below (CameraLayout.lensRowInset) even when they grow taller
                     // than the row, rather than reaching its edges.
-                    .padding(.vertical, CameraLayout.lensRowInset)
-                    .frame(minHeight: NopeSize.lensRow)
+                    .padding(.top, CameraLayout.lensRowInset - lift)
+                    .padding(.bottom, CameraLayout.lensRowInset)
+                    .frame(minHeight: NopeSize.lensRow - lift)
                     .padding(.horizontal, NopeSpace.m)
+                    // The gap from the spare height, and the 2 points the lift took from above.
+                    .padding(.bottom, stackedRowGap + lift)
                 driveStrip(rotation.isSideways ? .symbols : .words)
                     .frame(maxWidth: .infinity, minHeight: NopeSize.driveRow)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { driveStripHeight = $0 }
                     .padding(.horizontal, NopeSpace.m)
             }
         }
@@ -863,7 +917,9 @@ struct CameraReadyView: View {
                     .padding(.top, NopeSpace.xs)
                     // The shutter is centered in the column with Q just above it, so Q's bottom
                     // is half the height less half the shutter and the gap above it.
-                    .padding(.bottom, max(size.height / 2 + NopeSize.shutter / 2 + NopeSpace.xs, NopeSpace.xs))
+                    .padding(
+                        .bottom,
+                        max(size.height / 2 + NopeSize.shutter / 2 + CameraLayout.columnShutterGap(columnHeight: size.height), NopeSpace.xs))
                     .transition(NopeMotion.panelTransition(reduceMotion: reduceMotion))
             }
         }

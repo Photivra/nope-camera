@@ -140,8 +140,9 @@ enum NopeSize {
     /// 44 points: the drive strip of the stacked layout.
     static let driveRow: CGFloat = 44
 
-    /// 88 points: the smallest height of the shutter row; it takes the remaining height
-    /// (101 points on a 402 × 874-point screen).
+    /// 88 points: the smallest height of the shutter row; it takes the spare height the gap
+    /// under the lens row leaves (`CameraLayout.rowGap(spareHeight:)`, issue #116): 94 points on
+    /// a 402 × 874-point screen, 114 on a 440 × 956-point screen.
     static let shutterRowMin: CGFloat = 88
 
     /// 104 points: the width of the trailing column in the column layout.

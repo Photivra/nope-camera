@@ -48,12 +48,14 @@ Replacing 0.3.0 literals: 8 → 12, 10 → 12, 12 → 12, 20 → 24. System shee
 | `statusRow` | 44 | Status line |
 | `lensRow` | 56 | Lens row |
 | `driveRow` | 44 | Drive strip |
-| `shutterRowMin` | 88 | Shutter row; takes the remaining height (101 on a 402 × 874 pt screen) |
+| `shutterRowMin` | 88 | Shutter row; takes the spare height the row gap leaves (94 on a 402 × 874 pt screen, 114 on 440 × 956) |
 | `column` | 104 | Width of the trailing column in the column layout |
 | `scrollingPicture` | 280 | Picture height in the scrolling layout (unchanged) |
 | `panelMaxWidth` | 372 | Q panel width in the column layout and sideways |
 | `focusSquare` | 60 | Focus square (unchanged) |
 | `startMark` | 96 | The launch screen's mark and the same mark in the app's first frames ([LAUNCH-SCREEN.md](LAUNCH-SCREEN.md)) |
+
+**Space between the camera's rows (issue 116, [finish-1.0.md](finish-1.0.md) section 1).** In the stacked layout the picture keeps its size and place. The spare height (the window inside the safe area less the status line, the whole 4:3 picture, the lens row, the drive strip and `shutterRowMin`) is shared: the gap between the lens row and the drive strip takes the first 2 pt, then a third of the rest, rounded down, at most 24 (`NopeSpace.l`); the shutter row takes the rest, with the shutter centered. Two rows' targets are always at least `targetGap` apart: where there is less than 2 pt of spare height (where the rows overlay the picture), the lens controls move up by what is missing inside the rows, 4 pt below their top edge, and the rows keep their height; a shutter row too short to center the shutter with 8 pt above it moves its contents down (4 pt at 88). In the column layout Q and Last Photo are `NopeSpace.m` (16) from the shutter when the window is at least 600 pt tall, `NopeSpace.xs` (8) otherwise. `CameraLayout.rowGap(spareHeight:)`, `lensRowLift(rowGap:)`, `shutterRowTopPadding(shutterRowHeight:)` and `columnShutterGap(columnHeight:)` hold the rule.
 
 ## Type: `enum NopeFont` (`Font`)
 
