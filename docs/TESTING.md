@@ -1495,7 +1495,9 @@ and one on 27, the oldest and newest supported versions (issue #78):
   photo; Escape (a synthesized Escape didn't reach the viewer's command in the iOS 27.2
   Simulator, so no UI test covers it) and the VoiceOver scrub close it; the volume buttons and
   the Camera Control close the viewer and take no photo, and the next press takes one (decision
-  V1); a photo from Apple Watch while the viewer is open gives New Photo; the app switcher's
+  V1), also with Photo Details open over the viewer, where both close (issue #109; in the
+  Simulator `testHardwareShutterClosesPhotoDetailsAndTheViewer` covers it with a simulated press,
+  `-NopeSimulatedHardwareButton`); a photo from Apple Watch while the viewer is open gives New Photo; the app switcher's
   snapshot shows no photo, for the viewer, for Photo Details opened from the camera and for
   Photo Details opened over the viewer (they rely on `scenePhase` inside a full-screen cover and
   inside a sheet, which no UI test can see; a privacy claim in `docs/PRIVACY.md`, so record the
@@ -2839,6 +2841,9 @@ the camera picture is blanked gives blank frames whatever the pipeline, and prov
   camera.
 - `-NopeArmDebugRun tagcheck` (or `probe`) only stores the run and shows a message. The next
   launch from the Home Screen performs it once and clears it.
+- `-NopeSimulatedHardwareButton` (UI tests): each `notify_post` of
+  `com.photivra.nope.debug.simulatedHardwareButton` is a hardware shutter press and release
+  (`SimulatedHardwareButton`), which the Simulator can't make.
 - `-NopeNoSavePreviews` makes the launch's saves make no preview for the Last Photo viewer, to
   measure what previews cost a burst ("Burst rate" above). Debug builds also mark each preview
   as a "Save preview" signpost interval.

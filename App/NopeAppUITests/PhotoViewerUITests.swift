@@ -1,4 +1,5 @@
 import XCTest
+import notify
 
 /// UI tests for the Last Photo viewer (docs/design/BUILD-SPEC.md, 3.14; docs/design/viewer.html;
 /// docs/design/ACCESSIBILITY.md, "Last Photo viewer"): opening and closing, paging, the status
@@ -383,6 +384,36 @@ extension NopeAppUITests {
         XCTAssertTrue(app.buttons["Last Photo"].waitForExistence(timeout: 10))
         app.typeKey(" ", modifierFlags: [])
         XCTAssertTrue(wait(openViewer(app), "label == 'Photo 2 of 2'"), "the next Space didn't take a photo")
+    }
+
+    /// A hardware shutter press with Photo Details open over the viewer closes both and takes no
+    /// photo; the next press takes one (decision V1, issue #109). The press is simulated
+    /// (`-NopeSimulatedHardwareButton`): the Simulator has no hardware shutter buttons.
+    @MainActor
+    func testHardwareShutterClosesPhotoDetailsAndTheViewer() throws {
+        let app = launch("noRAW", extraArguments: Self.signingOn + ["-NopeSimulatedHardwareButton"])
+        takeViewerPhoto(app)
+        openViewer(app)
+        app.buttons["Photo Details"].tap()
+        let details = app.navigationBars["What's in This Photo"]
+        XCTAssertTrue(details.waitForExistence(timeout: 10))
+        pressSimulatedHardwareButton()
+        XCTAssertTrue(wait(details, "exists == false"), "Photo Details didn't close")
+        XCTAssertTrue(wait(viewerPhoto(app), "exists == false"), "the viewer didn't close")
+        XCTAssertTrue(app.buttons["Last Photo"].waitForExistence(timeout: 10))
+        let reopened = openViewer(app)
+        XCTAssertEqual(reopened.label, "Photo", "the press took a photo")
+        closeViewer(app)
+        pressSimulatedHardwareButton()
+        XCTAssertTrue(lastPhoto(app, says: "Saved", timeout: 15))
+        XCTAssertTrue(wait(openViewer(app), "label == 'Photo 2 of 2'"), "the next press didn't take a photo")
+        try audit(app)
+    }
+
+    /// Posts the notification the app's simulated hardware shutter button waits for
+    /// (`SimulatedHardwareButton`, Debug builds only).
+    private func pressSimulatedHardwareButton() {
+        notify_post("com.photivra.nope.debug.simulatedHardwareButton")
     }
 
     /// iPad: the column arrangement in both orientations, and the fallback.

@@ -245,6 +245,9 @@ struct NopeApp: App {
         // UI tests only: `-NopeSimulatedNightModeSwitch <seconds>` switches Night Mode from outside
         // the screens, as Siri or Control Center do.
         .task { await SimulatedNightModeSwitch.run(settings: settings) }
+        // UI tests only: `-NopeSimulatedHardwareButton` takes a hardware shutter press from the
+        // test, which the Simulator can't make (issue #109).
+        .task { await SimulatedHardwareButton.run(model: model) }
         .overlay(alignment: .center) { SimulatedShortcut.ResultView() }
         // UI tests only: `-NopeSimulatedPinchLabelSeconds <seconds>` keeps a pinch's lens label up.
         .environment(\.lensPinchLabelSeconds, SimulatedPinch.labelSeconds)
