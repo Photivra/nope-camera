@@ -91,4 +91,12 @@ struct ShutterHolds: Equatable {
         latestRelease[source] = max(latestRelease[source, default: 0], number)
         return number == latest ? .current : .early
     }
+
+    /// Ends every press that is down, as if each came up: the app left the active state
+    /// (issue #101).
+    mutating func releaseAll() {
+        for source in ShutterSource.allCases {
+            latestRelease[source] = max(latestRelease[source, default: 0], latestPress[source, default: 0])
+        }
+    }
 }

@@ -427,6 +427,64 @@ struct BurstTests {
         #expect(model.drive.lastBurst?.saved == 1)
     }
 
+    // MARK: - A held burst ends when its shutter goes away (issue #101)
+
+    /// How a held burst loses its shutter.
+    enum LostShutter: CaseIterable, Sendable {
+        /// The shutter view went away, or stopped reporting, with the finger down: it sends
+        /// `.cancelled` with the touch's number.
+        case viewCancelled
+        /// The app stopped being active.
+        case appInactive
+        /// The app went to the background.
+        case appInBackground
+    }
+
+    @Test(arguments: LostShutter.allCases)
+    func aHeldBurstStopsWhenItsShutterGoesAway(_ lost: LostShutter) async {
+        let hooked = HookedBackend(ScriptedBackend(capabilities: CameraModelTests.oneLens))
+        let model = await makeModel(backend: hooked)
+        await hooked.setOnCapture { [model] count in
+            guard count == 2 else { return }
+            switch lost {
+            case .viewCancelled: await model.shutter(.cancelled, from: .onScreen, press: 7)
+            case .appInactive: await model.cancelShutterHolds()
+            case .appInBackground: await model.send(.setInForeground(false))
+            }
+        }
+        await model.shutter(.pressed, from: .onScreen, press: 7)?.value
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 2))
+        #expect(!model.drive.isShutterHeld)
+        // The next press starts a burst as usual, and its release ends it.
+        await hooked.setOnCapture { [model] count in
+            if count == 4 { await model.shutter(.released, from: .hardware) }
+        }
+        await model.send(.setInForeground(true))
+        await model.shutter(.pressed, from: .hardware)?.value
+        #expect(model.drive.lastBurst?.saved == 2)
+    }
+
+    @Test func endingTheHoldsLeavesABurstThatNeedsNoHolding() async {
+        let hooked = HookedBackend(ScriptedBackend(capabilities: CameraModelTests.oneLens))
+        let model = await makeModel(backend: hooked)
+        await hooked.setOnCapture { [model] count in
+            if count == 2 { await model.cancelShutterHolds() }
+            if count == 3 { await model.send(.drive(.stopBurst)) }
+        }
+        await model.send(.drive(.startBurst))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 3))
+    }
+
+    @Test func holdsOfEverySourceEndTogether() {
+        var holds = ShutterHolds()
+        _ = holds.press(nil, from: .onScreen)
+        _ = holds.press(5, from: .hardware)
+        holds.releaseAll()
+        #expect(!holds.isAnyHeld)
+        #expect(holds.release(5, from: .hardware) == .current, "the late release is still its press's")
+        #expect(holds.press(6, from: .hardware) == .new(number: 6, isReleased: false))
+    }
+
     // MARK: - Start Burst
 
     @Test(arguments: [

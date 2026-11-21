@@ -1893,6 +1893,23 @@ RAW + HEIF + JPEG and HEIF, with signing on and off:
   Fast. Where Fast measures under about 3 a second, the app stops offering Slow on that lens for
   the session (`DriveModel.slowBurstMinimumFastRate`); check the Burst menu then has only Fast.
 
+### Holding the shutter on a device (issues #100, #101)
+
+The order of a press and its release, the numbered presses, the hold of each source and the
+three ways a hold ends without a release are covered by `BurstTests` (with the scripted camera)
+and `ShutterTouchesTests`. A real touch and the real capture events need a phone:
+
+- In Burst, hold and release with the on-screen shutter, a volume button and the Camera Control:
+  each burst ends when its own button comes up. Ten fast taps take ten single photos, never a run.
+- Hold the on-screen shutter, then press and release a volume button: the burst continues until
+  the on-screen shutter comes up.
+- Hold the shutter and swipe down Control Center, and hold it while the app is sent to the
+  background: the burst ends after the photo being taken, and the next hold works as usual.
+- On an iPhone Duo, if one is at hand: fold or unfold while the shutter is held. Record whether
+  the system ends the touch first (then `onChange(of: isPressed)` already ends the burst) or the
+  shutter view goes away with the finger down (then `onDisappear` does). On the iPhone Duo
+  Simulator a fold can't be made with a finger held down, so this is not checked there.
+
 ### Headphones as a remote shutter on a device (issue #81)
 
 Pending verification; nothing here is claimed in the store listing until it is checked. The app

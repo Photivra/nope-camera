@@ -70,7 +70,8 @@ public enum CameraIntent: Equatable, Sendable {
     /// whenever the scene phase changes to or from the background (issue #64).
     ///
     /// Leaving closes the Last Photo viewer and releases the previews in
-    /// ``CameraModel/sessionPhotos`` (docs/PRIVACY.md), and cancels the self-timer, because the camera stops and can't take its photo. With
+    /// ``CameraModel/sessionPhotos`` (docs/PRIVACY.md), ends every shutter press that is down
+    /// (``CameraModel/cancelShutterHolds()``), and cancels the self-timer, because the camera stops and can't take its photo. With
     /// the astro helper on, leaving pauses its frames instead (``AstroModel/isPaused``), or, during
     /// its start delay, starts the run paused; coming back with the camera running counts the
     /// start delay down again and continues the run.

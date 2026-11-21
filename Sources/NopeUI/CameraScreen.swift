@@ -200,6 +200,9 @@ public struct CameraScreen<Viewfinder: View>: View {
         // hears of leaving and coming back: the self-timer is cancelled, and astro frames pause
         // and continue (issue #64).
         .onChange(of: scenePhase) { _, phase in
+            // A shutter held down as the app stops being active (Control Center, a call, the
+            // background) may never report coming up, so its burst ends here (issue #101).
+            if phase != .active { model.cancelShutterHolds() }
             Task {
                 if phase == .background { await model.send(.light(.setTorch(false))) }
                 await model.send(.setInForeground(phase != .background))

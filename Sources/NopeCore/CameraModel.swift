@@ -367,6 +367,8 @@ public final class CameraModel {
             if !isInForeground {
                 isViewerOpen = false
                 sessionPhotos.releasePreviews()
+                // A shutter held down as the app left may never report coming up (issue #101).
+                cancelShutterHolds()
             }
         case .releasePhotoPreviews:
             sessionPhotos.releasePreviews()

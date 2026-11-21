@@ -176,6 +176,14 @@ extension CameraModel {
         return handleShutter(phase, from: source, press: press)
     }
 
+    /// Ends every shutter press that is down, as if each came up, so a held burst stops after the
+    /// photo being taken (issue #101). Call it when the app leaves the active state: a press that
+    /// is down then may never report coming up. Sending ``CameraIntent/setInForeground(_:)`` with
+    /// `false` does it too. A burst that needs no holding is not stopped by it.
+    public func cancelShutterHolds() {
+        drive.holds.releaseAll()
+    }
+
     /// Handles a shutter event without counting it as an action (see ``shutter(_:from:press:)``).
     ///
     /// - Parameters:

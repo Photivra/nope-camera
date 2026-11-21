@@ -15,7 +15,7 @@ import SwiftUI
 /// gives way to a stop square, because a press stops it. Its name stays "Take Photo"; the
 /// VoiceOver value says the mode (`shutterDriveValue(_:)`).
 ///
-/// In burst mode it also reports when it goes down and comes up (`onPressChange`), so holding it
+/// In burst mode it also reports when it goes down and comes up (`onPhase`), so holding it
 /// takes a burst (docs/design/BURST.md, 3.1). The disc shrinks while it is held, without
 /// animation. The action still runs for assistive activation and for a touch whose press went
 /// unreported, but not for a touch that already reported its press, so a tap takes one photo,
@@ -42,10 +42,15 @@ struct ShutterButton: View {
     /// Called when the shutter is pressed.
     let action: () -> Void
 
-    /// Called with ``NopeCore/ShutterPhase/pressed`` when a touch goes down on the shutter and
-    /// ``NopeCore/ShutterPhase/released`` when it comes up, slides off or is cancelled, with the
-    /// touch's number, which the release repeats (issue #100); `nil` outside burst mode.
-    let onPressChange: ((ShutterPhase, Int) -> Void)?
+    /// Whether the shutter reports its touches (``onPhase``): in burst mode.
+    let reportsPhases: Bool
+
+    /// Called with ``NopeCore/ShutterPhase/pressed`` when a touch goes down on the shutter, and
+    /// ``NopeCore/ShutterPhase/released`` when it comes up or slides off, with the touch's number,
+    /// which the release repeats (issue #100). Called with ``NopeCore/ShutterPhase/cancelled``
+    /// when the shutter goes away, or stops reporting, while a reported touch is down
+    /// (issue #101). Only while ``reportsPhases`` is `true`, apart from that last end.
+    let onPhase: (ShutterPhase, Int) -> Void
 
     /// Counts presses, to trigger the haptic.
     @State private var presses = 0
@@ -53,8 +58,8 @@ struct ShutterButton: View {
     /// Whether the current touch reported its press, so its action is skipped.
     @State private var pressWasReported = false
 
-    /// The number of the current or latest touch that reported its press, from ``pressCount``.
-    @State private var pressNumber = 0
+    /// The reported touch that is down, if any.
+    @State private var touches = ShutterTouches()
 
     /// The touches that reported a press since launch, so each press has a number no earlier
     /// shutter used, also after the view is rebuilt (`CameraModel.shutter(_:from:press:)`).
@@ -71,16 +76,17 @@ struct ShutterButton: View {
     /// - Parameters:
     ///   - isEnabled: Whether a photo can be taken now.
     ///   - face: What the disc shows; the plain disc by default.
-    ///   - onPressChange: Reports the touch going down and coming up with its number, in burst
-    ///     mode; `nil` otherwise.
+    ///   - reportsPhases: Whether it reports its touches, in burst mode.
+    ///   - onPhase: Receives each reported touch's phases with its number.
     ///   - action: Called when the shutter is pressed.
     init(
-        isEnabled: Bool, face: Face = .photo, onPressChange: ((ShutterPhase, Int) -> Void)? = nil,
-        action: @escaping () -> Void
+        isEnabled: Bool, face: Face = .photo, reportsPhases: Bool = false,
+        onPhase: @escaping (ShutterPhase, Int) -> Void = { _, _ in }, action: @escaping () -> Void
     ) {
         self.isEnabled = isEnabled
         self.face = face
-        self.onPressChange = onPressChange
+        self.reportsPhases = reportsPhases
+        self.onPhase = onPhase
         self.action = action
     }
 
@@ -97,12 +103,23 @@ struct ShutterButton: View {
                 .frame(width: Self.diameter, height: Self.diameter)
                 .contentShape(Circle())
         }
-        .buttonStyle(ShutterStyle(face: face, isEnabled: isEnabled, showsHeld: onPressChange != nil, onPressChange: pressChanged))
+        .buttonStyle(ShutterStyle(face: face, isEnabled: isEnabled, showsHeld: reportsPhases, onPressChange: pressChanged))
         // A round highlight under the iPad pointer, matching the drawn shape.
         .contentShape(.hoverEffect, Circle())
         .hoverEffect(.highlight)
         .disabled(!isEnabled)
         .sensoryFeedback(NopeHaptic.shutter, trigger: presses)
+        // The camera left burst-shutter mode with the finger down: the burst ends now, since
+        // the release would no longer be reported (issue #101). The touch then acts as a tap if
+        // it comes up on the shutter, as any touch outside burst mode does.
+        .onChange(of: reportsPhases) { _, reports in
+            guard !reports else { return }
+            pressWasReported = false
+            endTouch(.cancelled)
+        }
+        // The shutter goes away with the finger down (a fold or unfold, a layout that rebuilds
+        // it): its touch ends with it (issue #101).
+        .onDisappear { endTouch(.cancelled) }
         .accessibilityLabel(Text("Take Photo", bundle: .module, comment: "VoiceOver and Voice Control name of the shutter button."))
         .accessibilityShowsLargeContentViewer {
             Label {
@@ -117,18 +134,55 @@ struct ShutterButton: View {
     ///
     /// - Parameter isPressed: Whether the touch is down.
     private func pressChanged(_ isPressed: Bool) {
-        guard let onPressChange else { return }
-        if isPressed {
-            Self.pressCount += 1
-            pressNumber = Self.pressCount
-            pressWasReported = true
-            presses += 1
-        } else {
+        guard isPressed else {
             // The action of the same touch may run just after this, in the same turn of the run
             // loop; it must still see the press as reported.
-            DispatchQueue.main.async { pressWasReported = false }
+            if touches.reported != nil { DispatchQueue.main.async { pressWasReported = false } }
+            endTouch(.released)
+            return
         }
-        onPressChange(isPressed ? .pressed : .released, pressNumber)
+        guard reportsPhases else { return }
+        Self.pressCount += 1
+        pressWasReported = true
+        presses += 1
+        let (phase, number) = touches.press(number: Self.pressCount)
+        onPhase(phase, number)
+    }
+
+    /// Reports the end of the reported touch that is down, once; nothing when none is.
+    ///
+    /// - Parameter phase: How it ended.
+    private func endTouch(_ phase: ShutterPhase) {
+        guard let (phase, number) = touches.end(phase) else { return }
+        onPhase(phase, number)
+    }
+}
+
+/// The reported touch of the shutter that is down, so its end is reported exactly once: when it
+/// comes up, or when the shutter goes away or stops reporting first (issues #100, #101).
+struct ShutterTouches: Equatable {
+    /// The number of the reported touch that is down, or `nil`.
+    private(set) var reported: Int?
+
+    /// A touch went down and is reported.
+    ///
+    /// - Parameter number: Its number.
+    /// - Returns: The press to report.
+    mutating func press(number: Int) -> (ShutterPhase, Int) {
+        reported = number
+        return (.pressed, number)
+    }
+
+    /// The reported touch ended.
+    ///
+    /// - Parameter phase: How: ``NopeCore/ShutterPhase/released`` or
+    ///   ``NopeCore/ShutterPhase/cancelled``.
+    /// - Returns: The end to report with the touch's number, or `nil` when no reported touch is
+    ///   down.
+    mutating func end(_ phase: ShutterPhase) -> (ShutterPhase, Int)? {
+        guard let number = reported else { return nil }
+        reported = nil
+        return (phase, number)
     }
 }
 
