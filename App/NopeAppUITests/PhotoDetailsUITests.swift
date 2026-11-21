@@ -236,6 +236,13 @@ extension NopeAppUITests {
             openPhotoDetails(app)
             let explanation = element(app, containing: sentence)
             XCTAssertTrue(scrollDetails(app, to: explanation), sentence)
+            if scenario == "signingFails" {
+                // When the warning on the camera goes away (issue #113).
+                XCTAssertTrue(
+                    explanation.label.contains(
+                        "The camera shows Not Signed after a photo that could not be signed, until the next photo is signed or signing is turned off."),
+                    explanation.label)
+            }
             try audit(app, afterScrolling: true, checksDynamicType: false)
             app.terminate()
         }
@@ -245,7 +252,7 @@ extension NopeAppUITests {
     func testDetailsLocationHiddenUntilShown() throws {
         let app = launch("manual", extraArguments: Self.locationKept)
         openPhotoDetails(app)
-        XCTAssertTrue(summaryRow(app, "location").waitForExistence(timeout: 5))
+        XCTAssertTrue(scrollDetails(app, to: summaryRow(app, "location")))
         XCTAssertEqual(summaryRow(app, "location").label, "Warning, Location is in the files")
         let show = app.buttons["Show Value, Location"]
         XCTAssertTrue(scrollDetails(app, to: show))

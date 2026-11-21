@@ -1036,12 +1036,12 @@
       "comment" : "Honesty heading: photos are signed with Content Credentials only when the person turns signing on. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
-    "Signing was on, but nope. couldn't create the signature for this photo. The files were saved without one. The camera shows Not Signed until a photo is signed again." : {
-      "comment" : "In the photo details: signing was on but failed for this photo, so it was saved unsigned. Not Signed is the warning chip on the camera. Keep nope. unchanged. Draft wording for the Honesty review.",
+    "Signing was on, but nope. couldn't create the signature for this photo. The files were saved without one. The camera shows Not Signed after a photo that could not be signed, until the next photo is signed or signing is turned off." : {
+      "comment" : "In the photo details: signing was on but failed for this photo, so it was saved unsigned. Not Signed is the warning chip on the camera. The last sentence says when the camera's warning goes away (issue #113): it follows the last photo, and also goes when signing is turned off. Keep nope. unchanged. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
-    "Signing was on, but the signed file didn't pass nope.'s check, so the file that passed was saved without a signature. The camera shows Not Signed until a photo is signed again." : {
-      "comment" : "In the photo details: a signed file failed the read-back check, so the unsigned file, which passed, was saved instead. Not Signed is the warning chip on the camera. Keep nope. unchanged. Draft wording for the Honesty review.",
+    "Signing was on, but the signed file didn't pass nope.'s check, so the file that passed was saved without a signature. The camera shows Not Signed after a photo that could not be signed, until the next photo is signed or signing is turned off." : {
+      "comment" : "In the photo details: a signed file failed the read-back check, so the unsigned file, which passed, was saved instead. Not Signed is the warning chip on the camera. The last sentence says when the camera's warning goes away (issue #113): it follows the last photo, and also goes when signing is turned off. Keep nope. unchanged. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
     "Signing was on, but this version of the app can't sign photos. The files were saved without a signature." : {
