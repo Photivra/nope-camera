@@ -1543,6 +1543,16 @@ version in the section named, or list it in the changelog as not yet checked:
   with iOS 26, take a photo with RAW + HEIF and with the processed fallback (HEIF), and record
   that each HEIF saves to Photos and that the read-back reports no other key. Not run.
 
+### The viewer and What's in This Photo on a device (1.0.0)
+
+Device checks added by the last viewer and details changes for 1.0.0. Not run.
+
+- **The shown page zooms after a long series** (issue #102). Start an interval series of more
+  than 100 photos, open the viewer on the oldest photo while it runs, and leave it until that
+  photo is dropped from the session (the session keeps 100). The viewer moves to the newest
+  photo; double tap and pinch zoom it. `PhotoViewerTests.theShownPageFollowsTheFallbackWhenItsPhotoIsDropped`
+  covers the rule; no UI test runs a series that long.
+
 ### Lock Screen, Control Center, Siri and Shortcuts on a device
 
 Issues #42 and #62. Assumptions to confirm: the capture extension needs no entitlement, can add

@@ -135,6 +135,24 @@ struct PhotoViewerTests {
         #expect(PhotoViewerFacts.id(movingBy: 1, from: nil, in: photos) == nil)
     }
 
+    @Test func theShownPageFollowsTheFallbackWhenItsPhotoIsDropped() {
+        // A series past the session's limit of 100 drops the oldest records (issue #102).
+        let all = (1...(SessionPhotos.maximumCount + 1)).map { Self.photo($0) }
+        let kept = Array(all.suffix(SessionPhotos.maximumCount))
+        #expect(kept.first?.id == 2)
+        // The page shown was the first photo, which is gone: the shown page becomes the newest,
+        // the one the viewer draws, so it gets the zoom binding (`isZoomable`).
+        let shown = PhotoViewerFacts.shownID(1, in: kept)
+        #expect(shown == SessionPhotos.maximumCount + 1)
+        #expect(PhotoViewerFacts.isZoomable(page: kept.last!.id, shownID: shown))
+        #expect(!PhotoViewerFacts.isZoomable(page: kept.last!.id, shownID: 1))
+        #expect(!PhotoViewerFacts.isZoomable(page: kept[0].id, shownID: shown))
+        // A photo still kept stays shown; nothing to show, nothing chosen.
+        #expect(PhotoViewerFacts.shownID(50, in: kept) == 50)
+        #expect(PhotoViewerFacts.shownID(nil, in: kept) == SessionPhotos.maximumCount + 1)
+        #expect(PhotoViewerFacts.shownID(1, in: []) == nil)
+    }
+
     @Test func zoomReachesThePreviewsPixelsAndAtLeastTwiceFit() {
         let preview = CGSize(width: 3072, height: 2304)
         // An iPhone page of 402 points at 3 pixels per point: 1206 pixels, so 2.55 × fit.

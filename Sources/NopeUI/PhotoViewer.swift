@@ -221,6 +221,31 @@ enum PhotoViewerFacts {
         return newestID > (lastSeenNewestID ?? 0)
     }
 
+    /// The photo shown: the one chosen while the session still holds it, otherwise the newest.
+    ///
+    /// A long series can push the chosen photo past the session's limit of
+    /// ``SessionPhotos/maximumCount`` records (issue #102). The viewer then shows the newest
+    /// photo, and the chosen identifier must follow, or that page gets no zoom.
+    ///
+    /// - Parameters:
+    ///   - shownID: The photo chosen, or `nil`.
+    ///   - photos: The session's photos, oldest first.
+    /// - Returns: The identifier of the photo to show, or `nil` when there is none.
+    static func shownID(_ shownID: Int?, in photos: [SessionPhoto]) -> Int? {
+        guard let shownID, photos.contains(where: { $0.id == shownID }) else { return photos.last?.id }
+        return shownID
+    }
+
+    /// Whether a page takes the viewer's zoom: only the page shown does; the others stay at fit.
+    ///
+    /// - Parameters:
+    ///   - page: The page's photo.
+    ///   - shownID: The photo shown, after ``shownID(_:in:)``.
+    /// - Returns: Whether the page is bound to the zoom.
+    static func isZoomable(page: Int, shownID: Int?) -> Bool {
+        page == shownID
+    }
+
     /// The photos whose pictures are decoded: the one shown and its two neighbors.
     ///
     /// - Parameters:
@@ -712,7 +737,8 @@ struct PhotoViewerScreen: View {
 
     /// The photo shown: the chosen one, or the newest if it was dropped.
     private var shown: SessionPhoto? {
-        photos.first { $0.id == shownID } ?? photos.last
+        let id = PhotoViewerFacts.shownID(shownID, in: photos)
+        return photos.first { $0.id == id }
     }
 
     /// The arrangement for the window.
@@ -778,6 +804,12 @@ struct PhotoViewerScreen: View {
         .onChange(of: shownID) { _, id in
             zoom = .fit
             if let id, id == photos.last?.id { lastSeenNewestID = id }
+        }
+        // The photo shown left the session (more than 100 photos): follow the fallback, so the
+        // page drawn is the one bound to the zoom (issue #102).
+        .onChange(of: photos.map(\.id)) {
+            let id = PhotoViewerFacts.shownID(shownID, in: photos)
+            if id != shownID { shownID = id }
         }
         // Fold, unfold, rotate, resize: zoom returns to fit.
         .onChange(of: size) { zoom = .fit }
@@ -1230,7 +1262,8 @@ struct PhotoViewerPager: View {
                 ForEach(photos) { photo in
                     PhotoViewerPage(
                         photo: photo, picture: pictures[photo.id],
-                        zoom: photo.id == shownID ? $zoom : .constant(.fit), maximumZoom: maximumZoom,
+                        zoom: PhotoViewerFacts.isZoomable(page: photo.id, shownID: shownID) ? $zoom : .constant(.fit),
+                        maximumZoom: maximumZoom,
                         makesPreviews: makesPreviews, toggleControls: toggleControls
                     )
                     .containerRelativeFrame([.horizontal, .vertical])
