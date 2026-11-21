@@ -374,7 +374,7 @@ Behavior:
 - The camera keeps running under the viewer, as under a sheet: a running series continues, and Apple Watch and Siri can take photos. `canCapture` is not changed.
 - A new photo while the viewer is open is added as the last page. The page shown does not change. New Photo appears until the newest page is shown. The save sentence is announced as today.
 - A failure while the viewer is open shows the Photo Not Saved chip and is announced as today. The chip closes the viewer; the failure banner is on the camera.
-- Hardware shutter (volume buttons, Camera Control) and Take Photo (Space with nothing focused): recommended to close the viewer and take no photo (section 7). This needs the camera model to know the viewer is open, as it knows the compare view is; that is core work and belongs to the data specification.
+- Hardware shutter (volume buttons, Camera Control) and Take Photo (Space with nothing focused): close the viewer and take no photo; the next press takes one (decision V1, section 7). The same holds with Photo Details, or any sheet presented from the viewer, open over it: the press closes both and takes no photo (owner decision, 2026-11-21, issue #109). The camera model knows the viewer is open (`CameraModel.isViewerOpen`), as it knows the compare view is.
 - Fold, unfold, rotate, resize: the viewer stays open on the same photo, zoom returns to fit, and the arrangement follows the window.
 - Night mode: everything is red on black, the photo included, so the all-red check of the night-mode tests holds on this screen with no exception.
 
@@ -727,7 +727,7 @@ Last Photo viewer, still needing the owner. Each has a recommendation, and the d
 
 | # | Point | Recommendation | Other choice |
 | --- | --- | --- | --- |
-| V1 | A volume button or the Camera Control pressed while the viewer is open | Close the viewer and take no photo; the next press takes one. A photo is never taken while its framing is hidden | Take the photo at once and close the viewer, as a camera with a shutter button does during review; or leave the buttons to the system |
+| V1 | A volume button or the Camera Control pressed while the viewer is open | Close the viewer and take no photo; the next press takes one. A photo is never taken while its framing is hidden. Also with Photo Details or any other sheet open over the viewer: the press closes the sheet and the viewer together (owner decision, 2026-11-21, issue #109) | Take the photo at once and close the viewer, as a camera with a shutter button does during review; or leave the buttons to the system |
 | V2 | A photo taken while the viewer is open (Apple Watch, Siri, a series) | Stay on the photo shown and offer New Photo | Jump to the new photo |
 | V3 | The touch and hold menu on Last Photo | Remove it. The viewer holds both actions, and both stay as VoiceOver actions on Last Photo. Open in Photos becomes two taps | Keep it as a shortcut |
 | V4 | The photo in night mode | Red, like everything outside the live viewfinder; the all-red check stays without an exception | Natural colors, as the viewfinder has without Red Viewfinder |
