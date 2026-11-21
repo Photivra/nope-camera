@@ -5825,17 +5825,33 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 The words for the drive modes, the self-timer and bursts (issues #39 and #46). The modes' own
 names are the drive strip's (`DriveWord`).
 
-## `DriveText/burstValue(_:)`
+## `DriveText/burstValue(_:limit:)`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-@MainActor static func burstValue(_ speed: BurstSpeed) -> Text
+@MainActor static func burstValue(_ speed: BurstSpeed, limit: Int? = nil) -> Text
 ```
 
-The shutter's VoiceOver value in burst mode: "Burst, fast." or "Burst, slow."
+The shutter's VoiceOver value in burst mode: "Burst, fast." or "Burst, slow.", and with a
+Burst Limit "Burst, fast, 10 photos." (docs/design/finish-1.0.md, 5.3).
 
-- Parameter speed: The burst speed.
+- Parameters:
+  - speed: The burst speed.
+  - limit: The photos a press takes with a Burst Limit, or `nil`.
+
+## `DriveText/endAnnouncement(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func endAnnouncement(_ result: BurstResult) -> String?
+```
+
+What VoiceOver hears when a burst ends: why it stopped by itself (``endMessage(_:)``),
+or for a burst with a Burst Limit its summary, "4 of 10 photos saved"; otherwise `nil`.
+
+- Parameter result: How the burst ended.
 
 ## `DriveText/endMessage(_:)`
 
@@ -11663,7 +11679,7 @@ What the mode card on the picture's lower edge shows (docs/design/BUILD-SPEC.md,
 docs/design/BURST.md, 5.3): one case per state that has a card. Single has none, and Timer
 has none while idle: the shutter shows the delay, and the strip names the mode.
 
-It is plain data worked out from the camera's state (``resolve(mode:countdownRemaining:burst:endedBurst:burstSpeed:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)``),
+It is plain data worked out from the camera's state (``resolve(mode:countdownRemaining:burst:endedBurst:burstSpeed:burstLimit:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)``),
 so which card shows is tested without drawing.
 
 ## `ModeCardState/astroCountdown(remaining:)`
@@ -11719,15 +11735,17 @@ case burstEnded(BurstResult)
 A burst ended: the summary ("12 photos saved", the time and the rate), or why it stopped
 by itself (``DriveText/endMessage(_:)``), until the next action.
 
-## `ModeCardState/burstIdle(_:)`
+## `ModeCardState/burstIdle(_:limit:)`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-case burstIdle(BurstSpeed)
+case burstIdle(BurstSpeed, limit: Int? = nil)
 ```
 
-Burst is chosen and nothing runs: the speed, what the shutter does, and Start Burst.
+Burst is chosen and nothing runs: the speed, what the shutter does, and Start Burst; with
+a Burst Limit (issue #121), the count in the title ("Fast burst · 10 photos"), "A press
+takes 10 photos. Press again to stop." and no button, since a press starts the burst.
 
 ## `ModeCardState/burstRunning(_:)`
 
@@ -11738,7 +11756,8 @@ case burstRunning(BurstProgress)
 ```
 
 A burst takes photos: "Photos taken: 12", the measured rate, and "Release to stop" while
-the shutter holds it, or Stop Burst.
+the shutter holds it, or Stop Burst. A limited burst shows "3 of 10", the rate with
+"Press to stop", a bar by photos taken, and Stop Burst.
 
 ## `ModeCardState/burstSaving(saved:taken:)`
 
@@ -11759,7 +11778,7 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 @MainActor static func current(_ model: CameraModel, endedBurst: BurstResult?, showsControls: Bool, savedBracket: BracketCardState? = nil) -> ModeCardState?
 ```
 
-The card for the camera model's state, or `nil` (see ``resolve(mode:countdownRemaining:burst:endedBurst:burstSpeed:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)``).
+The card for the camera model's state, or `nil` (see ``resolve(mode:countdownRemaining:burst:endedBurst:burstSpeed:burstLimit:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)``).
 
 - Parameters:
   - model: The camera model.
@@ -11801,12 +11820,12 @@ var isRunning: Bool { get }
 Whether the card shows something that runs, and so stays in clean view: stopping never
 depends on bringing the controls back.
 
-## `ModeCardState/resolve(mode:countdownRemaining:burst:endedBurst:burstSpeed:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)`
+## `ModeCardState/resolve(mode:countdownRemaining:burst:endedBurst:burstSpeed:burstLimit:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-static func resolve(mode: DriveMode, countdownRemaining: Int?, burst: BurstProgress?, endedBurst: BurstResult?, burstSpeed: BurstSpeed = .fast, intervalProgress: IntervalProgress?, intervalSettings: IntervalSettings, isAstroOn: Bool, astroRun: AstroRun?, astroStartDelay: SelfTimerDelay, astroEstimate: AstroEstimate?, showsControls: Bool) -> ModeCardState?
+static func resolve(mode: DriveMode, countdownRemaining: Int?, burst: BurstProgress?, endedBurst: BurstResult?, burstSpeed: BurstSpeed = .fast, burstLimit: Int? = nil, intervalProgress: IntervalProgress?, intervalSettings: IntervalSettings, isAstroOn: Bool, astroRun: AstroRun?, astroStartDelay: SelfTimerDelay, astroEstimate: AstroEstimate?, showsControls: Bool) -> ModeCardState?
 ```
 
 The card for the camera's state, or `nil` for none. A running series or countdown comes
@@ -11819,6 +11838,7 @@ burst mode: running, saving, ended (until the next action), idle.
   - burst: The running burst, or `nil`.
   - endedBurst: A burst whose summary or end message still shows, or `nil`.
   - burstSpeed: The speed a burst on the selected lens uses, for the idle card.
+  - burstLimit: The photos a press takes with a Burst Limit, or `nil`, for the idle card.
   - intervalProgress: The running interval series, or `nil`.
   - intervalSettings: The next interval series.
   - isAstroOn: Whether Astro is on.
@@ -11938,6 +11958,19 @@ saved after the other stops, or `nil`.
 
 - Parameter result: How the burst ended.
 
+## `ModeCardText/burstEndedTitle(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func burstEndedTitle(_ result: BurstResult) -> String
+```
+
+The ended card's title: why the burst stopped by itself, or the photos saved ("12
+photos saved", or "4 of 10 photos saved" with a Burst Limit).
+
+- Parameter result: How the burst ended.
+
 ## `ModeCardText/burstIdleDetail`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
@@ -11947,6 +11980,18 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 ```
 
 "Hold the shutter. A tap takes one photo."
+
+## `ModeCardText/burstIdleDetail(limit:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func burstIdleDetail(limit: Int) -> Text
+```
+
+"A press takes 10 photos. Press again to stop."
+
+- Parameter limit: The photos a press takes.
 
 ## `ModeCardText/burstIdleTitle(_:)`
 
@@ -11959,6 +12004,21 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 The idle card's title: "Fast burst", or "Slow burst: up to 2 a second".
 
 - Parameter speed: The burst speed.
+
+## `ModeCardText/burstIdleTitle(_:limit:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func burstIdleTitle(_ speed: BurstSpeed, limit: Int) -> Text
+```
+
+The idle card's title with a Burst Limit: "Fast burst · 10 photos" or "Slow burst · 10
+photos" (docs/design/finish-1.0.md, 5.2).
+
+- Parameters:
+  - speed: The burst speed.
+  - limit: The photos a press takes.
 
 ## `ModeCardText/burstRate(_:)`
 
@@ -11982,6 +12042,18 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 The running burst's detail: the rate and "Release to stop" while held, or the rate alone,
 or `nil` before a rate and without a hold.
+
+- Parameter progress: The burst's progress.
+
+## `ModeCardText/burstRunningTitle(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func burstRunningTitle(_ progress: BurstProgress) -> Text
+```
+
+The running card's title: "Photos taken: 12", or "3 of 10" for a limited burst.
 
 - Parameter progress: The burst's progress.
 
@@ -12207,6 +12279,31 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 "12 photos saved".
 
 - Parameter saved: The photos saved, at least 2.
+
+## `ModeCardText/photosSaved(_:of:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func photosSaved(_ saved: Int, of limit: Int) -> String
+```
+
+"4 of 10 photos saved", for a burst with a Burst Limit. In the Honesty table: it states
+how many of the photos asked for were saved.
+
+- Parameters:
+  - saved: The photos saved.
+  - limit: The photos the press asked for.
+
+## `ModeCardText/pressToStop`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static var pressToStop: String { get }
+```
+
+"Press to stop".
 
 ## `ModeCardText/releaseToStop`
 
@@ -24183,7 +24280,7 @@ and idle it shows the delay ("3" or "10") in black; while a series or countdown 
 gives way to a stop square, because a press stops it. Its name stays "Take Photo"; the
 VoiceOver value says the mode (`shutterDriveValue(_:)`).
 
-In burst mode it also reports when it goes down and comes up (`onPressChange`), so holding it
+In burst mode it also reports when it goes down and comes up (`onPhase`), so holding it
 takes a burst (docs/design/BURST.md, 3.1). The disc shrinks while it is held, without
 animation. The action still runs for assistive activation and for a touch whose press went
 unreported, but not for a touch that already reported its press, so a tap takes one photo,
@@ -24269,12 +24366,12 @@ internal, declared in `Sources/NopeUI/ShutterButton.swift`
 
 What the disc shows.
 
-## `ShutterButton/init(isEnabled:face:onPressChange:action:)`
+## `ShutterButton/init(isEnabled:face:reportsPhases:onPhase:action:)`
 
 internal, declared in `Sources/NopeUI/ShutterButton.swift`
 
 ```swift
-@MainActor init(isEnabled: Bool, face: Face = .photo, onPressChange: ((Bool) -> Void)? = nil, action: @escaping () -> Void)
+@MainActor init(isEnabled: Bool, face: Face = .photo, reportsPhases: Bool = false, onPhase: @escaping (ShutterPhase, Int) -> Void = { _, _ in }, action: @escaping () -> Void)
 ```
 
 Creates the shutter.
@@ -24282,8 +24379,8 @@ Creates the shutter.
 - Parameters:
   - isEnabled: Whether a photo can be taken now.
   - face: What the disc shows; the plain disc by default.
-  - onPressChange: Reports the touch going down and coming up, in burst mode; `nil`
-    otherwise.
+  - reportsPhases: Whether it reports its touches, in burst mode.
+  - onPhase: Receives each reported touch's phases with its number.
   - action: Called when the shutter is pressed.
 
 ## `ShutterButton/isEnabled`
@@ -24296,16 +24393,29 @@ internal, declared in `Sources/NopeUI/ShutterButton.swift`
 
 Whether a photo can be taken now.
 
-## `ShutterButton/onPressChange`
+## `ShutterButton/onPhase`
 
 internal, declared in `Sources/NopeUI/ShutterButton.swift`
 
 ```swift
-@MainActor let onPressChange: ((Bool) -> Void)?
+@MainActor let onPhase: (ShutterPhase, Int) -> Void
 ```
 
-Called with `true` when a touch goes down on the shutter and `false` when it comes up,
-slides off or is cancelled; `nil` outside burst mode.
+Called with `ShutterPhase.pressed` when a touch goes down on the shutter, and
+`ShutterPhase.released` when it comes up or slides off, with the touch's number,
+which the release repeats (issue #100). Called with `ShutterPhase.cancelled`
+when the shutter goes away, or stops reporting, while a reported touch is down
+(issue #101). Only while ``reportsPhases`` is `true`, apart from that last end.
+
+## `ShutterButton/reportsPhases`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+@MainActor let reportsPhases: Bool
+```
+
+Whether the shutter reports its touches (``onPhase``): in burst mode.
 
 ## `ShutterButton/stopSide`
 
@@ -24395,6 +24505,65 @@ internal, declared in `Sources/NopeUI/ShutterButton.swift`
 ```
 
 Whether the disc shrinks while held: in burst mode.
+
+## `ShutterTouches`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+struct ShutterTouches
+```
+
+The reported touch of the shutter that is down, so its end is reported exactly once: when it
+comes up, or when the shutter goes away or stops reporting first (issues #100, #101).
+
+## `ShutterTouches/end(_:)`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+mutating func end(_ phase: ShutterPhase) -> (ShutterPhase, Int)?
+```
+
+The reported touch ended.
+
+- Parameter phase: How: `ShutterPhase.released` or
+  `ShutterPhase.cancelled`.
+- Returns: The end to report with the touch's number, or `nil` when no reported touch is
+  down.
+
+## `ShutterTouches/init()`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+init()
+```
+
+Creates the record with no touch down.
+
+## `ShutterTouches/press(number:)`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+mutating func press(number: Int) -> (ShutterPhase, Int)
+```
+
+A touch went down and is reported.
+
+- Parameter number: Its number.
+- Returns: The press to report.
+
+## `ShutterTouches/reported`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+var reported: Int? { get }
+```
+
+The number of the reported touch that is down, or `nil`.
 
 ## `SideBySideOrStacked`
 

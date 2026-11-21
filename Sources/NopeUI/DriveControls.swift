@@ -193,7 +193,7 @@ struct AstroRun: Equatable {
 /// docs/design/BURST.md, 5.3): one case per state that has a card. Single has none, and Timer
 /// has none while idle: the shutter shows the delay, and the strip names the mode.
 ///
-/// It is plain data worked out from the camera's state (``resolve(mode:countdownRemaining:burst:endedBurst:burstSpeed:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)``),
+/// It is plain data worked out from the camera's state (``resolve(mode:countdownRemaining:burst:endedBurst:burstSpeed:burstLimit:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)``),
 /// so which card shows is tested without drawing.
 enum ModeCardState: Equatable {
     /// The self-timer counts down: "Photo in 3s" and Cancel Timer.
@@ -303,7 +303,7 @@ enum ModeCardState: Equatable {
         result.hasSummary || DriveText.endMessage(result) != nil
     }
 
-    /// The card for the camera model's state, or `nil` (see ``resolve(mode:countdownRemaining:burst:endedBurst:burstSpeed:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)``).
+    /// The card for the camera model's state, or `nil` (see ``resolve(mode:countdownRemaining:burst:endedBurst:burstSpeed:burstLimit:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)``).
     ///
     /// - Parameters:
     ///   - model: The camera model.

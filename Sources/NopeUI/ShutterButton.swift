@@ -164,6 +164,9 @@ struct ShutterTouches: Equatable {
     /// The number of the reported touch that is down, or `nil`.
     private(set) var reported: Int?
 
+    /// Creates the record with no touch down.
+    init() {}
+
     /// A touch went down and is reported.
     ///
     /// - Parameter number: Its number.

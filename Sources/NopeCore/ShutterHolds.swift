@@ -52,6 +52,9 @@ struct ShutterHolds: Equatable {
     /// The number of the latest press of each source that has ended, or none.
     private var latestRelease: [ShutterSource: Int] = [:]
 
+    /// Creates the holds with no press yet from any source.
+    init() {}
+
     /// Whether a press of this source is down.
     ///
     /// - Parameter source: The shutter.
