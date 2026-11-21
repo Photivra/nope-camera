@@ -181,15 +181,29 @@ struct CameraModelTests {
 
     @Test func theShutterIsDisabledWhileSaving() async {
         let backend = ScriptedBackend(capabilities: Self.oneLens)
-        let gate = DevelopGate()
-        let model = await Self.runningModel(backend, saver: Self.saver(library: FakeLibrary(), developer: FakeDeveloper(gate: gate)))
+        // The save is held at the add to Photos, which every format reaches. A gate on the
+        // developer held nothing: the default formats are RAW only, which isn't developed, so
+        // the photo could finish saving before the test looked, as it did once under load.
+        let library = GatedLibrary(gatedAdd: 1)
+        let saver = PhotoSaver(developer: FakeDeveloper(), signer: nil, reader: BytesReader(), library: library, appVersion: "0.2.0")
+        let model = await Self.runningModel(backend, saver: saver)
+        #expect(model.saveSettings.formats == [.raw])
         let capture = Task { await model.send(.capture) }
-        await waitOrFail("the photo is saving") { model.captureStatus == .saving }
+        // A bounded wait: at most five seconds, then the test fails instead of hanging.
+        var waits = 0
+        while !(await library.isHolding), waits < 500 {
+            waits += 1
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(await library.isHolding, "the save didn't reach the add to Photos")
+        #expect(model.captureStatus == .saving)
         #expect(!model.canCapture)
         await model.send(.capture)
         #expect(await backend.captureRequests.count == 1)
-        await gate.open()
+        await library.release()
         await capture.value
+        #expect(model.captureStatus != .saving)
+        #expect(model.canCapture)
     }
 
     @Test func captureFailureIsReported() async {
