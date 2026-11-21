@@ -1,7 +1,9 @@
 import CoreGraphics
 import Foundation
 import NopeCore
+import SwiftUI
 import Testing
+import UIKit
 
 @testable import NopeUI
 
@@ -133,6 +135,64 @@ struct PhotoViewerTests {
         #expect(PhotoViewerFacts.id(movingBy: -1, from: 1, in: photos) == nil)
         #expect(PhotoViewerFacts.id(movingBy: 1, from: 4, in: photos) == nil)
         #expect(PhotoViewerFacts.id(movingBy: 1, from: nil, in: photos) == nil)
+    }
+
+    @Test func theShownPageFollowsTheFallbackWhenItsPhotoIsDropped() {
+        // A series past the session's limit of 100 drops the oldest records (issue #102).
+        let all = (1...(SessionPhotos.maximumCount + 1)).map { Self.photo($0) }
+        let kept = Array(all.suffix(SessionPhotos.maximumCount))
+        #expect(kept.first?.id == 2)
+        // The page shown was the first photo, which is gone: the shown page becomes the newest,
+        // the one the viewer draws, so it gets the zoom binding (`isZoomable`).
+        let shown = PhotoViewerFacts.shownID(1, in: kept)
+        #expect(shown == SessionPhotos.maximumCount + 1)
+        #expect(PhotoViewerFacts.isZoomable(page: kept.last!.id, shownID: shown))
+        #expect(!PhotoViewerFacts.isZoomable(page: kept.last!.id, shownID: 1))
+        #expect(!PhotoViewerFacts.isZoomable(page: kept[0].id, shownID: shown))
+        // A photo still kept stays shown; nothing to show, nothing chosen.
+        #expect(PhotoViewerFacts.shownID(50, in: kept) == 50)
+        #expect(PhotoViewerFacts.shownID(nil, in: kept) == SessionPhotos.maximumCount + 1)
+        #expect(PhotoViewerFacts.shownID(1, in: []) == nil)
+    }
+
+    @Test func pagesDecodeAtTheirFittedSizeAndTheZoomedPageAtFull() {
+        // Issue #103: a 3072 × 2304 preview fitted on a 402-point page at 3 pixels per point is
+        // 1206 pixels wide, so each page decodes at 1206 pixels instead of 3072.
+        let photos = [Self.photo(1), Self.photo(2), Self.photo(3), Self.photo(4)]
+        let page = CGSize(width: 402, height: 600)
+        let fitted = PhotoViewerFacts.decodes(around: 2, in: photos, page: page, displayScale: 3, isZoomed: false)
+        #expect(fitted == [.init(id: 2, maximumPixelSize: 1206), .init(id: 1, maximumPixelSize: 1206), .init(id: 3, maximumPixelSize: 1206)])
+        // Zoomed past fit, the page shown decodes at the preview's own size; its neighbors don't.
+        let zoomed = PhotoViewerFacts.decodes(around: 2, in: photos, page: page, displayScale: 3, isZoomed: true)
+        #expect(zoomed == [.init(id: 2, maximumPixelSize: nil), .init(id: 1, maximumPixelSize: 1206), .init(id: 3, maximumPixelSize: 1206)])
+        // A part pixel rounds up, so the fitted picture is never enlarged.
+        #expect(PhotoViewerFacts.decodeSide(preview: CGSize(width: 3072, height: 2304), page: CGSize(width: 402.5, height: 600), displayScale: 3) == 1208)
+        // A page as large as the preview, or larger, decodes it at its own size.
+        #expect(PhotoViewerFacts.decodeSide(preview: CGSize(width: 3072, height: 2304), page: CGSize(width: 2000, height: 1500), displayScale: 2) == nil)
+        // A 13-inch iPad page (1376 × 1032 points at 2): 2752 pixels, a little less than the preview.
+        #expect(PhotoViewerFacts.decodeSide(preview: CGSize(width: 3072, height: 2304), page: CGSize(width: 1376, height: 1032), displayScale: 2) == 2752)
+        #expect(PhotoViewerFacts.decodeSide(preview: CGSize(width: 3072, height: 2304), page: CGSize(width: 1536, height: 1152), displayScale: 2) == nil)
+        // Before the page is laid out nothing is decoded; a photo without a preview asks for
+        // nothing smaller.
+        #expect(PhotoViewerFacts.decodes(around: 2, in: photos, page: .zero, displayScale: 3, isZoomed: false).isEmpty)
+        let released = [Self.photo(1, preview: nil, released: true)]
+        #expect(PhotoViewerFacts.decodes(around: 1, in: released, page: page, displayScale: 3, isZoomed: false) == [.init(id: 1, maximumPixelSize: nil)])
+        #expect(PhotoViewerFacts.decodes(around: nil, in: photos, page: page, displayScale: 3, isZoomed: false).isEmpty)
+    }
+
+    @Test func stackedStatusLinesWrapInANarrowWindow() {
+        // Issue #110: at the largest text size "Processed · HEIF" and "Not signed" are lines one
+        // above the other; in a narrow window each must wrap rather than run past the edge.
+        let photo = SavedPhoto(formats: [.raw, .heif, .jpeg], isProcessedFallback: true, signature: .unsigned(.failed), metadata: [:])
+        let width: CGFloat = 160
+        for size in [DynamicTypeSize.accessibility5, .accessibility1] {
+            let status = PhotoViewerStatus(photo: photo, isOnPicture: false, isStackedLines: true)
+                .environment(\.dynamicTypeSize, size)
+            let fitting = UIHostingController(rootView: status)
+                .sizeThatFits(in: CGSize(width: width, height: .greatestFiniteMagnitude))
+            #expect(fitting.width <= width, "\(size): \(fitting)")
+            #expect(fitting.height > 0)
+        }
     }
 
     @Test func zoomReachesThePreviewsPixelsAndAtLeastTwiceFit() {

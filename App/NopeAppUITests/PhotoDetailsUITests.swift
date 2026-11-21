@@ -49,6 +49,48 @@ extension NopeAppUITests {
         for _ in 0..<20 where !(element.exists && element.isHittable) { app.swipeDown() }
     }
 
+    /// A row of the summary by its fact: `kind`, `signature`, `details` or `location`
+    /// (issue #118).
+    @MainActor
+    func summaryRow(_ app: XCUIApplication, _ fact: String) -> XCUIElement {
+        app.descendants(matching: .any)["PhotoDetails.summary.\(fact)"]
+    }
+
+    /// Checks the summary's head and rows: each row one element with exactly these words, below
+    /// the head and in the fixed order (kind, signature, details, location).
+    @MainActor
+    func checkSummary(
+        _ app: XCUIApplication, head: [String], rows: [String], file: StaticString = #filePath, line: UInt = #line
+    ) {
+        let summary = app.descendants(matching: .any)["PhotoDetails.summary"]
+        XCTAssertTrue(summary.waitForExistence(timeout: 5), file: file, line: line)
+        // The head scrolls away at the largest text size, so its words are read first.
+        let headLabel = summary.label
+        for words in head {
+            XCTAssertTrue(headLabel.contains(words), "\(words) not in \(headLabel)", file: file, line: line)
+        }
+        var lastY = summary.frame.minY
+        for (fact, label) in zip(["kind", "signature", "details", "location"], rows) {
+            let row = summaryRow(app, fact)
+            // At the largest text size the rows go below the screen: a short drag at a time, so
+            // no row is passed.
+            var drags = 0
+            while !(row.exists && row.isHittable) && drags < 12 {
+                let window = app.windows.firstMatch
+                window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
+                    .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)))
+                drags += 1
+            }
+            XCTAssertTrue(row.exists, fact, file: file, line: line)
+            XCTAssertEqual(row.label, label, fact, file: file, line: line)
+            // The head's words aren't repeated in a row, and a row's words aren't in the head.
+            XCTAssertFalse(headLabel.contains(label), fact, file: file, line: line)
+            // Each row is below the one before; after a drag the earlier ones have moved up.
+            if drags == 0 { XCTAssertGreaterThan(row.frame.minY, lastY, fact, file: file, line: line) }
+            lastY = row.frame.minY
+        }
+    }
+
     /// A disclosure row of the details by its title.
     @MainActor
     func disclosureRow(_ app: XCUIApplication, _ title: String) -> XCUIElement {
@@ -59,14 +101,16 @@ extension NopeAppUITests {
     func testDetailsSummaryForDefaultPhoto() throws {
         let app = launch("manual")
         openPhotoDetails(app)
+        // The head, then one row for each fact (issue #118): "Saved." is gone, and the signing
+        // row is the state with the reason under it.
+        checkSummary(
+            app, head: ["RAW (DNG)"],
+            rows: [
+                "RAW: one frame of sensor data", "Not signed, Signing is off in Settings", "No optional details in the files",
+                "No location in the files",
+            ])
         let summary = app.descendants(matching: .any)["PhotoDetails.summary"]
-        XCTAssertTrue(summary.waitForExistence(timeout: 5))
-        for line in [
-            "RAW (DNG)", "RAW: one frame of sensor data", "Saved. Not signed: signing is off in Settings.",
-            "No optional details in the files", "No location in the files",
-        ] {
-            XCTAssertTrue(summary.label.contains(line), "\(line) not in \(summary.label)")
-        }
+        XCTAssertFalse(summary.label.contains("Saved"), summary.label)
         // The lens and the time the shutter took it, from the session, as the viewer's caption
         // (BUILD-SPEC.md, 3.15, group 0; section 6, item 15).
         XCTAssertNotNil(
@@ -88,12 +132,12 @@ extension NopeAppUITests {
     func testDetailsGroupsInOrder() throws {
         let app = launch("manual", extraArguments: Self.detailsKept)
         openPhotoDetails(app)
-        let summary = app.descendants(matching: .any)["PhotoDetails.summary"]
-        XCTAssertTrue(summary.waitForExistence(timeout: 5))
-        XCTAssertTrue(summary.label.contains("RAW (DNG) and HEIF"), summary.label)
-        XCTAssertTrue(summary.label.contains("and a HEIF copy developed by nope."), summary.label)
-        XCTAssertTrue(summary.label.contains("Saved and signed."), summary.label)
-        XCTAssertTrue(summary.label.contains("5 optional details in the files"), summary.label)
+        checkSummary(
+            app, head: ["RAW (DNG) and HEIF"],
+            rows: [
+                "RAW: one frame of sensor data, and a HEIF copy developed by nope.", "Signed", "5 optional details in the files",
+                "No location in the files",
+            ])
         try audit(app, checksDynamicType: false, checksContrast: !isPad)
         var lastY = -CGFloat.infinity
         var scrolled = 0
@@ -164,9 +208,15 @@ extension NopeAppUITests {
     func testDetailsProcessedPhoto() throws {
         let app = launch("noRAW")
         openPhotoDetails(app)
-        let summary = app.descendants(matching: .any)["PhotoDetails.summary"]
-        XCTAssertTrue(summary.waitForExistence(timeout: 5))
-        XCTAssertTrue(summary.label.contains(deviceText("Processed by the phone's camera: this lens can't save RAW", iPad: "Processed by the iPad's camera: this lens can't save RAW")), summary.label)
+        // A warning row begins with "Warning"; "iPhone" reads "iPad" on an iPad.
+        checkSummary(
+            app, head: ["HEIF"],
+            rows: [
+                deviceText(
+                    "Warning, Processed by this iPhone, This lens can't save RAW",
+                    iPad: "Warning, Processed by this iPad, This lens can't save RAW"),
+                "Not signed, Signing is off in Settings", "No optional details in the files", "No location in the files",
+            ])
         try audit(app, checksDynamicType: false, checksContrast: !isPad)
         XCTAssertTrue(scrollDetails(app, to: element(app, containing: "Distortion correction")))
         XCTAssertTrue(scrollDetails(app, to: element(app, containing: "nope. didn't change this file's picture.")))
@@ -186,6 +236,13 @@ extension NopeAppUITests {
             openPhotoDetails(app)
             let explanation = element(app, containing: sentence)
             XCTAssertTrue(scrollDetails(app, to: explanation), sentence)
+            if scenario == "signingFails" {
+                // When the warning on the camera goes away (issue #113).
+                XCTAssertTrue(
+                    explanation.label.contains(
+                        "The camera shows Not Signed after a photo that could not be signed, until the next photo is signed or signing is turned off."),
+                    explanation.label)
+            }
             try audit(app, afterScrolling: true, checksDynamicType: false)
             app.terminate()
         }
@@ -195,15 +252,22 @@ extension NopeAppUITests {
     func testDetailsLocationHiddenUntilShown() throws {
         let app = launch("manual", extraArguments: Self.locationKept)
         openPhotoDetails(app)
-        let summary = app.descendants(matching: .any)["PhotoDetails.summary"]
-        XCTAssertTrue(summary.waitForExistence(timeout: 5))
-        XCTAssertTrue(summary.label.contains("Location is in the files"), summary.label)
+        XCTAssertTrue(scrollDetails(app, to: summaryRow(app, "location")))
+        XCTAssertEqual(summaryRow(app, "location").label, "Warning, Location is in the files")
         let show = app.buttons["Show Value, Location"]
         XCTAssertTrue(scrollDetails(app, to: show))
         let row = app.descendants(matching: .any).matching(identifier: "PhotoDetails.hiddenValue").firstMatch
         XCTAssertTrue(row.label.contains("Hidden"), row.label)
         XCTAssertFalse(row.label.contains("0.5°"), row.label)
         try audit(app, afterScrolling: true, checksDynamicType: false)
+        // With the taller summary card the swipes can leave the button just under the sheet's
+        // navigation bar, where a tap lands on the bar: bring it down first.
+        let window = app.windows.firstMatch
+        if show.frame.minY < window.frame.minY + 150 {
+            window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4))
+                .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6)))
+        }
+        XCTAssertTrue(show.isHittable)
         show.tap()
         XCTAssertTrue(element(app, containing: "0.5°").waitForExistence(timeout: 5))
         XCTAssertFalse(show.exists)
@@ -318,7 +382,13 @@ extension NopeAppUITests {
     func testDetailsLargestText() throws {
         let app = launch("signingFails", extraArguments: Self.largestTextSize + Self.detailsKept)
         openPhotoDetails(app)
-        XCTAssertTrue(element(app, containing: "Not signed").exists)
+        // The rows wrap under their own first word, and nothing is cut (the audit).
+        checkSummary(
+            app, head: ["RAW (DNG) and HEIF"],
+            rows: [
+                "RAW: one frame of sensor data, and a HEIF copy developed by nope.",
+                "Warning, Not signed, The signature couldn't be made", "5 optional details in the files", "No location in the files",
+            ])
         try audit(app)
         XCTAssertTrue(scrollDetails(app, to: element(app, containing: "Standard File Tags")))
         try audit(app, afterScrolling: true)
@@ -330,6 +400,15 @@ extension NopeAppUITests {
     func testDetailsRightToLeft() throws {
         let app = launch("manual", extraArguments: Self.rightToLeft + Self.detailsKept)
         openPhotoDetails(app)
+        checkSummary(
+            app, head: ["RAW (DNG) and HEIF"],
+            rows: [
+                "RAW: one frame of sensor data, and a HEIF copy developed by nope.", "Signed", "5 optional details in the files",
+                "No location in the files",
+            ])
+        // Right to left the rows' words end on the right, where the symbol column is.
+        let window = app.windows.firstMatch.frame
+        XCTAssertGreaterThan(summaryRow(app, "signature").frame.maxX, window.midX)
         try audit(app, checksDynamicType: false, checksContrast: !isPad)
         XCTAssertTrue(scrollDetails(app, to: disclosureRow(app, "In the Files")))
         try audit(app, afterScrolling: true, checksDynamicType: false, checksContrast: !isPad)
@@ -337,7 +416,11 @@ extension NopeAppUITests {
         // A processed photo right to left.
         let processed = launch("noRAW", extraArguments: Self.rightToLeft)
         openPhotoDetails(processed)
-        XCTAssertTrue(element(processed, containing: "this lens can't save RAW").exists)
+        XCTAssertEqual(
+            summaryRow(processed, "kind").label,
+            deviceText(
+                "Warning, Processed by this iPhone, This lens can't save RAW",
+                iPad: "Warning, Processed by this iPad, This lens can't save RAW"))
         try audit(processed, checksDynamicType: false, checksContrast: !isPad)
         XCTAssertTrue(scrollDetails(processed, to: element(processed, containing: "nope. didn't change this file's picture.")))
         try audit(processed, afterScrolling: true, checksDynamicType: false, checksContrast: !isPad)

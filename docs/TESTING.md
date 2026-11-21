@@ -623,7 +623,7 @@ each test checks, with `performAccessibilityAudit()` in every state:
 |---|---|
 | `allow` | First-run screen (three statements, Continue); camera ready with the format chip ("single-frame RAW, RAW + HEIF") and the wide lens selected; no thumbnail before the first photo; the shutter gives the last-photo slot "Saved and signed." (a simulated signer stands in for the real one, which `NopeSigningTests` cover); the telephoto (no RAW) turns the format status into the "Processed" marker; full auto shows only the default controls (no Settings button on the stacked camera); the camera flip; the format status's sheet, read-only on a lens without RAW; Q, the quick menu (closes on the shutter and on Q; Settings opens from its foot); signing off is stated after each photo without a warning chip; landscape on iPhone (layout fixed, Settings rotates) and iPad (column); the first run at the largest text size and right-to-left |
 | `allow`, `signingFails`, `noRAW` | The last photo (issues #36, #53): after a save the thumbnail is a button named "Last Photo" with a simulated picture; a tap opens the Last Photo viewer, whose Photo Details opens "What's in This Photo", which lists the files, signature (signed, or "Not signed" with the reason), processing (the fallback's "processed by the phone's camera"), the details left out with "Off in Settings", and the timings, at the default and largest text sizes and right-to-left; tapping the thumbnail opens the viewer and not another app, and its Open in Photos brings the Photos app to the front; with `manual` and a bracket, each frame is its own page of the viewer |
-| `manual`, `noRAW`, `signingFails` with `-NopeSimulatedSaveSettings` and `-NopeSimulatedFileTags` | What's in This Photo in the 1.0.0 design (`PhotoDetailsUITests.swift`, `docs/design/BUILD-SPEC.md` 3.15): the summary's four lines; with the default settings the simulated camera's 1/60 s and ISO 100 and the lens marked "Not in the files"; the group headings in order; Files with "lossless", Display P3 and "One photo: the RAW with its HEIF"; each disclosure row opens and closes (In the Files open at first); the processed fallback's warning, distortion and "didn't change this file's picture" lines and no RAW Sensor Data; the three signature states; the location "Hidden" until Show Value, hidden again after reopening, "nothing to write" and "Off in Settings"; the Every Tag page (groups, a tag's value and setting, search, Show Hidden Values); the value hidden again after the app leaves the screen and returns; audits at the default and largest text sizes, right to left, in night mode (no non-red pixel), sideways and on iPad. `-NopeSimulatedSaveSettings <base64>` (debug builds) writes the save settings JSON, Base64-encoded so the arguments domain still reads the launch's other arguments, into the emptied UI test settings store; `-NopeSimulatedFileTags full` (or `fullNoLocation`) makes the simulated read-back return realistic tags, each only where the current settings' allowlist allows it |
+| `manual`, `noRAW`, `signingFails` with `-NopeSimulatedSaveSettings` and `-NopeSimulatedFileTags` | What's in This Photo in the 1.0.0 design (`PhotoDetailsUITests.swift`, `docs/design/BUILD-SPEC.md` 3.15; the summary card of issue #118): the summary's head and its four rows, each one element with exact words, in order, a warning row beginning with "Warning"; with the default settings the simulated camera's 1/60 s and ISO 100 and the lens marked "Not in the files"; the group headings in order; Files with "lossless", Display P3 and "One photo: the RAW with its HEIF"; each disclosure row opens and closes (In the Files open at first); the processed fallback's warning, distortion and "didn't change this file's picture" lines and no RAW Sensor Data; the three signature states; the location "Hidden" until Show Value, hidden again after reopening, "nothing to write" and "Off in Settings"; the Every Tag page (groups, a tag's value and setting, search, Show Hidden Values); the value hidden again after the app leaves the screen and returns; audits at the default and largest text sizes, right to left, in night mode (no non-red pixel), sideways and on iPad. `-NopeSimulatedSaveSettings <base64>` (debug builds) writes the save settings JSON, Base64-encoded so the arguments domain still reads the launch's other arguments, into the emptied UI test settings store; `-NopeSimulatedFileTags full` (or `fullNoLocation`) makes the simulated read-back return realistic tags, each only where the current settings' allowlist allows it |
 | `noRAW` | A device without RAW (wide and front, no Bayer RAW): the "Processed" marker ("Processed: no RAW on this lens, HEIF" for VoiceOver) and the HEIF fallback in the viewfinder description, portrait and landscape, default and largest text sizes; Space takes a photo |
 | `multitasking` | iPad Split View, Slide Over or Stage Manager: "The camera works only when nope. fills the screen.", shutter disabled |
 | `-NopeSimulatedViewfinder white` or `yellow` | The camera with a photo, the manual readout and an open dial over a pure white and a pure yellow picture |
@@ -1542,6 +1542,45 @@ version in the section named, or list it in the changelog as not yet checked:
   (`MetadataPlan.heifDerivedImageIOKeys`, `docs/PRIVACY.md`, "ImageIO's own keys"). On an iPhone
   with iOS 26, take a photo with RAW + HEIF and with the processed fallback (HEIF), and record
   that each HEIF saves to Photos and that the read-back reports no other key. Not run.
+
+### The viewer and What's in This Photo on a device (1.0.0)
+
+Device checks added by the last viewer and details changes for 1.0.0. Not run.
+
+- **The shown page zooms after a long series** (issue #102). Start an interval series of more
+  than 100 photos, open the viewer on the oldest photo while it runs, and leave it until that
+  photo is dropped from the session (the session keeps 100). The viewer moves to the newest
+  photo; double tap and pinch zoom it. `PhotoViewerTests.theShownPageFollowsTheFallbackWhenItsPhotoIsDropped`
+  covers the rule; no UI test runs a series that long.
+- **Memory in the viewer** (issue #103). The viewer now decodes each of its three pages at the
+  size it fills on the screen, and the page shown at the preview's full 3072 pixels only while
+  it is zoomed in. By arithmetic (not measured), a 4:3 photo upright on a 402-point page at 3
+  pixels per point decodes at 1206 × 1608 pixels (about 7.8 MB) instead of 2304 × 3072 (about
+  28 MB), so three pages hold about 23 MB instead of 85 MB. With 20 photos taken, record the
+  app's memory (Xcode's memory gauge, or Instruments, Allocations) on the camera, with the
+  viewer open on a middle photo, zoomed in, and after a swipe to the next photo, on this build
+  and on the build before the change, on the smallest and largest supported iPhone and an iPad.
+  Check by eye that a fitted page is as sharp as before and that a zoomed page turns sharp
+  within a moment. The simulated previews of the UI tests are 30 × 40 pixels, so the Simulator
+  can't show it; `PhotoViewerTests.pagesDecodeAtTheirFittedSizeAndTheZoomedPageAtFull` covers
+  the sizes asked for.
+- **The viewer's status lines wrap** (issue #110). At the largest text size, with a processed
+  photo of a lens without RAW and signing on but failed ("Processed · HEIF" and "Not signed"),
+  open the viewer on the smallest supported iPhone and on an iPad in the narrowest window it
+  allows (a resized window or Slide Over): each line wraps inside the window and nothing runs
+  past its edge. `PhotoViewerTests.stackedStatusLinesWrapInANarrowWindow` measures the lines at
+  160 points; the status is hidden from VoiceOver (its words are in the photo's value), so a UI
+  test can't read its frame. `testViewerLargestText` runs on the iPhone SE (3rd generation)
+  Simulator for the 4.7-inch width.
+- **The summary card of What's in This Photo** (issue #118). With VoiceOver, swipe through the
+  card for a RAW photo with signing off, a processed photo of a lens without RAW, a photo that
+  could not be signed and a photo with the location kept: the head is read once ("RAW (DNG)",
+  the lens and time, the pixel size and file size), then each row once and in order, its second
+  line with it, and a warning row begins with "Warning". At the largest text size the symbol
+  column grows and each row wraps under its own first word; right to left (the pseudo-language)
+  the symbols are on the right; in Night Mode everything is red and a warning is told by its
+  triangle and words; on an iPad the card fills the sheet's width and says "Processed by this
+  iPad". Compare with the figures `summary-*` in `docs/design/screens`.
 
 ### Lock Screen, Control Center, Siri and Shortcuts on a device
 
