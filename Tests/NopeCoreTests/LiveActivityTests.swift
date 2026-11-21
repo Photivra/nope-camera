@@ -50,16 +50,6 @@ final class FakeBackgroundTime: BackgroundTimeRequesting {
     }
 }
 
-/// A clock the test moves.
-@MainActor
-final class TestClock {
-    var date = Date(timeIntervalSince1970: 1_000_000)
-
-    func advance(_ seconds: Double) {
-        date = date.addingTimeInterval(seconds)
-    }
-}
-
 /// The Live Activity (issue #64): its content, the model's content and outcome, and the
 /// coordinator that starts, updates and ends it.
 @MainActor
@@ -77,9 +67,9 @@ struct LiveActivityTests {
 
     func makeCoordinator(
         presenter: FakeLiveActivities = FakeLiveActivities(), time: FakeBackgroundTime = FakeBackgroundTime(),
-        clock: TestClock = TestClock()
+        clock: FakeClock = FakeClock()
     ) -> LiveActivityCoordinator {
-        let coordinator = LiveActivityCoordinator(presenter: presenter, backgroundTime: time, now: { clock.date })
+        let coordinator = LiveActivityCoordinator(presenter: presenter, backgroundTime: time, clock: clock.clock)
         coordinator.isEnabled = true
         return coordinator
     }
@@ -366,7 +356,7 @@ struct LiveActivityTests {
     @Test func updatesPhaseChangesAtOnceAndCountsRarely() async {
         let model = await makeModel()
         let presenter = FakeLiveActivities()
-        let clock = TestClock()
+        let clock = FakeClock()
         let coordinator = makeCoordinator(presenter: presenter, clock: clock)
         model.drive.beginBurst()
         coordinator.apply(model)
@@ -377,16 +367,16 @@ struct LiveActivityTests {
 
         // Counts alone, in the foreground: not before the minimum interval.
         model.drive.recordTaken()
-        clock.advance(LiveActivityCoordinator.minimumUpdateInterval - 1)
+        clock.advance(by: LiveActivityCoordinator.minimumUpdateInterval - 1)
         coordinator.apply(model)
         #expect(presenter.updates.isEmpty)
-        clock.advance(1)
+        clock.advance(by: 1)
         coordinator.apply(model)
         #expect(presenter.updates == [Content(kind: .burst, phase: .running, taken: 1)])
 
         // Saved count alone counts as a count change.
         model.drive.recordSaved()
-        clock.advance(LiveActivityCoordinator.minimumUpdateInterval)
+        clock.advance(by: LiveActivityCoordinator.minimumUpdateInterval)
         coordinator.apply(model)
         #expect(presenter.updates.last == Content(kind: .burst, phase: .running, taken: 1, saved: 1))
 
@@ -408,7 +398,7 @@ struct LiveActivityTests {
     @Test func endsAtOnceInTheForegroundAndLaterOutOfIt() async {
         let model = await makeModel()
         let presenter = FakeLiveActivities()
-        let clock = TestClock()
+        let clock = FakeClock()
         let coordinator = makeCoordinator(presenter: presenter, clock: clock)
 
         // In the foreground.
@@ -580,5 +570,87 @@ struct LiveActivityTests {
         #expect(presenter.ends.count == 1)
         task.cancel()
         await task.value
+    }
+
+    // MARK: - The monotonic clock (issue #125)
+
+    @Test func countUpdatesStillGoOutAfterTheDevicesClockIsSetBack() async {
+        let model = await makeModel()
+        let presenter = FakeLiveActivities()
+        let clock = FakeClock()
+        let coordinator = makeCoordinator(presenter: presenter, clock: clock)
+        model.drive.beginBurst()
+        coordinator.apply(model)
+        model.drive.recordTaken()
+        clock.advance(by: LiveActivityCoordinator.minimumUpdateInterval)
+        coordinator.apply(model)
+        #expect(presenter.updates.count == 1)
+
+        // The device's clock goes back an hour: the next count update still goes out after the
+        // minimum interval, not an hour and a half later.
+        clock.moveDate(by: -3600)
+        model.drive.recordTaken()
+        clock.advance(by: LiveActivityCoordinator.minimumUpdateInterval - 1)
+        coordinator.apply(model)
+        #expect(presenter.updates.count == 1, "not before the minimum interval")
+        clock.advance(by: 1)
+        coordinator.apply(model)
+        #expect(presenter.updates.count == 2)
+        #expect(presenter.updates.last?.taken == 2)
+    }
+
+    @Test func aChangeOfTheDevicesClockSendsTheTimedSeriesEndAgain() async {
+        let clock = FakeClock(date: Date(timeIntervalSince1970: 10_000))
+        let model = CameraModel(
+            backend: ScriptedManualBackend(lenses: [ManualFixtures.wide]), saver: CameraModelTests.saver(), clock: clock.clock)
+        await model.send(.start)
+        let presenter = FakeLiveActivities()
+        let coordinator = makeCoordinator(presenter: presenter, clock: clock)
+        await model.send(.manual(.setInterval(IntervalSettings(interval: 60, count: 10, stopAfter: .time, duration: 600))))
+        await model.send(.manual(.startInterval))
+        await waitUntil { model.manual.intervalProgress?.taken == 1 }
+        coordinator.apply(model)
+        #expect(presenter.started.last?.seriesTime?.upperBound == Date(timeIntervalSince1970: 10_600))
+
+        let sent = presenter.updates.count
+
+        // An hour forward: the end iOS draws moves with the clock, at once, as the same moment.
+        clock.moveDate(by: 3600)
+        coordinator.clockChanged(model)
+        #expect(presenter.updates.count == sent + 1)
+        #expect(presenter.updates.last?.seriesTime == Date(timeIntervalSince1970: 13_600)...Date(timeIntervalSince1970: 14_200))
+        await model.send(.manual(.stopInterval))
+    }
+
+    @Test func anActivityWithoutDatesIsNotSentAgain() async {
+        let model = await makeModel()
+        let presenter = FakeLiveActivities()
+        let coordinator = makeCoordinator(presenter: presenter)
+        coordinator.clockChanged(model)
+        #expect(presenter.started.isEmpty, "no activity: nothing to send")
+        model.drive.beginBurst()
+        coordinator.apply(model)
+        coordinator.clockChanged(model)
+        #expect(presenter.updates.isEmpty, "a burst shows no date")
+        #expect(Content(kind: .burst, phase: .running).hasDates == false)
+        #expect(Content(kind: .timer, phase: .countingDown, countdownEnd: .now).hasDates)
+        model.drive.endBurst(.stopped)
+    }
+
+    @Test func theSystemsClockChangeNotificationSendsACountdownAgain() async {
+        let model = await makeModel(sleep: { _ in try await Task.sleep(for: .seconds(60)) })
+        let presenter = FakeLiveActivities()
+        let coordinator = makeCoordinator(presenter: presenter)
+        let notifications = NotificationCenter()
+        let observing = Task { await coordinator.observe(model, notifications: notifications) }
+        await model.send(.drive(.startTimer(seconds: 10)))
+        await waitUntil { presenter.started.count == 1 }
+        #expect(presenter.started.first?.phase == .countingDown)
+        await settle()
+        notifications.post(name: .NSSystemClockDidChange, object: nil)
+        await waitUntil { presenter.updates.count == 1 }
+        #expect(presenter.updates.first?.phase == .countingDown)
+        observing.cancel()
+        await model.send(.drive(.cancelTimer))
     }
 }

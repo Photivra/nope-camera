@@ -16,15 +16,19 @@ public enum SelfTimerDelay: Int, CaseIterable, Sendable {
     }
 }
 
-/// A countdown in whole seconds that runs an action when it reaches zero: the self-timer.
+/// A countdown in whole seconds to a deadline that runs an action when it reaches zero: the
+/// self-timer.
 ///
 /// ``CameraModel`` owns one through ``DriveModel/countdown``. The shutter starts it in a timer
 /// drive mode (``DriveMode/timer(_:)``), and ``DriveIntent/startTimer(seconds:)`` starts it with
 /// any number of seconds, for example from a Siri or Shortcuts request with a delay (issue #62).
 /// An interface shows and announces ``remainingSeconds`` and gives a haptic tick when it changes.
 ///
-/// Battery rule (AGENTS.md, "Battery"): the countdown only sleeps between ticks; it does no
+/// Battery rule (AGENTS.md, "Battery"): the countdown only sleeps between numbers; it does no
 /// other work, and nothing keeps running once it ends or is cancelled.
+///
+/// It counts to a fixed deadline on the camera model's monotonic clock (issue #122), so the
+/// photo is taken on time however late each wake is.
 ///
 /// ```swift
 /// countdown.start(seconds: 3) { await takePhoto() }
@@ -33,11 +37,18 @@ public enum SelfTimerDelay: Int, CaseIterable, Sendable {
 @MainActor
 @Observable
 public final class Countdown {
-    /// The seconds left, from the starting number down to 1, or `nil` when no countdown runs.
+    /// The seconds left, from the starting number down to 1, or `nil` when no countdown runs:
+    /// the whole seconds until ``deadline``, rounded up. When the app is held up for more than a
+    /// second, a number is skipped; the photo is still on time (issue #122).
     public private(set) var remainingSeconds: Int?
 
-    /// Waits a number of seconds. Tests pass a faster one.
-    private let sleep: @Sendable (Double) async throws -> Void
+    /// When the running countdown reaches zero, on the monotonic clock (``NopeClock/now``), or
+    /// `nil` when none runs. Set when it starts; a late tick never moves it. The Live Activity
+    /// draws its countdown to this moment.
+    public private(set) var deadline: ContinuousClock.Instant?
+
+    /// The camera model's clock, which the countdown waits on.
+    private let clock: NopeClock
 
     /// The running countdown.
     private var task: Task<Void, Never>?
@@ -47,9 +58,17 @@ public final class Countdown {
 
     /// Creates a countdown that isn't running.
     ///
-    /// - Parameter sleep: Waits a number of seconds between ticks, throwing when cancelled.
-    public init(sleep: @escaping @Sendable (Double) async throws -> Void) {
-        self.sleep = sleep
+    /// - Parameter clock: The clock it waits on. Tests pass one they move.
+    public init(clock: NopeClock) {
+        self.clock = clock
+    }
+
+    /// Creates a countdown that waits on a sleep of a number of seconds, as tests written before
+    /// ``NopeClock`` pass (``NopeClock/stepped(by:now:)``).
+    ///
+    /// - Parameter sleep: Waits a number of seconds, throwing when cancelled.
+    public convenience init(sleep: @escaping @Sendable (Double) async throws -> Void) {
+        self.init(clock: .stepped(by: sleep))
     }
 
     /// Whether a countdown is running.
@@ -57,8 +76,14 @@ public final class Countdown {
         remainingSeconds != nil
     }
 
-    /// Starts counting down, one tick a second, and runs the action when the count reaches zero.
-    /// Does nothing when a countdown already runs or `seconds` is less than 1.
+    /// Starts counting down to a deadline `seconds` from now, and runs the action when it is
+    /// reached. Does nothing when a countdown already runs or `seconds` is less than 1.
+    ///
+    /// The count is the whole seconds left until the deadline, rounded up. Between numbers the
+    /// countdown waits until the next whole second before the deadline, so the time the app takes
+    /// to wake doesn't add up from tick to tick: a 10-second timer fires 10 seconds after it was
+    /// started, late only by its last wake (issue #122). A wake more than a second late skips a
+    /// number rather than moving the deadline.
     ///
     /// - Parameters:
     ///   - seconds: The delay, in seconds.
@@ -66,20 +91,33 @@ public final class Countdown {
     ///     is cancelled.
     public func start(seconds: Int, fire: @escaping @MainActor () async -> Void) {
         guard seconds > 0, task == nil else { return }
+        let deadline = clock.now() + .seconds(seconds)
+        self.deadline = deadline
         remainingSeconds = seconds
-        // The count changes only after a tick that wasn't cancelled, so a cancelled countdown
+        // The count changes only after a wait that wasn't cancelled, so a cancelled countdown
         // never writes over the state of the next one.
         task = Task {
             var remaining = seconds
             while remaining > 0 {
-                try? await sleep(1)
+                try? await clock.sleep(deadline - .seconds(remaining - 1))
                 if Task.isCancelled { return }
-                remaining -= 1
+                remaining = Self.wholeSeconds(until: deadline, at: clock.now())
                 remainingSeconds = remaining > 0 ? remaining : nil
             }
             task = nil
+            self.deadline = nil
             await fire()
         }
+    }
+
+    /// The whole seconds from a moment until the deadline, rounded up, and never less than 0.
+    ///
+    /// - Parameters:
+    ///   - deadline: When the countdown reaches zero.
+    ///   - now: The moment, on the same clock.
+    /// - Returns: The seconds shown.
+    nonisolated static func wholeSeconds(until deadline: ContinuousClock.Instant, at now: ContinuousClock.Instant) -> Int {
+        Int(Swift.max(((deadline - now) / .seconds(1)).rounded(.up), 0))
     }
 
     /// Counts down and waits until the count reaches zero or the countdown is cancelled: the
@@ -102,6 +140,7 @@ public final class Countdown {
         task?.cancel()
         task = nil
         remainingSeconds = nil
+        deadline = nil
         finishWaiting(fired: false)
     }
 

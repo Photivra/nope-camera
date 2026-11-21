@@ -152,8 +152,21 @@ public final class CameraModel {
     /// its release takes no photo.
     @ObservationIgnored var hardwarePressClosedViewer = false
 
-    /// Reads the device's clock for ``SessionPhoto/takenAt``. Tests replace it.
-    @ObservationIgnored var wallClock: @Sendable () -> Date = { Date() }
+    /// The clock the model and everything it owns read: dates from its wall clock, and every
+    /// deadline, wait and duration from its monotonic clock (``NopeClock``, issue #107). An
+    /// interface reads it to count down to a moment the model publishes, such as
+    /// ``IntervalProgress/nextPhotoStart``.
+    ///
+    /// Replacing it, or a part of it, later changes only what the model itself reads, such as
+    /// ``wallClock``; the manual controls and drive modes keep the clock the model was made with.
+    @ObservationIgnored public internal(set) var clock: NopeClock
+
+    /// Reads the wall clock of ``clock`` for ``SessionPhoto/takenAt``; setting it replaces that
+    /// part of the clock.
+    var wallClock: @Sendable () -> Date {
+        get { clock.date }
+        set { clock.date = newValue }
+    }
 
     /// The person's photo size for each lens (``CameraIntent/setPhotoSizes(_:)``), applied when
     /// the camera starts with a lens. Empty by default: every lens at its default size.
@@ -165,7 +178,8 @@ public final class CameraModel {
     /// The hardware the model asks for permission, capabilities and photos.
     let backend: any CaptureBackend
 
-    /// Reads the monotonic clock, to time each capture for the photo's details (issue #53).
+    /// Reads the monotonic clock, to time each capture for the photo's details (issue #53):
+    /// ``clock``'s, unless the model was made with the older seconds sleep and its own clock.
     let now: @Sendable () -> ContinuousClock.Instant
 
     /// Waits ``pauseAfterErrorSeconds`` after a photo of a series fails, for the pause that may
@@ -174,41 +188,86 @@ public final class CameraModel {
         try await Task.sleep(for: .seconds(CameraModel.pauseAfterErrorSeconds))
     }
 
-    /// Waits until the time of an interval series that stops after a time is up, while the
-    /// series waits for the camera (`waitForIntervalPhoto()`); the time is in seconds. Tests
-    /// replace it.
-    @ObservationIgnored var intervalEndSleep: @Sendable (Double) async throws -> Void = {
-        try await Task.sleep(for: .seconds($0))
-    }
-
     /// Creates a model in the ``CameraState/starting`` state.
     ///
     /// - Parameters:
     ///   - backend: The hardware, or a ``SimulatedCaptureBackend`` in tests and previews.
     ///   - saver: The save pipeline. Without one, every photo ends in
     ///     ``CaptureError/savingUnavailable`` and nothing is saved.
-    ///   - sleep: Waits a number of seconds between interval photos and self-timer ticks. Tests
-    ///     pass a faster one.
-    ///   - now: Reads the clock that times each capture. Tests pass a scripted one.
+    ///   - clock: The wall and monotonic clocks, and the wait, for everything the model times:
+    ///     interval photos, timed series, self-timer ticks, Slow bursts and each capture.
+    ///     ``NopeClock/system`` by default; tests pass one they move.
     ///   - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
-    ///   - currentDate: Reads the clock on the wall, for an interval series that stops after a
-    ///     time. Tests pass a scripted one.
     ///
     /// A ``ManualCaptureBackend`` also gets manual controls (``manual``), and a
     /// ``LightCaptureBackend`` a torch (``light``).
-    public init(
+    public convenience init(
+        backend: any CaptureBackend, saver: PhotoSaver? = nil, clock: NopeClock = .system,
+        deviceStatusReader: (any DeviceStatusReading)? = nil
+    ) {
+        self.init(backend: backend, saver: saver, clock: clock, measuredBy: clock.now, deviceStatusReader: deviceStatusReader)
+    }
+
+    /// Creates a model whose waits are a sleep of a number of seconds, as tests written before
+    /// ``NopeClock`` pass (``NopeClock/stepped(by:now:)``).
+    ///
+    /// The waits move the clock's own monotonic time by what they asked for, so deadlines are
+    /// reached in step with the sleep. Each capture, and the camera's readings, are still timed
+    /// with `now`.
+    ///
+    /// - Parameters:
+    ///   - backend: The hardware.
+    ///   - saver: The save pipeline.
+    ///   - sleep: Waits a number of seconds, throwing when cancelled.
+    ///   - now: Reads a monotonic clock, or `nil` for the system's. When given, the waits read it
+    ///     too, and the sleep must move it.
+    ///   - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
+    convenience init(
         backend: any CaptureBackend, saver: PhotoSaver? = nil,
-        sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) },
-        now: @escaping @Sendable () -> ContinuousClock.Instant = { .now },
-        deviceStatusReader: (any DeviceStatusReading)? = nil,
-        currentDate: @escaping @Sendable () -> Date = { Date() }
+        sleep: @escaping @Sendable (Double) async throws -> Void,
+        now: (@Sendable () -> ContinuousClock.Instant)? = nil,
+        deviceStatusReader: (any DeviceStatusReading)? = nil
+    ) {
+        self.init(
+            backend: backend, saver: saver, clock: .stepped(by: sleep, now: now), measuredBy: now ?? { .now },
+            deviceStatusReader: deviceStatusReader)
+    }
+
+    /// Creates a model whose monotonic clock is `now`, as tests that time captures pass; its
+    /// wall clock and waits are the system's.
+    ///
+    /// - Parameters:
+    ///   - backend: The hardware.
+    ///   - saver: The save pipeline.
+    ///   - now: Reads the monotonic clock.
+    ///   - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
+    convenience init(
+        backend: any CaptureBackend, saver: PhotoSaver? = nil, now: @escaping @Sendable () -> ContinuousClock.Instant,
+        deviceStatusReader: (any DeviceStatusReading)? = nil
+    ) {
+        self.init(backend: backend, saver: saver, clock: NopeClock(now: now), deviceStatusReader: deviceStatusReader)
+    }
+
+    /// Creates a model in the ``CameraState/starting`` state.
+    ///
+    /// - Parameters:
+    ///   - backend: The hardware.
+    ///   - saver: The save pipeline.
+    ///   - clock: The clock for dates, deadlines and waits.
+    ///   - measure: Reads the monotonic clock that times each capture, a burst's rate and the
+    ///     camera's readings.
+    ///   - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
+    init(
+        backend: any CaptureBackend, saver: PhotoSaver?, clock: NopeClock,
+        measuredBy measure: @escaping @Sendable () -> ContinuousClock.Instant,
+        deviceStatusReader: (any DeviceStatusReading)?
     ) {
         self.backend = backend
         self.saver = saver
-        self.now = now
-        manual = ManualControlsModel(
-            backend: backend as? any ManualCaptureBackend, sleep: sleep, currentDate: currentDate, now: now)
-        drive = DriveModel(sleep: sleep, now: now)
+        self.clock = clock
+        now = measure
+        manual = ManualControlsModel(backend: backend as? any ManualCaptureBackend, clock: clock, measuredBy: measure)
+        drive = DriveModel(clock: clock, measuredBy: measure)
         deviceStatus = DeviceStatus(reader: deviceStatusReader)
         live = LiveViewModel(backend: backend as? any LiveViewBackend)
         light = LightModel(backend: backend as? any LightCaptureBackend)
@@ -284,7 +343,7 @@ public final class CameraModel {
             await pressShutter()
         case .manual(let intent):
             if case .startInterval = intent, intervalBlocker != nil { return }
-            await manual.handle(intent) { [weak self] in await self?.takeIntervalPhoto() ?? false }
+            await manual.handle(intent) { [weak self] in await self?.takeIntervalPhoto() ?? .failed }
             await manualControlsDidChange(after: intent)
             bracketDidChange(after: intent)
         case .setCleanView(let isOn):

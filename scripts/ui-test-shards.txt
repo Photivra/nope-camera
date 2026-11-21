@@ -181,6 +181,7 @@
 6 4 NopeAppUITests/testInterruptionIsExplained 23 37
 3 2 NopeAppUITests/testIntervalCardOpensSettings 43e 43e
 3 5 NopeAppUITests/testIntervalCardRunsAndStops 59e 61e
+6 5 NopeAppUITests/testIntervalSettingsSayEachPhotoStartsOneIntervalAfterTheLast 160e 160e
 2 2 NopeAppUITests/testIntervalSheetAtTheLargestTextSizeAndRightToLeft 73 70
 1 2 NopeAppUITests/testIntervalShootingFromTheDriveMenuInFullAuto 50 49
 5 2 NopeAppUITests/testIntervalShootingShowsProgressAndStops 58 60

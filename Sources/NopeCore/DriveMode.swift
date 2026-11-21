@@ -317,13 +317,28 @@ public final class DriveModel {
     /// Creates the model in single mode, at the Fast burst speed.
     ///
     /// - Parameters:
+    ///   - clock: The camera model's clock: the countdown counts to a moment of it, and Slow
+    ///     photos wait on it.
+    ///   - measure: Reads the monotonic clock that times a burst's photos: `clock`'s, unless the
+    ///     camera model was made with the older seconds sleep.
+    init(clock: NopeClock, measuredBy measure: @escaping @Sendable () -> ContinuousClock.Instant) {
+        countdown = Countdown(clock: clock)
+        sleep = { try await clock.sleep(seconds: $0) }
+        now = measure
+    }
+
+    /// Creates the model with a sleep of a number of seconds, as tests written before
+    /// ``NopeClock`` pass: Slow photos wait on it directly, and the countdown on a clock stepped by
+    /// it (``NopeClock/stepped(by:now:)``).
+    ///
+    /// - Parameters:
     ///   - sleep: Waits a number of seconds between countdown ticks and between Slow photos.
     ///   - now: Reads the clock that times a burst's photos.
     init(
         sleep: @escaping @Sendable (Double) async throws -> Void,
         now: @escaping @Sendable () -> ContinuousClock.Instant = { .now }
     ) {
-        countdown = Countdown(sleep: sleep)
+        countdown = Countdown(clock: .stepped(by: sleep))
         self.sleep = sleep
         self.now = now
     }

@@ -72,6 +72,26 @@ signed with Content Credentials when signing is on.
    cools), and runtime errors (the model restarts the camera).
 7. The interface renders the new state. It holds no rules of its own.
 
+### One clock (issue #107)
+
+`CameraModel` takes one `NopeClock` (`CameraModel(backend:saver:clock:)`, `.system` by default)
+and passes it to `ManualControlsModel`, `DriveModel` and its `Countdown`; the app's
+`LiveActivityCoordinator` uses the same source. The clock has two readings and one wait:
+
+- `date()`, the wall clock, only for dates people see or that go into files: a photo's date, an
+  end time shown on the camera, and the dates a Live Activity needs. `clock.date(of:)` turns a
+  moment of the monotonic clock into the date it is shown as, worked out when it is needed.
+- `now()`, `ContinuousClock`, for everything that measures elapsed time: deadlines, waits and
+  durations. A change of the device's time doesn't move it, and it keeps counting while the
+  device sleeps.
+- `sleep(_:)`, a wait until a moment of `now()`.
+
+Tests replace this one value with a clock they move by hand (`FakeClock` in the unit tests).
+`scripts/check-architecture.sh` fails on `Date()`, `Date.now` or `Date.init` anywhere in
+`NopeCore` outside `NopeClock.swift`. Tests written before the clock existed pass a sleep of a
+number of seconds instead; `NopeClock.stepped(by:now:)` turns it into a clock whose own time
+moves by each completed wait, so their deadlines are reached in step with their sleeps.
+
 ### The lens while the camera is busy (issue #96)
 
 Changing the lens restarts the camera, so it is refused while a photo or a series depends on the
@@ -231,22 +251,38 @@ when the camera opens and when the option changes.
   series is marked paused (`IntervalProgress.isPaused`); it also waits while another photo is
   being taken or saved. A photo cut short by a pause is taken again, also when its error arrives
   before the pause (`failureWasAPause()` waits `CameraModel.pauseAfterErrorSeconds` for it); any
-  other failure ends the series. A series doesn't start while Astro is on or the self-timer or a
-  burst runs (`CameraModel.intervalBlocker`).
+  other failure ends the series, as stopped, also when it fails at or after a timed series' end
+  (issue #105). A series doesn't start while Astro is on or the self-timer or a burst runs
+  (`CameraModel.intervalBlocker`).
+- **Start to start** (issue #123, owner decision): each photo starts one interval after the last
+  one really started (`takeIntervalPhoto()` returns the moment, after any wait for the camera),
+  measured on the monotonic clock; the series waits on `CameraModel.clock` until then. A photo
+  that takes longer than the interval makes the next start as soon as it is saved, and
+  `IntervalProgress.isBehindSchedule` is set until a photo fits its interval again; no photo is
+  taken twice to catch up. A series paused past a start takes that photo when it resumes, and the
+  schedule continues from it. `IntervalProgress.nextPhotoStart` is the next start, which the card
+  counts "Next photo in" down to; behind schedule it says "Each photo takes longer than the
+  interval" instead. Interval Shooting says how photos are spaced ("Takes 10 photos, starting one
+  every 10 seconds."), or, when a shutter set by hand is longer than the interval
+  (`ManualControlsModel.isShutterLongerThanInterval`), that photos follow one another.
 - **Stop After** (`IntervalSettings.stopAfter`): a series stops after a number of photos (the
   default) or after a time, 1 minute to 24 hours (`.time`, `IntervalSettings.duration`). A timed
-  series fixes its end on the wall clock when it starts (`IntervalProgress.timeSpan`, read from
-  `CameraModel`'s `currentDate`), and the time keeps running while the series is paused, so
-  "1 hour from 8:41 PM" ends at 9:41 PM however long the app was away. It takes no photo whose
-  interval would end at or after the end; when the end passes while the series waits for the
-  camera, the wait wakes (`intervalEndSleep`, a one-shot wait only while it waits) and the series
-  ends without another photo. `ManualControlsModel.lastIntervalEnd` says whether the last series
+  series fixes its end when it starts, as a moment of the monotonic clock
+  (`IntervalProgress.deadline`, from `CameraModel.clock`, issue #106). The time keeps running
+  while the series is paused and while the device sleeps, so "1 hour from 8:41 PM" ends at
+  9:41 PM however long the app was away, and a change of the device's time doesn't make it end
+  early or late. The end is shown as a date only when it is shown: `IntervalProgress.endDate(clock:)`
+  and `timeSpan(date:now:)` (for the Live Activity) count it from now's date and the time left.
+  It takes another photo while the next start is before the end; when the end passes while the
+  series waits for the camera, a wait on the clock until the end wakes it (only while it waits)
+  and the series ends without another photo. `ManualControlsModel.lastIntervalEnd` says whether the last series
   finished (its count or its time) or was stopped early; a stop, a failed or unsaved photo and a
   camera that stops end a timed series as they end a counted one. The interval must be shorter
   than the time (`IntervalBlocker.intervalNotShorterThanTime`); the sheet then disables Start, the
   card says why, and the Interval shutter is disabled. `IntervalSettings.maximumPhotoCount` is the
-  most a timed series can take (one at the start and one after each interval that starts before
-  the end); saving each photo adds time, so the sheet says "At most".
+  most a timed series can take (one at the start and one at each start before the end); it takes
+  that many while each photo fits its interval, and a photo that takes longer delays the ones
+  after it, so the sheet says "At most".
 - While a series runs in the
   foreground, `SeriesScreenKeeper` turns the idle timer off and dims the screen; it puts both
   back when the series ends or stops, the camera screen goes away, or the app goes to the
@@ -270,7 +306,10 @@ outside burst mode, assistive activation, the Space bar); `CameraModel` applies 
 Single takes one photo; a timer mode starts `drive.countdown` (`Countdown`, 3 or 10 seconds),
 which takes one photo at zero; burst takes one photo (a burst of one). While a countdown or burst
 runs, the same intent stops it (`canPressShutter`). `.drive(.startTimer(seconds:))` starts a
-countdown of any length, for Siri and Shortcuts (issue #62).
+countdown of any length, for Siri and Shortcuts (issue #62). A countdown counts to a fixed
+deadline on `CameraModel.clock` (`Countdown.deadline`, issue #122): it shows the whole seconds left,
+rounded up, waits until the next whole second before the deadline, and fires when it is reached,
+so a late wake skips a number rather than making the photo late.
 
 Shutters that report how they move send `ShutterPhase` values: the app maps the hardware
 buttons' capture event phases to `.drive(.hardwareButton(_:))`, and the interface sends the
@@ -515,8 +554,11 @@ foreground, so it starts when the run starts while the app is active (`isActive`
 `active`); the content counts an inactive app (Control Center or a system alert over it) as in the
 foreground (`isInForeground`, any phase but `background`), since the camera keeps taking photos
 then; while the app is in the foreground a change of the
-counts alone is sent at most every 30 seconds, and phase changes and the content at the moment
-the app leaves are sent at once; countdowns are drawn by the system from their end time. Updates
+counts alone is sent at most every 30 seconds, measured on the monotonic clock (issue #125), and
+phase changes and the content at the moment the app leaves are sent at once; countdowns and a
+timed series' time are drawn by the system from their dates, so when the system says the device's
+clock changed (`NSSystemClockDidChange`) the coordinator sends content with dates again at once
+(`clockChanged(_:)`), worked out from the monotonic clock. Updates
 are local only: no push type, no push token, no network. The coordinator also asks iOS for time to
 finish saving (`BackgroundTimeRequesting`, `UIApplication.beginBackgroundTask`) while photos are
 still being taken or saved out of the foreground. When the app leaves the foreground the camera

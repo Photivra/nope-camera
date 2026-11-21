@@ -78,7 +78,7 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
     /// When an interval series that stops after a time started and when it ends, or `nil`. The
     /// system counts down to the end and fills the progress bar by time on screen, so the content
     /// isn't updated for it. The time keeps running while the series is paused
-    /// (``IntervalProgress/timeSpan``).
+    /// (``IntervalProgress/timeSpan(date:now:)``).
     public var seriesTime: ClosedRange<Date>?
 
     /// The photos saved so far.
@@ -163,6 +163,13 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         case .running, .paused: taken
         case .saving, .savingPaused, .finished, .stopped: kind == .interval ? taken : saved
         }
+    }
+
+    /// Whether the content holds a date iOS draws from: a countdown's end (``countdownEnd``) or a
+    /// timed series' time (``seriesTime``). Such content is sent again when the device's clock
+    /// changes (``LiveActivityCoordinator/clockChanged(_:)``).
+    public var hasDates: Bool {
+        countdownEnd != nil || seriesTime != nil
     }
 
     /// Whether the activity shows the time left of an interval series that stops after a time,

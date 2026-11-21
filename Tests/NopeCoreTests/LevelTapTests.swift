@@ -270,7 +270,7 @@ struct LevelTapHeldBackTests {
         await model.send(.manual(.setInterval(IntervalSettings(interval: 60, count: 10, stopAfter: .time, duration: 600))))
         await model.send(.manual(.startInterval))
         await waitUntil { model.manual.intervalProgress?.taken == 1 }
-        #expect(model.manual.intervalProgress?.timeSpan != nil)
+        #expect(model.manual.intervalProgress?.isTimed == true)
         #expect(model.captureStatus != .capturing)
         #expect(model.holdsBackLevelTap)
         await model.send(.manual(.stopInterval))

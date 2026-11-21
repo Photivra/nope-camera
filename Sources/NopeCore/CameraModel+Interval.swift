@@ -45,17 +45,20 @@ extension CameraModel {
     /// the photo the shutter took just before the series started) or the compare view is open.
     /// A photo cut short by a pause is taken again after it.
     ///
-    /// - Returns: Whether the photo was taken and saved. `false` ends the series: it was stopped,
-    ///   the camera stopped for good, or the photo failed for another reason (the camera says
-    ///   why).
-    func takeIntervalPhoto() async -> Bool {
+    /// - Returns: ``IntervalPhotoOutcome/taken(startedAt:)`` when the photo was taken and saved,
+    ///   with the moment it started;
+    ///   ``IntervalPhotoOutcome/timeUp`` when the series' time was up while it waited; otherwise
+    ///   ``IntervalPhotoOutcome/failed``: the camera stopped for good, or the photo failed for
+    ///   another reason (the camera says why). A stopped series is cancelled and ignores it.
+    func takeIntervalPhoto() async -> IntervalPhotoOutcome {
         while await waitForIntervalPhoto() {
-            guard canCapture else { return false }
+            guard canCapture else { return .failed }
+            let started = clock.now()
             await capture()
-            guard case .failed = captureStatus else { return true }
-            guard await failureWasAPause() else { return false }
+            guard case .failed = captureStatus else { return .taken(startedAt: started) }
+            guard await failureWasAPause() else { return .failed }
         }
-        return false
+        return manual.isIntervalTimeUp ? .timeUp : .failed
     }
 
     /// Whether the next interval photo has to wait: the series should pause, a photo is being
@@ -97,9 +100,9 @@ extension CameraModel {
     /// - Returns: The task that wakes it, to cancel when the wait ends, or `nil` for a series that
     ///   stops after a number of photos.
     private func wakeAtIntervalEnd(_ waiter: ChangeWaiter) -> Task<Void, Never>? {
-        guard let secondsLeft = manual.intervalProgress?.secondsLeft(at: manual.currentDate()) else { return nil }
-        return Task { [intervalEndSleep] in
-            guard (try? await intervalEndSleep(secondsLeft)) != nil else { return }
+        guard let deadline = manual.intervalProgress?.deadline else { return nil }
+        return Task { [clock] in
+            guard (try? await clock.sleep(deadline)) != nil else { return }
             waiter.expire()
         }
     }

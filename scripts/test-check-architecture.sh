@@ -31,6 +31,13 @@ import SwiftASN1"
 case_tree fail "signing imports UIKit" Sources/NopeSigning/S.swift "import UIKit"
 case_tree pass "app target is unrestricted" Sources/NopeApp/App.swift "import SwiftUI
 import AVFoundation"
+case_tree fail "core reads Date()" Sources/NopeCore/A.swift "let started = Date()"
+case_tree fail "core reads Date.now" Sources/NopeCore/A.swift "let started = Date.now"
+case_tree fail "core passes Date.init" Sources/NopeCore/A.swift "let read: () -> Date = Date.init"
+case_tree pass "core makes a fixed date" Sources/NopeCore/A.swift "let start = Date(timeIntervalSince1970: 0)"
+case_tree pass "core names Date() in a comment" Sources/NopeCore/A.swift "    /// Never Date() here."
+case_tree pass "the clock reads Date()" Sources/NopeCore/NopeClock.swift "let read = { Date() }"
+case_tree pass "the interface reads Date.now" Sources/NopeUI/V.swift "let shown = Date.now"
 
 if [[ $failures -ne 0 ]]; then echo "$failures case(s) failed"; exit 1; fi
 echo "all architecture check tests passed"

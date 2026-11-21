@@ -33,6 +33,7 @@ Related documentation in the repository:
 - ``CameraModel``
 - ``CameraState``
 - ``CameraIntent``
+- ``NopeClock``
 
 ### Camera status
 

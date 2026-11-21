@@ -812,7 +812,7 @@ struct CameraModelFocusBracketTests {
         #expect(content?.total == 3)
         #expect(content?.canStop == true)
         let presenter = FakeLiveActivities()
-        let coordinator = LiveActivityCoordinator(presenter: presenter, backgroundTime: FakeBackgroundTime(), now: { Date() })
+        let coordinator = LiveActivityCoordinator(presenter: presenter, backgroundTime: FakeBackgroundTime())
         coordinator.isEnabled = true
         coordinator.apply(model)
         #expect(coordinator.shown?.kind == .focusBracket)
@@ -826,7 +826,7 @@ struct CameraModelFocusBracketTests {
     @Test func theLiveActivityStopStopsAfterTheCurrentFrame() async {
         let (model, backend) = await makeModel(frames: 3)
         let presenter = FakeLiveActivities()
-        let coordinator = LiveActivityCoordinator(presenter: presenter, backgroundTime: FakeBackgroundTime(), now: { Date() })
+        let coordinator = LiveActivityCoordinator(presenter: presenter, backgroundTime: FakeBackgroundTime())
         coordinator.isEnabled = true
         await backend.setOnCapture { count in
             if count == 1 {
@@ -854,7 +854,7 @@ struct CameraModelFocusBracketTests {
         await model.send(.capture)
         #expect(model.drive.countdown.isRunning)
         let coordinator = LiveActivityCoordinator(
-            presenter: FakeLiveActivities(), backgroundTime: FakeBackgroundTime(), now: { Date() })
+            presenter: FakeLiveActivities(), backgroundTime: FakeBackgroundTime())
         coordinator.isEnabled = true
         coordinator.apply(model)
         #expect(coordinator.shown?.kind == .timer)

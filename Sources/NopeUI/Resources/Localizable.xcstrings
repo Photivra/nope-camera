@@ -3382,7 +3382,7 @@
       "extractionState" : "manual"
     },
     "At most %lld" : {
-      "comment" : "The most photos an interval series that stops after a time can take: one at the start and one after each interval that starts before the time is up. Saving each photo adds time, so it usually takes fewer. The number is a count of photos, at least 2.",
+      "comment" : "The most photos an interval series that stops after a time can take: one at the start and one each interval after, while the next start is before the time is up. A photo that takes longer than the interval delays the ones after it, so it can take fewer. The number is a count of photos, at least 2.",
       "extractionState" : "manual"
     },
     "The time keeps running while the series is paused, so the series ends on time." : {

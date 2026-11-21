@@ -113,14 +113,14 @@ struct DriveCardsTests {
     }
 
     @Test func nextPhotoCountsDownInWholeSeconds() {
-        let start = Date(timeIntervalSinceReferenceDate: 1000)
-        let timing = NextPhotoTiming(lastPhoto: start, interval: 10)
+        let start = ContinuousClock.now
+        let timing = NextPhotoTiming(due: start + .seconds(10))
         #expect(timing.secondsLeft(at: start) == 10)
-        #expect(timing.secondsLeft(at: start.addingTimeInterval(4.2)) == 6)
-        #expect(timing.secondsLeft(at: start.addingTimeInterval(9.99)) == 1)
+        #expect(timing.secondsLeft(at: start + .seconds(4.2)) == 6)
+        #expect(timing.secondsLeft(at: start + .seconds(9.99)) == 1)
         // Once due, the photo is being taken or waits for the camera: no time is shown.
-        #expect(timing.secondsLeft(at: start.addingTimeInterval(10)) == nil)
-        #expect(timing.secondsLeft(at: start.addingTimeInterval(12)) == nil)
+        #expect(timing.secondsLeft(at: start + .seconds(10)) == nil)
+        #expect(timing.secondsLeft(at: start + .seconds(12)) == nil)
     }
 
     @MainActor

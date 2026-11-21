@@ -22,7 +22,8 @@ extension CameraModel {
     /// - Parameters:
     ///   - kind: The kind of the activity already shown, or `nil`.
     ///   - isInForeground: Whether the app is in the foreground.
-    ///   - now: The current time, to say when a countdown ends.
+    ///   - now: The wall clock's date now, which the dates of a countdown's end and a timed
+    ///     series' time are counted from; the time left is measured on ``clock``.
     /// - Returns: The content, without night mode (the coordinator adds it).
     public func liveActivityContent(
         continuing kind: LiveActivityContent.Kind?, isInForeground: Bool, now: Date
@@ -30,7 +31,7 @@ extension CameraModel {
         if let progress = manual.intervalProgress {
             return LiveActivityContent(
                 kind: .interval, phase: isInForeground && !progress.isPaused ? .running : .paused, taken: progress.taken,
-                total: progress.total, seriesTime: progress.timeSpan)
+                total: progress.total, seriesTime: progress.timeSpan(date: now, now: clock.now()))
         }
         if let progress = astro.progress {
             return LiveActivityContent(
@@ -46,12 +47,13 @@ extension CameraModel {
             return LiveActivityContent(
                 kind: .burst, phase: isInForeground ? .running : .saving, taken: progress.taken, saved: progress.saved)
         }
-        if let remaining = drive.countdown.remainingSeconds {
+        if let deadline = drive.countdown.deadline {
             // A focus bracket's start delay is the bracket's own, so its Stop is offered then too.
             let kind: LiveActivityContent.Kind = astro.isOn ? .astro : bracketing.isFocusOn ? .focusBracket : .timer
             let total = kind == .astro ? astro.frameCount : kind == .focusBracket ? bracketing.focus.frameCount : nil
             return LiveActivityContent(
-                kind: kind, phase: .countingDown, total: total, countdownEnd: now.addingTimeInterval(Double(remaining)))
+                kind: kind, phase: .countingDown, total: total,
+                countdownEnd: now.addingTimeInterval((deadline - clock.now()) / .seconds(1)))
         }
         if kind == .timer, captureStatus == .capturing || captureStatus == .saving {
             return LiveActivityContent(kind: .timer, phase: captureStatus == .capturing ? .running : .saving, taken: 1)

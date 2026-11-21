@@ -1233,9 +1233,9 @@ After picker, the hours and minutes, "At most", the check that the interval is s
 time, the idle and running cards, audited at the default and largest text sizes, right to left
 and in night mode). The request logic (counts, lenses, the light, interval shooting,
 requests without a camera screen) is unit tested in `ShortcutTests`; a timed series (its end on
-the wall clock, pausing, ending early, presets and the duration of Start Interval Shooting) in
-`IntervalTimeTests`, with a scripted wall clock (`CameraModel(currentDate:)`) and wait for the
-end (`intervalEndSleep`).
+the monotonic clock, a change of the device's time, pausing, ending early, presets and the
+duration of Start Interval Shooting) in `IntervalTimeTests`, with a `FakeClock` passed as the
+model's `NopeClock`.
 
 ## Launch screen
 
@@ -1651,6 +1651,40 @@ and the time iOS gives to finish saving is enough for a burst's frames.
   stay readable.
 - With Live Activities turned off for nope. in the Settings app, the switch isn't offered.
 - Network capture during these checks shows no traffic (`docs/SECURITY_AUDIT.md`, check 8).
+
+### Clock and interval series on a device (issues #105, #106, #107, #122, #123, #125)
+
+Pending verification. On the release build, on an iPhone, with Settings › Camera › Live Activity
+on. The rules are unit tested with a fake clock (`IntervalTimeTests`, `IntervalScheduleTests`,
+`DriveTests`, `LiveActivityTests`, `NopeClockTests`); these checks confirm them against the
+system's clocks.
+
+- Timed series and the device's clock (#106): start a 10-minute series (Interval, Stop After:
+  Time, 10 s apart) and time it with a stopwatch on another device. After 3 minutes turn off
+  Settings › General › Date & Time › Set Automatically and set the time an hour forward; after
+  5 minutes set it two hours back. Expected: the series still ends 10 minutes after it began, the
+  card's time left follows the stopwatch, and a photo is still taken every 10 seconds. Turn Set
+  Automatically back on afterwards.
+- A failed last photo (#105): start a series of 3 photos, 30 s apart, and before the third
+  photo make saving fail (turn off the app's Photos access in the Settings app, or fill the
+  storage). Expected: the camera says why the photo wasn't saved, and the card and the Live
+  Activity end as Stopped, never Finished.
+- Start to start (#123): with Manual Controls on, set the shutter to 2 s and an interval series
+  of 10 photos every 10 s. Expected: "Takes 10 photos, starting one every 10 seconds." under the
+  rows; the photos' times (Photos › Info, or the camera's own photo details) are 10 s apart, the
+  card reads "Next photo in 8s" just after each save, and the series ends about 92 s after it
+  started. Then set the shutter to 15 s: before Start, "The shutter time is longer than the
+  interval, so photos follow one another."; while it runs, the card says "Each photo takes longer
+  than the interval" instead of the countdown, VoiceOver announces it once, and no photo is taken
+  twice (ten photos, each starting as the one before is saved). Check the line in Night Mode (red
+  only), at the largest text size and right to left.
+- Self-timer (#122): start a 10 s timer and a stopwatch together, five times, once with Low
+  Power Mode on. Record each time to the shutter sound (or the haptic) and the numbers shown.
+  Expected: about 10 s each time, with no drift from one run to the next; a number may be
+  skipped only if the phone was held up for more than a second.
+- Live Activity and the device's clock (#125): start the 10-minute timed series above, go to the
+  Lock Screen, and set the time an hour forward and then back as above. Expected: after each change
+  the activity's time left is right again at once, and its counts still update.
 
 ### Shared settings, the Night Mode control and the Lock Screen camera on a device
 
