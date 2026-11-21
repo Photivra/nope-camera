@@ -1564,6 +1564,14 @@ Device checks added by the last viewer and details changes for 1.0.0. Not run.
   within a moment. The simulated previews of the UI tests are 30 × 40 pixels, so the Simulator
   can't show it; `PhotoViewerTests.pagesDecodeAtTheirFittedSizeAndTheZoomedPageAtFull` covers
   the sizes asked for.
+- **The viewer's status lines wrap** (issue #110). At the largest text size, with a processed
+  photo of a lens without RAW and signing on but failed ("Processed · HEIF" and "Not signed"),
+  open the viewer on the smallest supported iPhone and on an iPad in the narrowest window it
+  allows (a resized window or Slide Over): each line wraps inside the window and nothing runs
+  past its edge. `PhotoViewerTests.stackedStatusLinesWrapInANarrowWindow` measures the lines at
+  160 points; the status is hidden from VoiceOver (its words are in the photo's value), so a UI
+  test can't read its frame. `testViewerLargestText` runs on the iPhone SE (3rd generation)
+  Simulator for the 4.7-inch width.
 
 ### Lock Screen, Control Center, Siri and Shortcuts on a device
 

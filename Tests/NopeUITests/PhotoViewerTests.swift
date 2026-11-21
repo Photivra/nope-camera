@@ -1,7 +1,9 @@
 import CoreGraphics
 import Foundation
 import NopeCore
+import SwiftUI
 import Testing
+import UIKit
 
 @testable import NopeUI
 
@@ -176,6 +178,21 @@ struct PhotoViewerTests {
         let released = [Self.photo(1, preview: nil, released: true)]
         #expect(PhotoViewerFacts.decodes(around: 1, in: released, page: page, displayScale: 3, isZoomed: false) == [.init(id: 1, maximumPixelSize: nil)])
         #expect(PhotoViewerFacts.decodes(around: nil, in: photos, page: page, displayScale: 3, isZoomed: false).isEmpty)
+    }
+
+    @Test func stackedStatusLinesWrapInANarrowWindow() {
+        // Issue #110: at the largest text size "Processed · HEIF" and "Not signed" are lines one
+        // above the other; in a narrow window each must wrap rather than run past the edge.
+        let photo = SavedPhoto(formats: [.raw, .heif, .jpeg], isProcessedFallback: true, signature: .unsigned(.failed), metadata: [:])
+        let width: CGFloat = 160
+        for size in [DynamicTypeSize.accessibility5, .accessibility1] {
+            let status = PhotoViewerStatus(photo: photo, isOnPicture: false, isStackedLines: true)
+                .environment(\.dynamicTypeSize, size)
+            let fitting = UIHostingController(rootView: status)
+                .sizeThatFits(in: CGSize(width: width, height: .greatestFiniteMagnitude))
+            #expect(fitting.width <= width, "\(size): \(fitting)")
+            #expect(fitting.height > 0)
+        }
     }
 
     @Test func zoomReachesThePreviewsPixelsAndAtLeastTwiceFit() {

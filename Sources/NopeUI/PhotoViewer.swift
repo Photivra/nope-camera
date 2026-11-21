@@ -1596,9 +1596,10 @@ struct PhotoViewerStatus: View {
         if let photo {
             Group {
                 if isStackedLines {
+                    // Each line wraps in a narrow window at these sizes (issue #110).
                     VStack(alignment: .leading, spacing: NopeSpace.xxs) {
-                        formats(of: photo)
-                        signature(of: photo)
+                        formats(of: photo, wraps: true)
+                        signature(of: photo, wraps: true)
                     }
                 } else if isOnPicture {
                     HStack(spacing: NopeSpace.s) {
@@ -1636,11 +1637,14 @@ struct PhotoViewerStatus: View {
 
     /// "RAW + HEIF", or the triangle and "Processed · HEIF".
     ///
-    /// - Parameter photo: The saved photo.
-    @ViewBuilder private func formats(of photo: SavedPhoto) -> some View {
+    /// - Parameters:
+    ///   - photo: The saved photo.
+    ///   - wraps: Whether the words wrap to the width offered (the stacked lines); otherwise
+    ///     the line keeps its ideal width, which `ViewThatFits` measures.
+    @ViewBuilder private func formats(of photo: SavedPhoto, wraps: Bool = false) -> some View {
         // Left-to-right marks keep "RAW + HEIF" in reading order in right-to-left layouts.
         let names = "\u{200E}" + PhotoViewerFacts.formatNames(of: photo) + "\u{200E}"
-        HStack(spacing: NopeSpace.xxs) {
+        HStack(alignment: .firstTextBaseline, spacing: NopeSpace.xxs) {
             if photo.isProcessedFallback {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(CameraStyle.warning)
@@ -1651,14 +1655,16 @@ struct PhotoViewerStatus: View {
             }
         }
         .foregroundStyle(NopeColor.label)
-        .fixedSize()
+        .fixedSize(horizontal: !wraps, vertical: true)
     }
 
     /// The signature: Signed, Not signed as a warning, or Not signed plain.
     ///
-    /// - Parameter photo: The saved photo.
-    @ViewBuilder private func signature(of photo: SavedPhoto) -> some View {
-        HStack(spacing: NopeSpace.xxs) {
+    /// - Parameters:
+    ///   - photo: The saved photo.
+    ///   - wraps: Whether the words wrap to the width offered (the stacked lines).
+    @ViewBuilder private func signature(of photo: SavedPhoto, wraps: Bool = false) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: NopeSpace.xxs) {
             switch PhotoViewerFacts.signature(of: photo) {
             case .signed:
                 Image(systemName: "checkmark.seal")
@@ -1677,7 +1683,7 @@ struct PhotoViewerStatus: View {
                     .foregroundStyle(CameraColor(NopeColor.labelSecondary))
             }
         }
-        .fixedSize()
+        .fixedSize(horizontal: !wraps, vertical: true)
     }
 }
 
