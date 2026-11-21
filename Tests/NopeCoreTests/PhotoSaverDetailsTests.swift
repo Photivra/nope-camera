@@ -112,7 +112,7 @@ struct CaptureTimingTests {
     func theCaptureIsTimed(errors: [CaptureError?]) async {
         let clock = TickingClock()
         let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens, captureErrors: errors)
-        let model = CameraModel(backend: backend, saver: CameraModelTests.saver(), now: clock.now)
+        let model = CameraModel(backend: backend, saver: CameraModelTests.saver(), clock: NopeClock(now: clock.now))
         await model.send(.start)
         await model.send(.capture)
         guard case .saved(let photo) = model.captureStatus else {

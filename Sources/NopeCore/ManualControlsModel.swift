@@ -58,11 +58,9 @@ public final class ManualControlsModel {
     /// The hardware, or `nil` when the backend has no manual controls.
     let backend: (any ManualCaptureBackend)?
 
-    /// Waits between interval photos; the time is in seconds.
-    private let sleep: @Sendable (Double) async throws -> Void
-
-    /// Reads the clock on the wall, for the end of a series that stops after a time.
-    let currentDate: @Sendable () -> Date
+    /// The clock of the camera model: interval photos wait on it, and a timed series' end is a
+    /// moment of its monotonic clock.
+    let clock: NopeClock
 
     /// Reads the monotonic clock, for when each camera reading arrived (``CloseUpDetector``).
     let now: @Sendable () -> ContinuousClock.Instant
@@ -129,21 +127,40 @@ public final class ManualControlsModel {
     ///
     /// - Parameters:
     ///   - backend: The hardware, or `nil` when it has no manual controls.
+    ///   - clock: The clock interval photos wait on and a timed series ends by. Its monotonic
+    ///     clock also times the camera's readings.
+    public convenience init(backend: (any ManualCaptureBackend)?, clock: NopeClock = .system) {
+        self.init(backend: backend, clock: clock, measuredBy: clock.now)
+    }
+
+    /// Creates the model with a sleep of a number of seconds, as tests written before
+    /// ``NopeClock`` pass (``NopeClock/stepped(by:now:)``).
+    ///
+    /// - Parameters:
+    ///   - backend: The hardware, or `nil` when it has no manual controls.
     ///   - sleep: Waits a number of seconds between interval photos, throwing when cancelled.
-    ///   - currentDate: Reads the clock on the wall, for a series that stops after a time. Tests
-    ///     pass a scripted one.
-    ///   - now: Reads the monotonic clock, for when each reading arrived. Tests pass a scripted
-    ///     one.
-    public init(
+    ///   - now: Reads the monotonic clock, for when each reading arrived.
+    convenience init(
         backend: (any ManualCaptureBackend)?,
         sleep: @escaping @Sendable (Double) async throws -> Void,
-        currentDate: @escaping @Sendable () -> Date = { Date() },
         now: @escaping @Sendable () -> ContinuousClock.Instant = { .now }
     ) {
+        self.init(backend: backend, clock: .stepped(by: sleep), measuredBy: now)
+    }
+
+    /// Creates the model.
+    ///
+    /// - Parameters:
+    ///   - backend: The hardware, or `nil` when it has no manual controls.
+    ///   - clock: The clock interval photos wait on and a timed series ends by.
+    ///   - measure: Reads the monotonic clock that times the camera's readings.
+    init(
+        backend: (any ManualCaptureBackend)?, clock: NopeClock,
+        measuredBy measure: @escaping @Sendable () -> ContinuousClock.Instant
+    ) {
         self.backend = backend
-        self.sleep = sleep
-        self.currentDate = currentDate
-        self.now = now
+        self.clock = clock
+        now = measure
     }
 
     // MARK: - What an interface reads
@@ -578,7 +595,7 @@ public final class ManualControlsModel {
     private func startInterval(capture: @escaping @MainActor () async -> Bool) {
         guard intervalProgress == nil else { return }
         let series = interval
-        let start = currentDate()
+        let start = clock.date()
         let timeSpan = series.stopAfter == .time ? start...start.addingTimeInterval(series.duration) : nil
         lastIntervalEnd = nil
         intervalProgress = IntervalProgress(
@@ -600,7 +617,7 @@ public final class ManualControlsModel {
                     break
                 }
                 do {
-                    try await sleep(series.interval)
+                    try await clock.sleep(seconds: series.interval)
                 } catch {
                     return
                 }
@@ -621,13 +638,13 @@ public final class ManualControlsModel {
     /// - Returns: Whether to wait the interval and take another photo.
     private func hasTimeForAnotherPhoto(_ series: IntervalSettings, taken: Int, timeSpan: ClosedRange<Date>?) -> Bool {
         guard let timeSpan else { return taken < series.count }
-        return currentDate().addingTimeInterval(series.interval) < timeSpan.upperBound
+        return clock.date().addingTimeInterval(series.interval) < timeSpan.upperBound
     }
 
     /// Whether the running series stops after a time and that time is up.
     var isIntervalTimeUp: Bool {
         guard let end = intervalProgress?.timeSpan?.upperBound else { return false }
-        return currentDate() >= end
+        return clock.date() >= end
     }
 
     /// Marks the running series as paused or running again, for the camera screen and the Live

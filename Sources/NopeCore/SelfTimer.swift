@@ -36,8 +36,8 @@ public final class Countdown {
     /// The seconds left, from the starting number down to 1, or `nil` when no countdown runs.
     public private(set) var remainingSeconds: Int?
 
-    /// Waits a number of seconds. Tests pass a faster one.
-    private let sleep: @Sendable (Double) async throws -> Void
+    /// The camera model's clock, which the countdown waits on.
+    private let clock: NopeClock
 
     /// The running countdown.
     private var task: Task<Void, Never>?
@@ -47,9 +47,17 @@ public final class Countdown {
 
     /// Creates a countdown that isn't running.
     ///
-    /// - Parameter sleep: Waits a number of seconds between ticks, throwing when cancelled.
-    public init(sleep: @escaping @Sendable (Double) async throws -> Void) {
-        self.sleep = sleep
+    /// - Parameter clock: The clock it waits on. Tests pass one they move.
+    public init(clock: NopeClock) {
+        self.clock = clock
+    }
+
+    /// Creates a countdown that waits on a sleep of a number of seconds, as tests written before
+    /// ``NopeClock`` pass (``NopeClock/stepped(by:now:)``).
+    ///
+    /// - Parameter sleep: Waits a number of seconds, throwing when cancelled.
+    public convenience init(sleep: @escaping @Sendable (Double) async throws -> Void) {
+        self.init(clock: .stepped(by: sleep))
     }
 
     /// Whether a countdown is running.
@@ -72,7 +80,7 @@ public final class Countdown {
         task = Task {
             var remaining = seconds
             while remaining > 0 {
-                try? await sleep(1)
+                try? await clock.sleep(seconds: 1)
                 if Task.isCancelled { return }
                 remaining -= 1
                 remainingSeconds = remaining > 0 ? remaining : nil

@@ -35,5 +35,12 @@ while IFS= read -r f; do
   done < <(grep -E '^[[:space:]]*(@[A-Za-z_]+[[:space:]]+)*import[[:space:]]' "$f" || true)
 done < <(find Sources -name '*.swift' -type f | sort)
 
+# One clock source (issue #107): NopeCore reads the wall clock only through NopeClock, so a
+# deadline or a duration can't be measured on a clock the person's time setting moves.
+while IFS= read -r hit; do
+  echo "architecture: $hit reads the wall clock directly; use NopeClock (date for dates, now for time)"; fail=1
+done < <(find Sources/NopeCore -name '*.swift' -type f ! -name NopeClock.swift -print0 2>/dev/null | sort -z |
+  xargs -0 grep -HnE '(^|[^A-Za-z0-9_.])Date(\(\)|\.now\b|\.init\b)' 2>/dev/null | grep -vE '^[^:]+:[0-9]+:[[:space:]]*//' || true)
+
 if [[ $fail -ne 0 ]]; then exit 1; fi
 echo "architecture checks passed"

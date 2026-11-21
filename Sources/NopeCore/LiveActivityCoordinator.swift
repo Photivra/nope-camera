@@ -78,22 +78,28 @@ public final class LiveActivityCoordinator {
     /// Asks for time to finish saving.
     @ObservationIgnored private let backgroundTime: any BackgroundTimeRequesting
 
-    /// Reads the current time.
-    @ObservationIgnored private let now: () -> Date
+    /// The clock: the camera model's (``CameraModel/clock``), so both read the same time.
+    @ObservationIgnored private let clock: NopeClock
 
     /// Creates a coordinator with no activity shown.
     ///
     /// - Parameters:
     ///   - presenter: Shows the activity.
     ///   - backgroundTime: Asks for time to finish saving.
-    ///   - now: Reads the current time. Tests pass their own.
+    ///   - clock: The clock, the same as the camera model's. ``NopeClock/system`` by default;
+    ///     tests pass one they move.
     public init(
         presenter: any LiveActivityPresenting, backgroundTime: any BackgroundTimeRequesting,
-        now: @escaping () -> Date = Date.init
+        clock: NopeClock = .system
     ) {
         self.presenter = presenter
         self.backgroundTime = backgroundTime
-        self.now = now
+        self.clock = clock
+    }
+
+    /// Reads the wall clock.
+    private func now() -> Date {
+        clock.date()
     }
 
     /// Follows the model until the calling task is cancelled: applies every change of the model

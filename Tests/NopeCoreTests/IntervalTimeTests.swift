@@ -3,26 +3,6 @@ import Testing
 
 @testable import NopeCore
 
-/// A wall clock that moves only when a test moves it.
-final class WallClock: @unchecked Sendable {
-    private let lock = NSLock()
-    private var date: Date
-
-    init(_ date: Date) {
-        self.date = date
-    }
-
-    /// The current time.
-    func now() -> Date {
-        lock.withLock { date }
-    }
-
-    /// Moves the clock on.
-    func advance(by seconds: Double) {
-        lock.withLock { date = date.addingTimeInterval(seconds) }
-    }
-}
-
 /// Interval series that stop after a time instead of a number of photos: the end is fixed on the
 /// wall clock when the series starts, the time keeps running while the series is paused, and a
 /// stop, a failed photo or a camera that stops still end it early (owner decision 2026-11-18).
@@ -30,18 +10,22 @@ final class WallClock: @unchecked Sendable {
 struct IntervalTimeTests {
     static let start = Date(timeIntervalSince1970: 1_800_000_000)
 
-    /// A started camera whose interval sleeps wait for `ticker` and whose wall clock is `clock`.
-    func makeModel(
-        ticker: Ticker, clock: WallClock
-    ) async -> (CameraModel, PausingBackend, Task<Void, Never>) {
+    /// A started camera on `clock`, whose interval photos wait on it.
+    func makeModel(clock: FakeClock) async -> (CameraModel, PausingBackend, Task<Void, Never>) {
         let backend = PausingBackend(ScriptedManualBackend(lenses: [ManualFixtures.wide]))
         let model = CameraModel(
-            backend: backend, saver: CameraModelTests.saver(), sleep: { _ in await ticker.sleep() },
-            deviceStatusReader: FakeStatusReader(bytes: nil), currentDate: { clock.now() })
+            backend: backend, saver: CameraModelTests.saver(), clock: clock.clock,
+            deviceStatusReader: FakeStatusReader(bytes: nil))
         model.pauseAfterErrorSleep = {}
         await model.send(.start)
         let events = Task { await model.observeEvents() }
         return (model, backend, events)
+    }
+
+    /// Lets time pass once a sleep waits: both clocks move on by `seconds`.
+    func pass(_ seconds: Double, on clock: FakeClock, whenWaiting count: Int = 1) async {
+        await waitForSleeps(clock, count: count)
+        clock.advance(by: seconds)
     }
 
     /// Starts a series one minute apart that stops after `duration` seconds.
@@ -58,10 +42,11 @@ struct IntervalTimeTests {
     // MARK: - Settings
 
     @Test func theDefaultClocksAreTheSystemOnes() async throws {
-        let manual = ManualControlsModel(backend: nil, sleep: { _ in })
-        #expect(abs(manual.currentDate().timeIntervalSinceNow) < 60)
+        let manual = ManualControlsModel(backend: nil)
+        #expect(abs(manual.clock.date().timeIntervalSinceNow) < 60)
         let model = CameraModel(backend: ScriptedBackend(capabilities: CameraModelTests.oneLens))
-        try await model.intervalEndSleep(0)
+        #expect(abs(model.clock.date().timeIntervalSinceNow) < 60)
+        try await model.clock.sleep(seconds: 0)
     }
 
     @Test func settingsKeepTheCountAndTheTimeInTheirRanges() {
@@ -124,9 +109,8 @@ struct IntervalTimeTests {
     // MARK: - Running to the time
 
     @Test func theSeriesEndsWhenTheNextIntervalWouldReachTheTime() async {
-        let ticker = Ticker()
-        let clock = WallClock(Self.start)
-        let (model, backend, events) = await makeModel(ticker: ticker, clock: clock)
+        let clock = FakeClock(date: Self.start)
+        let (model, backend, events) = await makeModel(clock: clock)
         await startTimedSeries(model, duration: 150)
         let span = Self.start...Self.start.addingTimeInterval(150)
         #expect(model.manual.intervalProgress?.timeSpan == span)
@@ -137,12 +121,10 @@ struct IntervalTimeTests {
             model.liveActivityContent(continuing: nil, isInForeground: true, now: Self.start)
                 == LiveActivityContent(kind: .interval, phase: .running, taken: 1, seriesTime: span))
 
-        clock.advance(by: 60)
-        await tick(ticker)
+        await pass(60, on: clock)
         await waitUntil { model.manual.intervalProgress?.taken == 2 }
-        #expect(model.manual.intervalProgress?.secondsLeft(at: clock.now()) == 90)
-        clock.advance(by: 60)
-        await tick(ticker)
+        #expect(model.manual.intervalProgress?.secondsLeft(at: clock.date) == 90)
+        await pass(60, on: clock)
         // The third photo at 2 minutes is the last: another minute would reach 2.5 minutes.
         await waitUntil { model.manual.intervalProgress == nil }
         #expect(await backend.captures == 3)
@@ -151,29 +133,25 @@ struct IntervalTimeTests {
     }
 
     @Test func aPhotoWhoseIntervalEndsExactlyAtTheTimeIsNotTaken() async {
-        let ticker = Ticker()
-        let clock = WallClock(Self.start)
-        let (model, backend, events) = await makeModel(ticker: ticker, clock: clock)
+        let clock = FakeClock(date: Self.start)
+        let (model, backend, events) = await makeModel(clock: clock)
         await startTimedSeries(model, duration: 120)
         await waitUntil { model.manual.intervalProgress?.taken == 1 }
-        clock.advance(by: 60)
-        await tick(ticker)
+        await pass(60, on: clock)
         await waitUntil { model.manual.intervalProgress == nil }
         #expect(await backend.captures == 2)
-        #expect(await ticker.pending == 0, "no wait after the last photo")
+        #expect(clock.pendingSleeps == 0, "no wait after the last photo")
         #expect(model.manual.lastIntervalEnd == .finished)
         await finish(backend, events)
     }
 
     @Test func aSeriesThatOverranItsTimeWhileWaitingEndsWithoutAnotherPhoto() async {
-        let ticker = Ticker()
-        let clock = WallClock(Self.start)
-        let (model, backend, events) = await makeModel(ticker: ticker, clock: clock)
+        let clock = FakeClock(date: Self.start)
+        let (model, backend, events) = await makeModel(clock: clock)
         await startTimedSeries(model, duration: 600)
         await waitUntil { model.manual.intervalProgress?.taken == 1 }
         // The wait took longer than asked, past the end.
-        clock.advance(by: 700)
-        await tick(ticker)
+        await pass(700, on: clock)
         await waitUntil { model.manual.intervalProgress == nil }
         #expect(await backend.captures == 1)
         #expect(model.manual.lastIntervalEnd == .finished)
@@ -183,12 +161,11 @@ struct IntervalTimeTests {
     // MARK: - Ending early
 
     @Test func stoppingBeforeTheTimeEndsItAsStopped() async {
-        let ticker = Ticker()
-        let clock = WallClock(Self.start)
-        let (model, backend, events) = await makeModel(ticker: ticker, clock: clock)
+        let clock = FakeClock(date: Self.start)
+        let (model, backend, events) = await makeModel(clock: clock)
         await startTimedSeries(model, duration: 3600)
         await waitUntil { model.manual.intervalProgress?.taken == 1 }
-        let shown = model.liveActivityContent(continuing: nil, isInForeground: false, now: clock.now())
+        let shown = model.liveActivityContent(continuing: nil, isInForeground: false, now: clock.date)
         await model.send(.manual(.stopInterval))
         #expect(model.manual.intervalProgress == nil)
         #expect(model.manual.lastIntervalEnd == .stopped)
@@ -199,15 +176,13 @@ struct IntervalTimeTests {
     }
 
     @Test func aFailedPhotoEndsItBeforeTheTime() async {
-        let ticker = Ticker()
-        let clock = WallClock(Self.start)
-        let (model, backend, events) = await makeModel(ticker: ticker, clock: clock)
+        let clock = FakeClock(date: Self.start)
+        let (model, backend, events) = await makeModel(clock: clock)
         // A full disk ends the series the same way: the photo can't be saved, and the camera says why.
         await backend.setOnCapture { number in number == 2 ? .captureFailed : nil }
         await startTimedSeries(model, duration: 3600)
         await waitUntil { model.manual.intervalProgress?.taken == 1 }
-        clock.advance(by: 60)
-        await tick(ticker)
+        await pass(60, on: clock)
         await waitUntil { model.manual.intervalProgress == nil }
         #expect(model.captureStatus == .failed(.captureFailed))
         #expect(model.manual.lastIntervalEnd == .stopped)
@@ -215,13 +190,12 @@ struct IntervalTimeTests {
     }
 
     @Test func aCameraThatStopsForGoodEndsItBeforeTheTime() async {
-        let ticker = Ticker()
-        let clock = WallClock(Self.start)
-        let (model, backend, events) = await makeModel(ticker: ticker, clock: clock)
+        let clock = FakeClock(date: Self.start)
+        let (model, backend, events) = await makeModel(clock: clock)
         await startTimedSeries(model, duration: 3600)
         await waitUntil { model.manual.intervalProgress?.taken == 1 }
         backend.inner.emitEvent(.interrupted(.inUseElsewhere))
-        await tick(ticker)
+        await pass(60, on: clock)
         await waitUntil { model.manual.intervalProgress?.isPaused == true }
         await backend.setStartError(.configurationFailed)
         backend.inner.emitEvent(.failed)
@@ -234,16 +208,15 @@ struct IntervalTimeTests {
     // MARK: - Pausing: the time keeps running
 
     @Test func aPauseKeepsTheEndOnTheWallClock() async {
-        let ticker = Ticker()
-        let clock = WallClock(Self.start)
-        let (model, backend, events) = await makeModel(ticker: ticker, clock: clock)
+        let clock = FakeClock(date: Self.start)
+        let (model, backend, events) = await makeModel(clock: clock)
         await startTimedSeries(model, duration: 600)
         await waitUntil { model.manual.intervalProgress?.taken == 1 }
-        clock.advance(by: 60)
+        await waitForSleeps(clock)
         await model.send(.setInForeground(false))
-        await tick(ticker)
+        clock.advance(by: 60)
         await waitUntil { model.manual.intervalProgress?.isPaused == true }
-        let paused = model.liveActivityContent(continuing: .interval, isInForeground: false, now: clock.now())
+        let paused = model.liveActivityContent(continuing: .interval, isInForeground: false, now: clock.date)
         #expect(paused?.statusLine == .pausedTimeLeft(1))
         #expect(paused?.showsTimeLeft == true)
 
@@ -253,23 +226,22 @@ struct IntervalTimeTests {
         await waitUntil { model.manual.intervalProgress?.taken == 2 }
         #expect(model.manual.intervalProgress?.isPaused == false)
         #expect(model.manual.intervalProgress?.timeSpan == Self.start...Self.start.addingTimeInterval(600))
-        #expect(model.manual.intervalProgress?.secondsLeft(at: clock.now()) == 240)
+        #expect(model.manual.intervalProgress?.secondsLeft(at: clock.date) == 240)
         await model.send(.manual(.stopInterval))
         #expect(await backend.captures == 2)
         await finish(backend, events)
     }
 
     @Test func aSeriesWhoseTimeRanOutWhileAwayEndsWhenTheAppIsBack() async {
-        let ticker = Ticker()
-        let clock = WallClock(Self.start)
-        let (model, backend, events) = await makeModel(ticker: ticker, clock: clock)
+        let clock = FakeClock(date: Self.start)
+        let (model, backend, events) = await makeModel(clock: clock)
         await startTimedSeries(model, duration: 120)
         await waitUntil { model.manual.intervalProgress?.taken == 1 }
-        clock.advance(by: 60)
+        await waitForSleeps(clock)
         await model.send(.setInForeground(false))
-        await tick(ticker)
+        clock.advance(by: 60)
         await waitUntil { model.manual.intervalProgress?.isPaused == true }
-        let shown = model.liveActivityContent(continuing: .interval, isInForeground: false, now: clock.now())
+        let shown = model.liveActivityContent(continuing: .interval, isInForeground: false, now: clock.date)
 
         clock.advance(by: 3600)
         await model.send(.setInForeground(true))
@@ -283,27 +255,19 @@ struct IntervalTimeTests {
     }
 
     @Test func aSeriesPausedOnScreenEndsAtItsTime() async {
-        let ticker = Ticker()
-        let endTicker = Ticker()
-        let clock = WallClock(Self.start)
-        let waits = SecondsRecorder()
-        let (model, backend, events) = await makeModel(ticker: ticker, clock: clock)
-        model.intervalEndSleep = { seconds in
-            await waits.add(seconds)
-            await endTicker.sleep()
-        }
+        let clock = FakeClock(date: Self.start)
+        let (model, backend, events) = await makeModel(clock: clock)
         await startTimedSeries(model, duration: 120)
         await waitUntil { model.manual.intervalProgress?.taken == 1 }
-        clock.advance(by: 60)
+        await waitForSleeps(clock)
         backend.inner.emitEvent(.interrupted(.inUseElsewhere))
         await waitUntil { model.sessionStatus == .interrupted(.inUseElsewhere) }
-        await tick(ticker)
+        clock.advance(by: 60)
         await waitUntil { model.manual.intervalProgress?.isPaused == true }
-        await eventually { await endTicker.pending == 1 }
-        #expect(await waits.values == [60], "it wakes when the minute left is up")
+        await waitForSleeps(clock)
+        #expect(clock.requestedWakes.last.map { clock.seconds(at: $0) } == 120, "it wakes when the minute left is up")
 
         clock.advance(by: 60)
-        await endTicker.tick()
         await waitUntil { model.manual.intervalProgress == nil }
         #expect(model.sessionStatus == .interrupted(.inUseElsewhere), "still interrupted")
         #expect(await backend.captures == 1)
@@ -312,40 +276,35 @@ struct IntervalTimeTests {
     }
 
     @Test func anEarlyWakeBeforeTheTimeKeepsWaiting() async {
-        let ticker = Ticker()
-        let endTicker = Ticker()
-        let clock = WallClock(Self.start)
-        let waits = SecondsRecorder()
-        let (model, backend, events) = await makeModel(ticker: ticker, clock: clock)
-        // The first wait for the end returns at once, as if the clock had been set back.
-        model.intervalEndSleep = { seconds in
-            await waits.add(seconds)
-            if await waits.values.count > 1 { await endTicker.sleep() }
-        }
+        let clock = FakeClock(date: Self.start)
+        let (model, backend, events) = await makeModel(clock: clock)
         await startTimedSeries(model, duration: 600)
         await waitUntil { model.manual.intervalProgress?.taken == 1 }
+        await waitForSleeps(clock)
         backend.inner.emitEvent(.interrupted(.inUseElsewhere))
         await waitUntil { model.sessionStatus == .interrupted(.inUseElsewhere) }
-        await tick(ticker)
+        clock.advance(by: 60)
         await waitUntil { model.manual.intervalProgress?.isPaused == true }
-        await eventually { await endTicker.pending == 1 }
-        #expect(await waits.values == [600, 600])
+        await waitForSleeps(clock)
+        // The device's clock is set back five minutes: the wake comes before the end on the wall.
+        clock.moveDate(by: -300)
+        clock.advance(by: 540)
+        await waitForSleeps(clock)
+        #expect(clock.requestedWakes.count == 3, "a second wait for the end")
         #expect(model.manual.intervalProgress?.isPaused == true)
         #expect(await backend.captures == 1)
 
         backend.inner.emitEvent(.interruptionEnded)
         await waitUntil { model.manual.intervalProgress?.taken == 2 }
         await model.send(.manual(.stopInterval))
-        await endTicker.tick()
         await finish(backend, events)
     }
 
     // MARK: - An interval as long as the time
 
     @Test func anIntervalNotShorterThanTheTimeBlocksTheStartAndTheShutter() async {
-        let ticker = Ticker()
-        let clock = WallClock(Self.start)
-        let (model, backend, events) = await makeModel(ticker: ticker, clock: clock)
+        let clock = FakeClock(date: Self.start)
+        let (model, backend, events) = await makeModel(clock: clock)
         await model.send(.manual(.setInterval(IntervalSettings(interval: 120, count: 10, stopAfter: .time, duration: 60))))
         #expect(model.intervalBlocker == .intervalNotShorterThanTime)
         #expect(model.canPressShutter, "the other modes still take photos")
@@ -464,14 +423,5 @@ struct IntervalTimeTests {
         older["seriesTime"] = nil
         let olderContent = try JSONDecoder().decode(Content.self, from: JSONSerialization.data(withJSONObject: older))
         #expect(olderContent.seriesTime == nil)
-    }
-}
-
-/// Records the seconds passed to a sleep, from any task.
-actor SecondsRecorder {
-    private(set) var values: [Double] = []
-
-    func add(_ seconds: Double) {
-        values.append(seconds)
     }
 }

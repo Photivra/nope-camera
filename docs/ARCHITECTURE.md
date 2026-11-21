@@ -72,6 +72,26 @@ signed with Content Credentials when signing is on.
    cools), and runtime errors (the model restarts the camera).
 7. The interface renders the new state. It holds no rules of its own.
 
+### One clock (issue #107)
+
+`CameraModel` takes one `NopeClock` (`CameraModel(backend:saver:clock:)`, `.system` by default)
+and passes it to `ManualControlsModel`, `DriveModel` and its `Countdown`; the app's
+`LiveActivityCoordinator` uses the same source. The clock has two readings and one wait:
+
+- `date()`, the wall clock, only for dates people see or that go into files: a photo's date, an
+  end time shown on the camera, and the dates a Live Activity needs. `clock.date(of:)` turns a
+  moment of the monotonic clock into the date it is shown as, worked out when it is needed.
+- `now()`, `ContinuousClock`, for everything that measures elapsed time: deadlines, waits and
+  durations. A change of the device's time doesn't move it, and it keeps counting while the
+  device sleeps.
+- `sleep(_:)`, a wait until a moment of `now()`.
+
+Tests replace this one value with a clock they move by hand (`FakeClock` in the unit tests).
+`scripts/check-architecture.sh` fails on `Date()`, `Date.now` or `Date.init` anywhere in
+`NopeCore` outside `NopeClock.swift`. Tests written before the clock existed pass a sleep of a
+number of seconds instead; `NopeClock.stepped(by:now:)` turns it into a clock whose own time
+moves by each completed wait, so their deadlines are reached in step with their sleeps.
+
 ### The lens while the camera is busy (issue #96)
 
 Changing the lens restarts the camera, so it is refused while a photo or a series depends on the

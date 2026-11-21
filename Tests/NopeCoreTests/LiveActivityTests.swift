@@ -50,16 +50,6 @@ final class FakeBackgroundTime: BackgroundTimeRequesting {
     }
 }
 
-/// A clock the test moves.
-@MainActor
-final class TestClock {
-    var date = Date(timeIntervalSince1970: 1_000_000)
-
-    func advance(_ seconds: Double) {
-        date = date.addingTimeInterval(seconds)
-    }
-}
-
 /// The Live Activity (issue #64): its content, the model's content and outcome, and the
 /// coordinator that starts, updates and ends it.
 @MainActor
@@ -77,9 +67,9 @@ struct LiveActivityTests {
 
     func makeCoordinator(
         presenter: FakeLiveActivities = FakeLiveActivities(), time: FakeBackgroundTime = FakeBackgroundTime(),
-        clock: TestClock = TestClock()
+        clock: FakeClock = FakeClock()
     ) -> LiveActivityCoordinator {
-        let coordinator = LiveActivityCoordinator(presenter: presenter, backgroundTime: time, now: { clock.date })
+        let coordinator = LiveActivityCoordinator(presenter: presenter, backgroundTime: time, clock: clock.clock)
         coordinator.isEnabled = true
         return coordinator
     }
@@ -366,7 +356,7 @@ struct LiveActivityTests {
     @Test func updatesPhaseChangesAtOnceAndCountsRarely() async {
         let model = await makeModel()
         let presenter = FakeLiveActivities()
-        let clock = TestClock()
+        let clock = FakeClock()
         let coordinator = makeCoordinator(presenter: presenter, clock: clock)
         model.drive.beginBurst()
         coordinator.apply(model)
@@ -377,16 +367,16 @@ struct LiveActivityTests {
 
         // Counts alone, in the foreground: not before the minimum interval.
         model.drive.recordTaken()
-        clock.advance(LiveActivityCoordinator.minimumUpdateInterval - 1)
+        clock.advance(by: LiveActivityCoordinator.minimumUpdateInterval - 1)
         coordinator.apply(model)
         #expect(presenter.updates.isEmpty)
-        clock.advance(1)
+        clock.advance(by: 1)
         coordinator.apply(model)
         #expect(presenter.updates == [Content(kind: .burst, phase: .running, taken: 1)])
 
         // Saved count alone counts as a count change.
         model.drive.recordSaved()
-        clock.advance(LiveActivityCoordinator.minimumUpdateInterval)
+        clock.advance(by: LiveActivityCoordinator.minimumUpdateInterval)
         coordinator.apply(model)
         #expect(presenter.updates.last == Content(kind: .burst, phase: .running, taken: 1, saved: 1))
 
@@ -408,7 +398,7 @@ struct LiveActivityTests {
     @Test func endsAtOnceInTheForegroundAndLaterOutOfIt() async {
         let model = await makeModel()
         let presenter = FakeLiveActivities()
-        let clock = TestClock()
+        let clock = FakeClock()
         let coordinator = makeCoordinator(presenter: presenter, clock: clock)
 
         // In the foreground.

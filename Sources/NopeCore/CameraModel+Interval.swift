@@ -97,9 +97,9 @@ extension CameraModel {
     /// - Returns: The task that wakes it, to cancel when the wait ends, or `nil` for a series that
     ///   stops after a number of photos.
     private func wakeAtIntervalEnd(_ waiter: ChangeWaiter) -> Task<Void, Never>? {
-        guard let secondsLeft = manual.intervalProgress?.secondsLeft(at: manual.currentDate()) else { return nil }
-        return Task { [intervalEndSleep] in
-            guard (try? await intervalEndSleep(secondsLeft)) != nil else { return }
+        guard let secondsLeft = manual.intervalProgress?.secondsLeft(at: clock.date()) else { return nil }
+        return Task { [clock] in
+            guard (try? await clock.sleep(seconds: secondsLeft)) != nil else { return }
             waiter.expire()
         }
     }
