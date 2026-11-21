@@ -113,6 +113,9 @@ public struct NopeClock: Sendable {
 /// The time of a ``NopeClock/stepped(by:now:)`` clock: the system's `ContinuousClock` when it was
 /// made, moved on by each completed wait.
 final class SteppedTime: @unchecked Sendable {
+    /// Creates the time, starting at the system's `ContinuousClock` now.
+    init() {}
+
     /// Guards ``time``; waits finish on any task.
     private let lock = NSLock()
 

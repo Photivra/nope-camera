@@ -3297,6 +3297,118 @@ case storageFull
 
 The next frame wouldn't fit in the device's free storage (issue #44).
 
+## `BurstLimit`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+enum BurstLimit
+```
+
+How many photos one press takes in Burst (Burst Limit, issue #121,
+`docs/design/finish-1.0.md`, section 5): Off, the default, or 3, 5, 10, 20 or 50.
+
+With the limit Off, a tap takes one photo and holding takes photos until the shutter comes
+up, as before the setting existed. With a limit, a tap or a hold of the shutter (on screen or
+a hardware button) is to start a burst that runs to the count even after the finger lifts, and
+a second press is to stop it after the photo being taken (owner decisions, 2026-11-21).
+
+**Not used yet.** In 1.0.0 the setting is built in two parts: this value, its storage, its
+place in presets and Factory Defaults, and its Settings row and search come first; the burst
+behavior that reads ``frameCount`` (`DriveModel`, `CameraModel+Drive.swift`, the burst card)
+comes with the shutter work of `docs/plans/1.0.0-finish.md`, section 4.2. Until then the
+shutter works as with Off.
+
+What the setting doesn't change:
+- Siri and Shortcuts keep their own photo count (``PhotoShortcut/count``).
+- The Apple Watch shutter stays as it is (owner decision 9). Today it takes one photo in
+  Burst: `WatchCommandServer` sends ``PhotoShortcut`` with a count of 1, which takes a single
+  photo, or the exposure bracket on in the manual controls, whatever the drive mode.
+- Drive mode still starts in Single at every launch.
+
+Stored by its raw value, which never changes once released (``NopeSettings/burstLimit``).
+
+## `BurstLimit/fifty`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+case fifty
+```
+
+50 photos a press, the most a burst takes (``DriveModel/maximumBurstFrames``).
+
+## `BurstLimit/five`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+case five
+```
+
+5 photos a press.
+
+## `BurstLimit/frameCount`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+var frameCount: Int? { get }
+```
+
+How many photos one press takes, never more than ``DriveModel/maximumBurstFrames``, or
+`nil` for ``off``.
+
+## `BurstLimit/off`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+case off
+```
+
+No limit: a tap takes one photo, a hold takes photos until it ends. The default.
+
+## `BurstLimit/standard`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+static let standard: BurstLimit
+```
+
+The default: Off, so a burst works as before the setting existed.
+
+## `BurstLimit/ten`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+case ten
+```
+
+10 photos a press.
+
+## `BurstLimit/three`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+case three
+```
+
+3 photos a press.
+
+## `BurstLimit/twenty`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+case twenty
+```
+
+20 photos a press.
+
 ## `BurstProgress`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
@@ -4272,6 +4384,22 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The state of the most recent capture.
 
+## `CameraModel/clock`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var clock: NopeClock { get }
+```
+
+The clock the model and everything it owns read: dates from its wall clock, and every
+deadline, wait and duration from its monotonic clock (``NopeClock``, issue #107). An
+interface reads it to count down to a moment the model publishes, such as
+``IntervalProgress/nextPhotoStart``.
+
+Replacing it, or a part of it, later changes only what the model itself reads, such as
+``wallClock``; the manual controls and drive modes keep the clock the model was made with.
+
 ## `CameraModel/closeUpLens`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -4480,8 +4608,13 @@ public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
 Forgets that the astro helper turned night mode on, without changing night mode, when the
 helper ended without leaving it: the app was quit or closed by the system while the helper
 was on, and the helper is off at every launch. Night mode stays as it was, so a relaunch in
-the dark opens red (owner decision, 2026-11-18); it is the person's from then on. Call it
-once the camera screen shows. It does nothing while the helper is on.
+the dark opens red (owner decision, 2026-11-18); it is the person's from then on. It does
+nothing while the helper is on.
+
+Only the app calls it, once its camera screen shows; the Lock Screen camera never does
+(issue #108). The record is the app's state: a process that isn't the app, though it
+shows the same camera screen, must leave it, or leaving Astro in the app would no longer
+turn night mode off.
 
 Side effects: may store that night mode is no longer the helper's.
 
@@ -4552,6 +4685,17 @@ internal, declared in `Sources/NopeCore/CameraModel.swift`
 Whether the press of a hardware shutter button that is down now closed the viewer, so
 its release takes no photo.
 
+## `CameraModel/heatLevel`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var heatLevel: HeatLevel { get set }
+```
+
+The last heat level the backend reported. Keep Screen On reads it, to dim sooner when the
+phone is hot (``KeepScreenOnConditions/heatLevel``, issue #119).
+
 ## `CameraModel/holdsBackLevelTap`
 
 public, declared in `Sources/NopeCore/Level.swift`
@@ -4569,12 +4713,12 @@ The Taptic Engine moves the device, so a tap is kept away from exposures and ser
 the camera not running there is no live picture to level. An interface also holds the tap
 back while a sheet covers the camera or the app isn't active, which the model can't see.
 
-## `CameraModel/init(backend:saver:sleep:now:deviceStatusReader:currentDate:)`
+## `CameraModel/init(backend:saver:clock:deviceStatusReader:)`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
 
 ```swift
-@MainActor init(backend: any CaptureBackend, saver: PhotoSaver? = nil, sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) }, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now }, deviceStatusReader: (any DeviceStatusReading)? = nil, currentDate: @escaping @Sendable () -> Date = { Date() })
+@MainActor convenience init(backend: any CaptureBackend, saver: PhotoSaver? = nil, clock: NopeClock = .system, deviceStatusReader: (any DeviceStatusReading)? = nil)
 ```
 
 Creates a model in the ``CameraState/starting`` state.
@@ -4583,15 +4727,71 @@ Creates a model in the ``CameraState/starting`` state.
   - backend: The hardware, or a ``SimulatedCaptureBackend`` in tests and previews.
   - saver: The save pipeline. Without one, every photo ends in
     ``CaptureError/savingUnavailable`` and nothing is saved.
-  - sleep: Waits a number of seconds between interval photos and self-timer ticks. Tests
-    pass a faster one.
-  - now: Reads the clock that times each capture. Tests pass a scripted one.
+  - clock: The wall and monotonic clocks, and the wait, for everything the model times:
+    interval photos, timed series, self-timer ticks, Slow bursts and each capture.
+    ``NopeClock/system`` by default; tests pass one they move.
   - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
-  - currentDate: Reads the clock on the wall, for an interval series that stops after a
-    time. Tests pass a scripted one.
 
 A ``ManualCaptureBackend`` also gets manual controls (``manual``), and a
 ``LightCaptureBackend`` a torch (``light``).
+
+## `CameraModel/init(backend:saver:clock:measuredBy:deviceStatusReader:)`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor init(backend: any CaptureBackend, saver: PhotoSaver?, clock: NopeClock, measuredBy measure: @escaping @Sendable () -> ContinuousClock.Instant, deviceStatusReader: (any DeviceStatusReading)?)
+```
+
+Creates a model in the ``CameraState/starting`` state.
+
+- Parameters:
+  - backend: The hardware.
+  - saver: The save pipeline.
+  - clock: The clock for dates, deadlines and waits.
+  - measure: Reads the monotonic clock that times each capture, a burst's rate and the
+    camera's readings.
+  - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
+
+## `CameraModel/init(backend:saver:now:deviceStatusReader:)`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor convenience init(backend: any CaptureBackend, saver: PhotoSaver? = nil, now: @escaping @Sendable () -> ContinuousClock.Instant, deviceStatusReader: (any DeviceStatusReading)? = nil)
+```
+
+Creates a model whose monotonic clock is `now`, as tests that time captures pass; its
+wall clock and waits are the system's.
+
+- Parameters:
+  - backend: The hardware.
+  - saver: The save pipeline.
+  - now: Reads the monotonic clock.
+  - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
+
+## `CameraModel/init(backend:saver:sleep:now:deviceStatusReader:)`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor convenience init(backend: any CaptureBackend, saver: PhotoSaver? = nil, sleep: @escaping @Sendable (Double) async throws -> Void, now: (@Sendable () -> ContinuousClock.Instant)? = nil, deviceStatusReader: (any DeviceStatusReading)? = nil)
+```
+
+Creates a model whose waits are a sleep of a number of seconds, as tests written before
+``NopeClock`` pass (``NopeClock/stepped(by:now:)``).
+
+The waits move the clock's own monotonic time by what they asked for, so deadlines are
+reached in step with the sleep. Each capture, and the camera's readings, are still timed
+with `now`.
+
+- Parameters:
+  - backend: The hardware.
+  - saver: The save pipeline.
+  - sleep: Waits a number of seconds, throwing when cancelled.
+  - now: Reads a monotonic clock, or `nil` for the system's. When given, the waits read it
+    too, and the sleep must move it.
+  - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
 
 ## `CameraModel/intervalBlocker`
 
@@ -4605,18 +4805,6 @@ Why an interval series can't start now, or `nil` when it can as far as these rul
 (the camera must also be able to take a photo, ``canCapture``). An interface disables
 Start and says why; ``CameraIntent/manual(_:)`` with
 ``ManualControlIntent/startInterval`` is ignored while it isn't `nil`.
-
-## `CameraModel/intervalEndSleep`
-
-internal, declared in `Sources/NopeCore/CameraModel.swift`
-
-```swift
-@MainActor var intervalEndSleep: @Sendable (Double) async throws -> Void
-```
-
-Waits until the time of an interval series that stops after a time is up, while the
-series waits for the camera (`waitForIntervalPhoto()`); the time is in seconds. Tests
-replace it.
 
 ## `CameraModel/isBracketOn`
 
@@ -4883,7 +5071,8 @@ taken and saved.
 - Parameters:
   - kind: The kind of the activity already shown, or `nil`.
   - isInForeground: Whether the app is in the foreground.
-  - now: The current time, to say when a countdown ends.
+  - now: The wall clock's date now, which the dates of a countdown's end and a timed
+    series' time are counted from; the time left is measured on ``clock``.
 - Returns: The content, without night mode (the coordinator adds it).
 
 ## `CameraModel/liveActivityOutcome(after:)`
@@ -4949,7 +5138,8 @@ internal, declared in `Sources/NopeCore/CameraModel.swift`
 @MainActor let now: @Sendable () -> ContinuousClock.Instant
 ```
 
-Reads the monotonic clock, to time each capture for the photo's details (issue #53).
+Reads the monotonic clock, to time each capture for the photo's details (issue #53):
+``clock``'s, unless the model was made with the older seconds sleep and its own clock.
 
 ## `CameraModel/observeEvents()`
 
@@ -5526,7 +5716,7 @@ Side effects: may show the add-only Photos prompt; adds each photo to Photos.
 internal, declared in `Sources/NopeCore/CameraModel+Interval.swift`
 
 ```swift
-@MainActor func takeIntervalPhoto() async -> Bool
+@MainActor func takeIntervalPhoto() async -> IntervalPhotoOutcome
 ```
 
 Takes one photo of the running interval series, the way the shutter does. While the
@@ -5535,19 +5725,22 @@ skipping the photo; it also waits while another photo is being taken or saved (s
 the photo the shutter took just before the series started) or the compare view is open.
 A photo cut short by a pause is taken again after it.
 
-- Returns: Whether the photo was taken and saved. `false` ends the series: it was stopped,
-  the camera stopped for good, or the photo failed for another reason (the camera says
-  why).
+- Returns: ``IntervalPhotoOutcome/taken(startedAt:)`` when the photo was taken and saved,
+  with the moment it started;
+  ``IntervalPhotoOutcome/timeUp`` when the series' time was up while it waited; otherwise
+  ``IntervalPhotoOutcome/failed``: the camera stopped for good, or the photo failed for
+  another reason (the camera says why). A stopped series is cancelled and ignores it.
 
 ## `CameraModel/wallClock`
 
 internal, declared in `Sources/NopeCore/CameraModel.swift`
 
 ```swift
-@MainActor var wallClock: @Sendable () -> Date
+@MainActor var wallClock: @Sendable () -> Date { get set }
 ```
 
-Reads the device's clock for ``SessionPhoto/takenAt``. Tests replace it.
+Reads the wall clock of ``clock`` for ``SessionPhoto/takenAt``; setting it replaces that
+part of the clock.
 
 ## `CameraModel/watchStatus`
 
@@ -8427,15 +8620,19 @@ public, declared in `Sources/NopeCore/SelfTimer.swift`
 @MainActor final class Countdown
 ```
 
-A countdown in whole seconds that runs an action when it reaches zero: the self-timer.
+A countdown in whole seconds to a deadline that runs an action when it reaches zero: the
+self-timer.
 
 ``CameraModel`` owns one through ``DriveModel/countdown``. The shutter starts it in a timer
 drive mode (``DriveMode/timer(_:)``), and ``DriveIntent/startTimer(seconds:)`` starts it with
 any number of seconds, for example from a Siri or Shortcuts request with a delay (issue #62).
 An interface shows and announces ``remainingSeconds`` and gives a haptic tick when it changes.
 
-Battery rule (AGENTS.md, "Battery"): the countdown only sleeps between ticks; it does no
+Battery rule (AGENTS.md, "Battery"): the countdown only sleeps between numbers; it does no
 other work, and nothing keeps running once it ends or is cancelled.
+
+It counts to a fixed deadline on the camera model's monotonic clock (issue #122), so the
+photo is taken on time however late each wake is.
 
 ```swift
 countdown.start(seconds: 3) { await takePhoto() }
@@ -8452,17 +8649,42 @@ public, declared in `Sources/NopeCore/SelfTimer.swift`
 
 Stops the countdown without running its action. Does nothing when none runs.
 
+## `Countdown/deadline`
+
+public, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+@MainActor var deadline: ContinuousClock.Instant? { get set }
+```
+
+When the running countdown reaches zero, on the monotonic clock (``NopeClock/now``), or
+`nil` when none runs. Set when it starts; a late tick never moves it. The Live Activity
+draws its countdown to this moment.
+
+## `Countdown/init(clock:)`
+
+public, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+@MainActor init(clock: NopeClock)
+```
+
+Creates a countdown that isn't running.
+
+- Parameter clock: The clock it waits on. Tests pass one they move.
+
 ## `Countdown/init(sleep:)`
 
 public, declared in `Sources/NopeCore/SelfTimer.swift`
 
 ```swift
-@MainActor init(sleep: @escaping @Sendable (Double) async throws -> Void)
+@MainActor convenience init(sleep: @escaping @Sendable (Double) async throws -> Void)
 ```
 
-Creates a countdown that isn't running.
+Creates a countdown that waits on a sleep of a number of seconds, as tests written before
+``NopeClock`` pass (``NopeClock/stepped(by:now:)``).
 
-- Parameter sleep: Waits a number of seconds between ticks, throwing when cancelled.
+- Parameter sleep: Waits a number of seconds, throwing when cancelled.
 
 ## `Countdown/isRunning`
 
@@ -8482,7 +8704,9 @@ public, declared in `Sources/NopeCore/SelfTimer.swift`
 @MainActor var remainingSeconds: Int? { get set }
 ```
 
-The seconds left, from the starting number down to 1, or `nil` when no countdown runs.
+The seconds left, from the starting number down to 1, or `nil` when no countdown runs:
+the whole seconds until ``deadline``, rounded up. When the app is held up for more than a
+second, a number is skipped; the photo is still on time (issue #122).
 
 ## `Countdown/run(seconds:)`
 
@@ -8507,13 +8731,34 @@ public, declared in `Sources/NopeCore/SelfTimer.swift`
 @MainActor func start(seconds: Int, fire: @escaping @MainActor () async -> Void)
 ```
 
-Starts counting down, one tick a second, and runs the action when the count reaches zero.
-Does nothing when a countdown already runs or `seconds` is less than 1.
+Starts counting down to a deadline `seconds` from now, and runs the action when it is
+reached. Does nothing when a countdown already runs or `seconds` is less than 1.
+
+The count is the whole seconds left until the deadline, rounded up. Between numbers the
+countdown waits until the next whole second before the deadline, so the time the app takes
+to wake doesn't add up from tick to tick: a 10-second timer fires 10 seconds after it was
+started, late only by its last wake (issue #122). A wake more than a second late skips a
+number rather than moving the deadline.
 
 - Parameters:
   - seconds: The delay, in seconds.
   - fire: What happens at zero, such as taking a photo. It doesn't run when the countdown
     is cancelled.
+
+## `Countdown/wholeSeconds(until:at:)`
+
+internal, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+nonisolated static func wholeSeconds(until deadline: ContinuousClock.Instant, at now: ContinuousClock.Instant) -> Int
+```
+
+The whole seconds from a moment until the deadline, rounded up, and never less than 0.
+
+- Parameters:
+  - deadline: When the countdown reaches zero.
+  - now: The moment, on the same clock.
+- Returns: The seconds shown.
 
 ## `DarwinNotificationListeners`
 
@@ -9456,6 +9701,77 @@ public, declared in `Sources/NopeCore/DeviceStatus.swift`
 
 The battery's state, or `nil` on a device without a battery.
 
+## `DimAfter`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+enum DimAfter
+```
+
+How long Keep Screen On waits without a touch or photo before it dims the screen: the person's
+Dim After choice (issue #119, `docs/design/finish-1.0.md`, section 4), under Settings › Screen.
+
+``standard`` (2 minutes) is the time Keep Screen On used before the choice existed, so
+nothing changes for anyone who doesn't open the menu. With ``never`` the screen keeps its
+brightness, except in Low Power Mode and when the phone is hot, where it still dims after
+``KeepScreenOnRule/lowPowerDimDelay`` (``KeepScreenOnConditions/dimsSooner``); Battery Low
+and ``KeepScreenOnRule/limit`` apply under every choice. The choice belongs to Keep Screen
+On only: an interval series or an Astro run still dims the screen at once
+(``SeriesScreenKeeper``; owner decision 8, `docs/plans/1.0.0-finish.md`, section 6).
+
+Stored by its raw value, which never changes once released (``NopeSettings/dimAfter``).
+
+## `DimAfter/fiveMinutes`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+case fiveMinutes
+```
+
+After 5 minutes.
+
+## `DimAfter/never`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+case never
+```
+
+Never, apart from Low Power Mode and heat. Uses more battery and can warm the phone.
+
+## `DimAfter/oneMinute`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+case oneMinute
+```
+
+After 1 minute.
+
+## `DimAfter/standard`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+static let standard: DimAfter
+```
+
+The default: 2 minutes, Keep Screen On's time before the choice existed.
+
+## `DimAfter/twoMinutes`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+case twoMinutes
+```
+
+After 2 minutes: the default.
+
 ## `DistortionCorrection`
 
 public, declared in `Sources/NopeCore/DistortionCorrection.swift`
@@ -9782,6 +10098,22 @@ Marks the burst as ended.
 
 - Parameter end: Why it ended.
 
+## `DriveModel/init(clock:measuredBy:)`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor init(clock: NopeClock, measuredBy measure: @escaping @Sendable () -> ContinuousClock.Instant)
+```
+
+Creates the model in single mode, at the Fast burst speed.
+
+- Parameters:
+  - clock: The camera model's clock: the countdown counts to a moment of it, and Slow
+    photos wait on it.
+  - measure: Reads the monotonic clock that times a burst's photos: `clock`'s, unless the
+    camera model was made with the older seconds sleep.
+
 ## `DriveModel/init(sleep:now:)`
 
 internal, declared in `Sources/NopeCore/DriveMode.swift`
@@ -9790,7 +10122,9 @@ internal, declared in `Sources/NopeCore/DriveMode.swift`
 @MainActor init(sleep: @escaping @Sendable (Double) async throws -> Void, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now })
 ```
 
-Creates the model in single mode, at the Fast burst speed.
+Creates the model with a sleep of a number of seconds, as tests written before
+``NopeClock`` pass: Slow photos wait on it directly, and the countdown on a clock stepped by
+it (``NopeClock/stepped(by:now:)``).
 
 - Parameters:
   - sleep: Waits a number of seconds between countdown ticks and between Slow photos.
@@ -11499,6 +11833,80 @@ let viewfinderPoint: FramePoint
 
 The tapped point in the viewfinder, as drawn: where an interface draws the focus square.
 
+## `ForegroundMove`
+
+public, declared in `Sources/NopeCore/AssistantForeground.swift`
+
+```swift
+enum ForegroundMove
+```
+
+What an assistant action that needs the camera does to bring the app on screen, once the
+Assistant Access check allowed it (issue #126).
+
+Siri and Shortcuts start a gated action in the background mode, so a refused or cancelled
+request never opens the app (issue #82). The camera runs only while the app is on screen, so
+an allowed request that needs it either finds the app already there, moves it to the
+foreground (App Intents' `continueInForeground`), or, where the system can't do that (a
+voice-only request, for example), ends with a sentence that says to open the app. Apple's
+guidance is to check `systemContext.currentMode.canContinueInForeground` first, because
+`continueInForeground` throws where it can't
+([Apple: continueInForeground](https://developer.apple.com/documentation/appintents/appintent/continueinforeground(_:alwaysconfirm:))).
+
+The intent reads the system's values and does what this says; the decision holds no
+App Intents types, so it is unit tested here.
+
+## `ForegroundMove/cannotOpen`
+
+public, declared in `Sources/NopeCore/AssistantForeground.swift`
+
+```swift
+case cannotOpen
+```
+
+The app isn't on screen and the system can't open it from this request. End with the
+sentence that says to open the app; nothing is taken.
+
+## `ForegroundMove/continueInForeground`
+
+public, declared in `Sources/NopeCore/AssistantForeground.swift`
+
+```swift
+case continueInForeground
+```
+
+Move the app to the foreground, then hand the request to the camera screen.
+
+## `ForegroundMove/init(runsInForeground:appIsOnScreen:canContinueInForeground:)`
+
+public, declared in `Sources/NopeCore/AssistantForeground.swift`
+
+```swift
+init(runsInForeground: Bool, appIsOnScreen: Bool, canContinueInForeground: Bool)
+```
+
+Decides the move.
+
+- Parameters:
+  - runsInForeground: Whether the intent already runs in the foreground mode
+    (`systemContext.currentMode == .foreground`).
+  - appIsOnScreen: Whether the app's window is on screen, active or covered by Siri
+    (`UIApplication.applicationState` isn't `.background`). The camera keeps running
+    then, so moving isn't needed, and a voice request that can't move still works.
+  - canContinueInForeground: Whether the system can move this request to the
+    foreground (`systemContext.currentMode.canContinueInForeground`).
+
+## `ForegroundMove/none`
+
+public, declared in `Sources/NopeCore/AssistantForeground.swift`
+
+```swift
+case none
+```
+
+The app is already on screen, or the intent already runs in the foreground: the camera
+screen takes the request as it is.
+
 ## `FrameAnalysis`
 
 public, declared in `Sources/NopeCore/FrameAnalysis.swift`
@@ -12558,6 +12966,49 @@ case stopped
 It ended early: it was stopped, the camera stopped for good, or a photo couldn't be taken
 or saved (the camera says why).
 
+## `IntervalPhotoOutcome`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+enum IntervalPhotoOutcome
+```
+
+What came of one photo of an interval series (`CameraModel.takeIntervalPhoto()`).
+
+## `IntervalPhotoOutcome/failed`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+case failed
+```
+
+The photo couldn't be taken or saved, or the camera stopped for good: the series stopped,
+and the camera says why.
+
+## `IntervalPhotoOutcome/taken(startedAt:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+case taken(startedAt: ContinuousClock.Instant)
+```
+
+The photo was taken and saved. `startedAt` is when it really started, on the monotonic
+clock, after any wait for the camera: the next photo is due one interval later.
+
+## `IntervalPhotoOutcome/timeUp`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+case timeUp
+```
+
+The series stops after a time, and the time was up while the photo waited for the camera:
+the series finished.
+
 ## `IntervalProgress`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
@@ -12568,26 +13019,66 @@ struct IntervalProgress
 
 How far a running interval series has got.
 
+## `IntervalProgress/deadline`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let deadline: ContinuousClock.Instant?
+```
+
+When a series that stops after a time ends, on the monotonic clock (``NopeClock/now``), or
+`nil` for a series that stops after a number of photos. It is set when the series starts
+and keeps running while the series is paused and while the device sleeps
+(``IntervalSettings/StopAfter/time``); a change of the device's time doesn't move it
+(issue #106). Show it as a date with ``endDate(clock:)``.
+
+## `IntervalProgress/duration`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let duration: Duration?
+```
+
+How long a series that stops after a time runs, or `nil` for a series that stops after a
+number of photos.
+
+## `IntervalProgress/endDate(clock:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func endDate(clock: NopeClock) -> Date?
+```
+
+When a series that stops after a time ends, as a date on the wall clock for showing it
+("Ends at 9:41 PM") and for the Live Activity: now's date plus the time left, worked out
+at each call, so it follows a change of the device's time without moving the end.
+
+- Parameter clock: The camera model's clock (``CameraModel/clock``).
+- Returns: The end's date, or `nil` for a series that stops after a number of photos.
+
 ## `IntervalProgress/fractionDone(at:)`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
 
 ```swift
-func fractionDone(at now: Date) -> Double
+func fractionDone(at now: ContinuousClock.Instant) -> Double
 ```
 
 How much of the series is done, from 0 to 1: by time for a series that stops after a
 time, otherwise by the photos taken.
 
-- Parameter now: The current time.
+- Parameter now: The current moment of the monotonic clock (``NopeClock/now``).
 - Returns: The share done.
 
-## `IntervalProgress/init(taken:total:isPaused:timeSpan:)`
+## `IntervalProgress/init(taken:total:isPaused:deadline:duration:nextPhotoStart:isBehindSchedule:)`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
 
 ```swift
-init(taken: Int, total: Int?, isPaused: Bool = false, timeSpan: ClosedRange<Date>? = nil)
+init(taken: Int, total: Int?, isPaused: Bool = false, deadline: ContinuousClock.Instant? = nil, duration: Duration? = nil, nextPhotoStart: ContinuousClock.Instant? = nil, isBehindSchedule: Bool = false)
 ```
 
 Creates a progress value.
@@ -12596,7 +13087,22 @@ Creates a progress value.
   - taken: The photos taken so far.
   - total: The photos in the series, or `nil` for a series that stops after a time.
   - isPaused: Whether the series is paused.
-  - timeSpan: When a series that stops after a time started and ends, or `nil`.
+  - deadline: When a series that stops after a time ends, on the monotonic clock, or `nil`.
+  - duration: How long a series that stops after a time runs, or `nil`.
+  - nextPhotoStart: When the next photo is due to start, on the monotonic clock, or `nil`.
+  - isBehindSchedule: Whether the last photo took longer than the interval.
+
+## `IntervalProgress/isBehindSchedule`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let isBehindSchedule: Bool
+```
+
+Whether the last photo took longer than the interval, so the next one starts as soon as it
+was saved instead of on schedule. It is cleared once a photo fits its interval again. An
+interface says "Each photo takes longer than the interval" in place of the countdown.
 
 ## `IntervalProgress/isPaused`
 
@@ -12609,18 +13115,41 @@ let isPaused: Bool
 Whether the series is paused: the app is out of the foreground or the camera is paused
 (an interruption, heat, or starting again). It continues when both are back.
 
+## `IntervalProgress/isTimed`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var isTimed: Bool { get }
+```
+
+Whether the series stops after a time.
+
+## `IntervalProgress/nextPhotoStart`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let nextPhotoStart: ContinuousClock.Instant?
+```
+
+When the next photo is due to start, on the monotonic clock: one interval after the last
+photo started (issue #123), or `nil` before the first photo is taken. An interface counts
+"Next photo in" down to it. It may be past: the photo is then being taken, waits for the
+camera, or starts at once because the series is behind schedule.
+
 ## `IntervalProgress/secondsLeft(at:)`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
 
 ```swift
-func secondsLeft(at now: Date) -> Double?
+func secondsLeft(at now: ContinuousClock.Instant) -> Double?
 ```
 
 The time left of a series that stops after a time, in seconds, never less than 0, or
 `nil` for a series that stops after a number of photos.
 
-- Parameter now: The current time.
+- Parameter now: The current moment of the monotonic clock (``NopeClock/now``).
 - Returns: The seconds until the end, or `nil`.
 
 ## `IntervalProgress/taken`
@@ -12634,17 +13163,21 @@ let taken: Int
 The photos taken so far. A photo is counted only once it is taken and saved; while the
 series is paused, nothing is taken or counted.
 
-## `IntervalProgress/timeSpan`
+## `IntervalProgress/timeSpan(date:now:)`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
 
 ```swift
-let timeSpan: ClosedRange<Date>?
+func timeSpan(date: Date, now: ContinuousClock.Instant) -> ClosedRange<Date>?
 ```
 
-When a series that stops after a time started and when it ends, or `nil` for a series
-that stops after a number of photos. The end is fixed when the series starts: the time
-keeps running while the series is paused (``IntervalSettings/StopAfter/time``).
+When a series that stops after a time started and ends, as dates on the wall clock, worked
+out from now's date: the Live Activity draws its time left and bar from them.
+
+- Parameters:
+  - date: The wall clock's date now.
+  - now: The monotonic clock's moment now.
+- Returns: The span, or `nil` for a series that stops after a number of photos.
 
 ## `IntervalProgress/total`
 
@@ -12669,17 +13202,20 @@ This progress, marked as paused or running.
 - Parameter isPaused: Whether the series is paused.
 - Returns: The progress.
 
-## `IntervalProgress/with(taken:)`
+## `IntervalProgress/with(taken:nextPhotoStart:isBehindSchedule:)`
 
 internal, declared in `Sources/NopeCore/Bracketing.swift`
 
 ```swift
-func with(taken: Int) -> IntervalProgress
+func with(taken: Int, nextPhotoStart: ContinuousClock.Instant, isBehindSchedule: Bool) -> IntervalProgress
 ```
 
-This progress with another count of photos taken, running.
+This progress after another photo was taken, running.
 
-- Parameter taken: The photos taken so far.
+- Parameters:
+  - taken: The photos taken so far.
+  - nextPhotoStart: When the next photo is due to start, on the monotonic clock.
+  - isBehindSchedule: Whether the photo took longer than the interval.
 - Returns: The progress.
 
 ## `IntervalSettings`
@@ -12724,9 +13260,10 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 case time
 ```
 
-The series ends once ``IntervalSettings/duration`` has passed since it started, by the
-clock on the wall: the time keeps running while the series is paused, so a series of
-one hour started at 8:41 PM ends at 9:41 PM (``IntervalProgress/timeSpan``).
+The series ends once ``IntervalSettings/duration`` has passed since it started, on the
+monotonic clock: the time keeps running while the series is paused and while the
+device sleeps, so a series of one hour started at 8:41 PM ends at 9:41 PM, and a change
+of the device's time doesn't make it end early or late (``IntervalProgress/deadline``).
 
 ## `IntervalSettings/count`
 
@@ -12825,7 +13362,7 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 let interval: Double
 ```
 
-The time from one photo to the next, in seconds.
+The time from the start of one photo to the start of the next, in seconds.
 
 ## `IntervalSettings/intervalChoices`
 
@@ -12911,10 +13448,10 @@ var maximumPhotoCount: Int { get }
 ```
 
 The most photos the series can take: ``count``, or for a series that stops after a time,
-one photo at the start and one after each whole interval that starts before the time is
-up. Each photo also takes time to be taken and saved before the next interval starts
-(`ManualControlsModel`), so a timed series usually takes fewer; an interface says "at
-most".
+one photo at the start and one at each start, an interval apart, before the time is up.
+Photos are spaced start to start (`ManualControlsModel`, issue #123), so the series takes
+this many while each photo fits its interval; a photo that takes longer delays the ones
+after it, so an interface says "at most".
 
 ## `IntervalSettings/standard`
 
@@ -12924,7 +13461,7 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 static let standard: IntervalSettings
 ```
 
-The default series: 10 photos, 10 seconds apart.
+The default series: 10 photos, starting one every 10 seconds.
 
 ## `IntervalSettings/standardDuration`
 
@@ -13233,12 +13770,59 @@ An interface fills it in and passes it to ``SeriesScreenKeeper/update(isSeriesRu
 whenever a value changes. Every value is a fact the interface or the model already has; none
 needs a new sensor.
 
-## `KeepScreenOnConditions/init(isSwitchOn:isActive:isCameraInFront:isCameraRunning:isBatteryLow:isLowPowerMode:)`
+## `KeepScreenOnConditions/dimAfter`
 
 public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
 
 ```swift
-init(isSwitchOn: Bool, isActive: Bool, isCameraInFront: Bool, isCameraRunning: Bool, isBatteryLow: Bool, isLowPowerMode: Bool)
+var dimAfter: DimAfter
+```
+
+The person's Dim After choice (``NopeSettings/dimAfter``).
+
+## `KeepScreenOnConditions/dimsSooner`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var dimsSooner: Bool { get }
+```
+
+Whether the screen dims after ``KeepScreenOnRule/lowPowerDimDelay`` whatever
+``dimAfter`` says: in Low Power Mode, and when the device is at ``hotHeatLevel`` or above.
+
+## `KeepScreenOnConditions/heatLevel`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var heatLevel: HeatLevel
+```
+
+How hot the device is, as the camera last reported it (``CameraModel/heatLevel``). At
+``hotHeatLevel`` or above the screen dims sooner, as in Low Power Mode.
+
+## `KeepScreenOnConditions/hotHeatLevel`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+static let hotHeatLevel: HeatLevel
+```
+
+The heat level from which the screen dims after ``KeepScreenOnRule/lowPowerDimDelay``
+whatever ``dimAfter`` says: `serious`, where the system "may reduce performance" and
+Apple asks apps to reduce their work
+([ProcessInfo.ThermalState.serious](https://developer.apple.com/documentation/foundation/processinfo/thermalstate/serious)).
+Owner decision 7 (`docs/plans/1.0.0-finish.md`, section 6). At `critical` the camera
+pauses, so Keep Screen On isn't used at all.
+
+## `KeepScreenOnConditions/init(isSwitchOn:isActive:isCameraInFront:isCameraRunning:isBatteryLow:isLowPowerMode:dimAfter:heatLevel:)`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+init(isSwitchOn: Bool, isActive: Bool, isCameraInFront: Bool, isCameraRunning: Bool, isBatteryLow: Bool, isLowPowerMode: Bool, dimAfter: DimAfter = .standard, heatLevel: HeatLevel = .nominal)
 ```
 
 Creates the conditions.
@@ -13250,6 +13834,8 @@ Creates the conditions.
   - isCameraRunning: Whether the camera is running.
   - isBatteryLow: Whether the Battery Low warning shows.
   - isLowPowerMode: Whether Low Power Mode is on.
+  - dimAfter: The Dim After choice; ``DimAfter/standard`` by default.
+  - heatLevel: How hot the device is; `nominal` by default.
 
 ## `KeepScreenOnConditions/isActive`
 
@@ -13420,8 +14006,10 @@ struct KeepScreenOnRule
 ```
 
 The rule of Keep Screen On (issue #97, `docs/design/keep-screen-on.md`): while it is used,
-the screen stays on until ``limit`` after the last touch or photo, and dims after
-``dimDelay`` without one (``lowPowerDimDelay`` in Low Power Mode).
+the screen stays on until ``limit`` after the last touch or photo, and dims after the
+person's Dim After choice without one (issue #119, ``dimDelays``), or after
+``lowPowerDimDelay`` in Low Power Mode and when the phone is hot
+(``KeepScreenOnConditions/dimsSooner``). With Dim After set to Never it doesn't dim otherwise.
 
 A pure value: it reads no clock and changes nothing. ``SeriesScreenKeeper`` gives it the
 conditions, the time of the last activity and the time now, applies its answer to the screen
@@ -13433,6 +14021,84 @@ The times are proposals from the design, not measurements; the UI tests shorten 
 let decision = KeepScreenOnRule.standard.decide(conditions, lastActivity: touched, now: .now)
 screen.isIdleTimerDisabled = decision.keepsAwake
 ```
+
+## `KeepScreenOnRule/DimDelays`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+struct DimDelays
+```
+
+How long without activity before the screen dims, for each Dim After choice but Never.
+
+## `KeepScreenOnRule/DimDelays/delay(for:)`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+func delay(for choice: DimAfter) -> Duration?
+```
+
+The delay of a choice.
+
+- Parameter choice: The Dim After choice.
+- Returns: The delay, or `nil` for ``DimAfter/never``.
+
+## `KeepScreenOnRule/DimDelays/fiveMinutes`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var fiveMinutes: Duration
+```
+
+For ``DimAfter/fiveMinutes``.
+
+## `KeepScreenOnRule/DimDelays/init(oneMinute:twoMinutes:fiveMinutes:)`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+init(oneMinute: Duration, twoMinutes: Duration, fiveMinutes: Duration)
+```
+
+Creates the delays.
+
+- Parameters:
+  - oneMinute: The delay for 1 Minute.
+  - twoMinutes: The delay for 2 Minutes.
+  - fiveMinutes: The delay for 5 Minutes.
+
+## `KeepScreenOnRule/DimDelays/oneMinute`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var oneMinute: Duration
+```
+
+For ``DimAfter/oneMinute``.
+
+## `KeepScreenOnRule/DimDelays/standard`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+static let standard: KeepScreenOnRule.DimDelays
+```
+
+The design's times: 1, 2 and 5 minutes (`docs/design/finish-1.0.md`, 4.1).
+
+## `KeepScreenOnRule/DimDelays/twoMinutes`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var twoMinutes: Duration
+```
+
+For ``DimAfter/twoMinutes``.
 
 ## `KeepScreenOnRule/decide(_:lastActivity:now:)`
 
@@ -13450,18 +14116,18 @@ What the screen should do now.
     took a photo, or when the setting last started being used.
   - now: The time now, on the same clock.
 - Returns: Whether the idle timer is off, whether the screen is dimmed, and when that
-  next changes. After ``limit`` the idle timer is on again and the screen stays dimmed
-  until it is touched or locks.
+  next changes. After ``limit`` the idle timer is on again and a dimmed screen stays
+  dimmed until it is touched or locks.
 
-## `KeepScreenOnRule/dimDelay`
+## `KeepScreenOnRule/dimDelays`
 
 public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
 
 ```swift
-var dimDelay: Duration
+var dimDelays: DimDelays
 ```
 
-How long without activity before the screen dims: 2 minutes.
+How long without activity before the screen dims, for each Dim After choice.
 
 ## `KeepScreenOnRule/init(dimDelay:lowPowerDimDelay:limit:)`
 
@@ -13471,11 +14137,27 @@ public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
 init(dimDelay: Duration, lowPowerDimDelay: Duration, limit: Duration)
 ```
 
+Creates a rule that dims after the same time for every Dim After choice but Never, as the
+UI tests and the clock test need.
+
+- Parameters:
+  - dimDelay: How long without activity before the screen dims, for 1, 2 and 5 minutes.
+  - lowPowerDimDelay: The same in Low Power Mode and when the phone is hot.
+  - limit: How long without activity before the phone's Auto-Lock applies again.
+
+## `KeepScreenOnRule/init(dimDelays:lowPowerDimDelay:limit:)`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+init(dimDelays: DimDelays, lowPowerDimDelay: Duration, limit: Duration)
+```
+
 Creates a rule with its times.
 
 - Parameters:
-  - dimDelay: How long without activity before the screen dims.
-  - lowPowerDimDelay: The same in Low Power Mode.
+  - dimDelays: How long without activity before the screen dims, for each choice.
+  - lowPowerDimDelay: The same in Low Power Mode and when the phone is hot.
   - limit: How long without activity before the phone's Auto-Lock applies again.
 
 ## `KeepScreenOnRule/limit`
@@ -13496,8 +14178,8 @@ public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
 var lowPowerDimDelay: Duration
 ```
 
-How long without activity before the screen dims in Low Power Mode: 30 seconds, iOS's
-own shortest Auto-Lock time.
+How long without activity before the screen dims in Low Power Mode and when the phone is
+hot, whatever Dim After says: 30 seconds, iOS's own shortest Auto-Lock time.
 
 ## `KeepScreenOnRule/standard`
 
@@ -13507,7 +14189,7 @@ public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
 static let standard: KeepScreenOnRule
 ```
 
-The times of the design: 2 minutes, 30 seconds and 30 minutes.
+The times of the design: 1, 2 or 5 minutes, 30 seconds and 30 minutes.
 
 ## `Lens`
 
@@ -15052,6 +15734,18 @@ var countdownEnd: Date?
 When the countdown ends, while ``phase`` is ``Phase/countingDown``; otherwise `nil`. The
 system counts down to it on screen, so the content isn't updated every second.
 
+## `LiveActivityContent/hasDates`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var hasDates: Bool { get }
+```
+
+Whether the content holds a date iOS draws from: a countdown's end (``countdownEnd``) or a
+timed series' time (``seriesTime``). Such content is sent again when the device's clock
+changes (``LiveActivityCoordinator/clockChanged(_:)``).
+
 ## `LiveActivityContent/hasEnded`
 
 public, declared in `Sources/NopeCore/LiveActivity.swift`
@@ -15146,7 +15840,7 @@ var seriesTime: ClosedRange<Date>?
 When an interval series that stops after a time started and when it ends, or `nil`. The
 system counts down to the end and fills the progress bar by time on screen, so the content
 isn't updated for it. The time keeps running while the series is paused
-(``IntervalProgress/timeSpan``).
+(``IntervalProgress/timeSpan(date:now:)``).
 
 ## `LiveActivityContent/showsTimeLeft`
 
@@ -15237,7 +15931,7 @@ Starts, updates and ends the Live Activity that shows a series and its saving on
 Screen and in the Dynamic Island (issue #64), and asks for time to finish saving when the app
 leaves the foreground.
 
-The app owns one for its lifetime, runs ``observe(_:)`` while the camera screen is shown, and
+The app owns one for its lifetime, runs ``observe(_:notifications:)`` while the camera screen is shown, and
 keeps ``isEnabled`` (the Settings switch, off by default), ``isInForeground``, ``isActive``
 and ``isNightMode`` current. The coordinator follows the camera model; it holds no camera
 rules.
@@ -15248,9 +15942,10 @@ rules.
   Live Activities.
 - **Updates:** local only, no push and no network. While the app is in the foreground the
   activity isn't on screen, so a change of the counts alone is sent at most every
-  ``minimumUpdateInterval``; a change of phase, and the content when the app leaves the
-  foreground, are sent at once. A countdown is drawn by the system from its end time, with no
-  updates (AGENTS.md, "Battery": no timers that keep running).
+  ``minimumUpdateInterval``, measured on the monotonic clock (issue #125); a change of phase,
+  the content when the app leaves the foreground, and the dates after a change of the
+  device's clock (``clockChanged(_:)``) are sent at once. A countdown is drawn by the system
+  from its end time, with no updates (AGENTS.md, "Battery": no timers that keep running).
 - **End:** when the run ends, at once if the app is in the foreground, where the camera screen
   says how it went; otherwise its final content stays on the Lock Screen for
   ``endedActivityDuration``. Stop on the activity ends it at once (``stopSeries(_:)``).
@@ -15271,6 +15966,22 @@ Brings the background time and the activity in line with the model's state.
 
 - Parameter model: The camera model.
 
+## `LiveActivityCoordinator/clockChanged(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
+
+```swift
+@MainActor func clockChanged(_ model: CameraModel)
+```
+
+Sends the shown activity's content again after the device's clock changed, when it holds a
+date: a countdown's end or a timed series' time. iOS draws those from absolute dates, which
+are stale after the change; the content's dates are worked out again from the monotonic
+clock, so the time left the activity shows is right at once (issue #125). Nothing is sent
+for an activity without dates.
+
+- Parameter model: The camera model.
+
 ## `LiveActivityCoordinator/endedActivityDuration`
 
 public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
@@ -15282,12 +15993,12 @@ public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
 How long an activity that ended while the app was out of the foreground stays on the Lock
 Screen, in seconds: two minutes, "a short time after saving finishes" (issue #64).
 
-## `LiveActivityCoordinator/init(presenter:backgroundTime:now:)`
+## `LiveActivityCoordinator/init(presenter:backgroundTime:clock:)`
 
 public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
 
 ```swift
-@MainActor init(presenter: any LiveActivityPresenting, backgroundTime: any BackgroundTimeRequesting, now: @escaping () -> Date = Date.init)
+@MainActor init(presenter: any LiveActivityPresenting, backgroundTime: any BackgroundTimeRequesting, clock: NopeClock = .system)
 ```
 
 Creates a coordinator with no activity shown.
@@ -15295,7 +16006,8 @@ Creates a coordinator with no activity shown.
 - Parameters:
   - presenter: Shows the activity.
   - backgroundTime: Asks for time to finish saving.
-  - now: Reads the current time. Tests pass their own.
+  - clock: The clock, the same as the camera model's. ``NopeClock/system`` by default;
+    tests pass one they move.
 
 ## `LiveActivityCoordinator/isActive`
 
@@ -15355,19 +16067,25 @@ app is in the foreground and the activity isn't on screen. An assumption to be c
 device: rare enough to cost no noticeable battery, often enough to stay roughly current if
 the system shows the activity.
 
-## `LiveActivityCoordinator/observe(_:)`
+## `LiveActivityCoordinator/observe(_:notifications:)`
 
 public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
 
 ```swift
-@MainActor func observe(_ model: CameraModel) async
+@MainActor func observe(_ model: CameraModel, notifications: NotificationCenter = .default) async
 ```
 
 Follows the model until the calling task is cancelled: applies every change of the model
 or of ``isEnabled``, ``isInForeground``, ``isActive`` and ``isNightMode`` as it happens.
 Nothing polls; it waits for Observation's change notifications.
 
-- Parameter model: The camera model.
+While it follows the model it also listens for the system's notice that the device's clock
+changed (`NSSystemClockDidChange`), and then sends the content again (``clockChanged(_:)``).
+
+- Parameters:
+  - model: The camera model.
+  - notifications: Where the clock-change notice is posted: the default center, or a
+    test's own.
 
 ## `LiveActivityCoordinator/shown`
 
@@ -17387,6 +18105,17 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 The selected lens's manual capabilities.
 
+## `ManualControlsModel/clock`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor let clock: NopeClock
+```
+
+The clock of the camera model: interval photos wait on it, and a timed series' end is a
+moment of its monotonic clock.
+
 ## `ManualControlsModel/closeUpDetector`
 
 internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
@@ -17406,16 +18135,6 @@ internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
 ```
 
 Whether the person dismissed the close-up suggestion on this lens.
-
-## `ManualControlsModel/currentDate`
-
-internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
-
-```swift
-@MainActor let currentDate: @Sendable () -> Date
-```
-
-Reads the clock on the wall, for the end of a series that stops after a time.
 
 ## `ManualControlsModel/dismissCloseUpSuggestion()`
 
@@ -17534,7 +18253,7 @@ system's behavior; the app sets it from the person's Face Detection setting
 internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 ```swift
-@MainActor func handle(_ intent: ManualControlIntent, capture: @escaping @MainActor () async -> Bool) async
+@MainActor func handle(_ intent: ManualControlIntent, capture: @escaping @MainActor () async -> IntervalPhotoOutcome) async
 ```
 
 Handles one intent. ``CameraModel/send(_:)`` calls it.
@@ -17546,7 +18265,7 @@ planned around the camera's reading), so they always apply.
 - Parameters:
   - intent: The intent.
   - capture: Takes one photo of an interval series the way the shutter does, waiting
-    while the series is paused, and returns whether the photo was taken and saved.
+    while the series is paused, and says what came of it.
 
 ## `ManualControlsModel/holdsControls`
 
@@ -17560,23 +18279,51 @@ Whether the camera's controls are held by a focus bracket, which sets focus, exp
 white balance itself while it runs or while an end of its range is set. Changes to the
 settings are kept, and applied when the hold ends.
 
-## `ManualControlsModel/init(backend:sleep:currentDate:now:)`
+## `ManualControlsModel/init(backend:clock:)`
 
 public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 ```swift
-@MainActor init(backend: (any ManualCaptureBackend)?, sleep: @escaping @Sendable (Double) async throws -> Void, currentDate: @escaping @Sendable () -> Date = { Date() }, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now })
+@MainActor convenience init(backend: (any ManualCaptureBackend)?, clock: NopeClock = .system)
 ```
 
 Creates the model.
 
 - Parameters:
   - backend: The hardware, or `nil` when it has no manual controls.
+  - clock: The clock interval photos wait on and a timed series ends by. Its monotonic
+    clock also times the camera's readings.
+
+## `ManualControlsModel/init(backend:clock:measuredBy:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor init(backend: (any ManualCaptureBackend)?, clock: NopeClock, measuredBy measure: @escaping @Sendable () -> ContinuousClock.Instant)
+```
+
+Creates the model.
+
+- Parameters:
+  - backend: The hardware, or `nil` when it has no manual controls.
+  - clock: The clock interval photos wait on and a timed series ends by.
+  - measure: Reads the monotonic clock that times the camera's readings.
+
+## `ManualControlsModel/init(backend:sleep:now:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor convenience init(backend: (any ManualCaptureBackend)?, sleep: @escaping @Sendable (Double) async throws -> Void, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now })
+```
+
+Creates the model with a sleep of a number of seconds, as tests written before
+``NopeClock`` pass (``NopeClock/stepped(by:now:)``).
+
+- Parameters:
+  - backend: The hardware, or `nil` when it has no manual controls.
   - sleep: Waits a number of seconds between interval photos, throwing when cancelled.
-  - currentDate: Reads the clock on the wall, for a series that stops after a time. Tests
-    pass a scripted one.
-  - now: Reads the monotonic clock, for when each reading arrived. Tests pass a scripted
-    one.
+  - now: Reads the monotonic clock, for when each reading arrived.
 
 ## `ManualControlsModel/interval`
 
@@ -17616,7 +18363,20 @@ internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
 @MainActor var isIntervalTimeUp: Bool { get }
 ```
 
-Whether the running series stops after a time and that time is up.
+Whether the running series stops after a time and that time is up, on the monotonic clock.
+
+## `ManualControlsModel/isShutterLongerThanInterval`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var isShutterLongerThanInterval: Bool { get }
+```
+
+Whether the manual shutter time is longer than the series' interval, so its photos follow
+one another rather than keep to the interval (decision 10 of the 1.0.0 plan): an interface
+says so in Interval Shooting before the series starts. Only a shutter set by hand is known
+in advance; in full auto, or with an automatic shutter, it is `false`.
 
 ## `ManualControlsModel/isSupported`
 
@@ -20938,6 +21698,152 @@ case wholeFrame
 
 The whole frame.
 
+## `NopeClock`
+
+public, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+struct NopeClock
+```
+
+The one source of time for the camera model and everything it owns (issue #107): the wall
+clock for dates people see or that go into files, and the monotonic clock for everything that
+measures elapsed time.
+
+``CameraModel`` takes one and passes it to its manual controls, drive modes and self-timer;
+``LiveActivityCoordinator`` takes the same one. Tests replace this one value, usually with a
+clock they move by hand, instead of a separate sleep and two separate clocks.
+
+The two readings are kept apart on purpose:
+
+- ``date`` is the clock on the wall. The person can change it, and iOS changes it with the
+  time zone and network time, so it is only used for a photo's date, an end time shown on
+  screen and the dates a Live Activity needs.
+- ``now`` is `ContinuousClock`, which a change of the device's time doesn't move and which
+  keeps counting while the device sleeps ([Apple: ContinuousClock]
+  (https://developer.apple.com/documentation/swift/continuousclock)). Every deadline, wait and
+  duration is measured on it: the end of a timed series, the start of the next interval photo,
+  the self-timer and the limit on Live Activity updates.
+
+`scripts/check-architecture.sh` fails on a direct read of the wall clock (`Date()` or
+`Date.now`) anywhere else in `NopeCore`, so the two can't be mixed up again.
+
+```swift
+let model = CameraModel(backend: backend, saver: saver, clock: .system)
+let deadline = model.clock.now() + .seconds(10)
+try await model.clock.sleep(deadline)
+```
+
+## `NopeClock/date`
+
+public, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+var date: @Sendable () -> Date
+```
+
+Reads the wall clock: only for dates people see or that go into files.
+
+## `NopeClock/date(of:)`
+
+public, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+func date(of instant: ContinuousClock.Instant) -> Date
+```
+
+The date on the wall clock of a moment on the monotonic clock: now's date plus the time
+until that moment. Worked out when it is needed, so a change of the device's time since the
+moment was set doesn't move it on the monotonic clock, only the date it is shown as.
+
+- Parameter instant: A moment of ``now``, past or future.
+- Returns: Its date.
+
+## `NopeClock/init(date:now:sleep:)`
+
+public, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+init(date: @escaping @Sendable () -> Date = { Date() }, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now }, sleep: @escaping @Sendable (ContinuousClock.Instant) async throws -> Void = {
+            try await Task.sleep(until: $0, clock: .continuous)
+        })
+```
+
+Creates a clock from its three parts. Each part defaults to the system's, so a test can
+replace just one.
+
+- Parameters:
+  - date: Reads the wall clock.
+  - now: Reads the monotonic clock.
+  - sleep: Waits until a moment of ``now``, throwing when cancelled.
+
+## `NopeClock/now`
+
+public, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+var now: @Sendable () -> ContinuousClock.Instant
+```
+
+Reads the monotonic clock: for everything that measures elapsed time.
+
+## `NopeClock/sleep`
+
+public, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+var sleep: @Sendable (ContinuousClock.Instant) async throws -> Void
+```
+
+Waits until a moment on the monotonic clock (``now``), and throws `CancellationError` when
+the calling task is cancelled. A moment already past returns at once.
+
+## `NopeClock/sleep(seconds:)`
+
+public, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+func sleep(seconds: Double) async throws
+```
+
+Waits a number of seconds, measured on ``now``.
+
+- Parameter seconds: How long to wait, in seconds. Zero or less returns at once.
+- Throws: `CancellationError` when the calling task is cancelled.
+
+## `NopeClock/stepped(by:now:)`
+
+internal, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+static func stepped(by sleep: @escaping @Sendable (Double) async throws -> Void, now: (@Sendable () -> ContinuousClock.Instant)? = nil) -> NopeClock
+```
+
+A clock for code written before this type, which passes a sleep that takes a number of
+seconds, usually one that returns at once or when a test lets it go.
+
+Such a sleep doesn't move a clock, so a deadline would never be reached. The clock this
+makes keeps its own time instead: it starts at the system's `ContinuousClock` and moves on
+only by each completed wait, by exactly the time asked for. A wait then asks the sleep for
+whole seconds when it is on time, as the sleeps of that code expect. With `now`, the clock
+reads that clock instead and leaves moving it to the sleep, as a test clock whose sleep
+moves it does.
+
+- Parameters:
+  - sleep: Waits a number of seconds, throwing when cancelled.
+  - now: Reads a monotonic clock that the sleep moves, or `nil` for the clock's own time.
+- Returns: The clock; its ``date`` is the system's.
+
+## `NopeClock/system`
+
+public, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+static let system: NopeClock
+```
+
+The system's clocks: `Date()`, `ContinuousClock` and `Task.sleep(until:clock:)`.
+
 ## `NopeSettings`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -21008,6 +21914,26 @@ static let assistantKeys: Set<String>
 ```
 
 The Assistant Access keys, which no preset stores or applies.
+
+## `NopeSettings/Key/burstLimit`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let burstLimit: String
+```
+
+How many photos one press takes in Burst, a ``BurstLimit`` raw value.
+
+## `NopeSettings/Key/dimAfter`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let dimAfter: String
+```
+
+How long Keep Screen On waits before it dims, a ``DimAfter`` raw value.
 
 ## `NopeSettings/Key/fastShutter`
 
@@ -21239,6 +22165,18 @@ When the app asks before an assistant action runs. ``AssistantAskLevel/everyActi
 default; kept while ``assistantAccess`` is off and used when it is turned on. Changed
 only as ``assistantAccess`` is.
 
+## `NopeSettings/burstLimit`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var burstLimit: BurstLimit { get set }
+```
+
+How many photos one press takes in Burst (Burst Limit, issue #121). ``BurstLimit/off`` by
+default. Stored, in presets and in the Lock Screen camera's snapshot; not yet read by the
+burst itself (see ``BurstLimit``).
+
 ## `NopeSettings/canTurnOff(_:deviceSupportsBayerRAW:)`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -21278,6 +22216,20 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 
 How the HEIF and JPEG copies are developed from the RAW. ``DevelopedLook/standard`` by
 default. The RAW is never changed by it.
+
+## `NopeSettings/dimAfter`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var dimAfter: DimAfter { get set }
+```
+
+How long Keep Screen On waits without a touch or photo before it dims the screen (Dim
+After, issue #119). ``DimAfter/standard`` (2 minutes) by default, so nothing changes for
+anyone who doesn't choose. ``SeriesScreenKeeper`` applies it through
+``KeepScreenOnConditions/dimAfter``; Low Power Mode and heat still dim sooner, and a
+series still dims at once.
 
 ## `NopeSettings/fastShutter`
 
@@ -21670,6 +22622,18 @@ Assistant Access page calls it.
 
 - Parameter level: The choice.
 
+## `NopeSettings/setBurstLimit(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setBurstLimit(_ limit: BurstLimit)
+```
+
+Sets how many photos one press takes in Burst, and saves the change.
+
+- Parameter limit: Off, or the number of photos.
+
 ## `NopeSettings/setDevelopedLook(_:)`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -21681,6 +22645,18 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 Sets how the HEIF and JPEG copies are developed, and saves the change.
 
 - Parameter look: The look.
+
+## `NopeSettings/setDimAfter(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setDimAfter(_ choice: DimAfter)
+```
+
+Sets how long Keep Screen On waits before it dims the screen, and saves the change.
+
+- Parameter choice: The Dim After choice.
 
 ## `NopeSettings/setFastShutter(_:)`
 
@@ -26579,6 +27555,20 @@ photos.
 Every value is checked here, so an intent can pass what the person typed in Shortcuts as it
 is.
 
+## `PhotoShortcut/answersWhenTimerStarts(delaySeconds:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+static func answersWhenTimerStarts(delaySeconds: Int) -> Bool
+```
+
+Whether a request with this delay is answered when its timer starts rather than after
+its photos: a delay over ``longestDelayAnsweredAfterPhoto``.
+
+- Parameter delaySeconds: The delay in seconds.
+- Returns: `true` when the answer comes as the timer starts.
+
 ## `PhotoShortcut/appliesBracketInApp`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -26663,6 +27653,25 @@ let lensKind: Lens.Kind?
 
 The kind of lens to use, or `nil` for the lens already selected.
 
+## `PhotoShortcut/longestDelayAnsweredAfterPhoto`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+static let longestDelayAnsweredAfterPhoto: Int
+```
+
+The longest delay, in seconds, after which the answer still waits for the photo; a longer
+one is answered when the timer starts (``ShortcutOutcome/timerStarted(seconds:)``; owner
+decision, 2026-11-21, issue #126).
+
+iOS gives an App Intent that runs in the background about 30 seconds
+([Apple: LongRunningIntent](https://developer.apple.com/documentation/appintents/longrunningintent)).
+Measured on the iOS 27.2 Simulator: Take Photo with a 40-second delay, run by the system's
+App Intents runner, ended with a timeout after 31 seconds (`TakePhotoIntentUITests`).
+Ten seconds, the self-timer's longest, leaves the rest for the question, the camera's
+start, a long exposure in low light and the save.
+
 ## `PhotoShortcut/maximumDelaySeconds`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -26672,8 +27681,9 @@ static let maximumDelaySeconds: Int
 ```
 
 The longest delay a request may ask for, in seconds. A product choice for issue #62, not
-a platform limit: Siri waits for the result, and a minute keeps that wait short. Longer
-requests are shortened to it.
+a platform limit. Longer requests are shortened to it. A delay over
+``longestDelayAnsweredAfterPhoto`` is answered when the timer starts, because Siri and
+Shortcuts don't wait that long (issue #126).
 
 ## `PhotoSigning`
 
@@ -30123,6 +31133,19 @@ A bracket, burst or focus bracket saved some of its photos and then failed. `sav
 how many were saved, `total` how many were planned. Say how many of how many were saved,
 and that the app shows why the others weren't.
 
+## `ShortcutOutcome/timerStarted(seconds:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case timerStarted(seconds: Int)
+```
+
+The self-timer started, with a delay over ``PhotoShortcut/longestDelayAnsweredAfterPhoto``,
+so the request is answered now and the photos are taken when it ends, as with the
+camera's own self-timer; the app shows their result (issue #126). `seconds` is the delay.
+Say that the timer started and for how long; claim nothing about the photo.
+
 ## `ShortcutRequest`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -31041,6 +32064,49 @@ init()
 ```
 
 Creates a simulated preview source.
+
+## `SteppedTime`
+
+internal, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+final class SteppedTime
+```
+
+The time of a ``NopeClock/stepped(by:now:)`` clock: the system's `ContinuousClock` when it was
+made, moved on by each completed wait.
+
+## `SteppedTime/advance(to:)`
+
+internal, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+func advance(to instant: ContinuousClock.Instant)
+```
+
+Moves the time on to a moment, never back.
+
+- Parameter instant: The moment a wait ended at.
+
+## `SteppedTime/init()`
+
+internal, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+init()
+```
+
+Creates the time, starting at the system's `ContinuousClock` now.
+
+## `SteppedTime/now`
+
+internal, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+var now: ContinuousClock.Instant { get }
+```
+
+The current time.
 
 ## `StorageWarning`
 
@@ -32278,7 +33344,8 @@ The watch's result for how a photo request through the ``ShortcutInbox`` ended.
 
 The watch asks only for a photo, so the outcomes of other requests (a lens, the light, an
 interval series, a bracket, the focus range, a photo size, a preset) can't happen; they would be
-reported as not saved.
+reported as not saved. Nor can ``ShortcutOutcome/timerStarted(seconds:)``: the watch's
+delays are the self-timer's, at most ``PhotoShortcut/longestDelayAnsweredAfterPhoto``.
 
 - Parameter outcome: How the request ended.
 

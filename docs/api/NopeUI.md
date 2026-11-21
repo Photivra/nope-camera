@@ -2179,6 +2179,85 @@ Creates the cover.
 
 - Parameter action: Brightens the screen.
 
+## `BurstLimitSettingRow`
+
+internal, declared in `Sources/NopeUI/BurstLimitSettingRow.swift`
+
+```swift
+@MainActor struct BurstLimitSettingRow
+```
+
+The Burst Limit menu in Settings › Camera, the last row (issue #121): Off (the default), 3, 5,
+10, 20 or 50, with its explanation. Shown on every device and in the Lock Screen camera too,
+since the settings are shared.
+
+## `BurstLimitSettingRow/body`
+
+internal, declared in `Sources/NopeUI/BurstLimitSettingRow.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The menu with its label and explanation.
+
+## `BurstLimitSettingRow/init(settings:)`
+
+internal, declared in `Sources/NopeUI/BurstLimitSettingRow.swift`
+
+```swift
+@MainActor init(settings: NopeSettings)
+```
+
+Creates the row.
+
+- Parameter settings: The settings.
+
+## `BurstLimitSettingRow/settings`
+
+internal, declared in `Sources/NopeUI/BurstLimitSettingRow.swift`
+
+```swift
+@MainActor let settings: NopeSettings
+```
+
+The settings.
+
+## `BurstLimitText`
+
+internal, declared in `Sources/NopeUI/BurstLimitSettingRow.swift`
+
+```swift
+enum BurstLimitText
+```
+
+The words of the Burst Limit menu (issue #121, `docs/design/finish-1.0.md`, section 5.1).
+
+## `BurstLimitText/explanation`
+
+internal, declared in `Sources/NopeUI/BurstLimitSettingRow.swift`
+
+```swift
+static let explanation: Text
+```
+
+The explanation under the row. It begins with where the setting is used, as the scope
+rule asks (`docs/design/SETTINGS-PLAN.md`).
+
+## `BurstLimitText/name(_:)`
+
+internal, declared in `Sources/NopeUI/BurstLimitSettingRow.swift`
+
+```swift
+static func name(_ limit: BurstLimit) -> Text
+```
+
+The name of a choice, as the menu and its value show it: "Off", or the number of photos
+formatted for the person's locale.
+
+- Parameter limit: The choice.
+- Returns: Its name.
+
 ## `BurstSpeedText`
 
 internal, declared in `Sources/NopeUI/DriveStrip.swift`
@@ -2674,6 +2753,23 @@ case column
 
 The picture beside a trailing control column: iPad, and any window wider than tall.
 
+## `CameraLayout/columnShutterGap(columnHeight:)`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static func columnShutterGap(columnHeight: CGFloat) -> CGFloat
+```
+
+The gap above and below the shutter in the column layout, in points (issue #116;
+docs/design/finish-1.0.md, 1.4): 16 (``NopeSpace/m``) when the column is at least
+``roomyColumnMinHeight`` tall, otherwise 8 (``NopeSpace/xs``). The column sits beside the
+picture, so the gap costs the picture nothing.
+
+- Parameter columnHeight: The column's height, in points: the window's, inside the safe
+  area.
+- Returns: The gap, in points.
+
 ## `CameraLayout/isRegularSize(horizontal:vertical:)`
 
 internal, declared in `Sources/NopeUI/CameraLayout.swift`
@@ -2705,6 +2801,46 @@ row (``NopeSize/lensRow``) leaves around a 44-point control (``NopeSize/minTarge
 the drive strip, as in the design (docs/design/screens/camera-auto: picture to 639, lens
 group 645 to 689, strip from 695). The row grows rather than lose this gap when its
 controls are taller, as with larger text.
+
+## `CameraLayout/lensRowLift(rowGap:)`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static func lensRowLift(rowGap: CGFloat) -> CGFloat
+```
+
+How far the lens row's controls move up, toward the picture, so they stay 8 points from
+the drive strip's targets when the spare height gives less than 2 points of gap
+(``minimumRowGap``), in points: the 2 points on a screen where the rows overlay the
+picture (a 4.7 or 5.4-inch iPhone). The rows take no more height than before, so the
+picture is covered no further; the controls are then 4 points below the rows' top edge.
+
+- Parameter rowGap: The gap from ``rowGap(spareHeight:)``, in points.
+- Returns: The points taken from above the lens row's controls, from 0 to 2.
+
+## `CameraLayout/maximumRowGap`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static var maximumRowGap: CGFloat { get }
+```
+
+The largest gap between the lens row and the drive strip, in points (``NopeSpace/l``,
+docs/design/finish-1.0.md, 1.2).
+
+## `CameraLayout/minimumRowGap`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static var minimumRowGap: CGFloat { get }
+```
+
+The smallest gap between the lens row and the drive strip, in points: what the lens row's
+own 6 points below its controls (``lensRowInset``) lack of the 8 points between two
+targets (``NopeSize/targetGap``), so 2 points.
 
 ## `CameraLayout/photoAspectRatio`
 
@@ -2743,6 +2879,39 @@ The height of the whole portrait 4:3 picture at a width.
 
 - Parameter width: The picture's width, in points.
 - Returns: The height, in points.
+
+## `CameraLayout/roomyColumnMinHeight`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static var roomyColumnMinHeight: CGFloat { get }
+```
+
+The smallest height of the column layout at which Q, the shutter and Last Photo get 16
+points around the shutter instead of 8, in points (docs/design/finish-1.0.md, 1.4): a
+full-size iPad window has it in both orientations; a short window, such as the iPhone
+Duo's inner display held like a book, keeps 8.
+
+## `CameraLayout/rowGap(spareHeight:)`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static func rowGap(spareHeight: CGFloat) -> CGFloat
+```
+
+The gap the spare height adds between the lens row and the drive strip, in points (issue
+#116; docs/design/finish-1.0.md, 1.2): the first 2 points of the spare height
+(``minimumRowGap``), which bring the lens controls 8 points from the drive strip's
+targets, then a third of the rest, rounded down to a whole point, and never more than 24
+points (``maximumRowGap``). The shutter row takes what is left. The picture keeps its size.
+
+For example, a 440 × 956 point iPhone has 41 spare points and gets a 15-point gap; a
+393 × 852 point iPhone has 3 and gets 2.
+
+- Parameter spareHeight: The spare height (``spareHeight(in:bandsHeight:)``), in points.
+- Returns: The gap, in whole points; zero when there is no spare height.
 
 ## `CameraLayout/rowsOverPicture(in:bandsHeight:)`
 
@@ -2795,6 +2964,44 @@ static var shutterRowHeight: CGFloat { get }
 
 The shutter row's smallest height, in points (``NopeSize/shutterRowMin``; issue #68,
 "Point budget").
+
+## `CameraLayout/shutterRowTopPadding(shutterRowHeight:)`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static func shutterRowTopPadding(shutterRowHeight: CGFloat) -> CGFloat
+```
+
+The space the shutter row's contents move down by, in points, so the shutter stays 8
+points (``NopeSize/targetGap``) below the drive strip's targets when the row is too short
+to center the shutter with 8 points above it: 4 points in a row at its smallest, 88
+points (``NopeSize/shutterRowMin``), which leaves the shutter 8 points below the strip
+and 4 above the safe area's lower edge. Zero once the row is 92 points or taller.
+
+- Parameter shutterRowHeight: The shutter row's height, in points.
+- Returns: The space added above the row's contents, in points.
+
+## `CameraLayout/spareHeight(in:bandsHeight:)`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static func spareHeight(in space: CGSize, bandsHeight: CGFloat) -> CGFloat
+```
+
+The height left in the stacked layout once the status line, the whole 4:3 picture, the
+lens row, the drive strip and the shutter row at its smallest have their place, in points
+(docs/design/finish-1.0.md, 1.2, "Spare height"); zero when the rows overlay the picture
+(``bandsOverlayPicture(in:bandsHeight:)``) or nothing is left.
+
+`bandsHeight` must be the rows' own height, without the gap ``rowGap(spareHeight:)``
+puts between them, or the gap would feed back into the height it is worked out from.
+
+- Parameters:
+  - space: The space between the status line and the shutter row at its smallest.
+  - bandsHeight: The height of the lens row and drive strip together, without the gap.
+- Returns: The spare height, in points.
 
 ## `CameraLayout/stacked`
 
@@ -5203,6 +5410,97 @@ The secondary text on a dial (the range line, notes and the meter):
 red so it keeps its contrast on black.
 
 - Parameter isNightMode: Whether night mode is on.
+
+## `DimAfterSettingRow`
+
+internal, declared in `Sources/NopeUI/DimAfterSettingRow.swift`
+
+```swift
+@MainActor struct DimAfterSettingRow
+```
+
+The Dim After menu in Settings › Screen, under Keep Screen On (issue #119): 1 Minute,
+2 Minutes (the default), 5 Minutes or Never, with its note under it and, with Never, what
+Never costs. Always shown and usable where Keep Screen On is offered, whether the switch is on
+or off, so no row appears or disappears when a switch changes. VoiceOver reads the note with
+the row.
+
+## `DimAfterSettingRow/body`
+
+internal, declared in `Sources/NopeUI/DimAfterSettingRow.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The menu with its label and note.
+
+## `DimAfterSettingRow/init(settings:)`
+
+internal, declared in `Sources/NopeUI/DimAfterSettingRow.swift`
+
+```swift
+@MainActor init(settings: NopeSettings)
+```
+
+Creates the row.
+
+- Parameter settings: The settings.
+
+## `DimAfterSettingRow/settings`
+
+internal, declared in `Sources/NopeUI/DimAfterSettingRow.swift`
+
+```swift
+@MainActor let settings: NopeSettings
+```
+
+The settings.
+
+## `DimAfterText`
+
+internal, declared in `Sources/NopeUI/DimAfterSettingRow.swift`
+
+```swift
+enum DimAfterText
+```
+
+The words of the Dim After menu (issue #119, `docs/design/finish-1.0.md`, section 4).
+
+## `DimAfterText/name(_:)`
+
+internal, declared in `Sources/NopeUI/DimAfterSettingRow.swift`
+
+```swift
+static func name(_ choice: DimAfter) -> Text
+```
+
+The name of a choice, as the menu and its value show it: "1 Minute", "2 Minutes",
+"5 Minutes" or "Never". The minutes are a plural string, so each language counts them
+its own way.
+
+- Parameter choice: The choice.
+- Returns: Its name.
+
+## `DimAfterText/neverNote`
+
+internal, declared in `Sources/NopeUI/DimAfterSettingRow.swift`
+
+```swift
+static let neverNote: Text
+```
+
+The note's addition with Never chosen: what Never costs, and when the screen still dims.
+
+## `DimAfterText/note`
+
+internal, declared in `Sources/NopeUI/DimAfterSettingRow.swift`
+
+```swift
+static let note: Text
+```
+
+The note under the row, for every choice.
 
 ## `DoneButton`
 
@@ -9148,6 +9446,26 @@ Why Start is unavailable, said beside the disabled button.
 - Parameter blocker: Why a series can't start now.
 - Returns: The sentence.
 
+## `IntervalSection/scheduleSentence(_:shutterIsLonger:)`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor static func scheduleSentence(_ settings: IntervalSettings, shutterIsLonger: Bool) -> String
+```
+
+The sentence under the rows that says how the photos are spaced: start to start
+(issue #123). "Takes 10 photos, starting one every 10 seconds.", or for a series that stops
+after a time, "Takes photos for 1 hour, starting one every 10 seconds.". When the shutter
+set by hand is longer than the interval, the app knows before the series starts that the
+photos can't keep to it, and says so instead (decision 10 of the 1.0.0 plan).
+
+- Parameters:
+  - settings: The series.
+  - shutterIsLonger: Whether the manual shutter time is longer than the interval
+    (`ManualControlsModel.isShutterLongerThanInterval`).
+- Returns: The sentence.
+
 ## `IntervalSheet`
 
 internal, declared in `Sources/NopeUI/IntervalControls.swift`
@@ -9203,6 +9521,8 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 The running card of an interval series that stops after a time: the photos taken and the time
 left, the next photo's time (or, paused, when the series ends), a progress bar by time, and
 Stop. The time keeps running while the series is paused, so the card counts it down then too.
+The time left is read from the monotonic clock at each redraw; only the redraws and the end
+time shown follow the wall clock (issue #106).
 
 ## `IntervalTimeCard/accessory`
 
@@ -9224,19 +9544,30 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 The card, redrawn each minute of the series.
 
-## `IntervalTimeCard/init(progress:nextPhoto:accessory:)`
+## `IntervalTimeCard/clock`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-@MainActor init(progress: IntervalProgress, nextPhoto: NextPhotoTiming?, @ViewBuilder accessory: () -> Accessory)
+@MainActor let clock: NopeClock
+```
+
+The camera model's clock.
+
+## `IntervalTimeCard/init(progress:nextPhoto:clock:accessory:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor init(progress: IntervalProgress, nextPhoto: NextPhotoTiming?, clock: NopeClock, @ViewBuilder accessory: () -> Accessory)
 ```
 
 Creates the card.
 
 - Parameters:
-  - progress: The series' progress; its `IntervalProgress.timeSpan` is set.
+  - progress: The series' progress; its `IntervalProgress.deadline` is set.
   - nextPhoto: When the next photo is due, or `nil`.
+  - clock: The camera model's clock.
   - accessory: The Stop capsule.
 
 ## `IntervalTimeCard/nextPhoto`
@@ -9291,12 +9622,22 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 The line, or nothing.
 
-## `IntervalTimeDetail/init(progress:nextPhoto:now:)`
+## `IntervalTimeDetail/clock`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-@MainActor init(progress: IntervalProgress, nextPhoto: NextPhotoTiming?, now: Date)
+@MainActor let clock: NopeClock
+```
+
+The camera model's clock: the end is shown as a date of its wall clock.
+
+## `IntervalTimeDetail/init(progress:nextPhoto:clock:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor init(progress: IntervalProgress, nextPhoto: NextPhotoTiming?, clock: NopeClock)
 ```
 
 Creates the line.
@@ -9304,7 +9645,7 @@ Creates the line.
 - Parameters:
   - progress: The series' progress.
   - nextPhoto: When the next photo is due, or `nil`.
-  - now: The current time.
+  - clock: The camera model's clock.
 
 ## `IntervalTimeDetail/nextPhoto`
 
@@ -9315,16 +9656,6 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 ```
 
 When the next photo is due, or `nil`.
-
-## `IntervalTimeDetail/now`
-
-internal, declared in `Sources/NopeUI/DriveControls.swift`
-
-```swift
-@MainActor let now: Date
-```
-
-The current time.
 
 ## `IntervalTimeDetail/progress`
 
@@ -11570,6 +11901,18 @@ shutter for the estimate.
   - startDelay: Astro's start delay.
   - estimate: What the run will take.
 
+## `ModeCardText/behindScheduleString`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static var behindScheduleString: String { get }
+```
+
+"Each photo takes longer than the interval": the interval card's second line, in place of
+the countdown, while photos take longer than the interval (issue #123). Plain text, not a
+warning: the series keeps going.
+
 ## `ModeCardText/burstDuration(_:)`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
@@ -11790,7 +12133,7 @@ seconds, for 1 hour, 30 minutes".
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-@MainActor static func intervalTimeProgress(_ progress: IntervalProgress, at now: Date) -> Text
+@MainActor static func intervalTimeProgress(_ progress: IntervalProgress, at now: ContinuousClock.Instant) -> Text
 ```
 
 "12 photos taken · 1 hr, 12 min left", or "Paused: 12 photos taken · 1 hr, 12 min left",
@@ -11798,21 +12141,21 @@ for a series that stops after a time. VoiceOver reads the units in full.
 
 - Parameters:
   - progress: The series' progress.
-  - now: The current time.
+  - now: The current moment of the monotonic clock.
 
 ## `ModeCardText/intervalTimeProgressString(_:at:width:)`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-@MainActor static func intervalTimeProgressString(_ progress: IntervalProgress, at now: Date, width: Duration.UnitsFormatStyle.UnitWidth = .abbreviated) -> String
+@MainActor static func intervalTimeProgressString(_ progress: IntervalProgress, at now: ContinuousClock.Instant, width: Duration.UnitsFormatStyle.UnitWidth = .abbreviated) -> String
 ```
 
 The words of ``intervalTimeProgress(_:at:)``.
 
 - Parameters:
   - progress: The series' progress.
-  - now: The current time.
+  - now: The current moment of the monotonic clock.
   - width: How the units of the time left are written.
 
 ## `ModeCardText/joined(_:_:)`
@@ -12057,7 +12400,8 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 @MainActor struct NextPhotoDetail
 ```
 
-"Next photo in 6s", counting down each second until the photo is due.
+"Next photo in 6s", counting down each second until the photo is due, or "Each photo takes
+longer than the interval" while the series is behind schedule (issue #123).
 
 ## `NextPhotoDetail/body`
 
@@ -12067,19 +12411,32 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 @MainActor var body: some View { get }
 ```
 
-The seconds left, or nothing once the photo is due.
+The seconds left, or nothing once the photo is due; behind schedule, a plain line that says
+photos take longer than the interval.
 
-## `NextPhotoDetail/init(timing:)`
+## `NextPhotoDetail/clock`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-@MainActor init(timing: NextPhotoTiming)
+@MainActor let clock: NopeClock
+```
+
+The camera model's clock.
+
+## `NextPhotoDetail/init(timing:clock:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor init(timing: NextPhotoTiming, clock: NopeClock)
 ```
 
 Creates the detail.
 
-- Parameter timing: When the next photo is due.
+- Parameters:
+  - timing: When the next photo is due.
+  - clock: The camera model's clock.
 
 ## `NextPhotoDetail/timing`
 
@@ -12099,61 +12456,72 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 struct NextPhotoTiming
 ```
 
-When an interval series' next photo is due, for the running card's "Next photo in 6s".
+When an interval series' next photo is due, for the running card's "Next photo in 6s", or that
+the series is behind schedule.
 
-`NopeCore` doesn't publish the time of the next photo, so the card counts from the moment the
-count of photos taken last changed, by the series' interval: the series waits that long after
-each photo is saved (`ManualControlsModel`). The interval is the one set now, which is the
-series' own unless it was changed in Interval Settings while the series runs (the change
-applies to the next series). Until the card sees a photo counted, and while the series is
-paused, it shows no time rather than a guessed one.
+`NopeCore` publishes the next photo's start (`IntervalProgress.nextPhotoStart`): one interval
+after the last photo started, on the monotonic clock, so neither the time a photo takes nor a
+change of the device's time moves it (issues #106, #123). Until the first photo is taken, and
+while the series is paused, the card shows no time rather than a guessed one.
 
-## `NextPhotoTiming/init(lastPhoto:interval:)`
+## `NextPhotoTiming/due`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-init(lastPhoto: Date, interval: Double)
+let due: ContinuousClock.Instant
+```
+
+When the next photo is due, on the monotonic clock.
+
+## `NextPhotoTiming/init(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+init?(_ progress: IntervalProgress)
+```
+
+The timing of a running series, or `nil` before its first photo.
+
+- Parameter progress: The series' progress.
+
+## `NextPhotoTiming/init(due:isBehindSchedule:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+init(due: ContinuousClock.Instant, isBehindSchedule: Bool = false)
 ```
 
 Creates the timing.
 
 - Parameters:
-  - lastPhoto: When the last photo was counted.
-  - interval: The series' interval, in seconds.
+  - due: When the next photo is due, on the monotonic clock.
+  - isBehindSchedule: Whether the last photo took longer than the interval.
 
-## `NextPhotoTiming/interval`
-
-internal, declared in `Sources/NopeUI/DriveControls.swift`
-
-```swift
-let interval: Double
-```
-
-The series' interval, in seconds.
-
-## `NextPhotoTiming/lastPhoto`
+## `NextPhotoTiming/isBehindSchedule`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-let lastPhoto: Date
+let isBehindSchedule: Bool
 ```
 
-When the last photo was counted.
+Whether the last photo took longer than the interval, so the next starts at once.
 
 ## `NextPhotoTiming/secondsLeft(at:)`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-func secondsLeft(at now: Date) -> Int?
+func secondsLeft(at now: ContinuousClock.Instant) -> Int?
 ```
 
 The whole seconds until the next photo, rounded up, or `nil` once it is due (it is being
-taken or waits for the camera).
+taken or waits for the camera) or the series is behind schedule.
 
-- Parameter now: The current time.
+- Parameter now: The current moment of the monotonic clock.
 - Returns: The seconds left, at least 1, or `nil`.
 
 ## `NightModeRowBackground`
@@ -14777,8 +15145,9 @@ internal, declared in `Sources/NopeUI/DesignTokens.swift`
 static let shutterRowMin: CGFloat
 ```
 
-88 points: the smallest height of the shutter row; it takes the remaining height
-(101 points on a 402 × 874-point screen).
+88 points: the smallest height of the shutter row; it takes the spare height the gap
+under the lens row leaves (`CameraLayout.rowGap(spareHeight:)`, issue #116): 94 points on
+a 402 × 874-point screen, 114 on a 440 × 956-point screen.
 
 ## `NopeSize/startMark`
 
@@ -15488,6 +15857,19 @@ What processing a file went through, in plain words.
 - Parameter processing: The processing.
 - Returns: The text, from `Honesty.xcstrings`.
 
+## `PhotoDetailsSections/processingText(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor static func processingText(_ processing: PhotoDetails.Processing) -> String
+```
+
+What processing a file went through, in plain words, as a string for the summary's rows.
+
+- Parameter processing: The processing.
+- Returns: The words, from `Honesty.xcstrings`.
+
 ## `PhotoDetailsSections/reason(_:)`
 
 internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
@@ -15891,10 +16273,199 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
 @MainActor struct PhotoSummaryCard
 ```
 
-The summary at the top of What's in This Photo (`docs/design/BUILD-SPEC.md`, 3.15, group 0):
-the formats, the lens, the pixel size and total size, then four lines with symbols: what kind
-of photo it is, the signature, how many optional details the files hold, and whether they hold
-a location. One section with one row, read by VoiceOver as one element.
+The summary at the top of What's in This Photo (`docs/design/BUILD-SPEC.md`, 3.15, group 0;
+issue #118, `docs/design/finish-1.0.md`, section 3): one group built like the groups under it.
+
+- The head: the formats as the title, then the lens and time, then the pixel size and total
+  size, all on the leading edge. One VoiceOver element, with the identifier
+  `PhotoDetails.summary`.
+- One row for each fact, always in this order: what kind of file it is, the signature, the
+  optional details, the location (``rows(of:)``). Each symbol is centered in a column of one
+  width that grows with the text size, so the words of every row start on the same line. Each
+  row is one VoiceOver element, read once and in order; a warning row begins with "Warning".
+
+Color: amber with the triangle for a warning, teal for the one verified fact (signed), the
+secondary color for the rest. A warning is always told by its triangle and its words too, so
+night mode's red loses nothing.
+
+## `PhotoSummaryCard/Row`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+struct Row
+```
+
+One fact of the summary: its symbol and color, its words and, for some, a second line
+that says why.
+
+## `PhotoSummaryCard/Row/Fact`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+enum Fact
+```
+
+Which fact; also the row's order.
+
+## `PhotoSummaryCard/Row/Fact/details`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+case details
+```
+
+How many optional details the files hold.
+
+## `PhotoSummaryCard/Row/Fact/kind`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+case kind
+```
+
+What kind of file it is.
+
+## `PhotoSummaryCard/Row/Fact/location`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+case location
+```
+
+Whether the files hold the location.
+
+## `PhotoSummaryCard/Row/Fact/signature`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+case signature
+```
+
+The signature.
+
+## `PhotoSummaryCard/Row/Tone`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+enum Tone
+```
+
+The symbol's color.
+
+## `PhotoSummaryCard/Row/Tone/fact`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+case fact
+```
+
+Teal: the one verified fact, signed.
+
+## `PhotoSummaryCard/Row/Tone/plain`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+case plain
+```
+
+The secondary color: plain information.
+
+## `PhotoSummaryCard/Row/Tone/warning`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+case warning
+```
+
+Amber, with the triangle: a warning.
+
+## `PhotoSummaryCard/Row/detail`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+let detail: String?
+```
+
+The second line in the secondary style, or `nil`.
+
+## `PhotoSummaryCard/Row/id`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+let id: Fact
+```
+
+Which fact.
+
+## `PhotoSummaryCard/Row/init(id:symbol:tone:title:detail:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+init(id: Fact, symbol: String, tone: Tone, title: String, detail: String?)
+```
+
+Creates a row.
+
+- Parameters:
+  - id: Which fact.
+  - symbol: The SF Symbol name.
+  - tone: The symbol's color.
+  - title: The words.
+  - detail: The second line, or `nil`.
+
+## `PhotoSummaryCard/Row/spokenLabel`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+var spokenLabel: String { get }
+```
+
+What VoiceOver reads for the row: the words and the second line, with "Warning"
+first for a warning.
+
+## `PhotoSummaryCard/Row/symbol`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+let symbol: String
+```
+
+The SF Symbol name, hidden from VoiceOver.
+
+## `PhotoSummaryCard/Row/title`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+let title: String
+```
+
+The words.
+
+## `PhotoSummaryCard/Row/tone`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+let tone: Tone
+```
+
+The symbol's color.
 
 ## `PhotoSummaryCard/body`
 
@@ -15904,7 +16475,7 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
 @MainActor var body: some View { get }
 ```
 
-The card.
+The group: the head, then a row for each fact.
 
 ## `PhotoSummaryCard/caption(lens:takenAt:)`
 
@@ -15914,7 +16485,9 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
 @MainActor static func caption(lens: Lens?, takenAt: Date?) -> String?
 ```
 
-The caption's words: the lens and the time, joined as the viewer's caption joins them.
+The caption's words: the lens and the time, such as "1× · 2:41 PM", joined as the
+viewer's caption joins them (`docs/design/BUILD-SPEC.md`, 3.15, group 0, and section 6,
+item 15; decision P3): from the session's photo list, even when the files hold neither.
 
 - Parameters:
   - lens: The lens, or `nil`.
@@ -15931,18 +16504,18 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
 
 Its details.
 
-## `PhotoSummaryCard/detailsCount(_:)`
+## `PhotoSummaryCard/detailsRow(_:)`
 
 internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
 
 ```swift
-@MainActor static func detailsCount(_ count: Int) -> Text
+@MainActor static func detailsRow(_ count: Int) -> Row
 ```
 
 How many optional details the files hold, the location not counted.
 
 - Parameter count: The count.
-- Returns: The sentence, from `Honesty.xcstrings`, with its plural rule.
+- Returns: The row.
 
 ## `PhotoSummaryCard/init(photo:details:lens:takenAt:)`
 
@@ -15965,7 +16538,7 @@ Creates the card.
 internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
 
 ```swift
-@MainActor static func kind(of details: PhotoDetails) -> Text
+@MainActor static func kind(of details: PhotoDetails) -> String
 ```
 
 The kind of a photo with RAW: one frame of sensor data, and the copies developed from it.
@@ -15973,6 +16546,20 @@ A photo saved without its RAW (copies only) says how the copies were made.
 
 - Parameter details: The details.
 - Returns: The sentence, from `Honesty.xcstrings`.
+
+## `PhotoSummaryCard/kindRow(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor static func kindRow(of details: PhotoDetails) -> Row
+```
+
+What kind of file it is: processed by the device (a warning, with the reason), or the
+RAW and the copies developed from it.
+
+- Parameter details: The details.
+- Returns: The row.
 
 ## `PhotoSummaryCard/lens`
 
@@ -15984,6 +16571,19 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
 
 The lens it was taken with, or `nil`.
 
+## `PhotoSummaryCard/locationRow(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor static func locationRow(_ holdsLocation: Bool) -> Row
+```
+
+Whether the files hold the location: a warning when they do.
+
+- Parameter holdsLocation: Whether the files hold it.
+- Returns: The row.
+
 ## `PhotoSummaryCard/photo`
 
 internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
@@ -15993,6 +16593,34 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
 ```
 
 The photo.
+
+## `PhotoSummaryCard/rows(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor static func rows(of details: PhotoDetails) -> [Row]
+```
+
+The summary's rows, always in this order: what kind of file, the signature, the optional
+details, the location (`docs/design/finish-1.0.md`, 3.2).
+
+- Parameter details: The photo's details.
+- Returns: The four rows.
+
+## `PhotoSummaryCard/signatureRow(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor static func signatureRow(_ signature: SignatureStatus) -> Row
+```
+
+The signature: Signed; or Not signed with the reason, a warning unless signing is off by
+the person's choice (`docs/design/BUILD-SPEC.md`, 3.9).
+
+- Parameter signature: The photo's signature status.
+- Returns: The row.
 
 ## `PhotoSummaryCard/takenAt`
 
@@ -16268,6 +16896,51 @@ The rules of the Last Photo viewer that don't draw anything: the caption, the st
 position, the zoom limit and the fallback's size. Plain data in and out, so they are tested
 without a screen (`PhotoViewerTests`).
 
+## `PhotoViewerFacts/Decode`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+struct Decode
+```
+
+One picture to decode: a photo, and the longest side to decode it to.
+
+## `PhotoViewerFacts/Decode/id`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+let id: Int
+```
+
+The photo's `SessionPhoto.id`.
+
+## `PhotoViewerFacts/Decode/init(id:maximumPixelSize:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+init(id: Int, maximumPixelSize: Int?)
+```
+
+Creates a picture to decode.
+
+- Parameters:
+  - id: The photo's `SessionPhoto.id`.
+  - maximumPixelSize: The longest side to decode to, in pixels, or `nil` for the
+    preview's own size.
+
+## `PhotoViewerFacts/Decode/maximumPixelSize`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+let maximumPixelSize: Int?
+```
+
+The longest side to decode to, in pixels, or `nil` for the preview's own size.
+
 ## `PhotoViewerFacts/Signature`
 
 internal, declared in `Sources/NopeUI/PhotoViewer.swift`
@@ -16343,6 +17016,23 @@ The caption: the position (with more than one photo), the lens and the time, suc
   - photos: The session's photos, oldest first.
 - Returns: The caption.
 
+## `PhotoViewerFacts/decodeSide(preview:page:displayScale:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func decodeSide(preview: CGSize, page: CGSize, displayScale: CGFloat) -> Int?
+```
+
+The longest side a preview fills on a page, in pixels, rounded up so the picture is
+never enlarged; `nil` when that is the preview's own size or more.
+
+- Parameters:
+  - preview: The preview's size, in pixels.
+  - page: The page's size, in points.
+  - displayScale: The screen's pixels per point.
+- Returns: The side, in pixels, or `nil` for the preview's own size.
+
 ## `PhotoViewerFacts/decodedIDs(around:in:)`
 
 internal, declared in `Sources/NopeUI/PhotoViewer.swift`
@@ -16357,6 +17047,27 @@ The photos whose pictures are decoded: the one shown and its two neighbors.
   - shownID: The photo shown.
   - photos: The session's photos, oldest first.
 - Returns: Their identifiers, the shown one first.
+
+## `PhotoViewerFacts/decodes(around:in:page:displayScale:isZoomed:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func decodes(around shownID: Int?, in photos: [SessionPhoto], page: CGSize, displayScale: CGFloat, isZoomed: Bool) -> [Decode]
+```
+
+The pictures to decode: the page shown and its two neighbors, each at the size it fills
+on the screen, and the page shown at the preview's own size once it is zoomed in
+(issue #103). A preview decoded at its full 3072 pixels holds about 28 MB; fitted on an
+iPhone page it holds 4 to 8 MB.
+
+- Parameters:
+  - shownID: The photo shown.
+  - photos: The session's photos, oldest first.
+  - page: The page's size, in points; nothing is decoded before it is laid out.
+  - displayScale: The screen's pixels per point.
+  - isZoomed: Whether the page shown is zoomed past fit.
+- Returns: What to decode, the page shown first.
 
 ## `PhotoViewerFacts/fallbackSide(thumbnailLongestSide:)`
 
@@ -16415,6 +17126,21 @@ The identifier of the photo an offset away from the one shown, or `nil` past eit
   - shownID: The photo shown.
   - photos: The session's photos, oldest first.
 - Returns: The identifier, or `nil`.
+
+## `PhotoViewerFacts/isZoomable(page:shownID:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func isZoomable(page: Int, shownID: Int?) -> Bool
+```
+
+Whether a page takes the viewer's zoom: only the page shown does; the others stay at fit.
+
+- Parameters:
+  - page: The page's photo.
+  - shownID: The photo shown, after ``shownID(_:in:)``.
+- Returns: Whether the page is bound to the zoom.
 
 ## `PhotoViewerFacts/label(of:in:)`
 
@@ -16501,6 +17227,25 @@ internal, declared in `Sources/NopeUI/PhotoViewer.swift`
   - number: The photo's place, from 1.
   - count: How many photos there are.
 - Returns: The text, or `nil` for a single photo.
+
+## `PhotoViewerFacts/shownID(_:in:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func shownID(_ shownID: Int?, in photos: [SessionPhoto]) -> Int?
+```
+
+The photo shown: the one chosen while the session still holds it, otherwise the newest.
+
+A long series can push the chosen photo past the session's limit of
+`SessionPhotos.maximumCount` records (issue #102). The viewer then shows the newest
+photo, and the chosen identifier must follow, or that page gets no zoom.
+
+- Parameters:
+  - shownID: The photo chosen, or `nil`.
+  - photos: The session's photos, oldest first.
+- Returns: The identifier of the photo to show, or `nil` when there is none.
 
 ## `PhotoViewerFacts/showsNewPhoto(shownID:newestID:lastSeenNewestID:)`
 
@@ -21110,6 +21855,16 @@ case assistantAsk
 
 Ask First, on the Assistant Access page.
 
+## `SettingsID/burstLimit`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case burstLimit
+```
+
+The Burst Limit menu (issue #121), last in the Camera group.
+
 ## `SettingsID/camera`
 
 public, declared in `Sources/NopeUI/SettingsSearch.swift`
@@ -21343,6 +22098,16 @@ case detailsTimeZone
 ```
 
 Time Zone.
+
+## `SettingsID/dimAfter`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case dimAfter
+```
+
+The Dim After menu (issue #119), under Keep Screen On.
 
 ## `SettingsID/factoryDefaults`
 
@@ -22032,10 +22797,10 @@ navigation stack, opened from the camera (`docs/design/BUILD-SPEC.md`, 3.10;
 - Photos: Formats, HEIF and JPEG Copies, Photo Size, Mirror Front Camera;
 - Privacy: Details in Each Photo, Sign Each Photo, Assistant Access (issue #82), last in the
   group;
-- Camera: Fast Shutter, Focus on Faces, Pinch (with two or more rear lenses);
+- Camera: Fast Shutter, Focus on Faces, Pinch (with two or more rear lenses), Burst Limit;
 - Screen: Start in Clean View, Viewfinder Overlays, Show Processed Marker, Night Mode, Keep
-  Night Mode After Astro (where the device offers Astro), Red Viewfinder, Keep Screen On (not
-  in the Lock Screen camera), Live Activity;
+  Night Mode After Astro (where the device offers Astro), Red Viewfinder, Keep Screen On and
+  Dim After (not in the Lock Screen camera), Live Activity;
 - More: Accessibility, Honesty, About and Licenses.
 
 A row is shown or not by the device only; no row appears or disappears when a setting
@@ -22670,6 +23435,16 @@ static let bundle: LocalizedStringResource.BundleDescription
 
 The module's bundle, for the resources.
 
+## `SettingsText/burstLimit`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let burstLimit: LocalizedStringResource
+```
+
+"Burst Limit" (issue #121).
+
 ## `SettingsText/camera`
 
 internal, declared in `Sources/NopeUI/SettingsSearch.swift`
@@ -22719,6 +23494,16 @@ static let details: LocalizedStringResource
 ```
 
 "Details in Each Photo".
+
+## `SettingsText/dimAfter`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let dimAfter: LocalizedStringResource
+```
+
+"Dim After" (issue #119).
 
 ## `SettingsText/factoryDefaults`
 

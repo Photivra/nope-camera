@@ -224,7 +224,7 @@ enum PhotoViewerFacts {
     /// The photo shown: the one chosen while the session still holds it, otherwise the newest.
     ///
     /// A long series can push the chosen photo past the session's limit of
-    /// ``SessionPhotos/maximumCount`` records (issue #102). The viewer then shows the newest
+    /// `SessionPhotos.maximumCount` records (issue #102). The viewer then shows the newest
     /// photo, and the chosen identifier must follow, or that page gets no zoom.
     ///
     /// - Parameters:
@@ -259,10 +259,21 @@ enum PhotoViewerFacts {
 
     /// One picture to decode: a photo, and the longest side to decode it to.
     struct Decode: Equatable {
-        /// The photo's ``SessionPhoto/id``.
+        /// The photo's `SessionPhoto.id`.
         let id: Int
         /// The longest side to decode to, in pixels, or `nil` for the preview's own size.
         let maximumPixelSize: Int?
+
+        /// Creates a picture to decode.
+        ///
+        /// - Parameters:
+        ///   - id: The photo's `SessionPhoto.id`.
+        ///   - maximumPixelSize: The longest side to decode to, in pixels, or `nil` for the
+        ///     preview's own size.
+        init(id: Int, maximumPixelSize: Int?) {
+            self.id = id
+            self.maximumPixelSize = maximumPixelSize
+        }
     }
 
     /// The pictures to decode: the page shown and its two neighbors, each at the size it fills

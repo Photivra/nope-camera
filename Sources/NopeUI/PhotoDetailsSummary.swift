@@ -142,6 +142,22 @@ struct PhotoSummaryCard: View {
         /// The second line in the secondary style, or `nil`.
         let detail: String?
 
+        /// Creates a row.
+        ///
+        /// - Parameters:
+        ///   - id: Which fact.
+        ///   - symbol: The SF Symbol name.
+        ///   - tone: The symbol's color.
+        ///   - title: The words.
+        ///   - detail: The second line, or `nil`.
+        init(id: Fact, symbol: String, tone: Tone, title: String, detail: String?) {
+            self.id = id
+            self.symbol = symbol
+            self.tone = tone
+            self.title = title
+            self.detail = detail
+        }
+
         /// What VoiceOver reads for the row: the words and the second line, with "Warning"
         /// first for a warning.
         var spokenLabel: String {
