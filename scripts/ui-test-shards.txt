@@ -259,6 +259,7 @@
 2 1 NopeAppUITests/testNoPillRepeatsManualControlsOrTheDriveStrip 56e 57e
 2 1 NopeAppUITests/testNotSignedOnlyWhenSigningFailed 51e 52e
 5 1 NopeAppUITests/testOneLongPinchCrossesThreeLenses 34e 48e
+6 5 NopeAppUITests/testOnlyTheAppForgetsThatAstroTurnedNightModeOn 300e 300e
 6 3 NopeAppUITests/testOpenPhotosAtTheLargestTextSizeRightToLeftAndInNightMode 78e 79e
 6 1 NopeAppUITests/testOpenPhotosBeforeTheFirstPhoto 52e 55e
 5 4 NopeAppUITests/testOpenPhotosIsNotOfferedWhereItCantBeUsed 62e 64e

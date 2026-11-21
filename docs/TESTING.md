@@ -2132,6 +2132,11 @@ tripod (issue #60):
   still on, and leaving Astro later doesn't turn it off; on before Astro, or changed with the Control Center or Lock Screen control while Astro is on, it
   stays as it is; with Keep Night Mode After Astro on, it stays on.
 
+Issue #108, the night mode record and the Lock Screen camera: with night mode off, turn Astro
+on in the app (night mode turns on), lock the phone, open the Lock Screen camera and take a
+photo, then unlock and return to the app, and leave Astro: night mode turns off. Repeat with the
+app closed by the system in between (it then keeps night mode on, as after any relaunch).
+
 ### Bracketing on a device
 
 Exposure bracketing on the drive strip (docs/design/BRACKETING.md, section 9). The plan, the

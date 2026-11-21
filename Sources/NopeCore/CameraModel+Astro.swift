@@ -98,8 +98,13 @@ extension CameraModel {
     /// Forgets that the astro helper turned night mode on, without changing night mode, when the
     /// helper ended without leaving it: the app was quit or closed by the system while the helper
     /// was on, and the helper is off at every launch. Night mode stays as it was, so a relaunch in
-    /// the dark opens red (owner decision, 2026-11-18); it is the person's from then on. Call it
-    /// once the camera screen shows. It does nothing while the helper is on.
+    /// the dark opens red (owner decision, 2026-11-18); it is the person's from then on. It does
+    /// nothing while the helper is on.
+    ///
+    /// Only the app calls it, once its camera screen shows; the Lock Screen camera never does
+    /// (issue #108). The record is the app's state: a process that isn't the app, though it
+    /// shows the same camera screen, must leave it, or leaving Astro in the app would no longer
+    /// turn night mode off.
     ///
     /// Side effects: may store that night mode is no longer the helper's.
     ///
