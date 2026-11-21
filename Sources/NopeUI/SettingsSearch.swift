@@ -113,6 +113,8 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
     case focusOnFaces = "settings.focusOnFaces"
     /// The Pinch menu (issue #95), on devices with two or more rear lenses.
     case pinch = "settings.pinch"
+    /// The Burst Limit menu (issue #121), last in the Camera group.
+    case burstLimit = "settings.burstLimit"
 
     // Screen.
 
@@ -196,7 +198,7 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
     var page: SettingsPage? {
         switch self {
         case .photos, .privacy, .camera, .screen, .more, .presets, .formats, .copies, .photoSize, .mirrorFrontCamera,
-            .details, .signEachPhoto, .assistantAccess, .fastShutter, .focusOnFaces, .pinch, .startInCleanView,
+            .details, .signEachPhoto, .assistantAccess, .fastShutter, .focusOnFaces, .pinch, .burstLimit, .startInCleanView,
             .overlays, .showProcessedMarker, .nightMode, .keepNightModeAfterAstro, .redViewfinder, .keepScreenOn,
             .dimAfter, .liveActivity, .accessibility, .honesty, .about:
             nil
@@ -235,7 +237,7 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
             .detailsAppNameAndVersion, .detailsStandardFileTags, .detailsAlwaysSaved, .signEachPhoto, .assistantAccess,
             .assistantAccessSwitch, .assistantAsk:
             .privacy
-        case .camera, .fastShutter, .focusOnFaces, .pinch: .camera
+        case .camera, .fastShutter, .focusOnFaces, .pinch, .burstLimit: .camera
         case .screen, .startInCleanView, .overlays, .overlaysGrid, .overlaysGridStyle, .overlaysLevel,
             .overlaysFocusPeaking, .overlaysHistogram, .overlaysLiveReadout, .overlaysKeepReadout,
             .showProcessedMarker, .nightMode, .keepNightModeAfterAstro, .redViewfinder, .keepScreenOn, .dimAfter,
@@ -519,6 +521,8 @@ enum SettingsText {
     static let focusOnFaces = LocalizedStringResource("Focus on Faces", bundle: bundle, comment: "Switch: autofocus and auto exposure follow faces the camera finds. Replaces Face Detection; also the name of the Shortcuts action Set Focus on Faces.")
     /// "Pinch".
     static let pinch = LocalizedStringResource("Pinch", bundle: bundle, comment: "Setting in Settings › Camera: what a pinch on the camera picture does (Switch Lenses or Off). The gesture of two fingers moving apart or together; not zoom.")
+    /// "Burst Limit" (issue #121).
+    static let burstLimit = LocalizedStringResource("Burst Limit", bundle: bundle, comment: "Menu in Settings › Camera and its Voice Control name: how many photos one press of the shutter takes in Burst (Off, 3, 5, 10, 20 or 50). Burst is the drive mode's name; use its translation. Draft wording for the Honesty review (issue #121).")
     /// "Start in Clean View".
     static let startInCleanView = LocalizedStringResource("Start in Clean View", bundle: bundle, comment: "Switch: the camera opens with only the viewfinder and the shutter.")
     /// "Viewfinder Overlays".
@@ -617,6 +621,7 @@ enum SettingsText {
         case .fastShutter: fastShutter
         case .focusOnFaces: focusOnFaces
         case .pinch: pinch
+        case .burstLimit: burstLimit
         case .startInCleanView: startInCleanView
         case .overlays: overlays
         case .overlaysGrid: grid
@@ -682,6 +687,8 @@ enum SettingsText {
             LocalizedStringResource("Search keywords: Focus on Faces", defaultValue: "face detection, people, portrait", bundle: bundle, comment: "Settings search keywords for Focus on Faces, separated by commas. Not shown on screen.")
         case .pinch:
             LocalizedStringResource("Search keywords: Pinch", defaultValue: "zoom, lens, lenses, gesture, two fingers", bundle: bundle, comment: "Settings search keywords for the Pinch setting, separated by commas. Not shown on screen. Zoom is listed so people who look for it find the setting and read that nope. has no zoom; keep a word for zoom.")
+        case .burstLimit:
+            LocalizedStringResource("Search keywords: Burst Limit", defaultValue: "burst, limit, count, frames, series, continuous", bundle: bundle, comment: "Settings search keywords for Burst Limit, separated by commas. Not shown on screen: list the words people in your language would type to find how many photos one press takes in Burst.")
         case .nightMode, .redViewfinder:
             LocalizedStringResource("Search keywords: Night Mode", defaultValue: "red, dark", bundle: bundle, comment: "Settings search keywords for Night Mode and Red Viewfinder, separated by commas. Not shown on screen.")
         case .keepNightModeAfterAstro:

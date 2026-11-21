@@ -182,6 +182,57 @@ struct NopeSettingsTests {
         #expect(!NopeSettings(defaults: scratch.defaults).followsFaces)
     }
 
+    // MARK: - Burst Limit (issue #121)
+
+    @Test func theBurstLimitChoicesAreTheDesigns() {
+        #expect(BurstLimit.allCases == [.off, .three, .five, .ten, .twenty, .fifty])
+        #expect(BurstLimit.allCases.map(\.rawValue) == ["off", "three", "five", "ten", "twenty", "fifty"])
+        #expect(BurstLimit.allCases.map(\.frameCount) == [nil, 3, 5, 10, 20, 50])
+        #expect(BurstLimit.standard == .off, "Off by default, so a burst works as before")
+        // The count never goes above the cap of a burst.
+        for limit in BurstLimit.allCases {
+            #expect((limit.frameCount ?? 0) <= DriveModel.maximumBurstFrames, "\(limit)")
+        }
+    }
+
+    @Test func theBurstLimitIsOffByDefaultAndStoredByName() {
+        let scratch = ScratchDefaults()
+        let settings = NopeSettings(defaults: scratch.defaults)
+        #expect(settings.burstLimit == .off)
+        for limit in BurstLimit.allCases {
+            settings.setBurstLimit(limit)
+            #expect(settings.burstLimit == limit)
+            #expect(scratch.defaults.string(forKey: NopeSettings.Key.burstLimit) == limit.rawValue)
+            #expect(NopeSettings(defaults: scratch.defaults).burstLimit == limit)
+        }
+        // Another process's change is picked up by reload.
+        scratch.defaults.set("five", forKey: NopeSettings.Key.burstLimit)
+        #expect(settings.reload())
+        #expect(settings.burstLimit == .five)
+        // An unknown stored value, as from a later version, reads as Off.
+        scratch.defaults.set("hundred", forKey: NopeSettings.Key.burstLimit)
+        #expect(NopeSettings(defaults: scratch.defaults).burstLimit == .off)
+        scratch.defaults.set(10, forKey: NopeSettings.Key.burstLimit)
+        #expect(NopeSettings(defaults: scratch.defaults).burstLimit == .off)
+    }
+
+    @Test func theBurstLimitIsInPresetsAndTheLockScreenSnapshot() async throws {
+        let scratch = ScratchDefaults()
+        let settings = NopeSettings(defaults: scratch.defaults)
+        settings.setBurstLimit(.twenty)
+        // The Lock Screen camera gets it with the other settings (it applies there too).
+        let lockScreen = NopeSettings(defaults: ScratchDefaults().defaults)
+        #expect(lockScreen.apply(try settings.makeSnapshot()))
+        #expect(lockScreen.burstLimit == .twenty)
+        // A preset keeps it; Factory Defaults turns it off.
+        let presets = SettingsPresets(settings: settings)
+        let preset = try presets.saveCurrent(named: "Sports", camera: nil)
+        _ = await presets.apply(.factoryDefaults, camera: nil, location: nil)
+        #expect(settings.burstLimit == .off)
+        _ = await presets.apply(.saved(preset.id), camera: nil, location: nil)
+        #expect(settings.burstLimit == .twenty)
+    }
+
     @Test func theProcessedMarkerSwitchIsSavedAndReloaded() {
         let scratch = ScratchDefaults()
         let settings = NopeSettings(defaults: scratch.defaults)

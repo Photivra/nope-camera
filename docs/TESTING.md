@@ -2252,6 +2252,17 @@ with Keep Screen On on and the camera showing:
 6. VoiceOver reads the note with the row, and with Never also the cost; changing the choice
    doesn't move focus. With Reduce Motion on, the dimming still fades as Keep Screen On's does.
 
+### Burst Limit setting on a device (issue #121)
+
+The setting alone (Settings › Camera › Burst Limit) is covered by `NopeSettingsTests`,
+`SettingsPresetsTests`, `BurstLimitSearchTests` and `BurstLimitSettingUITests.swift` (the row,
+the menu, search, a preset round trip, the largest text size, right to left and Night Mode, with
+audits). On a phone: the row with VoiceOver (the explanation read with it, the value read as
+"Off" or the number) and Voice Control ("Burst Limit"); and the choice made in the app reaches
+the Lock Screen camera's Settings. The burst that stops at the limit has its own device check
+with the shutter work (Burst Limit 10: a tap, a hold, a second press at photo 4, with each kind
+of button).
+
 ### Pinch to switch lenses on a device (issue #95)
 
 The step logic, where a pinch is used, the settling and the setting are unit tested

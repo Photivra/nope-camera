@@ -109,6 +109,11 @@ public final class NopeSettings {
     /// The camera screen reads it with ``CameraModel/pinchSwitchesLenses(setting:)``.
     public private(set) var pinch: PinchAction
 
+    /// How many photos one press takes in Burst (Burst Limit, issue #121). ``BurstLimit/off`` by
+    /// default. Stored, in presets and in the Lock Screen camera's snapshot; not yet read by the
+    /// burst itself (see ``BurstLimit``).
+    public private(set) var burstLimit: BurstLimit
+
     /// Whether the camera shows the "Processed" marker before a photo is taken with a lens
     /// without Bayer RAW (issue #80). On by default. Off hides the marker only: the photo is
     /// still the labeled processed fallback, VoiceOver still names its format, and the photo's
@@ -174,6 +179,9 @@ public final class NopeSettings {
         // A missing value (settings or a preset from before 1.0.0) or an unknown one is the
         // default, Switch Lenses.
         pinch = defaults.string(forKey: Key.pinch).flatMap(PinchAction.init(rawValue:)) ?? .switchLenses
+        // A missing value (settings or a preset from before the setting) or an unknown one is
+        // the default, Off.
+        burstLimit = defaults.string(forKey: Key.burstLimit).flatMap(BurstLimit.init(rawValue:)) ?? .standard
         showsProcessedMarker =
             defaults.object(forKey: Key.showsProcessedMarker) == nil || defaults.bool(forKey: Key.showsProcessedMarker)
         // Unreadable sizes fall back to the defaults: every lens at its default size.
@@ -525,6 +533,7 @@ public final class NopeSettings {
             update(\.showsLiveActivity, from: stored),
             update(\.followsFaces, from: stored),
             update(\.pinch, from: stored),
+            update(\.burstLimit, from: stored),
             update(\.showsProcessedMarker, from: stored),
             update(\.photoSizes, from: stored),
             update(\.assistantAccess, from: stored),
@@ -561,6 +570,14 @@ public final class NopeSettings {
     public func setPinch(_ action: PinchAction) {
         pinch = action
         defaults.set(action.rawValue, forKey: Key.pinch)
+    }
+
+    /// Sets how many photos one press takes in Burst, and saves the change.
+    ///
+    /// - Parameter limit: Off, or the number of photos.
+    public func setBurstLimit(_ limit: BurstLimit) {
+        burstLimit = limit
+        defaults.set(limit.rawValue, forKey: Key.burstLimit)
     }
 
     /// Shows or hides the "Processed" marker, and saves the change.
@@ -692,6 +709,8 @@ public final class NopeSettings {
         static let followsFaces = "NopeSettings.followsFaces"
         /// What a pinch on the viewfinder does, a ``PinchAction`` raw value.
         static let pinch = "NopeSettings.pinch"
+        /// How many photos one press takes in Burst, a ``BurstLimit`` raw value.
+        static let burstLimit = "NopeSettings.burstLimit"
         /// Whether the "Processed" marker is shown, a Boolean.
         static let showsProcessedMarker = "NopeSettings.showsProcessedMarker"
         /// The photo size chosen for each lens, as JSON-encoded `[Lens.ID: PhotoDimensions]`.

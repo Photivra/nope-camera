@@ -16,7 +16,7 @@ extension EnvironmentValues {
 /// - Photos: Formats, HEIF and JPEG Copies, Photo Size, Mirror Front Camera;
 /// - Privacy: Details in Each Photo, Sign Each Photo, Assistant Access (issue #82), last in the
 ///   group;
-/// - Camera: Fast Shutter, Focus on Faces, Pinch (with two or more rear lenses);
+/// - Camera: Fast Shutter, Focus on Faces, Pinch (with two or more rear lenses), Burst Limit;
 /// - Screen: Start in Clean View, Viewfinder Overlays, Show Processed Marker, Night Mode, Keep
 ///   Night Mode After Astro (where the device offers Astro), Red Viewfinder, Keep Screen On and
 ///   Dim After (not in the Lock Screen camera), Live Activity;
@@ -332,8 +332,8 @@ public struct SettingsScreen: View {
         }
     }
 
-    /// Fast Shutter, Focus on Faces and Pinch: how the camera focuses, exposes and answers a
-    /// pinch.
+    /// Fast Shutter, Focus on Faces, Pinch and Burst Limit: how the camera focuses, exposes,
+    /// answers a pinch and how many photos a press takes in Burst.
     private var cameraSection: some View {
         Section {
             pageRow(.fastShutter, value: FastShutterText.name(settings.fastShutter), note: FastShutterText.scopeNote)
@@ -347,6 +347,7 @@ public struct SettingsScreen: View {
             if availability.offersPinch {
                 PinchSettingRow(settings: settings)
             }
+            BurstLimitSettingRow(settings: settings)
         } header: {
             Text(SettingsText.camera)
         }
