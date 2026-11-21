@@ -45,9 +45,9 @@ struct ShutterButton: View {
     /// Whether the shutter reports its touches (``onPhase``): in burst mode.
     let reportsPhases: Bool
 
-    /// Called with ``NopeCore/ShutterPhase/pressed`` when a touch goes down on the shutter, and
-    /// ``NopeCore/ShutterPhase/released`` when it comes up or slides off, with the touch's number,
-    /// which the release repeats (issue #100). Called with ``NopeCore/ShutterPhase/cancelled``
+    /// Called with `ShutterPhase.pressed` when a touch goes down on the shutter, and
+    /// `ShutterPhase.released` when it comes up or slides off, with the touch's number,
+    /// which the release repeats (issue #100). Called with `ShutterPhase.cancelled`
     /// when the shutter goes away, or stops reporting, while a reported touch is down
     /// (issue #101). Only while ``reportsPhases`` is `true`, apart from that last end.
     let onPhase: (ShutterPhase, Int) -> Void
@@ -175,8 +175,8 @@ struct ShutterTouches: Equatable {
 
     /// The reported touch ended.
     ///
-    /// - Parameter phase: How: ``NopeCore/ShutterPhase/released`` or
-    ///   ``NopeCore/ShutterPhase/cancelled``.
+    /// - Parameter phase: How: `ShutterPhase.released` or
+    ///   `ShutterPhase.cancelled`.
     /// - Returns: The end to report with the touch's number, or `nil` when no reported touch is
     ///   down.
     mutating func end(_ phase: ShutterPhase) -> (ShutterPhase, Int)? {

@@ -368,6 +368,18 @@ struct BurstTests {
         #expect(model.actionCount == actions + 2, "each event is the person's action")
     }
 
+    @Test func outsideBurstAPressWhoseReleaseCameFirstIsATap() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await makeModel(backend: backend)
+        await model.send(.drive(.setMode(.single)))
+        #expect(model.shutter(.released, from: .hardware, press: 1) == nil)
+        await model.shutter(.pressed, from: .hardware, press: 1)?.value
+        #expect(await backend.captureRequests.count == 1, "the hardware button acts when it comes up")
+        #expect(!model.drive.isShutterHeld)
+        #expect(model.shutter(.pressed, from: .hardware, press: 1) == nil, "a press delivered twice is dropped")
+        #expect(!model.drive.isShutterHeld)
+    }
+
     @Test func aSecondPressBeforeTheBurstBeginsStartsNoSecondBurst() async {
         let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
         let model = await makeModel(backend: backend)
