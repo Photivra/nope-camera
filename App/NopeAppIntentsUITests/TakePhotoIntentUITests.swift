@@ -1,6 +1,11 @@
 import AppIntentsTesting
 import XCTest
 
+/// These tests are their own UI test target, `NopeAppIntentsUITests`: `AppIntentsTesting` needs
+/// iOS 27 (it links `AppIntentsTypeSupport`, which iOS 26 doesn't have), and a test bundle that
+/// links it can't be loaded on an iOS 26 Simulator at all, so in the main UI test bundle it
+/// stopped every UI test there ("Failed to load the test bundle").
+///
 /// Take Photo run the way Siri and Shortcuts run it (issue #126): out of process, through the
 /// system's App Intents runner (`AppIntentsTesting`, iOS 27), against the installed app. Unlike
 /// `ShortcutUITests`, which send the request through the Debug-only `-NopeSimulatedShortcut`
@@ -37,7 +42,13 @@ final class TakePhotoIntentUITests: XCTestCase {
             "-NopeSimulatedCamera", "noRAW", "-NopeSimulatedSigning",
             "-NopeSettings.assistantAccess", access ? "YES" : "NO", "-NopeSettings.assistantAsk", ask,
         ]
-        app.launchAfterThePreviousRunExits()
+        // As `launchAfterThePreviousRunExits()` in the main UI tests: a launch right after a
+        // terminate sometimes waited out XCTest's minute for a process ID.
+        if app.state != .notRunning {
+            app.terminate()
+            _ = app.wait(for: .notRunning, timeout: 30)
+        }
+        app.launch()
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 30))
         return app
     }

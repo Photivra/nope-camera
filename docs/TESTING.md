@@ -1247,7 +1247,11 @@ the request through the Assistant Access check and the same `ShortcutInbox` the 
 Photo ask (it is confirmed otherwise); a cancelled question gets no answer from the app, so the
 result reads "No answer: the question was cancelled." `TakePhotoIntentUITests.swift` (iOS 27 only)
 runs the real Take Photo intent through the system's App Intents runner (`AppIntentsTesting`)
-instead: access off, on with Never, on with Every Action (the runner confirms the question), a
+instead, in its own UI test target, `NopeAppIntentsUITests`, which isn't in the CI shards:
+`AppIntentsTesting` links `AppIntentsTypeSupport`, which iOS 26 doesn't have, and while these
+tests were in `NopeAppUITests` the test bundle couldn't be loaded on the iOS 26.5 Simulator, so
+no UI test ran there ("Failed to load the test bundle"). Run them with
+`-only-testing:NopeAppIntentsUITests` on an iOS 27 Simulator. They cover: access off, on with Never, on with Every Action (the runner confirms the question), a
 40-second delay answered when the timer starts, and the app closed. The runner refuses an app
 built with `CODE_SIGNING_ALLOWED=NO` ("Unable to run internal tests on a Customer build"), so
 these tests are skipped in such a build and run with the Simulator's own signing (leave the

@@ -28,6 +28,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		C10000000000000000000301 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000401;
+			remoteInfo = NopeApp;
+		};
 		A10000000000000000000301 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A10000000000000000000001 /* Project object */;
@@ -104,6 +111,7 @@
 /* Begin PBXFileReference section */
 		A10000000000000000000501 /* nope.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = nope.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000502 /* NopeAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NopeAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C10000000000000000000502 /* NopeAppIntentsUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NopeAppIntentsUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000507 /* NopeControls.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NopeControls.entitlements; sourceTree = "<group>"; };
 		A10000000000000000000508 /* NopeApp-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "NopeApp-Info.plist"; sourceTree = "<group>"; };
 		A10000000000000000000503 /* NopeApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NopeApp.entitlements; sourceTree = "<group>"; };
@@ -145,6 +153,7 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A10000000000000000000601 /* NopeApp */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A10000000000000000000E01 /* Exceptions for "NopeApp" folder in "NopeCaptureExtension" target */, ); path = NopeApp; sourceTree = "<group>"; };
 		A10000000000000000000602 /* NopeAppUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; path = NopeAppUITests; sourceTree = "<group>"; };
+		C10000000000000000000602 /* NopeAppIntentsUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; path = NopeAppIntentsUITests; sourceTree = "<group>"; };
 		A10000000000000000000603 /* Shared */ = {isa = PBXFileSystemSynchronizedRootGroup; path = Shared; sourceTree = "<group>"; };
 		A10000000000000000000604 /* NopeCaptureExtension */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A10000000000000000000E02 /* Exceptions for "NopeCaptureExtension" folder in "NopeCaptureExtension" target */, ); path = NopeCaptureExtension; sourceTree = "<group>"; };
 		A10000000000000000000605 /* NopeControls */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A10000000000000000000E03 /* Exceptions for "NopeControls" folder in "NopeControls" target */, ); path = NopeControls; sourceTree = "<group>"; };
@@ -166,6 +175,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A10000000000000000000702 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C10000000000000000000702 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -220,6 +236,7 @@
 				A10000000000000000000507 /* NopeControls.entitlements */,
 				A10000000000000000000601 /* NopeApp */,
 				A10000000000000000000602 /* NopeAppUITests */,
+				C10000000000000000000602 /* NopeAppIntentsUITests */,
 				A10000000000000000000603 /* Shared */,
 				A10000000000000000000604 /* NopeCaptureExtension */,
 				A10000000000000000000605 /* NopeControls */,
@@ -234,6 +251,7 @@
 			children = (
 				A10000000000000000000501 /* nope.app */,
 				A10000000000000000000502 /* NopeAppUITests.xctest */,
+				C10000000000000000000502 /* NopeAppIntentsUITests.xctest */,
 				A10000000000000000000505 /* NopeCaptureExtension.appex */,
 				A10000000000000000000506 /* NopeControls.appex */,
 				B70000000000000000000501 /* NopeWatch.app */,
@@ -300,6 +318,29 @@
 			);
 			productName = NopeAppUITests;
 			productReference = A10000000000000000000502 /* NopeAppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		C10000000000000000000402 /* NopeAppIntentsUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C10000000000000000000A03 /* Build configuration list for PBXNativeTarget "NopeAppIntentsUITests" */;
+			buildPhases = (
+				C10000000000000000000902 /* Sources */,
+				C10000000000000000000702 /* Frameworks */,
+				C10000000000000000000904 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C10000000000000000000B01 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				C10000000000000000000602 /* NopeAppIntentsUITests */,
+			);
+			name = NopeAppIntentsUITests;
+			packageProductDependencies = (
+			);
+			productName = NopeAppIntentsUITests;
+			productReference = C10000000000000000000502 /* NopeAppIntentsUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 		A10000000000000000000403 /* NopeCaptureExtension */ = {
@@ -417,6 +458,10 @@
 						CreatedOnToolsVersion = 27.2;
 						TestTargetID = A10000000000000000000401;
 					};
+					C10000000000000000000402 = {
+						CreatedOnToolsVersion = 27.2;
+						TestTargetID = A10000000000000000000401;
+					};
 					A10000000000000000000403 = {
 						CreatedOnToolsVersion = 27.2;
 					};
@@ -451,6 +496,7 @@
 			targets = (
 				A10000000000000000000401 /* NopeApp */,
 				A10000000000000000000402 /* NopeAppUITests */,
+				C10000000000000000000402 /* NopeAppIntentsUITests */,
 				A10000000000000000000403 /* NopeCaptureExtension */,
 				A10000000000000000000404 /* NopeControls */,
 				B70000000000000000000401 /* NopeWatch */,
@@ -468,6 +514,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A10000000000000000000904 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C10000000000000000000904 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -520,6 +573,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C10000000000000000000902 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A10000000000000000000905 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -557,6 +617,11 @@
 			isa = PBXTargetDependency;
 			target = A10000000000000000000401 /* NopeApp */;
 			targetProxy = A10000000000000000000301 /* PBXContainerItemProxy */;
+		};
+		C10000000000000000000B01 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000401 /* NopeApp */;
+			targetProxy = C10000000000000000000301 /* PBXContainerItemProxy */;
 		};
 		A10000000000000000000B02 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -667,6 +732,26 @@
 			buildSettings = {
 				GENERATE_INFOPLIST_FILE = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOPE_BUNDLE_IDENTIFIER).uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_TARGET_NAME = NopeApp;
+			};
+			name = Release;
+		};
+		C10000000000000000000D05 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOPE_BUNDLE_IDENTIFIER).intentsuitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_TARGET_NAME = NopeApp;
+			};
+			name = Debug;
+		};
+		C10000000000000000000D06 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOPE_BUNDLE_IDENTIFIER).intentsuitests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_TARGET_NAME = NopeApp;
 			};
@@ -846,6 +931,15 @@
 			buildConfigurations = (
 				A10000000000000000000D05 /* Debug */,
 				A10000000000000000000D06 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C10000000000000000000A03 /* Build configuration list for PBXNativeTarget "NopeAppIntentsUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C10000000000000000000D05 /* Debug */,
+				C10000000000000000000D06 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

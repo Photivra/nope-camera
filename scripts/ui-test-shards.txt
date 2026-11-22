@@ -442,8 +442,3 @@
 4 4 ShortcutUITests/testApplyPresetSaysWhatChangedAndCanBeUndone 19 16
 5 1 ShortcutUITests/testSwitchingLensesDuringASeriesSaysTheLensDidNotChange 18e 16e
 2 4 ShortcutUITests/testSwitchingLensesSaysWhichCamera 13 12
-4 4 TakePhotoIntentUITests/testALongDelayIsAnsweredWhenTheTimerStarts 40e 40e
-4 2 TakePhotoIntentUITests/testWithAccessOffNothingIsTakenAndNoErrorIsThrown 40e 40e
-1 4 TakePhotoIntentUITests/testWithAccessOnAndNoQuestionOnePhotoIsSaved 40e 40e
-3 1 TakePhotoIntentUITests/testWithEveryActionTheConfirmedQuestionSavesOnePhoto 40e 40e
-5 2 TakePhotoIntentUITests/testWithTheAppClosedTheRequestEndsWithAResult 40e 40e
