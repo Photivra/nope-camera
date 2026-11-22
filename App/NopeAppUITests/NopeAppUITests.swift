@@ -311,6 +311,24 @@ final class NopeAppUITests: XCTestCase {
         }
     }
 
+    /// Whether an issue is the open finding of `testDetailsSideways`, set aside for 1.0.0 only
+    /// (owner, 2026-11-22; remove with issue #140): "Potentially inaccessible text" with no
+    /// element, on an iPad with iOS 27.2 or later held sideways, while Photo Details is open over
+    /// the Last Photo viewer. The viewer's status lines and buttons show beside the form sheet,
+    /// and iOS ignores accessibility hiding on the presenting view while a sheet is up: both
+    /// `.accessibilityHidden` on the viewer and hiding it before the sheet presents left every
+    /// viewer element in the tree (docs/TESTING.md). Every other finding, and this one anywhere
+    /// else, still fails.
+    @MainActor
+    static func isViewerTextBesideIPadDetails(_ issue: XCUIAccessibilityAuditIssue, in app: XCUIApplication) -> Bool {
+        guard UIDevice.current.userInterfaceIdiom == .pad,
+            ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 27, minorVersion: 2, patchVersion: 0)),
+            XCUIDevice.shared.orientation.isLandscape,
+            issue.auditType == .elementDetection, issue.element == nil
+        else { return false }
+        return app.descendants(matching: .any)["PhotoDetails"].exists && app.descendants(matching: .any)["ViewerPhoto"].exists
+    }
+
     /// Whether an issue is a contrast finding on a disabled control, drawn at the tokens' disabled
     /// opacity (the RAW row while it is the only format, a lens button's "No RAW" caption while
     /// the self-timer counts down): WCAG 2.2, 1.4.3, exempts inactive user interface components
@@ -650,6 +668,7 @@ final class NopeAppUITests: XCTestCase {
                 || self.isApprovedAuditException(issue)
                 || Self.isMeasuredDynamicTypeFinding(issue)
                 || Self.isTextCutByAPopover(issue, in: app)
+                || Self.isViewerTextBesideIPadDetails(issue, in: app)
                 || Self.isEnlargedPastTheLowerEdge(issue, of: scrollFrame)
                 || Self.isIgnored(issue, in: app, afterScrolling: afterScrolling)
                 || Self.isGuidePictureText(issue, in: app)

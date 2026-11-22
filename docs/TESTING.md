@@ -508,6 +508,14 @@ other finding fails the test:
     the Settings app." of "Camera Access Is Off" beside the Formats page, "Tint" of the live
     readout beside Viewfinder Overlays, in the failing runs' recordings). The Settings list
     with its search field passed the same check where no text was cut;
+  - for 1.0.0 only (owner, 2026-11-22; to be removed with issue #140), "Potentially inaccessible
+    text" with no element on an iPad with iOS 27.2 or later held sideways while Photo Details is
+    open over the Last Photo viewer (`testDetailsSideways`; `isViewerTextBesideIPadDetails`). The
+    viewer's status lines and buttons show beside the form sheet. Hiding the viewer from
+    accessibility while the sheet is up was tried twice (`.accessibilityHidden` on the viewer,
+    and hiding it before the sheet presents) and left every viewer element in the tree: iOS
+    ignores accessibility hiding on the presenting view while a sheet is up. The same test passes
+    on the iPad with iOS 26.5;
   - a contrast finding on a disabled control (the RAW row while it is the only format, the
     button gallery's disabled states, a lens button's "No RAW" caption while the self-timer
     counts down, at the tokens' 40% opacity): WCAG 2.2, 1.4.3, exempts inactive user interface
