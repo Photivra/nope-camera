@@ -19,8 +19,12 @@ extension NopeAppUITests {
     /// The Dim After note, under every choice.
     static let dimAfterNote = "With Keep Screen On, the screen dims after this long without a touch or photo."
 
-    /// The Dim After note's addition with Never chosen.
-    static let dimAfterNeverNote = "Never uses more battery and can warm the phone. The screen still dims in Low Power Mode and when the phone is hot."
+    /// The Dim After note's addition with Never chosen. The string has device variants: it
+    /// names the iPad on an iPad and the phone on an iPhone.
+    @MainActor var dimAfterNeverNote: String {
+        let device = isPad ? "iPad" : "phone"
+        return "Never uses more battery and can warm the \(device). The screen still dims in Low Power Mode and when the \(device) is hot."
+    }
 
     /// The cover of the dimmed screen.
     @MainActor
@@ -266,7 +270,7 @@ extension NopeAppUITests {
                 let chosen = settingsElement(app, "settings.dimAfter")
                 XCTAssertTrue(self.row(chosen, shows: choice), "\(choice): \(chosen.debugDescription)")
                 XCTAssertTrue(self.row(chosen, shows: Self.dimAfterNote), choice)
-                XCTAssertEqual(self.row(chosen, shows: Self.dimAfterNeverNote), choice == "Never", choice)
+                XCTAssertEqual(self.row(chosen, shows: dimAfterNeverNote), choice == "Never", choice)
                 if choice == "Never" {
                     try audit(app, afterScrolling: true, checksDynamicType: false, checksContrast: !isPad)
                 }
@@ -277,7 +281,7 @@ extension NopeAppUITests {
         // Night mode: red on black, with the Never note.
         let night = launch("denied", extraArguments: Self.nightModeOn + ["-NopeSettings.dimAfter", "never"])
         let row = checkDimAfterRow(night)
-        XCTAssertTrue(self.row(row, shows: Self.dimAfterNeverNote), row.debugDescription)
+        XCTAssertTrue(self.row(row, shows: dimAfterNeverNote), row.debugDescription)
         XCTAssertEqual(nonRedPixels(night, outside: .zero), 0)
         try audit(night, afterScrolling: true, checksDynamicType: false, checksContrast: !isPad)
     }
@@ -291,7 +295,7 @@ extension NopeAppUITests {
             let row = settingsElement(app, "settings.dimAfter")
             for _ in 0..<30 where !(row.exists && row.isHittable) { app.swipeUp() }
             XCTAssertTrue(row.exists && row.isHittable, "Dim After is in Settings")
-            XCTAssertTrue(self.row(row, shows: Self.dimAfterNeverNote), "the note isn't cut: \(row.debugDescription)")
+            XCTAssertTrue(self.row(row, shows: dimAfterNeverNote), "the note isn't cut: \(row.debugDescription)")
             try audit(app, afterScrolling: true, checksDynamicType: arguments == Self.largestTextSize, checksContrast: !isPad)
             app.terminate()
         }
