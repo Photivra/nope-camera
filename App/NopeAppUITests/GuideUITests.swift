@@ -221,7 +221,8 @@ extension NopeAppUITests {
         keepGuideScreenshot(app, "guide-settings-row")
         // Dynamic Type is audited on the Settings list by the Settings tests at the largest size.
         try audit(app, afterScrolling: true, checksDynamicType: false, checksContrast: !isPad)
-        row.tap()
+        // The audit scrolled the list, so the row is found again before the tap.
+        settingsElement(app, "settings.howToUse").tap()
         XCTAssertTrue(guideTitle(app, is: Self.guideTitles[0]))
         XCTAssertEqual(app.staticTexts["guide.pageNumber"].label, "Page 1 of 7")
         try audit(app)
