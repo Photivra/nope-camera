@@ -1,16 +1,16 @@
 # Designs for 1.2.0
 
-Status: proposed 2026-11-21 for release 1.2.0, which is one issue: 83, protection for high-risk use. Not built, not yet accepted, and not in the screen counts of [README.md](README.md). This design was first written as section 4 of [release-1.1.md](release-1.1.md); it was revised for the fourteen owner decisions that followed the review of issue 83, and moved here when the owner gave the issue its own release, all on 2026-11-21. Decisions already recorded on the issue are taken as fixed and marked "decided"; the open choices are in [docs/plans/1.2.0.md](../plans/1.2.0.md), section 7. All wording is a draft until the Honesty review. The figures are SVG files in [release-1.2/](release-1.2/); they are sketches of layout, states and wording, not pixel-exact screens. The full screen set (`screens/`) is redrawn when the design is accepted and built.
+Status: proposed 2026-11-21 for release 1.2.0, which is one issue: 83, protection for high-risk use. Not built, not yet accepted, and not in the screen counts of [README.md](README.md). This design was first written as section 4 of [release-1.1.md](release-1.1.md); it was revised for the fourteen owner decisions that followed the review of issue 83, and moved here when the owner gave the issue its own release, all on 2026-11-21. Decisions already recorded on the issue are taken as fixed and marked "decided"; the open choices are in [docs/plans/1.2.0.md](../plans/1.2.0.md), section 7. **Six parts were split out into release 1.1.0 by the owner on 2026-11-22** (issues 132 to 137), so that they ship for every user without the app's own store: sharing a copy with the When Sharing setting, the file-name rule, the Lock Screen camera's settings copy, leaving less behind, the app-switcher privacy cover, and the limits on the Honesty screen. Their designs and strings are now in [release-1.1.md](release-1.1.md), sections 7 to 12; this document points to them and designs only what the store adds. All wording is a draft until the Honesty review. The figures are SVG files in [release-1.2/](release-1.2/); they are sketches of layout, states and wording, not pixel-exact screens. The full screen set (`screens/`) is redrawn when the design is accepted and built.
 
 | Section | What |
 | --- | --- |
 | 1 | Settings › Privacy: Save Photos To, Lock Captures, the backup question |
 | 2 | The Captures library, and what the camera screen shows |
-| 3 | Getting captures out, Share Without Optional Details, file names |
+| 3 | Getting captures out; sharing and file names as release 1.1.0 built them |
 | 4 | Delete |
 | 5 | Saved wording |
 | 6 | The Lock Screen camera |
-| 7 | Limits the wording must cover |
+| 7 | Limits the wording must cover, beyond those of release 1.1.0 |
 | 8 | Accessibility |
 | 9 | Every draft string, for the Honesty review |
 | 10 | The High-Risk Checklist, with ways to get captures off the phone and the ways others may try to get photos (added 2026-11-21 and 2026-11-22) |
@@ -29,9 +29,9 @@ Anything that depends on a device check is marked. If the check fails, the fallb
 
 ## 1. Settings › Privacy
 
-The group gets the two rows `SETTINGS-PLAN.md` reserved, above Assistant Access: **Save Photos To** (value: Photos, or nope only) and **Lock Captures** (value: Off, or On). Five rows in the group. A sixth, **High-Risk Checklist**, is added by section 10; its place and who sees it are the plan's decisions 30 and 31.
+The group gets the two rows `SETTINGS-PLAN.md` reserved, above Assistant Access: **Save Photos To** (value: Photos, or nope only) and **Lock Captures** (value: Off, or On). Six rows in the group, with When Sharing from release 1.1.0 ([release-1.1.md](release-1.1.md), 7.2). A seventh, **High-Risk Checklist**, is added by section 10; its place and who sees it are the plan's decisions 30 and 31.
 
-**In the Lock Screen camera's Settings, neither row is shown** (review decision 13; this replaces "read only"). The group has three rows there (the High-Risk Checklist row is not shown there either; section 10.2). Nothing in the Lock Screen camera states whether captures are kept in the app or locked.
+**In the Lock Screen camera's Settings, neither row is shown** (review decision 13; this replaces "read only"). The group has four rows there (the High-Risk Checklist row is not shown there either; section 10.2). Nothing in the Lock Screen camera states whether captures are kept in the app or locked.
 
 **Save Photos To** (a page; figure, panel B):
 
@@ -50,7 +50,7 @@ The group gets the two rows `SETTINGS-PLAN.md` reserved, above Assistant Access:
 3. "Kept in nope.": a **Captures** row with the count and size, which opens the library. Shown whenever the app holds captures, whichever choice is selected. With Lock Captures on, the row shows no count or size.
 4. **Leave Out of Backups** and **Neutral File Names**, each with its explanation (strings 23, 25).
    - Leave Out of Backups keeps its name (review decision 3). Its explanation says that the app asks iOS, that iOS treats this as a request, and that it does not cover a copy of the phone's storage made another way. It names a kind of backup (iCloud Backup, an encrypted or an unencrypted backup to a computer, a direct transfer to a new iPhone) only where research step R4 confirmed that kind honors the request; a kind that was not checked or did not honor it is not named. If no kind is confirmed, the option goes back to the owner before it is built.
-   - Neutral File Names is an option on top of the file-name rule of section 3, not the only protection.
+   - Neutral File Names is an option on top of the file-name rule, not the only protection. The rule and the option are release 1.1.0's ([release-1.1.md](release-1.1.md), section 8). Where the option's row sits was set for 1.1.0 by the 1.1.0 plan's decision 40; if it is on the Details in Each Photo page, it is not repeated here, and this page's explanation of file names points to it.
 5. **Delete All Captures…**, shown when the app holds captures.
 6. When the device has no passcode: a notice at the top (string 24).
 7. While a burst, a series or a bracket is running, the choice cannot be changed and the page says why (string 50). The destination of a capture is fixed when the shutter is pressed and travels with it (G1).
@@ -62,7 +62,7 @@ The group gets the two rows `SETTINGS-PLAN.md` reserved, above Assistant Access:
 
 **Details in Each Photo** gains one footer sentence (string 48; review decision 9): for a photo kept in the app, the time it was taken stays inside the app to keep the library in order, even with Date and Time off.
 
-**Factory Defaults**, applied in the app, leaves Save Photos To, Lock Captures (with Lock Again and Passcode Only) and Leave Out of Backups as they are, as the assistant route already does (review decision 10). Its confirmation says so (string 49). It needs no authentication for them, because it does not change them. Whether it also leaves Neutral File Names alone is the plan's decision 28.
+**Factory Defaults**, applied in the app, leaves Save Photos To, Lock Captures (with Lock Again and Passcode Only) and Leave Out of Backups as they are, as the assistant route already does (review decision 10). Its confirmation says so (string 49). It needs no authentication for them, because it does not change them. Whether it also leaves Neutral File Names alone is the plan's decision 28. When Sharing, a 1.1.0 setting, is set to As Saved by Factory Defaults as in 1.1.0.
 
 ## 2. The Captures library
 
@@ -81,26 +81,26 @@ The group gets the two rows `SETTINGS-PLAN.md` reserved, above Assistant Access:
 - **Locked:** the lock symbol, "Captures Are Locked", Unlock. No thumbnails, counts, dates or sizes are drawn behind it. If the passcode has been removed, the screen says that setting one restores access and that nothing was deleted (string 47).
 - **Unavailable:** if the app is running while the iPhone's protected data cannot be read (it was started while the phone was locked), the library shows the locked screen and the store reads, rebuilds, moves and deletes nothing (C1). This is a state of the store, not an error.
 - **A file without its details** (a capture whose manifest could not be written or read) is listed with a plain label (string 53) and can be exported or deleted. It is never hidden and never deleted automatically (G2).
-- **Privacy cover:** while the library, a capture or Photo Details is on screen and the scene becomes inactive, the cover replaces the content (the viewer's existing cover, extended). Whether the cover also hides the share sheet, the Files picker and a confirmation, which the system draws above the app's views, is a device check; if a picture shows, the share sheet gets a neutral header (the app's icon and a count, no image) and an open sheet is dismissed when the scene becomes inactive (E2).
+- **Privacy cover:** release 1.1.0's cover ([release-1.1.md](release-1.1.md), section 10; issue 136) is drawn over the library, the locked screen and a capture as over every other screen that can show a photo. What 1.1.0 found for sheets the system draws is kept: either the cover hides them, or the share sheet has a neutral header and an open sheet is dismissed when the scene becomes inactive (E2). New here, and a device check: the Files picker, which 1.1.0 does not use.
 - A session, for "export a whole session", is a day's section in 1.2.0. The manifest stores no session identifier.
 
 ## 3. Getting captures out
 
-- **Share…** first asks As Saved or **Share Without Optional Details** (figure, panel A), then opens the system share sheet. The option was drafted as "Share Clean"; it was renamed because "clean" can be read as untraceable (review decision 8). The name is a draft for the owner's string review.
-- **Removed from the share sheet** (review decision 12): Copy, Save Image, Assign to Contact and Print, and any other action that a device check shows writes to Photos or to a shared album. The app's own Save to Photos stays. If an action that writes to a shared album cannot be removed by type, the export note names it and the claim "cannot be added to a shared album by mistake" is not made for the share sheet.
-- **Share Without Optional Details** shows its summary first (panel B), read back from the copy. Each row says "Removed" only when the stored file held that detail, and "Not in the file" otherwise. "What Stays in the File" includes the sensor-pattern sentence in the wording already used on the Honesty screen (string 33). If the read-back fails, nothing is shared and the screen says why.
-- **As Saved** says when the file holds a location (string 31b).
-- **File names** (review decision 7). A copy's name carries the date or time only when the Date and Time detail is in that copy. Otherwise the name is random. So a copy without optional details never has a dated name, and with the default details no exported name has one. Neutral File Names, when on, gives every copy a random name, for people who keep the date in the file but not in its name. The Share and Save to Files steps show the name the copy will have (string 51). Whether the same rule applies to photos saved straight to Photos, with Save Photos To set to Photos, is the plan's decision 29.
+- **Share…** follows the When Sharing setting of release 1.1.0 ([release-1.1.md](release-1.1.md), section 7; issue 132): As Saved, Without Optional Details, or Ask Each Time, in which case the share step is shown (figure, panel A) with neither option selected and Share Without Optional Details first. The setting, the step, the copy and its summary are 1.1.0's and are reused, not rebuilt; this release gives them a second source, a capture kept in the app, and several captures at once. The plan's decision 33 is superseded by the setting.
+- **Removed from the share sheet** (review decision 12): Copy, Save Image, Assign to Contact and Print, and any other action that a device check shows writes to Photos or to a shared album. Release 1.1.0 may already remove the same list for photos saved to Photos (the 1.1.0 plan's decision 38); for a capture kept in the app the whole list applies whatever that decision is. The app's own Save to Photos stays. If an action that writes to a shared album cannot be removed by type, the export note names it and the claim "cannot be added to a shared album by mistake" is not made for the share sheet.
+- **The copy without optional details and its summary** are 1.1.0's ([release-1.1.md](release-1.1.md), 7.4; strings 32 to 34). For a stored capture the summary compares with the stored file. For several captures it gives one summary with counts, and the copies that failed their read-back are not shared and are listed.
+- **As Saved** says when the file holds a location, as in 1.1.0 (string 31b).
+- **File names** follow 1.1.0's rule and option ([release-1.1.md](release-1.1.md), section 8; issue 133). Save to Files shows the name the copy will have, as the share step does (string 51).
 - **Save to Files…** opens the system's folder picker. A note before it, every time: the copy is outside the app's protection, and the place it goes keeps its own copy (string 30).
 - **Save to Photos** makes a copy in Photos (add-only), keeping a RAW pair as one asset.
 - **Space:** before several captures are exported, the app checks that there is room for the temporary copies and says how much is needed if there is not (string 54; E7).
 - With Lock Captures on, an export from an unlocked library does not ask again; from anywhere else it asks first.
-- If Share Without Optional Details is cut from the release, the share step says, for a file that holds optional details, that the copy includes them (string 31c).
+- If release 1.1.0 shipped without the copy without optional details, the share step says, for a file that holds optional details, that the copy includes them (string 31c).
 
 ## 4. Delete
 
 - One capture or a selection: a confirmation that states the count and that there is no Recently Deleted (decided: a single delete always asks).
-- **Delete All Captures…**: the confirmation states the count, that it cannot be undone, what it does not reach, and that restoring an earlier backup brings back the captures that were in it (string 36; figure, panel C). It does not say "now" or anything else about how fast or how completely storage is erased.
+- **Delete All Captures…**: the confirmation states the count, that it cannot be undone, what it does not reach, and that restoring an earlier backup brings back the captures that were in it (string 36; figure, panel B). It does not say "now" or anything else about how fast or how completely storage is erased.
 - While a burst or a series is running, or photos are still saving, Delete All stops it and discards the pending photos first, and its confirmation says so (string 55). No capture is saved after the delete (E4).
 - Every delete also removes what the camera screen holds of the deleted captures: the Last Photo spot is reset and the session's records and previews for them are dropped. After Delete All the session viewer is empty (E1).
 
@@ -113,23 +113,23 @@ With nope only, the saved sentence names the place: "Saved in nope." and its sig
 - **It always keeps its captures in its own session folder**, whatever its copy of the settings says, and never writes to Photos (review decision 1). When the app is next opened with the iPhone unlocked, it files each capture by the setting at that moment: into Photos, or into the app's store. A stale or missing copy of the settings therefore cannot send a capture to the wrong place.
 - **Its sentence is not "Saved."** A capture in the session folder has not reached either place, so the Lock Screen camera says it is kept and what finishes the save (string 41). This is also the sentence when Save Photos To is Photos: a photo taken from the Lock Screen camera reaches Photos when the app is next opened unlocked, which is later than in 1.0.0. The release notes say so.
 - **A failed write is always shown.** The Lock Screen camera has no storage warning of its own, so every failed write shows the existing "Not saved" state with the reason, and a partial file is removed (A3).
-- **Nothing of a capture with Lock Captures on:** as decided in 2026-11-18, the Lock Screen camera then shows no thumbnail or details. It learns that setting from its copy of the settings, which can be out of date; what it shows in that case is an open question for the owner (plan, decision 27).
-- **This design is conditional on a device check.** It is built only if R4 shows that the session folder keeps its content (through a restart, a week without the app being opened, and low storage) and that its files, once written, cannot be read while the iPhone is locked. **If the check fails,** the review's fallback is built instead: nothing is kept in the session folder; a change of Save Photos To takes effect only once the app has read the Lock Screen camera's copy back, and a failed read-back is shown on the page as a change that was not made; with nope only in effect the Lock Screen camera does not take photos and says why (string 42); with Photos it saves as in 1.0.0.
+- **Nothing of a capture with Lock Captures on:** as decided in 2026-11-18, the Lock Screen camera then shows no thumbnail or details. It learns that setting from its copy of the settings. Release 1.1.0 confirms that copy after every change and shows a notice with Try Again when a change has not arrived ([release-1.1.md](release-1.1.md), section 9; issue 134). Decision 27 of the plan builds on that: while turning Lock Captures on has not been confirmed, the Lock Captures page shows 1.1.0's notice, and with no copy at all the Lock Screen camera shows nothing.
+- **This design is conditional on a device check.** It is built only if R4 shows that the session folder keeps its content (through a restart, a week without the app being opened, and low storage) and that its files, once written, cannot be read while the iPhone is locked. **If the check fails,** the review's fallback is built instead: nothing is kept in the session folder; a change of Save Photos To takes effect only once the app has read the Lock Screen camera's copy back, using 1.1.0's read-back and notice, and a failed read-back is shown on the page as a change that was not made; with nope only in effect the Lock Screen camera does not take photos and says why (string 42); with Photos it saves as in 1.0.0.
 
 ## 7. Limits the wording must cover
 
-The limits text itself is written with part 6 of the issue, after the device checks. The review adds these to what it must cover, each only as far as its check or source supports:
+The limits text itself is written with part 6 of the issue, after the device checks. Four limits that hold without the app's own store are on the Honesty screen from release 1.1.0 ([release-1.1.md](release-1.1.md), section 12; issue 137): deleting does not overwrite storage, copies shared or saved elsewhere are outside the app, a computer backup that is not encrypted can be read, and an update to the app can read what the app can read. This release adds to those entries for captures kept in the app and does not rewrite them; the items below marked "1.1.0" are covered there in their general form. The review adds these to what the text must cover, each only as far as its check or source supports:
 
 - Lock Captures and iOS protection start a few seconds after the iPhone locks, are as strong as the passcode, and do not exist while the iPhone is unlocked, including while Keep Screen On holds the screen on (C3). The Keep Screen On entry on the Honesty screen gains a sentence for captures kept in the app.
-- A computer the iPhone already trusts, and a backup to a computer that is not encrypted (B3).
+- A computer the iPhone already trusts (B3). A backup to a computer that is not encrypted: 1.1.0, extended here to say that it holds the captures kept in the app.
 - Settings are kept outside the store and are in every backup, so a backup shows that captures were kept in the app and locked (B4).
 - iPhone Mirroring, by the result of its device check (C4).
 - Records iOS keeps: App Privacy Report, the app's storage size, and the system log's record that the app asked for authentication (E6).
-- The app cannot erase storage; a deleted file is removed, not overwritten (E4).
-- What a share route adds outside the file, per route checked (F4).
+- The app cannot erase storage; a deleted file is removed, not overwritten (E4): 1.1.0, extended here for Delete and Delete All.
+- What a share route adds outside the file, per route checked (F4): 1.1.0's device check 15 and its Honesty entry on sharing; checked again here for Save to Files.
 - Which export option suits which purpose: a copy without optional details has no date and no signature, so it is the wrong choice for a record (F5).
 - A phone managed by an employer or school (G3).
-- A hostile app update (owner, 2026-11-21; also the checklist item "Update nope. yourself", string 70): an update to nope. that runs on the phone can read everything the app can read, including captures kept in the app while it is unlocked, and could add a network connection the current app does not have. Lock Captures does not protect against the app itself. For high-risk use, automatic updates can be turned off and each release's notes and source read before updating. The text claims no protection against this.
+- A hostile app update: the general limit is 1.1.0's. Added here (owner, 2026-11-21; also the checklist item "Update nope. yourself", string 70): an update to nope. that runs on the phone can read everything the app can read, including captures kept in the app while it is unlocked, and could add a network connection the current app does not have. Lock Captures does not protect against the app itself. For high-risk use, automatic updates can be turned off and each release's notes and source read before updating. The text claims no protection against this.
 - Advanced Data Protection (owner, 2026-11-21): the same suggestion as string 44a, with every limit in full, each as Apple's pages state it (section 10.9, H9 to H11):
   - it end-to-end encrypts iCloud Backup, iCloud Photos and iCloud Drive, among other categories;
   - Apple still holds the keys to some metadata. For a backup: the date, time and size of each snapshot, the device's name, model, color and serial number, and the list of apps and file formats in it. For a photo in iCloud Photos: a checksum of the file, when it was created, imported and modified, whether it is a favorite, hidden or deleted, and how often it was viewed. For a file in iCloud Drive: checksums of its content and of its name, its type, size and dates;
@@ -153,7 +153,7 @@ The limits text itself is written with part 6 of the issue, after the device che
 
 ## 9. Draft strings
 
-For the Honesty review. "H" marks a sentence that states what is or is not protected, saved or processed; it goes in `Honesty.xcstrings`. English (U.S.) only in 1.2.0; Spanish follows with issue 87 in 1.3.0. **The numbers continue from the 1.1.0 design and are not changed:** strings 1 to 12 are in [release-1.1.md](release-1.1.md), section 6; 13 to 40 were first drafted there for this issue; 41 to 56 were added with the review decisions; 44a was rewritten and 44b and 57 to 100 added for section 10.
+For the Honesty review. "H" marks a sentence that states what is or is not protected, saved or processed; it goes in `Honesty.xcstrings`. English (U.S.) only in 1.2.0; Spanish follows with issue 87 in 1.3.0. **The numbers continue from the 1.1.0 design and are not changed:** strings 1 to 12 are in [release-1.1.md](release-1.1.md), section 6; 13 to 40 were first drafted there for this issue; 41 to 56 were added with the review decisions; 44a was rewritten and 44b and 57 to 100 added for section 10. **Strings 25, 31, 31b, 32, 33, 34 and 51 moved to the 1.1.0 design on 2026-11-22** with issues 132 and 133, and keep their numbers there ([release-1.1.md](release-1.1.md), section 6); their rows below point to it. That design's new strings are 101 to 121, so no number is used twice.
 
 | # | Where | Text | H |
 | --- | --- | --- | --- |
@@ -170,19 +170,19 @@ For the Honesty review. "H" marks a sentence that states what is or is not prote
 | 22 | Under the Captures row | Deleting the app deletes these. Export the ones you want to keep. | H |
 | 23 | Leave Out of Backups, explanation | nope. asks iOS to leave these captures out of this iPhone's backups. iOS treats this as a request, not a guarantee, and it does not cover a copy of the phone's storage made another way. Left out, captures are lost if the phone is lost and do not move to a new phone. | H |
 | 24 | Notice with no passcode | This iPhone has no passcode, so iOS does not protect the captures kept in nope. Anyone who has the phone can read them. | H |
-| 25 | Neutral File Names, explanation | A copy's name includes the date and time only when the file itself holds them. With this on, every exported or shared copy, and every photo saved to Photos, gets a random name. | H |
+| 25 | Neutral File Names, explanation (issue 133) | Moved to release 1.1.0: [release-1.1.md](release-1.1.md), section 6, same number | H |
 | 26 | Lock Captures, explanation | Viewing, sharing and deleting captures kept in nope. asks for Face ID or the passcode. Taking photos never asks, and the camera screen shows no picture of a capture kept in nope. | H |
 | 27 | Lock Captures footer | A gate inside the app, not encryption. Anyone with the iPhone's passcode can open it. It does not cover copies in Photos or already shared, and it does not stop someone with the unlocked iPhone from deleting nope. and every capture in it. | H |
 | 28a | Lock Captures page, without Lock Again (the default outcome) | Captures lock again when you go back to the camera, leave nope. or lock the iPhone. | H |
 | 28b | Lock Again footer (only if the device check passes) | The time counts from when you leave nope. Captures always lock again when you go back to the camera, when the iPhone locks, and when nope. is closed. | H |
 | 29 | Locked library | Captures Are Locked · Use Face ID or the passcode to see them. · Unlock | |
 | 30 | Before Save to Files and the share sheet | The copy leaves nope.'s protection. The app or place you send it to keeps its own copy. The capture in nope. is not changed. | H |
-| 31 | Share choices | As Saved: every detail in the file, and its signature. · Share Without Optional Details: a copy with the optional details removed. | H |
-| 31b | As Saved, when the file holds a location | As Saved: every detail in the file, including its location, and its signature. | H |
-| 31c | Share step, only if Share Without Optional Details is cut | This copy includes the optional details in the file. | H |
-| 32 | Summary, signature (when the stored file was signed) | The copy is not signed: a signature does not survive a change to the file. | H |
-| 33 | Summary, What Stays in the File | Color and size data that the file needs to open can point to the phone model, and possibly to the individual phone. Every camera sensor also leaves a faint, unique noise pattern in the picture. With enough of your photos, forensic tools can match them to the same camera. No app can fully remove it. The picture itself is not changed. | H |
-| 34 | Share Without Optional Details, check failed | Not shared: nope. couldn't confirm that the copy holds only the details listed. | H |
+| 31 | Share choices (issue 132) | Moved to release 1.1.0: [release-1.1.md](release-1.1.md), section 6, same number | H |
+| 31b | As Saved, when the file holds a location (issue 132) | Moved to release 1.1.0: [release-1.1.md](release-1.1.md), section 6, same number | H |
+| 31c | Share step, only if release 1.1.0 shipped without the copy without optional details | This copy includes the optional details in the file. | H |
+| 32 | Summary, signature (issue 132) | Moved to release 1.1.0: [release-1.1.md](release-1.1.md), section 6, same number | H |
+| 33 | Summary, What Stays in the File (issue 132) | Moved to release 1.1.0: [release-1.1.md](release-1.1.md), section 6, same number | H |
+| 34 | Share Without Optional Details, check failed (issue 132) | Moved to release 1.1.0: [release-1.1.md](release-1.1.md), section 6, same number | H |
 | 35 | Delete All, title and button | Delete %lld Captures? · Delete %lld Captures | |
 | 36 | Delete All, message | This deletes every capture kept in nope. It can't be undone. It does not reach copies in Photos, in iCloud, in backups or already shared. Restoring an earlier backup brings back the captures that were in it. | H |
 | 37 | Delete, one or several | There is no Recently Deleted. This can't be undone. | H |
@@ -201,7 +201,7 @@ For the Honesty review. "H" marks a sentence that states what is or is not prote
 | 48 | Details in Each Photo footer, added sentence | For a photo kept in nope., the time it was taken stays inside nope. to keep your captures in order, even with Date and Time off. It is not written into the file. | H |
 | 49 | Factory Defaults confirmation, added sentence | Save Photos To, Lock Captures and Leave Out of Backups stay as they are. | H |
 | 50 | Save Photos To, while a burst, series or bracket runs | Stop the series to change where photos are saved. | |
-| 51 | Share and Save to Files steps | File name · (the name the copy will have) · The name holds the date and time only when the file itself holds them. | H |
+| 51 | Share and Save to Files steps, the file name (issue 133) | Moved to release 1.1.0: [release-1.1.md](release-1.1.md), section 6, same number | H |
 | 52 | What's in This Photo, for a stored capture | File name when exported | |
 | 53 | Library, a file without its details | Photo, details not available | |
 | 54 | Export of several, not enough space | Not exported: this needs about %@ of free space. | H |
@@ -254,21 +254,22 @@ For the Honesty review. "H" marks a sentence that states what is or is not prote
 
 Notes on the issue 83 strings:
 
-- **Two reviews** (review decision 14, which amends the plan's decision 26 for issue 83). The owner reviews strings 20 to 24, 26 to 28, 30 to 33 and 36 from this table, as rewritten here with their lettered forms, before group S1 starts. The numbers are the ones these strings had in the 1.1.0 design, so the review list on the issue points to the same sentences; the design is built on them. The new strings marked H (31b, 31c, 41, 42, 44, 46 to 49, 51, 54, 55) came from the same decisions and are in the table for that pass. Every string is reviewed again in the built app before the release run.
+- **Two reviews** (review decision 14, which amends the plan's decision 26 for issue 83). The owner reviews strings 20 to 24, 26 to 28, 30 to 33 and 36 from this table, as rewritten here with their lettered forms, before group S1 starts. Of these, 31, 32 and 33 moved to release 1.1.0 and are reviewed from its table before its group G starts; the list for S1 is then 20 to 24, 26 to 28, 30 and 36. The numbers are the ones these strings had in the 1.1.0 design, so the review list on the issue points to the same sentences; the design is built on them. The new strings marked H (31c, 41, 42, 44, 46 to 49, 54, 55; 31b and 51 moved to 1.1.0) came from the same decisions and are in the table for that pass. Every string is reviewed again in the built app before the release run.
 - **Rewritten on 2026-11-21:** 20 (now 20a and 20b), 23, 24, 25, 26, 27, 28 (now 28a and 28b), 30, 31, 32 (its condition), 33, 34 (its name), 36. New: 31b, 31c, 41 to 56. Unchanged: 21, 22, 29, 35, 37 to 40.
 - **Backup kinds.** Strings 20a, 20b, 23 and 44 name a kind of backup only as far as R4 confirmed it. "Including iCloud Backup" in 20a rests on Apple's documentation and is confirmed on a device before it is final. Where R4 confirms which kinds honor the request, 20b and 23 name those kinds in place of "this iPhone's backups".
 - **String 27** follows the iPhone Mirroring check: if the prompt can be answered from a Mac with something other than the iPhone's passcode, the sentence names it.
-- **String 33.** "And possibly to the individual phone" stays unless a comparison of the locked values across two phones of one model shows they do not differ; with no second phone, it stays. The sensor sentences are the wording of `docs/research/privacy-claims.md`, claim 9, as on the Honesty screen.
+- **String 33** and its note moved to the 1.1.0 design with the two-phone comparison (1.1.0 plan, device check 15).
 - **Face ID** in strings 26, 29, 46 stands for the device's own method (Face ID, Touch ID or Optic ID), as in the system's wording.
 - **String 44a** was rewritten on 2026-11-21 to state the limits of Advanced Data Protection (section 1). It joins the owner's first review. If it is still too long for the question, the first cut is "You turn it on in the Settings app.", which the checklist item (string 68) also carries as its path.
 - **Strings 57 to 82** are the High-Risk Checklist (section 10). Each item's cell is its title, its text and, where there is one, the place to go, separated by "·"; each is one localized string per part, never joined from fragments. Every sentence that states what iOS, Apple or the app does or does not do is marked H, including the paths. The source for each is in section 10.4 and 10.6.
 - **No third-party app or service is named** in strings 57 to 82 or anywhere else in the checklist (owner, 2026-11-22). Kinds are described: "an end-to-end encrypted messaging app", "a cloud storage service you trust", "your organization's documentation tool". Apple's own features are named.
 - **Strings 83 to 100** are the page "Ways Others May Try to Get Your Photos" (section 10.7). Each route's cell is its title, what happens, what helps and what the app cannot do; each part is one localized string. They name no tool, product or authority, and give no steps. Strings 88, 90 and 94 follow device checks: 88's second sentence rests on Apple's description of the protection classes (H16) and on R4; 90's second sentence is the review's check of a backup made by a trusted computer while the iPhone is locked, and is left out if that check does not show it; 94 gains a sentence about covering captures only if that is built and its check passed.
-- **Strings that wait for a check:** 63 (its second sentence follows the same check as the first limit in section 7), 64 and 75 (what is in a backup, by R4's backup result and the answer to Leave Out of Backups), 71 (its last sentence is left out if Share Without Optional Details is cut). None of 57 to 82 says anything about Lock Captures under Stolen Device Protection, the app in Lockdown Mode, or what AirDrop shows the receiving device; a sentence on each is added only from its recorded device check.
+- **Strings 71 to 73** name As Saved and Share Without Optional Details. Since 2026-11-22 the choice between them is the When Sharing setting of release 1.1.0, or its step with Ask Each Time; the sentences are read again against the built setting before they are final.
+- **Strings that wait for a check:** 63 (its second sentence follows the same check as the first limit in section 7), 64 and 75 (what is in a backup, by R4's backup result and the answer to Leave Out of Backups), 71 (its last sentence is left out if release 1.1.0 shipped without the copy without optional details). None of 57 to 82 says anything about Lock Captures under Stolen Device Protection, the app in Lockdown Mode, or what AirDrop shows the receiving device; a sentence on each is added only from its recorded device check.
 - **String 79** takes the month and the iOS version from the review record (section 10.8), so the page never states a date that no review supports.
-- **The name "Share Without Optional Details"** is a draft. "Share Clean" is not used in the interface; the issue and older notes call this part "Share clean".
+- **The name "Share Without Optional Details"** is a draft, now reviewed with release 1.1.0's strings. "Share Clean" is not used in the interface; the issue and older notes call this part "Share clean".
 
-The limits issue 83 lists under "Limits to state plainly" (what stays in a file, the sensor pattern, screenshots, that the app cannot hide that it is installed), and those the review adds (section 7), are Honesty screen entries and `docs/PRIVACY.md` text, written with part 6 of the issue once the device checks are in; they are not drafted here.
+The limits issue 83 lists under "Limits to state plainly" (what stays in a file, the sensor pattern, screenshots, that the app cannot hide that it is installed), and those the review adds (section 7), are Honesty screen entries and `docs/PRIVACY.md` text, written with part 6 of the issue once the device checks are in; they are not drafted here. The four that hold without the store are drafted in the 1.1.0 design (strings 115 to 118).
 
 ## 10. The High-Risk Checklist
 
@@ -343,7 +344,7 @@ Rules for these items:
 
 ### 10.6 Getting captures off the phone
 
-Added 2026-11-22. A group on the same page, "Getting Captures Off This iPhone" (strings 71 to 77), in the same source of truth. It uses only what section 3 already has: Share… (As Saved, or Share Without Optional Details), Save to Files… and the backups of section 1. Nothing is sent by the app.
+Added 2026-11-22. A group on the same page, "Getting Captures Off This iPhone" (strings 71 to 77), in the same source of truth. It uses only what section 3 already has: Share… (As Saved, or Share Without Optional Details, by the When Sharing setting of release 1.1.0), Save to Files… and the backups of section 1. Nothing is sent by the app.
 
 The group opens with three statements that hold for every way (string 71): the app sends nothing itself; a copy that leaves the app is outside its protection and under the control of whoever receives it; and which export option fits which purpose. **A signed copy with its details (As Saved) suits a record. Share Without Optional Details suits publishing:** it has no date and no signature (section 7, F5).
 
