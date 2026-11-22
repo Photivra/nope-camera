@@ -467,3 +467,18 @@ Read or searched for this page on 2026-11-21. Publication dates are as shown by 
 - [T2] iLEAPP (open-source parser for iOS backups and diagnostics archives): https://github.com/abrignoni/iLEAPP
 
 In this repository: issue 83 and its comments; `docs/research/83-blind-spots.md`; `docs/plans/1.1.0.md` (groups S1 to S6, R4); AGENTS.md; `docs/PRIVACY.md`; `docs/SECURITY_AUDIT.md` (threat model; checks 1, 11, 13, 15, 20; MASVS coverage); `SECURITY.md`; `security/allowed-entitlements.txt`; issue 84.
+
+## Addendum (2026-11-21): a hostile or compelled app update
+
+Added at the owner's request.
+
+- **Threat.** The app's publishing accounts are taken over, or the maintainer is compelled, and an update is published that collects a person's captures. Once installed and opened, the update runs with everything the app can reach: captures kept in the app (while the phone is unlocked, and through Lock Captures, which the app itself controls), Photos if full access was granted, settings and signing material, and it could add networking that the app does not have today.
+- **What limits it.** It must be installed and opened; App Review applies; iOS permissions still gate Photos and other apps' data; changes to an open-source app are visible in the repository, though the App Store build cannot be checked against the source byte for byte (no reproducible builds on iOS); a network connection would also require a changed privacy label.
+- **What the project does.**
+  - Accounts: protect the Apple developer account and GitHub with passkeys or hardware security keys, and give App Store Connect access only to the people who need it, each with the narrowest role.
+  - Releases: only the maintainer submits builds; each release has a public tag, changelog and source.
+  - Networking is never added without a public, reviewable change and an updated privacy label.
+- **What users are told.** In the limits text (design 1.2, section 7) and docs/PRIVACY.md's high-risk section: the app cannot protect against an update from its own publisher; for high-risk use, turn off automatic updates and read each release's notes before updating.
+- **Never claimed.** That the app protects against its maker, or that the App Store build is verified to match the source.
+- **Severity.** High impact, low likelihood. It is a residual risk shared by every installed app; no build group can remove it.
+
