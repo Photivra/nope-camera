@@ -1,6 +1,6 @@
 {
   "about": "Site-only sentences of the accessibility page (docs/design/nope-site.md, 7.1). \"claims\" as in home.json. The status table comes from store/accessibility-status.json. Each statement under appStatements must be a string of the app's Accessibility screen (source) or be backed by the quoted evidence in its source file; held lists the screen's statements kept off the page, with the reason, until the reason no longer holds. lastUpdated is checked against the last change to this file and to the status file.",
-  "lastUpdated": "2026-11-19",
+  "lastUpdated": "2026-11-22",
   "title": {"md": "Accessibility · Photivra Nope Camera", "claims": ["none"]},
   "description": {"md": "What Photivra Nope Camera has for VoiceOver, Voice Control, Switch Control, a keyboard and large text, what has been checked, and how to report a problem.", "claims": ["none"]},
   "text": {

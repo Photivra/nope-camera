@@ -6,7 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-11-18
+## [1.0.0] - 2026-11-22
 
 Languages: 1.0.0 ships in English only (issue #86); Spanish (es, with es-419 overrides) is in the backlog (#87). Entries below that say "eleven languages" describe draft translations that were later removed (#86).
 
