@@ -120,6 +120,7 @@ The limits text itself is written with part 6 of the issue, after the device che
 - What a share route adds outside the file, per route checked (F4).
 - Which export option suits which purpose: a copy without optional details has no date and no signature, so it is the wrong choice for a record (F5).
 - A phone managed by an employer or school (G3).
+- A hostile app update (owner, 2026-11-21): an update to nope. that runs on the phone can read everything the app can read, including captures kept in the app while it is unlocked, and could add a network connection the current app does not have. Lock Captures does not protect against the app itself. For high-risk use, automatic updates can be turned off and each release's notes and source read before updating. The text claims no protection against this.
 - Advanced Data Protection (owner, 2026-11-21): the same suggestion as string 44a, with its limits; the app does not know whether it is on.
 
 ## 8. Accessibility
