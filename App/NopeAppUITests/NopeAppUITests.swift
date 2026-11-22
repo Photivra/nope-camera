@@ -296,6 +296,7 @@ final class NopeAppUITests: XCTestCase {
         scrollToTop(app)
         let ignored = { (issue: XCUIAccessibilityAuditIssue) in
             Self.isClippedContrastIssue(issue, in: app) || Self.isOpenIPadFinding(issue)
+                || Self.isDisabledControlContrast(issue)
                 || (!checksContrast && issue.auditType == .contrast)
         }
         // A check whose findings are all ignored isn't run (see ``audit(_:afterScrolling:)``).
@@ -308,6 +309,25 @@ final class NopeAppUITests: XCTestCase {
         for issue in remaining {
             XCTFail("\(issue.compactDescription): \(issue.element?.debugDescription ?? "no element")", file: file, line: line)
         }
+    }
+
+    /// Whether an issue is a contrast finding on a disabled control, drawn at the tokens' disabled
+    /// opacity (the RAW row while it is the only format, a lens button's "No RAW" caption while
+    /// the self-timer counts down): WCAG 2.2, 1.4.3, exempts inactive user interface components
+    /// from the contrast minimum (docs/design/tokens.md; chunk 0's note on "Contrast nearly
+    /// passed"). Every audit helper applies it, ``audit(_:afterScrolling:)`` and
+    /// ``auditScrollingScreen(_:checksContrast:file:line:)`` alike. An enabled control is never
+    /// exempt.
+    @MainActor
+    static func isDisabledControlContrast(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
+        guard let element = issue.element, element.exists else { return false }
+        return isExemptFromContrast(auditType: issue.auditType, isEnabled: element.isEnabled)
+    }
+
+    /// The rule of ``isDisabledControlContrast(_:)`` on its inputs: only a contrast finding, and
+    /// only on a control that isn't enabled.
+    static func isExemptFromContrast(auditType: XCUIAccessibilityAuditType, isEnabled: Bool) -> Bool {
+        auditType == .contrast && !isEnabled
     }
 
     /// Whether an issue is a contrast issue of an element that isn't wholly on screen, or of no
@@ -901,10 +921,7 @@ final class NopeAppUITests: XCTestCase {
         // notice at the largest text size. Every page is audited at the largest text size, where
         // a finding on an element fails.
         if issue.element == nil && (issue.auditType == .contrast || issue.auditType == .textClipped) { return true }
-        // A disabled control, drawn at the tokens' disabled opacity (the RAW row while it is the
-        // only format): WCAG 2.2, 1.4.3, exempts inactive user interface components from the
-        // contrast minimum (docs/design/tokens.md; chunk 0's note on "Contrast nearly passed").
-        if issue.auditType == .contrast, let element = issue.element, element.exists, !element.isEnabled { return true }
+        if isDisabledControlContrast(issue) { return true }
         guard afterScrolling else { return false }
         guard issue.auditType != .contrast, let element = issue.element else { return true }
         let current = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", element.label))

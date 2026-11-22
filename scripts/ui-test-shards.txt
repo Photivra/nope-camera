@@ -7,6 +7,7 @@
 # test to the shard with the least time on each device, with twice its local time and an "e".
 2 1 MeasuredContrastTests/testAFrameWithOneColorOrNoPixelsHasNoMeasurement 2e 2e
 2 1 MeasuredContrastTests/testAnImageIsDrawnInSRGB 2e 2e
+2 1 MeasuredContrastTests/testOnlyADisabledControlIsExemptFromContrast 2e 2e
 2 1 MeasuredContrastTests/testAntiAliasedEdgesCountTowardTheLowerContrast 2e 2e
 2 1 MeasuredContrastTests/testStrayPixelsDontRaiseTheResult 2e 2e
 2 1 MeasuredContrastTests/testTextOnAPlainBackground 2e 2e

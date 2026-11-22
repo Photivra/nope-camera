@@ -99,4 +99,20 @@ final class MeasuredContrastTests: XCTestCase {
         let ratio = try XCTUnwrap(MeasuredContrast.ratio(of: image))
         XCTAssertEqual(ratio, 5.00, accuracy: 0.01)
     }
+
+    /// Only a disabled control is exempt from the contrast audit; an enabled one below the
+    /// minimum still fails, and the exemption covers no other finding type
+    /// (`NopeAppUITests.isDisabledControlContrast`, applied by every audit helper).
+    @MainActor
+    func testOnlyADisabledControlIsExemptFromContrast() {
+        XCTAssertTrue(NopeAppUITests.isExemptFromContrast(auditType: .contrast, isEnabled: false))
+        XCTAssertFalse(NopeAppUITests.isExemptFromContrast(auditType: .contrast, isEnabled: true))
+        XCTAssertFalse(NopeAppUITests.isExemptFromContrast(auditType: .textClipped, isEnabled: false))
+        XCTAssertFalse(NopeAppUITests.isExemptFromContrast(auditType: .dynamicType, isEnabled: false))
+        // Mid-gray text on black measures about 4.8:1, below the 7:1 that sets a finding aside
+        // by measurement: on an enabled control, it fails.
+        let gray = MeasuredContrast.relativeLuminance(red: 120, green: 120, blue: 120)
+        let black = MeasuredContrast.relativeLuminance(red: 0, green: 0, blue: 0)
+        XCTAssertLessThan(MeasuredContrast.ratio(gray, black), 7)
+    }
 }

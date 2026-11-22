@@ -509,8 +509,12 @@ other finding fails the test:
     readout beside Viewfinder Overlays, in the failing runs' recordings). The Settings list
     with its search field passed the same check where no text was cut;
   - a contrast finding on a disabled control (the RAW row while it is the only format, the
-    button gallery's disabled states, at the tokens' 40% opacity): WCAG 2.2, 1.4.3, exempts
-    inactive user interface components from the contrast minimum;
+    button gallery's disabled states, a lens button's "No RAW" caption while the self-timer
+    counts down, at the tokens' 40% opacity): WCAG 2.2, 1.4.3, exempts inactive user interface
+    components from the contrast minimum. Every audit helper applies it, the scrolling layout's
+    `auditScrollingScreen` too (owner, 2026-11-22: it lacked the rule, and
+    `testSelfTimerAtTheLargestTextSizeAndRightToLeft` failed on the iPad at 2.96:1 measured);
+    an enabled control is never exempt (`MeasuredContrastTests`);
   - in the scrolling camera layout, a contrast finding on a row partly under the pinned Q and
     shutter row (it runs from above the pinned row into it): the audit measures the part the
     pinned row covers. The pinned row's own buttons, and every row wholly above it, are checked;
