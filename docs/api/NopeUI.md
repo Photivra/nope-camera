@@ -9609,6 +9609,19 @@ static let opensGuide: LocalizedStringResource
 
 "Opens the guide.".
 
+## `GuideText/page`
+
+internal, declared in `Sources/NopeUI/GuideView.swift`
+
+```swift
+static let page: LocalizedStringResource
+```
+
+"Page": what VoiceOver calls the page number, read before it as "Page, 2 of 7". The
+number is the element's value, so the label and the shown text don't differ in length:
+a shown "2 of 7" labelled "Page 2 of 7" was reported as clipped text by the accessibility
+audit on iPad.
+
 ## `GuideText/pageNumber(_:of:)`
 
 internal, declared in `Sources/NopeUI/GuideView.swift`
@@ -9673,21 +9686,6 @@ static let quickMenuTitle: LocalizedStringResource
 ```
 
 "Q and Settings".
-
-## `GuideText/spokenPageNumber(_:of:)`
-
-internal, declared in `Sources/NopeUI/GuideView.swift`
-
-```swift
-static func spokenPageNumber(_ number: Int, of total: Int) -> LocalizedStringResource
-```
-
-"Page 2 of 7".
-
-- Parameters:
-  - number: The page's number, from 1.
-  - total: The number of pages.
-- Returns: The page number as VoiceOver reads it.
 
 ## `GuideText/takePhotoText`
 

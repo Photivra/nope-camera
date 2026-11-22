@@ -557,6 +557,18 @@
         }
       }
     },
+    "Guide: Page" : {
+      "comment" : "VoiceOver label of the how-to-use guide's page number; VoiceOver reads the number after it, such as \"Page, 2 of 7\".",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Page"
+          }
+        }
+      }
+    },
     "Hides this card. The guide stays in Settings." : {
       "comment" : "VoiceOver hint of the Dismiss button on the camera's how-to-use card. Settings is the name of the app's settings screen.",
       "extractionState" : "manual"
@@ -631,10 +643,6 @@
     },
     "Order" : {
       "comment" : "Picker in Bracket Settings, and a setting of the Take Bracket action: the order in which the frames are taken.",
-      "extractionState" : "manual"
-    },
-    "Page %lld of %lld" : {
-      "comment" : "VoiceOver reading of the how-to-use guide's page number, such as \"Page 2 of 7\".",
       "extractionState" : "manual"
     },
     "Page %lld of %lld: %@" : {

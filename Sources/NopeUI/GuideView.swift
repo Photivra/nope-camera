@@ -285,12 +285,13 @@ struct GuideView: View {
         .background(.background)
     }
 
-    /// "2 of 7", read as "Page 2 of 7".
+    /// "2 of 7", read as "Page, 2 of 7": the label "Page" and the number as its value.
     private var pageNumber: some View {
         Text(GuideText.pageNumber(page.number, of: GuidePage.allCases.count))
             .font(.subheadline)
             .foregroundStyle(CameraStyle.secondaryText)
-            .accessibilityLabel(Text(GuideText.spokenPageNumber(page.number, of: GuidePage.allCases.count)))
+            .accessibilityLabel(Text(GuideText.page))
+            .accessibilityValue(Text(GuideText.pageNumber(page.number, of: GuidePage.allCases.count)))
             .accessibilityIdentifier("guide.pageNumber")
     }
 
@@ -676,17 +677,13 @@ enum GuideText {
             comment: "Page number under the how-to-use guide, between Back and Next, such as \"2 of 7\": the page shown, of how many.")
     }
 
-    /// "Page 2 of 7".
-    ///
-    /// - Parameters:
-    ///   - number: The page's number, from 1.
-    ///   - total: The number of pages.
-    /// - Returns: The page number as VoiceOver reads it.
-    static func spokenPageNumber(_ number: Int, of total: Int) -> LocalizedStringResource {
-        LocalizedStringResource(
-            "Page \(number) of \(total)", bundle: bundle,
-            comment: "VoiceOver reading of the how-to-use guide's page number, such as \"Page 2 of 7\".")
-    }
+    /// "Page": what VoiceOver calls the page number, read before it as "Page, 2 of 7". The
+    /// number is the element's value, so the label and the shown text don't differ in length:
+    /// a shown "2 of 7" labelled "Page 2 of 7" was reported as clipped text by the accessibility
+    /// audit on iPad.
+    static let page = LocalizedStringResource(
+        "Guide: Page", defaultValue: "Page", bundle: bundle,
+        comment: "VoiceOver label of the how-to-use guide's page number; VoiceOver reads the number after it, such as \"Page, 2 of 7\".")
 
     /// What VoiceOver hears when a page shows: "Page 2 of 7: Photos as the camera took them".
     ///

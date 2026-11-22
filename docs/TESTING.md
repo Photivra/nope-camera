@@ -2479,7 +2479,7 @@ own controls drawn as decoration and hidden from VoiceOver by design. On a phone
 4. The Lock Screen camera never shows the card; its Settings row opens the guide.
 5. VoiceOver: the card is read after the picture's elements and doesn't take focus when it
    appears; Open's and Dismiss's hints are read. In the guide each title is a heading, a page
-   reads title, text, link, then Back, "Page 2 of 7", Next, and moving to a page announces
+   reads title, text, link, then Back, "Page, 2 of 7", Next, and moving to a page announces
    "Page 2 of 7: Photos as the camera took them". The pictures are not read.
 6. Voice Control: "Tap Open", "Tap Dismiss", "Tap Next", "Tap Back", "Tap Done", "Tap Close",
    "Tap About processing" and "Tap Details in Each Photo" work.

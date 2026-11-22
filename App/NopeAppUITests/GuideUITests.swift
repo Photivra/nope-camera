@@ -150,7 +150,8 @@ extension NopeAppUITests {
         XCTAssertFalse(app.buttons["guide.back"].exists, "Back on the first page")
         for (index, title) in Self.guideTitles.enumerated() {
             XCTAssertTrue(guideTitle(app, is: title), "page \(index + 1) isn't \(title)")
-            XCTAssertEqual(number.label, "Page \(index + 1) of 7")
+            XCTAssertEqual(number.label, "Page")
+            XCTAssertEqual(number.value as? String, "\(index + 1) of 7")
             XCTAssertEqual(app.buttons["guide.link"].exists, index == 1 || index == 2, "page \(index + 1)'s link")
             keepGuideScreenshot(app, "guide-page-\(index + 1)")
             try audit(app)
@@ -224,7 +225,7 @@ extension NopeAppUITests {
         // The audit scrolled the list, so the row is found again before the tap.
         settingsElement(app, "settings.howToUse").tap()
         XCTAssertTrue(guideTitle(app, is: Self.guideTitles[0]))
-        XCTAssertEqual(app.staticTexts["guide.pageNumber"].label, "Page 1 of 7")
+        XCTAssertEqual(app.staticTexts["guide.pageNumber"].value as? String, "1 of 7")
         try audit(app)
         app.buttons["guide.close"].tap()
         XCTAssertTrue(guideIsClosed(app))

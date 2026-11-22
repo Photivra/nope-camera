@@ -95,7 +95,7 @@ struct GuideTests {
 
     @Test func thePageNumberIsShownAndSpoken() {
         #expect(String(localized: GuideText.pageNumber(2, of: 7)) == "2 of 7")
-        #expect(String(localized: GuideText.spokenPageNumber(2, of: 7)) == "Page 2 of 7")
+        #expect(String(localized: GuideText.page) == "Page")
         #expect(GuideText.announcement(for: .unprocessed) == "Page 2 of 7: Photos as the camera took them")
     }
 
