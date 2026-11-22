@@ -36,7 +36,8 @@ extension NopeAppUITests {
     }
 
     /// The Settings element with an identifier, scrolled wholly into view: down the list until
-    /// it is found or the list stops moving, then back up the same way.
+    /// it is found or the list stops moving, then back up the same way. A row that is partly in
+    /// view and fits is moved to the list's middle by a slow, held drag instead.
     ///
     /// The search doesn't count drags. At the largest text size the list is many screens long
     /// (the Pinch row alone is about 1,000 points high), and an audit's text size changes can
@@ -57,7 +58,19 @@ extension NopeAppUITests {
             var drags = 0
             var position = settingsListPosition(list)
             while !(element.exists && element.isHittable && frame.contains(element.frame)) && drags < Self.maximumSettingsDrags {
-                point(towardEnd ? 0.7 : 0.4).press(forDuration: 0.05, thenDragTo: point(towardEnd ? 0.4 : 0.7))
+                let row = element.exists ? element.frame : .null
+                if !row.isNull, row.height < frame.height, row.intersects(frame) {
+                    // Partly in view and short enough to fit: a slow drag that ends held, so the
+                    // list doesn't coast, moves the row's middle to the list's. A row 486 points
+                    // tall in the 720-point iPad popover (Keep Night Mode After Astro at the
+                    // largest text size) has only 234 points to land in, and a plain drag, which
+                    // coasts about 375 points, stepped over them each way.
+                    let shift = max(-0.4, min(0.4, (frame.midY - row.midY) / frame.height))
+                    point(0.5).press(
+                        forDuration: 0.05, thenDragTo: point(0.5 + shift), withVelocity: .slow, thenHoldForDuration: 0.3)
+                } else {
+                    point(towardEnd ? 0.7 : 0.4).press(forDuration: 0.05, thenDragTo: point(towardEnd ? 0.4 : 0.7))
+                }
                 drags += 1
                 let next = settingsListPosition(list)
                 if let next, next == position { break }
