@@ -37,6 +37,8 @@ The rules for contributors and coding agents are in AGENTS.md. Read it before ch
 - [docs/design/nope-site.md](docs/design/nope-site.md): the public site design, accepted 2026-11-19 for release 1.0.0: nope.photivra.com on GitHub Pages (landing page, privacy policy, support, accessibility), with no cookies, analytics, JavaScript or external requests; draft copy, tokens, accessibility, search, performance budgets, the build and its checks, publishing steps and the decisions
 - [docs/design/finish-1.0.md](docs/design/finish-1.0.md): the last designs proposed for release 1.0.0 (2026-11-21): control-row spacing, the how-to-use guide, the Photo Details summary card, Dim After, Burst Limit, the self-timer deadline and start-to-start intervals, with the draft strings
 - [docs/plans/1.0.0-finish.md](docs/plans/1.0.0-finish.md): the plan for finishing release 1.0.0: an audit of every open 1.0.0 issue, the technical plan for the clock, shutter, burst, interval and Siri work, the build order in parallel groups, and the decisions for the owner
+- [docs/design/release-1.1.md](docs/design/release-1.1.md): the designs proposed for release 1.1.0 (2026-11-21): the quieter Show Controls button, Shutter Sound, capture feedback and save status, and Save Photos To with the Captures library, export, Share clean and Lock Captures, with the draft strings
+- [docs/plans/1.1.0.md](docs/plans/1.1.0.md): the plan for release 1.1.0: each open 1.1.0 issue with its behavior, tests, risks and size, the research to do before building, the build order in parallel groups, the acceptance and device checks, and the decisions for the owner
 - [docs/design/layouts.html](docs/design/layouts.html): the rule that gives each window its layout, and which screens are drawn for iPhone, iPad, iPhone Duo and Apple Watch
 - [docs/RELEASING.md](docs/RELEASING.md): what the maintainer does to release, including the one-time setup and publication of the public site
 - [site/site.json](site/site.json): the public site, https://nope.photivra.com/ (privacy policy, support, accessibility), built from `site/` by `scripts/build-site.py` and checked by `scripts/check-site.sh`
@@ -66,6 +68,7 @@ The rules for contributors and coding agents are in AGENTS.md. Read it before ch
 - [docs/research/capability-survey.md](docs/research/capability-survey.md): iPhone and iPad camera capabilities and the v1.0 plan
 - [docs/research/capture-and-file-settings.md](docs/research/capture-and-file-settings.md): every capture and file setting AVFoundation and ImageIO let an app control, and which ones the app offers
 - [docs/research/privacy-claims.md](docs/research/privacy-claims.md): every privacy statement, its verified wording and its sources
+- [docs/research/usability-test-plan.md](docs/research/usability-test-plan.md): the usability test for issue 127: participants, session, tasks, the System Usability Scale and its scoring, targets, and what is published
 
 ## Project history
 
