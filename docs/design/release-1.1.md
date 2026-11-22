@@ -86,7 +86,6 @@ Not confirmed on a device (plan, research step R2): when the system plays the so
 - **On:** the app asks for nothing, so the system's own sound plays by the system's rules (today's behavior). The app ships no sound of its own, starts no audio session and never changes the volume.
 - **Where the system does not allow silence** (`isShutterSoundSuppressionSupported` is false): the row is a value, "Always On", not a switch, with the reason under it. The row is not hidden: a person should be able to find out why the camera makes a sound.
 - **The sound carries no information of its own** (AGENTS.md, "Hearing"): the shutter haptic, the picture's dimming (section 3) and the saved sentence still mark every photo.
-- **Haptic and sound at the same moment** (owner): when the sound will play, the shutter haptic is given on the capture's "will capture" event, where the system plays the sound, instead of on the press, so the two land together for every photo. With the sound off, the haptic stays on the press.
 
 | Where | Behavior |
 | --- | --- |
