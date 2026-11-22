@@ -482,3 +482,9 @@ Added at the owner's request.
 - **Never claimed.** That the app protects against its maker, or that the App Store build is verified to match the source.
 - **Severity.** High impact, low likelihood. It is a residual risk shared by every installed app; no build group can remove it.
 
+
+## Owner decisions (2026-11-21)
+
+All ten decisions in this document were answered with the recommended option, with one change made afterwards by the owner:
+
+- **No app-level encryption.** The project does not implement its own encryption of captures. It relies on iOS Data Protection on the device, and suggests Apple's Advanced Data Protection for iCloud backups. Issue #84 is closed as not planned. Decision 2's reserved per-file field (HD35) is dropped: 1.2.0 adds no encryption seam. Decision 1 stands without its reference to #84: Lock Captures is a gate, not encryption, and is not bound to a keychain item.
