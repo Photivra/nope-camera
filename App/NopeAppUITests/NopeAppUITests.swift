@@ -1126,7 +1126,7 @@ final class NopeAppUITests: XCTestCase {
             swipes += 1
         }
         XCTAssertEqual(sign.value as? String, "0")
-        XCTAssertTrue(sign.label.contains("taken with nope., and which version"), sign.label)
+        XCTAssertTrue(sign.label.contains("The signature names nope. and its version as the maker."), sign.label)
         open(app, row: "Details in Each Photo")
         let detailMaster = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Remove All Optional Details")).firstMatch
         XCTAssertTrue(detailMaster.waitForExistence(timeout: 5))
@@ -2377,11 +2377,13 @@ final class NopeAppUITests: XCTestCase {
         continuePastFirstRun(app)
         openPhotoDetails(app)
         XCTAssertTrue(element(app, containing: "RAW (DNG)").waitForExistence(timeout: 5))
+        // The summary's signature row (issue #118) says "Signed"; "Saved and signed." is the
+        // camera's message after the photo, which the summary no longer repeats.
+        XCTAssertEqual(summaryRow(app, "signature").label, "Signed")
         // The RAW clipping the simulated camera reports (SimulatedCaptureBackend.placeholderClipping).
         XCTAssertTrue(scrollUntilExists(app, element(app, containing: "0.4% of photosites")))
         XCTAssertTrue(scrollUntilExists(app, element(app, containing: "0.1% of photosites")))
         XCTAssertTrue(scrollUntilExists(app, app.staticTexts["Files"]))
-        XCTAssertTrue(scrollUntilExists(app, element(app, containing: "Saved and signed.")))
         // As for the format sheet (testFormatChipExplainsTheFormat): the list's system section
         // headers are reported as "partially unsupported" at the default size; the same list is
         // audited in full at the largest size in testDetailsLargestText (PhotoDetailsUITests).
