@@ -2,20 +2,20 @@
 
 Status: proposed 2026-11-21 for release 1.1.0. Not built, not yet accepted, and not in the screen counts of [README.md](README.md). Decisions already recorded on an issue are taken as fixed and marked "decided"; everything else is a proposal, and the open choices are collected in [docs/plans/1.1.0.md](../plans/1.1.0.md), section 8. All wording is a draft until the Honesty review. The figures are SVG files in [release-1.1/](release-1.1/); they are sketches of layout, states and wording, not pixel-exact screens. The full screen set (`screens/`) is redrawn when each design is accepted and built.
 
-This document covers the user-facing parts of five issues. Issue 85 (CI) has no interface; its diagram is here because the figures are kept together. Issue 114 (Apple Vision Pro) and issue 127 (the usability test) have no screens: see the plan, sections 3.1 and 3.7, and [docs/research/usability-test-plan.md](../research/usability-test-plan.md).
+This document covers the user-facing parts of three issues. Issue 85 (CI) has no interface; its diagram is here because the figures are kept together. Issue 114 (Apple Vision Pro) and issue 127 (the usability test) have no screens: see the plan, sections 3.1 and 3.7, and [docs/research/usability-test-plan.md](../research/usability-test-plan.md).
 
 | Section | Issue | What |
 | --- | --- | --- |
 | 1 | 120 | The Show Controls button in clean view, made quieter |
 | 2 | 128 | Shutter Sound |
 | 3 | 129 | Capture feedback and save status |
-| 4 | 83 | Save Photos To, the Captures library, export, Share clean, Lock Captures |
+| 4 | 83 | Moved to release 1.2.0: [release-1.2.md](release-1.2.md) |
 | 5 | 85 | Which CI jobs a change runs (diagram only) |
 | 6 | | Every draft string, for the Honesty review |
 
 Evidence note: everything about today's behavior was read from the code on branch `n100-H` at `9cef00d`. Nothing here was measured on a device or run on a simulator. Contrast ratios are calculated from the color values with the WCAG 2.2 formula (the same one `MeasuredContrast` uses in the UI tests); they are not measured from a screen. Each statement that needs a device is listed as a device check in the plan, section 7.
 
-Q, the quick menu, is not changed by anything here: no tile is added, removed, moved or made editable, and Q still opens only from its button. The new settings are in Settings; the Captures library opens from the Last Photo spot and from Settings.
+Q, the quick menu, is not changed by anything here: no tile is added, removed, moved or made editable, and Q still opens only from its button. The new settings are in Settings.
 
 Names: the interface says "nope."; documents and the About screen say "Photivra Nope Camera" (AGENTS.md, "Name and wordmark").
 
@@ -125,7 +125,7 @@ No timing has been measured. The plan's research step R3 measures first; the num
 
 ### 3.2 The rule
 
-One rule for every surface: **feedback at capture says a photo was taken; only a confirmed save says it was saved.** "Confirmed" means what `.saved` means today: the files passed the metadata read-back and the destination (Photos, or the app's store with issue 83) accepted them.
+One rule for every surface: **feedback at capture says a photo was taken; only a confirmed save says it was saved.** "Confirmed" means what `.saved` means today: the files passed the metadata read-back and the destination accepted them (Photos; from release 1.2.0 also the app's own store, issue 83).
 
 | Moment | Picture | Haptic and sound | Last Photo spot | Words and VoiceOver |
 | --- | --- | --- | --- | --- |
@@ -154,63 +154,7 @@ Details:
 
 ## 4. Protection for high-risk use (issue 83)
 
-Figures: [release-1.1/save-photos-to.svg](release-1.1/save-photos-to.svg), [release-1.1/captures-library.svg](release-1.1/captures-library.svg), [release-1.1/export-share-clean.svg](release-1.1/export-share-clean.svg).
-
-Issue 83 is the specification, including its ten owner decisions of 2026-11-18. This section adds the screens, the entry points and the wording, and does not repeat the issue. Where the two differ, the issue is right.
-
-### 4.1 Settings › Privacy
-
-The group gets the two rows `SETTINGS-PLAN.md` reserved, above Assistant Access: **Save Photos To** (value: Photos, or nope only) and **Lock Captures** (value: Off, or On). Five rows in the group.
-
-**Save Photos To** (a page):
-
-1. The choice: Photos, nope only. Footer: what the choice covers and does not (strings 20, 21).
-2. "Kept in nope.": a **Captures** row with the count and size, which opens the library. Shown whenever the app holds captures, whichever choice is selected. With Lock Captures on and locked, the row shows no count or size.
-3. **Leave Out of Backups** and **Neutral File Names**, both off by default, each with its trade-off.
-4. **Delete All Captures…**, shown when the app holds captures.
-5. When the device has no passcode: a notice at the top that captures are not protected at rest (string 24).
-
-**Lock Captures** (a page): the switch; "Lock Again" (Immediately, After 1 Minute, After 5 Minutes); Passcode Only; the limits in the footer. The switch is unavailable, with the reason, when the device has no passcode.
-
-In the Lock Screen camera both rows are read only (decided).
-
-### 4.2 The Captures library
-
-- **Entry points:** the Last Photo spot, and the Captures row on the Save Photos To page. Not Q.
-  - While the app holds captures, the Last Photo spot opens the viewer for this session's photos as today; the viewer's Open in Photos becomes **Show in Captures** for a photo kept in the app.
-  - Before the first photo of a session, where the spot today holds Open Photos, it holds **Captures** (a stack symbol) when the app holds captures.
-  - With Lock Captures on: a neutral marker in the spot (the stack symbol, no thumbnail), which opens the library after authentication (decided).
-- **Layout:** a grid of square thumbnails, newest first, in sections by day; an adaptive grid (three columns on an iPhone upright, more on wider windows). Each cell shows the format chip (RAW, HEIF, JPEG, or RAW + HEIF as one item) and the signed seal where it applies. At the largest text sizes the grid becomes a list: thumbnail, date, format, size.
-- **One capture:** opens in the existing Last Photo viewer (paging, zoom, Photo Details), with Share, Save to Files, Save to Photos and Delete in its menu.
-- **Select:** Select, Select All, and a section's "Select" for a whole day; then Share…, Save to Files…, Save to Photos, Delete. Progress and a summary for several ("9 exported. 1 could not be exported: …").
-- **Empty:** "No Captures" with one sentence on what appears here.
-- **Locked:** the lock symbol, "Captures Are Locked", Unlock. No thumbnails, counts, dates or sizes are drawn behind it.
-- **Privacy cover:** while the library, a capture or Photo Details is on screen and the scene becomes inactive, the cover replaces the content (the viewer's existing cover, extended).
-- A session, for "export a whole session", is a day's section in 1.1.0. The manifest stores no session identifier.
-
-### 4.3 Getting captures out
-
-- **Share…** first asks As Saved or Share Clean (figure, panel A), then opens the system share sheet with Copy removed. Share Clean shows its summary first (panel B), read back from the copy. If the read-back fails, nothing is shared and the screen says why.
-- **Save to Files…** opens the system's folder picker. A note before it, every time: the copy is outside the app's protection (string 30).
-- **Save to Photos** makes a copy in Photos (add-only), keeping a RAW pair as one asset.
-- With Lock Captures on, each export asks for authentication first unless the library was unlocked within the re-lock time.
-
-### 4.4 Delete
-
-- One capture or a selection: a confirmation that states the count and that there is no Recently Deleted (decision 15 asks whether a single delete needs it).
-- **Delete All Captures…**: the confirmation states the count, that it cannot be undone, and what it does not reach (figure, panel C).
-
-### 4.5 Saved wording
-
-With nope only, the saved sentence names the place: "Saved in nope." and its signed and unsigned forms (strings 16 to 18; decision 14). The Photos sentences are unchanged.
-
-### 4.6 Accessibility
-
-- VoiceOver: each capture is one element, "Photo, 21 November, 2:14 PM, RAW, signed", with actions Share, Save to Files, Save to Photos, Delete. Selecting is a trait, not a color. The locked screen reads its title, sentence and Unlock, nothing else.
-- Dynamic Type to the largest sizes: the list layout above; export and delete actions wrap, never truncate.
-- Night Mode: thumbnails drawn red like the viewer; settings rows `#1C0000` on black as elsewhere.
-- Voice Control names match the visible labels. Switch Control and Full Keyboard Access reach every action; Escape closes the library.
-- Authentication prompts are the system's.
+Moved to release 1.2.0 on 2026-11-21, with its figures and its strings (13 to 56, numbers unchanged): [release-1.2.md](release-1.2.md). What the saving state of section 3 shows with Lock Captures on is designed there.
 
 ## 5. Which CI jobs a change runs (issue 85)
 
@@ -235,33 +179,5 @@ For the Honesty review. "H" marks a sentence that states what is or is not prote
 | 10 | Last Photo spot, several saving, VoiceOver | Saving %lld photos | H |
 | 11 | Last Photo spot, VoiceOver, after a failure | Last photo, not saved | H |
 | 12 | Failure with several pending | %1$lld of %2$lld photos were not saved: | H |
-| 13 | Settings › Privacy, row | Save Photos To | |
-| 14 | Its choices | Photos · nope only | |
-| 15 | Settings › Privacy, row | Lock Captures | |
-| 16 | Saved, nope only, signed | Saved in nope. and signed. | H |
-| 17 | Saved, nope only, signing off | Saved in nope. Not signed: signing is off in Settings. | H |
-| 18 | Saved, nope only, other unsigned reasons | Saved in nope. Not signed: (the existing reason) | H |
-| 19 | Library title; Last Photo spot button | Captures | |
-| 20 | Save Photos To footer, nope only | New photos are kept in nope. and are not added to Photos. Photos already in Photos stay there: nope. can add photos but can't read or move them. | H |
-| 21 | Save Photos To footer, Photos, while captures are held | New photos go to Photos. The captures already in nope. stay here until you export or delete them. | H |
-| 22 | Under the Captures row | Deleting the app deletes these. Export the ones you want to keep. | H |
-| 23 | Leave Out of Backups, explanation | Captures are in iPhone and iCloud backups unless left out. Left out, they are lost if the phone is lost and do not move to a new phone. | H |
-| 24 | Notice with no passcode | This iPhone has no passcode, so captures kept in nope. are not protected when it is locked. | H |
-| 25 | Neutral File Names, explanation | Exported and shared copies, and photos saved to Photos, get a random name without the date and time. | H |
-| 26 | Lock Captures, explanation | Viewing, sharing and deleting captures kept in nope. asks for Face ID or the passcode. Taking photos never asks. | H |
-| 27 | Lock Captures footer | A gate inside the app, not encryption. Anyone with the iPhone's passcode can open it. It does not cover copies in Photos or already shared. | H |
-| 28 | Lock Again footer | Always locked after the app is closed or the iPhone locks. | H |
-| 29 | Locked library | Captures Are Locked · Use Face ID or the passcode to see them. · Unlock | |
-| 30 | Before Save to Files and the share sheet | The copy leaves nope.'s protection. The capture in nope. is not changed. | H |
-| 31 | Share choices | As Saved: every detail in the file, and its signature. · Share Clean: optional details removed from the copy. | H |
-| 32 | Share Clean summary, signature | The copy is not signed: a signature does not survive a change to the file. | H |
-| 33 | Share Clean summary, what stays | Color and size data that the file needs to open can point to the phone model. The picture itself is not changed. | H |
-| 34 | Share Clean, check failed | Not shared: nope. couldn't confirm that the copy holds only the details listed. | H |
-| 35 | Delete All, title and button | Delete %lld Captures? · Delete %lld Captures | |
-| 36 | Delete All, message | This deletes every capture kept in nope., now. It can't be undone. It does not reach copies in Photos, in iCloud, in backups or already shared. | H |
-| 37 | Delete, one or several | There is no Recently Deleted. This can't be undone. | H |
-| 38 | Empty library | No Captures · Photos you keep in nope. appear here. | |
-| 39 | Face ID usage text (Info.plist) | nope. uses Face ID to unlock the captures you keep in the app. | H |
-| 40 | Viewer, for a photo kept in the app | Show in Captures | |
 
-The limits issue 83 lists under "Limits to state plainly" (what stays in a file, the sensor pattern, screenshots, that the app cannot hide that it is installed) are Honesty screen entries and `docs/PRIVACY.md` text, written with part 6 of the issue once the device checks are in; they are not drafted here.
+Strings 13 to 56 are for issue 83 and moved with it to [release-1.2.md](release-1.2.md), section 9, with their numbers unchanged.

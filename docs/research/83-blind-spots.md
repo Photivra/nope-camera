@@ -1,6 +1,6 @@
 # Review: blind spots in issue 83 (protection for high-risk use)
 
-Status: review, 2026-11-21. No code. This is a review of a specification and a plan, not of an implementation: nothing in issue 83 is built. It is not legal advice.
+Status: review, 2026-11-21; the owner's decisions and where each finding went were added the same day under "Outcome". The findings below are as first written. No code. This is a review of a specification and a plan, not of an implementation: nothing in issue 83 is built. It is not legal advice.
 
 Reviewed: issue 83 with its ten decisions of 2026-11-18 and the five recorded 2026-11-21; `docs/plans/1.1.0.md` (section 3.6, research step R4, groups S1 to S6, section 7, decisions 13 to 17) and `docs/design/release-1.1.md` (section 4, strings 13 to 40, three figures) at `c75e1b6`; the 1.0 code on the same base.
 
@@ -339,22 +339,103 @@ For R4 and section 7 of the plan. A check that cannot be run ends as "not claime
 
 ## Owner decisions
 
-Each lists its options with the recommendation first and one line of reason. None is decided here.
+Each lists its options with the recommendation first and one line of reason. All fourteen were decided by the owner on 2026-11-21, each as option (a); see "Outcome".
 
-1. **Where Lock Screen captures go, given that the settings copy can be stale (A1).** (a) **Recommended, if R4 shows the session folder is durable and protected:** the Lock Screen camera always writes to its session folder, whatever its copy says, and the app files each capture by the current setting when it is next opened unlocked. (b) Keep the copy-driven design; after each change the app reads the copy back, and the Save Photos To page shows a warning and offers Try Again until the Lock Screen camera has it. (c) With "nope only" chosen and the copy unconfirmed, the Lock Screen camera does not take photos and says why. *Reason: (a) removes the failure instead of reporting it, but it delays Lock Screen photos reaching Photos for everyone, so it needs the R4 result first.*
-2. **Backups when "nope only" is chosen (B1).** (a) **Recommended:** the first time "nope only" is chosen, ask once, with neither answer preselected: keep captures in this iPhone's backups, or leave them out; the footer states the current answer. (b) Keep Leave Out of Backups off by default and add the backup sentence to the "nope only" footer. (c) Turn Leave Out of Backups on by default when "nope only" is chosen, with the loss warning. *Reason: the default trades exposure in a backup against losing the only copy, and only the person knows which matters more for them.*
-3. **The name and wording of Leave Out of Backups (B2).** (a) **Recommended:** keep the row name; the explanation says the app asks iOS to leave captures out, names only the backup kinds a device check confirmed, and says it does not cover other ways of copying the phone. (b) Rename the row to "Ask iOS to Leave Out of Backups". (c) Hold the option until the checks are done for every backup kind. *Reason: Apple describes the flag as guidance, not a guarantee.*
-4. **Re-lock delays (D2).** (a) **Recommended:** if the device check cannot show that a lock of the phone inside the delay is detected, 1.1.0 ships "Immediately" only. (b) Keep the delays and drop the sentence about the iPhone locking. (c) Keep both as drafted if the check passes. *Reason: a delay is a convenience; a sentence that is sometimes false is not acceptable on this page.*
-5. **When an unlocked library locks again inside the app (D3).** (a) **Recommended:** when the library or a capture's viewer is closed back to the camera. (b) Only on the background rules, as specified. (c) After a short idle time in the foreground. *Reason: the camera is the part of the app that is open in public; returning to it should close the library behind the person.*
-6. **This session's photos with Lock Captures on (D1).** (a) **Recommended:** no thumbnail, preview or details of a capture kept in the app is held in memory outside the store's lock; the Last Photo spot and issue 129's saving state show the neutral marker. (b) Keep them in memory but make every reader ask the lock. (c) Show this session's photos without authentication until the app next leaves the foreground. *Reason: the most recent photos are the ones most likely to be on screen when the phone is taken.*
-7. **File names (F1).** (a) **Recommended:** an exported name never carries the date or time unless the Date and Time detail is in that file; Neutral File Names remains for people who keep the date in the file but not in the name. (b) Neutral File Names on by default. (c) As planned: dated names unless the option is turned on. *Reason: the name should not put back what the detail switch removed, and (a) stays true if the option is cut.*
-8. **The name "Share Clean" (F2).** (a) **Recommended:** a descriptive name, such as "Share Without Optional Details", and the sensor-pattern sentence in the summary. (b) Keep "Share Clean" and add the sentence. (c) Keep the name and summary as drafted. *Reason: "clean" can be read as untraceable, which no camera app can deliver.*
-9. **The capture time in the library when Date and Time is off (E5).** (a) **Recommended:** keep the time in the store for ordering and day sections, and say so in the Details in Each Photo footer and `docs/PRIVACY.md`. (b) For such captures keep only an order number: no day sections, no time in the label, and store file dates set to a fixed value. *Reason: (a) keeps the library usable and is honest if stated; (b) is the stricter reading of the switch and costs more to build.*
-10. **Factory Defaults applied in the app (D6).** (a) **Recommended:** it leaves Save Photos To, Lock Captures and Leave Out of Backups as they are, like the assistant route. (b) It resets them after authentication, and its confirmation names each change. (c) As specified: reset after authentication when the lock is on. *Reason: a reset meant to fix the camera should not change where photos are kept.*
-11. **The cut order (H1).** (a) **Recommended:** the store does not ship without Lock Captures; if the lock must be cut, parts 1, 2 and 5 move with it. (b) Keep the recorded order; if the lock is cut, the Save Photos To footer says captures are not locked and points to the system's Require Face ID for the whole app. (c) Keep the recorded order with no change. *Reason: without the lock, anyone holding the unlocked phone reaches every capture from the camera screen.*
-12. **Which share sheet actions are removed (E3).** (a) **Recommended:** Copy, Save Image, Assign to Contact and Print, plus any action the device check shows writes to Photos or a shared album; Save to Photos stays as the app's own action. (b) Copy only, as specified, with the others named in the export note. *Reason: each of these leaves a copy in a system place the note does not name, and one of them contradicts the mode's first promise.*
-13. **Save Photos To and Lock Captures in the Lock Screen camera's Settings (A4).** (a) **Recommended:** not shown there. (b) Read only, as decided. *Reason: the Lock Screen camera can be opened by anyone holding the locked phone.*
-14. **When the sentences that shape this design are reviewed (plan decision 26).** (a) **Recommended:** strings 20 to 24, 26 to 28, 30 to 33 and 36 are reviewed from the table before S1 starts, and all strings again in the built app before the release run (the plan's option c). (b) In the built app only, as the plan recommends. *Reason: findings B1, B2, C3, D2 and F2 are wording that would be built on.*
+1. **Where Lock Screen captures go, given that the settings copy can be stale (A1).** (a) **Recommended, if R4 shows the session folder is durable and protected:** the Lock Screen camera always writes to its session folder, whatever its copy says, and the app files each capture by the current setting when it is next opened unlocked. (b) Keep the copy-driven design; after each change the app reads the copy back, and the Save Photos To page shows a warning and offers Try Again until the Lock Screen camera has it. (c) With "nope only" chosen and the copy unconfirmed, the Lock Screen camera does not take photos and says why. *Reason: (a) removes the failure instead of reporting it, but it delays Lock Screen photos reaching Photos for everyone, so it needs the R4 result first.* **Decided 2026-11-21: (a).**
+2. **Backups when "nope only" is chosen (B1).** (a) **Recommended:** the first time "nope only" is chosen, ask once, with neither answer preselected: keep captures in this iPhone's backups, or leave them out; the footer states the current answer. (b) Keep Leave Out of Backups off by default and add the backup sentence to the "nope only" footer. (c) Turn Leave Out of Backups on by default when "nope only" is chosen, with the loss warning. *Reason: the default trades exposure in a backup against losing the only copy, and only the person knows which matters more for them.* **Decided 2026-11-21: (a).**
+3. **The name and wording of Leave Out of Backups (B2).** (a) **Recommended:** keep the row name; the explanation says the app asks iOS to leave captures out, names only the backup kinds a device check confirmed, and says it does not cover other ways of copying the phone. (b) Rename the row to "Ask iOS to Leave Out of Backups". (c) Hold the option until the checks are done for every backup kind. *Reason: Apple describes the flag as guidance, not a guarantee.* **Decided 2026-11-21: (a).**
+4. **Re-lock delays (D2).** (a) **Recommended:** if the device check cannot show that a lock of the phone inside the delay is detected, 1.1.0 ships "Immediately" only. (b) Keep the delays and drop the sentence about the iPhone locking. (c) Keep both as drafted if the check passes. *Reason: a delay is a convenience; a sentence that is sometimes false is not acceptable on this page.* **Decided 2026-11-21: (a).**
+5. **When an unlocked library locks again inside the app (D3).** (a) **Recommended:** when the library or a capture's viewer is closed back to the camera. (b) Only on the background rules, as specified. (c) After a short idle time in the foreground. *Reason: the camera is the part of the app that is open in public; returning to it should close the library behind the person.* **Decided 2026-11-21: (a).**
+6. **This session's photos with Lock Captures on (D1).** (a) **Recommended:** no thumbnail, preview or details of a capture kept in the app is held in memory outside the store's lock; the Last Photo spot and issue 129's saving state show the neutral marker. (b) Keep them in memory but make every reader ask the lock. (c) Show this session's photos without authentication until the app next leaves the foreground. *Reason: the most recent photos are the ones most likely to be on screen when the phone is taken.* **Decided 2026-11-21: (a).**
+7. **File names (F1).** (a) **Recommended:** an exported name never carries the date or time unless the Date and Time detail is in that file; Neutral File Names remains for people who keep the date in the file but not in the name. (b) Neutral File Names on by default. (c) As planned: dated names unless the option is turned on. *Reason: the name should not put back what the detail switch removed, and (a) stays true if the option is cut.* **Decided 2026-11-21: (a).**
+8. **The name "Share Clean" (F2).** (a) **Recommended:** a descriptive name, such as "Share Without Optional Details", and the sensor-pattern sentence in the summary. (b) Keep "Share Clean" and add the sentence. (c) Keep the name and summary as drafted. *Reason: "clean" can be read as untraceable, which no camera app can deliver.* **Decided 2026-11-21: (a).**
+9. **The capture time in the library when Date and Time is off (E5).** (a) **Recommended:** keep the time in the store for ordering and day sections, and say so in the Details in Each Photo footer and `docs/PRIVACY.md`. (b) For such captures keep only an order number: no day sections, no time in the label, and store file dates set to a fixed value. *Reason: (a) keeps the library usable and is honest if stated; (b) is the stricter reading of the switch and costs more to build.* **Decided 2026-11-21: (a).**
+10. **Factory Defaults applied in the app (D6).** (a) **Recommended:** it leaves Save Photos To, Lock Captures and Leave Out of Backups as they are, like the assistant route. (b) It resets them after authentication, and its confirmation names each change. (c) As specified: reset after authentication when the lock is on. *Reason: a reset meant to fix the camera should not change where photos are kept.* **Decided 2026-11-21: (a).**
+11. **The cut order (H1).** (a) **Recommended:** the store does not ship without Lock Captures; if the lock must be cut, parts 1, 2 and 5 move with it. (b) Keep the recorded order; if the lock is cut, the Save Photos To footer says captures are not locked and points to the system's Require Face ID for the whole app. (c) Keep the recorded order with no change. *Reason: without the lock, anyone holding the unlocked phone reaches every capture from the camera screen.* **Decided 2026-11-21: (a).**
+12. **Which share sheet actions are removed (E3).** (a) **Recommended:** Copy, Save Image, Assign to Contact and Print, plus any action the device check shows writes to Photos or a shared album; Save to Photos stays as the app's own action. (b) Copy only, as specified, with the others named in the export note. *Reason: each of these leaves a copy in a system place the note does not name, and one of them contradicts the mode's first promise.* **Decided 2026-11-21: (a).**
+13. **Save Photos To and Lock Captures in the Lock Screen camera's Settings (A4).** (a) **Recommended:** not shown there. (b) Read only, as decided. *Reason: the Lock Screen camera can be opened by anyone holding the locked phone.* **Decided 2026-11-21: (a).**
+14. **When the sentences that shape this design are reviewed (plan decision 26).** (a) **Recommended:** strings 20 to 24, 26 to 28, 30 to 33 and 36 are reviewed from the table before S1 starts, and all strings again in the built app before the release run (the plan's option c). (b) In the built app only, as the plan recommends. *Reason: findings B1, B2, C3, D2 and F2 are wording that would be built on.* **Decided 2026-11-21: (a).**
+
+## Outcome
+
+Added 2026-11-21, after the owner answered the fourteen decisions on issue 83. Nothing was built or run for this section. The same day the owner moved issue 83 out of release 1.1.0 into its own release, 1.2.0. The plan is now `docs/plans/1.2.0.md` and the design is `docs/design/release-1.2.md`, both written with the decisions folded in; "plan" and "design" below mean those two. The findings above cite the 1.1.0 plan and design as they stood at `c75e1b6`. Decision numbers 13 to 17 and 26, device check numbers 6 to 12 and string numbers 13 to 40 are unchanged in the new documents, so those citations still point to the right items; the design's sections 4.1 to 4.6 are now sections 1 to 5 and 8 of the 1.2.0 design.
+
+### The fourteen decisions
+
+Every decision is the recommended option, (a).
+
+| # | Decision | Outcome | Where it is specified |
+| --- | --- | --- | --- |
+| 1 | Where Lock Screen captures go | The Lock Screen camera always writes to its session folder; the app files each capture by the current setting when next opened unlocked. Conditional on R4 showing the folder is durable and protected. If R4 does not show that, the fallback from A1 and A2 is built: nothing is kept in the folder, a change of Save Photos To takes effect only after the Lock Screen camera's copy is read back, and with nope only the Lock Screen camera does not take photos and says why | Plan 2.1 and 2.5; design 6; strings 41, 42 |
+| 2 | Backups when nope only is chosen | Asked once, the first time nope only is chosen, with neither answer preselected; the footer states the current answer | Design 1; strings 20a, 20b, 43 to 45; figure `save-photos-to.svg`, panel D |
+| 3 | Leave Out of Backups | The name stays. The text says the app asks iOS, names only the backup kinds a device check confirmed, and says it does not cover other ways of copying the phone | Design 1; string 23 |
+| 4 | Re-lock delays | Built only if a device check shows a lock of the phone inside the delay is detected; otherwise Immediately only | Plan 2.5; design 1; strings 28a, 28b |
+| 5 | Locking again inside the app | When the library, or a capture's viewer opened from the camera, is closed back to the camera | Design 2, "Locking again" |
+| 6 | This session's photos with Lock Captures on | Nothing of a capture kept in the app is held outside the store's lock; the Last Photo spot and issue 129's saving state show the neutral marker | Design 2, "Nothing outside the lock" and "The saving state"; plan 2.1 |
+| 7 | File names | No date or time in an exported name unless the Date and Time detail is in that file; Neutral File Names stays as an option | Design 3; strings 25, 51 |
+| 8 | The name "Share Clean" | Renamed; the draft is "Share Without Optional Details". The summary carries the sensor-pattern sentence | Design 3; strings 31, 33; figure `export-share-clean.svg` |
+| 9 | The capture time when Date and Time is off | Kept in the store for ordering and day sections; stated in the Details in Each Photo footer and, when group S6 writes it, in `docs/PRIVACY.md` | Design 1 and 2; string 48 |
+| 10 | Factory Defaults | Leaves Save Photos To, Lock Captures and Leave Out of Backups unchanged | Design 1; string 49 |
+| 11 | The cut order | The store does not ship without Lock Captures; if the lock is cut, parts 1, 2 and 5 move with it. Replaces the cut rule of the plan's decision 13. With issue 83 now a release of its own, a cut of the lock means that release waits | Plan 2.1, 4.6 and decision 13 |
+| 12 | Share sheet actions | Copy, Save Image, Assign to Contact and Print are removed, plus any action a device check shows writes to Photos or a shared album; the app's own Save to Photos stays | Design 3; plan, R4 and device check 9 |
+| 13 | The Lock Screen camera's Settings | Save Photos To and Lock Captures are not shown there. Replaces read only | Design 1; figure `save-photos-to.svg`, panel A |
+| 14 | When the strings are reviewed | Strings 20 to 24, 26 to 28, 30 to 33 and 36 from the design table before S1 starts; all strings again in the built app before the release run. Amends the plan's decision 26 for issue 83 | Plan 4.2, 4.6 and decision 26; design 9 |
+
+### Where each finding went
+
+"Decision N" is the table above. "Plan" is section 2 of the 1.2.0 plan unless another section is named. Wording for the Honesty screen and `docs/PRIVACY.md` is written by group S6 after the device checks; until then it is a listed requirement (design 7), not text.
+
+| Finding | Severity | Outcome |
+| --- | --- | --- |
+| A1 | Critical | Decision 1. The destination no longer depends on the settings copy. Kept from the proposal: a test that the extension writes to the folder whatever the copy says, and a build-failing test of the copy's size limit. The read-back of the copy is part of the fallback only |
+| A2 | High | Decision 1's gate. R4 gains the folder checks; the class is set on each file after the move and checked at each unlocked launch; the Lock Screen camera says "Kept…", not "Saved" |
+| A3 | Medium | Folded in: every failed write in the Lock Screen camera is shown and a partial file removed; device check 7 fills the device |
+| A4 | Low | Decision 13 |
+| B1 | Critical | Decision 2. The nope only footer states the backup answer; the iCloud Backup wording waits for the device check; `docs/PRIVACY.md` in S6 |
+| B2 | High | Decision 3. The flag is set after every write and read back in debug builds; R4 checks each kind of backup |
+| B3 | High | Folded in: R4 attempts a backup with the phone locked and paired; the threat model and `docs/PRIVACY.md` guidance in S6 (design 7) |
+| B4 | Low | Folded in as a limit for S6 to state (design 7). No design change |
+| B5 | Medium | Folded in: device check 8 gains restore, transfer, offload and an iOS update; string 36 says a restore brings captures back; the class of every file is checked at each unlocked launch |
+| C1 | High | Folded in: three store states, the rule against treating a permission error as damage, the fake's locked mode for every store test, R4 and device check 7 |
+| C2 | Medium | Folded in part. The two-class design stays, with one retry as CompleteUnlessOpen and the launch check. The alternative, always creating files as CompleteUnlessOpen, is adopted only if R4's burst check shows class Complete writes failing at the moment of locking |
+| C3 | Medium | Folded in: string 24 no longer implies that a passcode alone protects; the conditions are listed for S6 (design 7), with the Keep Screen On sentence |
+| C4 | Medium | Folded in: an R4 check and device check 7; string 27 follows the result |
+| D1 | High | Decision 6. The route test gains the Last Photo spot during and after a save, the session viewer, Photo Details, the comparison view and the saving state |
+| D2 | High | Decision 4. R4 gains the check; string 28b is used only if it passes |
+| D3 | High | Decision 5. The lock's tests gain the "library closed", "viewer closed" and "idle in the foreground" events |
+| D4 | Medium | Folded in: Passcode Only has its own explanation (string 46); a unit test that an earlier device unlock is never reused |
+| D5 | Medium | Folded in: string 27 says the lock does not stop someone deleting the app; evidence guidance in S6 |
+| D6 | Medium | Decision 10 |
+| D7 | Low | Folded in: As Saved names a location when the file holds one (string 31b), with a UI test. The 2026-11-18 decision on which settings the lock guards is unchanged |
+| D8 | Low | Folded in: the locked screen's no-passcode sentence (string 47); device check 7 completes the prompt with VoiceOver and Switch Control |
+| E1 | High | Folded in: every delete removes the session's records and resets the Last Photo spot; a UI test and a unit test |
+| E2 | Medium | Folded in: R4 and device check 7 inspect the snapshot with the share sheet, the Files picker and each dialog open; the remedy (a neutral share-sheet header, sheets dismissed when the scene becomes inactive) is built only if a picture shows |
+| E3 | Medium | Decision 12. R4 and device check 9 list the sheet's actions per format and lock the phone during a ten-file AirDrop |
+| E4 | Medium | Folded in: the index is rewritten whole and Delete All recreates the store directory; "now" is removed from string 36; Delete All stops a series and discards pending saves, and says so (string 55) |
+| E5 | Medium | Decision 9, with the rule that the manifest holds nothing else the detail switches removed |
+| E6 | Low | Folded in as a limit for S6 to state (design 7) |
+| E7 | Low | Folded in part: a free-space check before several captures are exported (string 54). Exporting one file at a time is not adopted, because the share sheet and the folder picker take all the files at once. Clones for As Saved copies are used only if R4 shows a clone keeps its protection class |
+| F1 | High | Decision 7. The rule is built with export (group S2), and the name is shown before sharing and in What's in This Photo |
+| F2 | High | Decision 8. Summary rows say "Removed" only when the stored file held the detail |
+| F3 | Medium | Folded in: an R4 comparison across two phones of one model; until it is done the wording says "and possibly to the individual phone" |
+| F4 | Medium | Folded in: string 30 says the receiving app or place keeps its own copy; device check 9 records each route's received name, dates and tags; the list of routes in S6 |
+| F5 | Low | Folded in as guidance for S6 (`docs/PRIVACY.md` and the how-to guide). No interface change |
+| F6 | Low | Folded in: the per-format test accounts for every byte of the copy; device check 10 compares with `exiftool` output |
+| G1 | Medium | Folded in: the destination is fixed at the press; Save Photos To cannot be changed while a series runs (string 50); unit tests per drive mode |
+| G2 | Medium | Folded in: saved means file and manifest written and read back; a file without a manifest is listed (string 53), never hidden or deleted; the storage warning counts the store's needs; a test fails each write in turn |
+| G3 | Low | Folded in as guidance for S6 |
+| H1 | High | Decision 11 |
+| H2 | Medium | Folded in: decision 7 keeps the name rule if the Neutral File Names option is cut; if Share Without Optional Details is cut, the share step says the copy includes the optional details (string 31c) |
+
+No finding was left out. Three were folded in only in part, for the reasons given in their rows: C2, E2 and E7.
+
+### Questions raised while folding the decisions in
+
+Not decided. They are in the 1.2.0 plan, section 7.2, as decisions 27 to 29:
+
+- The Lock Screen camera learns whether Lock Captures is on from the same settings copy that A1 showed can be out of date. What it shows when that copy cannot be confirmed is open.
+- Decision 10 names three settings. Whether Factory Defaults also leaves Neutral File Names unchanged is open.
+- Decision 7 covers exported copies. Whether the same rule applies to the name the app gives a photo saved straight to Photos is open.
 
 ## Sources
 
