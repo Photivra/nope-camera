@@ -89,7 +89,7 @@ extension NopeAppUITests {
             swipes += 1
         }
         XCTAssertTrue(toggle.exists)
-        XCTAssertTrue(toggle.label.contains("nothing is sent"), "the explanation is read with the switch")
+        XCTAssertTrue(toggle.label.contains("nope. sends nothing."), "the explanation is read with the switch: \(toggle.label)")
         // The form's width: the window on iPhone, the Settings sheet on iPad.
         let form = app.navigationBars["Settings"].frame
         XCTAssertGreaterThan(toggle.frame.width, form.width * 0.8, "the explanation runs across the row")
