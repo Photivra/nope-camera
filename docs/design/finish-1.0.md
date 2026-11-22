@@ -25,7 +25,7 @@ The Q menu is not changed by anything here. The guide describes Q in one sentenc
 
 In the stacked layout (an iPhone in portrait, also when it is held sideways) the screen is, from the top: the status line (44 pt), the picture (the window's width, 4:3), the lens row (56 pt), the drive strip (44 pt) and the shutter row (88 pt at least). `CameraReadyView.stacked` gives every spare point to the shutter row, which centers the shutter in it; the lens row and the drive strip always sit edge to edge.
 
-So on a 440 × 956 pt iPhone, where the request was made, the three spaces between the shapes are 12 pt (lens group to drive words), 33 pt (drive words to shutter) and 27 pt (under the shutter): figure `spacing-pro-max-before`. The first is the crowded one. The touch targets are closer still: the lens controls end 6 pt above the drive strip's 44 pt targets, less than the design's own smallest gap between targets (`NopeSize.targetGap`, 8 pt).
+So on a 440 × 956 pt iPhone, where the request was made, the three spaces between the shapes are 12 pt (lens group to drive words), 33 pt (drive words to shutter) and 27 pt (under the shutter). The first is the crowded one. The touch targets are closer still: the lens controls end 6 pt above the drive strip's 44 pt targets, less than the design's own smallest gap between targets (`NopeSize.targetGap`, 8 pt).
 
 ### 1.2 The rule
 
@@ -97,7 +97,22 @@ Built for 1.0.0 (wave 1, group D) with the owner's decisions 1 and 2 of 2026-11-
 
 The iPhone Duo's inner display held like a book is 635 pt tall inside the safe area ([duo.html](duo.html)), so at the 600 pt threshold it gets 16 pt too, not 8 as 1.4 says; this was not checked on the Duo Simulator.
 
-The 25 `camera-*` figures on the 402 × 874 pt frame are redrawn with the rule (at integration of wave 1): with their 59 pt top inset they have 13 pt of spare height, so the drive strip moves down 5 pt (top 695 to 700 pt) and the shutter row starts 5 pt lower and is 5 pt shorter (96 pt instead of 101), which puts the shutter 2.5 pt lower. The lens row and the picture are unchanged. The figures keep the 59 pt top inset they were drawn with; the 402 × 874 pt iPhone measures 62 pt on the Simulator (the table in 1.3), which leaves 10 pt of spare height and a 4 pt row gap there. So on that screen everything from the picture down sits 3 pt lower than in the figures, and the drive strip moves 4 pt, not 5. The figures were not redrawn for the 3 pt. Not redrawn: `camera-small` (the 4.7-inch figure; `spacing-small` shows the change there), and the 121 other figures drawn on the same frame with the old rows (`assistant-*`, `bracket-*`, `burst-*`, `drive-*`, `feedback-*`, `keep-*`, `landscape-*`, `launch-*`, `lock-*`, `manual-*`, `permission-*`, `q-*`, `rtl-*`, `scope-*`, `sheet-*`, `viewer-*`), which are off by the same 5 pt.
+The figures are redrawn to the build (2026-11-22). A figure of a 402 × 874 pt iPhone now has the 62 pt top inset the Simulator measures and the rows of the table in 1.3: the status line from 62 pt, the picture from 106 to 642 pt, the lens row from 642 pt, the 4 pt gap, the drive strip from 702 pt and a 94 pt shutter row from 746 pt. Q's panel keeps its place 8 pt above the shutter row, so it ends at 738 pt; its tiles are unchanged. This covers the 25 `camera-*` figures, first redrawn at integration of wave 1 with a 59 pt inset and a 5 pt gap, and the figures that were left then with the old rows. The build's own screenshot `guide-invite.png` (iPhone 18 Pro Simulator, iOS 27.2) measures the same: the picture from 106 to 642 pt, the lens group from 648 to 692 pt, the selected drive word from 708 to 740 pt and the shutter from 755 to 831 pt.
+
+Redrawn with them, from the layout code and not from a measurement:
+
+- **Where the rows overlay the picture** (the 4.7-inch figures, the iPhone Duo's outer display, iPad at half of Split View): the lens controls 2 pt higher and the shutter 2 pt lower, as in `spacing-small`.
+- **iPad at a third of Split View and in Slide Over** (`ipad-split-third`, `ipad-slide-over`): 65 spare points give a 23 pt gap and a 130 pt shutter row; 1 spare point gives a 1 pt gap, with the lens controls 1 pt higher.
+- **The Last Photo viewer** on the 402 × 874 pt frame: the 62 pt inset, and its caption and actions in the place of the drive strip and the 94 pt shutter row, as [viewer.html](viewer.html) specifies. `PhotoViewer.swift` gives the actions `shutterRowMin` (88 pt) as their smallest height and no share of the spare height, so on a device Close may sit 3 pt lower than Last Photo; this was not measured.
+- **The first-run and camera-access screens**: the Settings button at the 62 pt inset.
+
+Not redrawn, and still different from the build:
+
+- **Largest text.** The pinned shutter row is drawn 101 pt tall; the code gives it the shutter and 8 pt above and below, 92 pt. Only the top inset changed in these figures.
+- **Clean view** (`camera-clean`). The figure keeps the shutter where it is with the rows shown. In the code the hidden rows leave their height to the shutter row; not measured.
+- **The column layout** (iPad, the iPhone Duo's inner display). The figures draw Q, the shutter and Last Photo 24 pt apart with 20 pt above and below the column; the build has 16 pt for both in a column at least 600 pt tall.
+- **The drive strip's words.** Many figures still show five words; the build has Bracket as the sixth ([drive.html](drive.html) says so).
+- **The App Store mockups** (`store-*`) that show a camera figure have the redrawn figure inside; their captions were not re-rendered.
 
 ## 2. The how-to-use guide (issue 117)
 
