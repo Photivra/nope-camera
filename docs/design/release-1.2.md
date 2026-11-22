@@ -36,6 +36,8 @@ The group gets the two rows `SETTINGS-PLAN.md` reserved, above Assistant Access:
 
 1. The choice: Photos, nope only. The footer says what the choice covers and does not, and for nope only it states where the captures stand with backups (strings 20a, 20b, 21).
 2. **The backup question** (review decision 2; figure, panel D). The first time nope only is chosen, the app asks once whether captures kept in the app stay in this iPhone's backups (strings 43 to 45). The two answers are drawn alike: neither is preselected, bold or the default action, and neither is marked destructive. Cancel leaves Save Photos To on Photos and the question is asked again next time. The answer sets Leave Out of Backups, which can be changed later on this page. The question is not asked again after it has been answered, including after Factory Defaults.
+
+   **Advanced Data Protection (owner, 2026-11-21).** The backup question's message (string 44a) and the Honesty limits (section 7) suggest turning on Apple's Advanced Data Protection for iCloud, which end-to-end encrypts iCloud Backup and iCloud Photos so that only the person's trusted devices hold the keys. The text states, as far as Apple's documentation supports: what it covers for this app's data (iCloud Backup and iCloud Photos, not computer backups); that it needs a recovery contact or recovery key, and that Apple cannot help recover data without one; that it is turned on in the Settings app, not in nope; and that it is not available in every country or region, without naming places. nope cannot tell whether it is on (no public interface), so the suggestion is shown the same way to everyone and never says it is on or off. A link opens Apple's support page about it. No other place in the app shows it.
 3. "Kept in nope.": a **Captures** row with the count and size, which opens the library. Shown whenever the app holds captures, whichever choice is selected. With Lock Captures on, the row shows no count or size.
 4. **Leave Out of Backups** and **Neutral File Names**, each with its explanation (strings 23, 25).
    - Leave Out of Backups keeps its name (review decision 3). Its explanation says that the app asks iOS, that iOS treats this as a request, and that it does not cover a copy of the phone's storage made another way. It names a kind of backup (iCloud Backup, an encrypted or an unencrypted backup to a computer, a direct transfer to a new iPhone) only where research step R4 confirmed that kind honors the request; a kind that was not checked or did not honor it is not named. If no kind is confirmed, the option goes back to the owner before it is built.
@@ -118,6 +120,7 @@ The limits text itself is written with part 6 of the issue, after the device che
 - What a share route adds outside the file, per route checked (F4).
 - Which export option suits which purpose: a copy without optional details has no date and no signature, so it is the wrong choice for a record (F5).
 - A phone managed by an employer or school (G3).
+- Advanced Data Protection (owner, 2026-11-21): the same suggestion as string 44a, with its limits; the app does not know whether it is on.
 
 ## 8. Accessibility
 
@@ -171,6 +174,7 @@ For the Honesty review. "H" marks a sentence that states what is or is not prote
 | 42 | Lock Screen camera, only if the session-folder check fails and nope only is chosen | Photos can't be kept in nope. while the iPhone is locked. Unlock and open nope. to take photos. | H |
 | 43 | Backup question, title | Keep Captures in This iPhone's Backups? | |
 | 44 | Backup question, message | Captures kept in nope. are not in Photos. In backups, they can be restored to a new phone, and anyone who can open the backup can read them. Left out, they are lost if the phone is lost or replaced. | H |
+| 44a | Backup question, second paragraph | For iCloud backups, Apple's Advanced Data Protection keeps them end-to-end encrypted, so only your devices hold the keys. It is turned on in Settings, needs a recovery contact or key, and is not available everywhere. nope. can't tell whether it's on. | H |
 | 45 | Backup question, buttons | Keep in Backups · Leave Out of Backups · Cancel | |
 | 46 | Passcode Only, explanation | Face ID can be used by someone holding the phone to your face. With this on, only the passcode opens your captures. | H |
 | 47 | Locked library, the passcode was removed | This iPhone has no passcode. Set one in the Settings app to open your captures. Nothing was deleted. | H |
