@@ -244,9 +244,9 @@ struct HonestyScreen: View {
             HonestyStatement(
                 title: Text("Faces and Autofocus", tableName: "Honesty", bundle: .module, comment: "Honesty heading: iOS may detect faces to choose where to focus."),
                 text: Text(
-                    "iOS may detect faces in the viewfinder to decide where to focus. Focus on Faces in nope.'s settings decides only whether nope.'s autofocus and auto exposure follow them. nope. doesn't read or save which faces it found.",
+                    "iOS may detect faces in the viewfinder to decide where to focus. Focus on Faces in nope.'s settings decides only whether nope.'s autofocus and auto exposure follow them. nope. doesn't read or save which faces it found. With Exposure Settings on in Details in Each Photo, the files can record the area the camera focused on.",
                     tableName: "Honesty", bundle: .module,
-                    comment: "Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus and auto exposure); issue #80. Focus on Faces is the name of nope.'s own switch; use its translation. Don't describe the switch as turning face detection off. Keep \"nope.\" unchanged. Must not claim more than the English."))
+                    comment: "Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus and auto exposure); issue #80. Focus on Faces is the name of nope.'s own switch; use its translation. Don't describe the switch as turning face detection off. Keep \"nope.\" unchanged. Exposure Settings and Details in Each Photo are nope.'s own names; use their translations. The last sentence is the EXIF SubjectArea tag (docs/PRIVACY.md). Must not claim more than the English. Draft wording for the Honesty review."))
             HonestyStatement(
                 title: Text("Keep Screen On", tableName: "Honesty", bundle: .module, comment: "Honesty heading: what the Keep Screen On switch does to the screen, the battery and locking. Keep Screen On is the name of nope.'s own switch; use its translation. Draft wording for the Honesty review."),
                 text: Text(

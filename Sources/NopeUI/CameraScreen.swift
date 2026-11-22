@@ -203,10 +203,8 @@ public struct CameraScreen<Viewfinder: View>: View {
             // A shutter held down as the app stops being active (Control Center, a call, the
             // background) may never report coming up, so its burst ends here (issue #101).
             if phase != .active { model.cancelShutterHolds() }
-            Task {
-                if phase == .background { await model.send(.light(.setTorch(false))) }
-                await model.send(.setInForeground(phase != .background))
-            }
+            // Applied in order: a quick return can't be overtaken by the older change (S4).
+            Task { await model.sceneDidChange(isInBackground: phase == .background) }
         }
         // Dark for the camera; first run, camera access declined and no camera follow the system.
         .windowAppearance(ScreenAppearance.of(model.state), isNightMode: settings.isNightModeOn)

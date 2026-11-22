@@ -135,7 +135,7 @@ enum SimulatedShortcut {
 
     /// What the result shows when the simulated question was cancelled: the request ended with
     /// the question's error, and the app gave no answer. Debug only, not user-facing.
-    static let cancelledMarker = "No answer: the question was cancelled."
+    static let cancelledMarker = "No answer: the question was canceled."
 
     /// The error a cancelled simulated question throws, as `requestConfirmation` throws on
     /// Cancel.

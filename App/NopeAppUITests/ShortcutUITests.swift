@@ -56,7 +56,7 @@ final class ShortcutUITests: XCTestCase {
         cancel.tap()
         let message = result(app)
         XCTAssertTrue(message.waitForExistence(timeout: 10))
-        XCTAssertEqual(message.label, "The timer was cancelled. No photo was taken.")
+        XCTAssertEqual(message.label, "The timer was canceled. No photo was taken.")
     }
 
     @MainActor

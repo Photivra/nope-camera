@@ -225,7 +225,8 @@ extension NopeAppUITests {
         XCTAssertTrue(viewfinder.exists)
         viewfinder.tap()
         XCTAssertTrue(lock.waitForExistence(timeout: 5), "a second tap brings Lock back")
-        // On the iPad Simulator the test's press and hold arrives as a tap (docs/TESTING.md).
+        // On the iPad Simulator the test's press and hold arrives as a tap (docs/TESTING.md,
+        // issue #146).
         guard !isPad else { return }
         viewfinder.press(forDuration: 1.2)
         let unlock = app.buttons["Unlock Focus and Exposure"]

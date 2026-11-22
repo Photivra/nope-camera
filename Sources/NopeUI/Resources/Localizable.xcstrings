@@ -341,7 +341,7 @@
         }
       }
     },
-    "Exposure and white balance are locked at the first frame, so every frame matches." : {
+    "Where the lens allows, exposure and white balance are held at the first frame, so the frames match." : {
       "comment" : "Footer in Bracket Settings for a focus bracket.",
       "extractionState" : "manual"
     },
@@ -1259,8 +1259,8 @@
       "comment" : "Under a frame in Bracket Settings that the lens can't make as dark as asked. The number is the first frame with the darkest exposure the lens can give.",
       "extractionState" : "manual"
     },
-    "Timer, above the shutter, sets a self-timer of 3 or 10 seconds. Burst is beside it: hold the shutter for a burst, or use Start Burst so nothing has to be held. VoiceOver says each second of the countdown." : {
-      "comment" : "Accessibility screen: the self-timer and burst. Timer and Burst are the words of the drive strip above the shutter; use their translations. A burst is a rapid run of separate photos. VoiceOver is Apple's screen reader; keep the name unchanged.",
+    "Timer sets a self-timer of 3 or 10 seconds. In Burst, hold the shutter, use Start Burst, or set a Burst Limit so one press takes the series. VoiceOver says each second of the countdown." : {
+      "comment" : "Accessibility screen: the self-timer and burst. Timer, Burst, Start Burst and Burst Limit are the words of the drive strip, the burst button and the Settings row; use their translations. A burst is a rapid run of separate photos. VoiceOver is Apple's screen reader; keep the name unchanged.",
       "extractionState" : "manual"
     },
     "Uncompressed" : {
@@ -1614,10 +1614,6 @@
     },
     "Burst stopped: the camera stopped." : {
       "comment" : "Announced and shown when a burst stops because the camera was interrupted or switched lenses.",
-      "extractionState" : "manual"
-    },
-    "Burst. Press to start, press again to stop." : {
-      "comment" : "VoiceOver value of the shutter in burst mode: one press starts a rapid run of separate photos, the next press stops it.",
       "extractionState" : "manual"
     },
     "Camera" : {
@@ -3543,10 +3539,6 @@
     },
     "Tilted %@ counterclockwise" : {
       "comment" : "VoiceOver value of the horizon level: how far the device is turned counterclockwise from level. The value is an angle such as 3°.",
-      "extractionState" : "manual"
-    },
-    "Timer, above the shutter, sets a self-timer of 3 or 10 seconds. Burst is beside it. VoiceOver says each second of the countdown." : {
-      "comment" : "Accessibility page, Self-Timer and Burst: where the self-timer and burst are on the camera. Timer and Burst are words on the drive strip above the shutter; use their translations. VoiceOver is Apple's screen reader; keep the name unchanged. Replaces the sentence that named Quick Controls.",
       "extractionState" : "manual"
     },
     "Timing" : {

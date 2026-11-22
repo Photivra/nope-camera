@@ -239,11 +239,11 @@ jobs:
     name: ui-tests ${{ matrix.shard }}/6
     needs: ui-build
     runs-on: xcode-27
-    # About 81 to 90 minutes of tests by the listed times (most of them estimates, docs/TESTING.md)
-    # and 7 of setup; on a runner that has to remount a Simulator runtime first,
-    # scripts/wait-for-simulator-runtimes.sh waits up to 12.5 more. The rest is room for one
-    # second run of unfinished tests after an infrastructure failure.
-    timeout-minutes: 130
+    # About 93 to 102 minutes of tests by the listed times (most of them estimates, docs/TESTING.md;
+    # `scripts/ui-test-shards.sh times`) and 7 of setup; on a runner that has to remount a
+    # Simulator runtime first, scripts/wait-for-simulator-runtimes.sh waits up to 12.5 more. The
+    # rest is room for one second run of unfinished tests after an infrastructure failure.
+    timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
@@ -294,15 +294,15 @@ jobs:
         run: '[[ "${{ needs.ui-tests-shard.result }}" == success ]]'
 
   # The source link test is skipped on iPad: there the source link wasn't found in the Settings
-  # popover (docs/TESTING.md). The privacy policy link test runs on iPad.
+  # popover (docs/TESTING.md, issue #147). The privacy policy link test runs on iPad.
   ui-tests-ipad-shard:
     name: ui-tests-ipad ${{ matrix.shard }}/5
     needs: ui-build
     runs-on: xcode-27
-    # About 103 to 109 minutes of tests by the listed times (most of them estimates) and 7 of setup, up
-    # to 12.5 more for a runtime remount, and room for one second run of unfinished tests after
-    # an infrastructure failure.
-    timeout-minutes: 160
+    # About 117 to 124 minutes of tests by the listed times (most of them estimates;
+    # `scripts/ui-test-shards.sh times`) and 7 of setup, up to 12.5 more for a runtime remount,
+    # and room for one second run of unfinished tests after an infrastructure failure.
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
@@ -505,9 +505,10 @@ jobs:
     name: unit-tests (iOS 26)
     needs: c2pa-lib
     runs-on: xcode-27
-    # About 10 minutes to download the runtime, up to 12.5 for the runtime wait and 20 of build
-    # and tests.
-    timeout-minutes: 60
+    # About 10 minutes to download the runtime (scripts/add-simulator-runtime.sh allows two
+    # attempts of up to 40 minutes each), up to 12.5 for the runtime wait and 20 of build and
+    # tests.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -545,8 +546,8 @@ jobs:
     name: ui-tests 1/6 (iOS 26)
     needs: ui-build
     runs-on: xcode-27
-    # The iPhone shard's 130 minutes, and about 10 to download the runtime.
-    timeout-minutes: 140
+    # The iPhone shard's 150 minutes, and about 10 to download the runtime.
+    timeout-minutes: 160
     env:
       NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:

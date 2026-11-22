@@ -18,8 +18,16 @@ import XCTest
 /// are a device check.
 @available(iOS 27.0, *)
 final class TakePhotoIntentUITests: XCTestCase {
-    /// The app's actions, by the bundle identifier of the app under test.
-    static let definitions = IntentDefinitions(bundleIdentifier: "com.photivra.nope.dev")
+    /// The app's actions, by the bundle identifier of the app under test: this test bundle's,
+    /// `$(NOPE_BUNDLE_IDENTIFIER).intentsuitests`, without its last part, so a build with another
+    /// bundle identifier (`Config/Local.xcconfig`) tests its own app.
+    static let definitions = IntentDefinitions(bundleIdentifier: appBundleIdentifier)
+
+    /// The bundle identifier of the app under test.
+    static var appBundleIdentifier: String {
+        let tests = Bundle(for: TakePhotoIntentUITests.self).bundleIdentifier ?? "com.photivra.nope.dev.intentsuitests"
+        return tests.hasSuffix(".intentsuitests") ? String(tests.dropLast(".intentsuitests".count)) : tests
+    }
 
     /// How often a run is tried while the system hasn't indexed the just-installed app yet.
     static let attempts = 5

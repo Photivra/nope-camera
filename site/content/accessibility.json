@@ -36,7 +36,7 @@
       "source": "Sources/NopeUI/AccessibilitySettingsView.swift",
       "appHeading": "Self-Timer and Burst",
       "items": [
-        {"md": "Timer, above the shutter, sets a self-timer of 3 or 10 seconds. Burst is beside it: hold the shutter for a burst, or use Start Burst so nothing has to be held. VoiceOver says each second of the countdown.", "claims": ["none"]}
+        {"md": "Timer sets a self-timer of 3 or 10 seconds. In Burst, hold the shutter, use Start Burst, or set a Burst Limit so one press takes the series. VoiceOver says each second of the countdown.", "claims": ["none"]}
       ]
     },
     {

@@ -4389,7 +4389,8 @@ public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 Ends every shutter press that is down, as if each came up, so a held burst stops after the
 photo being taken (issue #101). Call it when the app leaves the active state: a press that
 is down then may never report coming up. Sending ``CameraIntent/setInForeground(_:)`` with
-`false` does it too. A burst that needs no holding is not stopped by it.
+`false` does it too. A burst that needs no holding is not stopped by it. A hardware press
+that closed the Last Photo viewer ends too, so the next press takes a photo.
 
 ## `CameraModel/capabilities`
 
@@ -4771,6 +4772,21 @@ Camera Control): while the camera runs. At other times they keep their system be
 as Apple asks of apps that can't respond to them (AVKit, `AVCaptureEventInteraction`,
 "isEnabled"). Not while the compare view is open (issue #55). While the Last Photo viewer
 is open (``isViewerOpen``) a press closes it and takes no photo.
+
+## `CameraModel/hardwareButtonsTurnedOff()`
+
+public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor func hardwareButtonsTurnedOff()
+```
+
+Ends a hardware button's press that is down, as if it were cancelled. Call it when
+``handlesHardwareButtons`` becomes false while the scene stays active (an interruption,
+critical heat, the compare view opening): AVKit may then send no end or cancel for the
+press, and a hold left behind would let the next on-screen burst run on after the finger
+lifts (final review of 1.0.0, S6). A held burst stops after the photo being taken; a burst
+that needs no holding, and an on-screen press, are not affected.
 
 ## `CameraModel/hardwarePressClosedViewer`
 
@@ -5184,8 +5200,9 @@ public, declared in `Sources/NopeCore/CameraModel+LiveActivity.swift`
 The final content of an activity whose run has ended: how it ended, how many photos were
 saved and whether they are signed.
 
-The model doesn't keep every run's result, so an ended interval series and a self-timer
-are judged from the last content shown. That content is current when the app is out of
+The model doesn't keep every run's result, so a self-timer is judged from the last content
+shown, and an interval series by ``ManualControlsModel/lastIntervalEnd``, or from the last
+content when no series has ended. That content is current when the app is out of
 the foreground, the only time an activity is on screen: the camera has stopped, so nothing
 changes unseen.
 
@@ -5486,6 +5503,37 @@ internal, declared in `Sources/NopeCore/CameraModel.swift`
 ```
 
 Builds, checks and saves each photo, or `nil` when this model can't save (previews).
+
+## `CameraModel/sceneChange`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var sceneChange: Task<Void, Never>?
+```
+
+The latest change of the scene phase being applied (``sceneDidChange(isInBackground:)``),
+which the next change waits for, so the changes apply in the order they happened.
+
+## `CameraModel/sceneDidChange(isInBackground:)`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func sceneDidChange(isInBackground: Bool) async
+```
+
+Applies a change of the app's scene phase to or from the background: going to the
+background turns the light off (AGENTS.md, "Battery"), then sends
+``CameraIntent/setInForeground(_:)`` with `false`; coming back sends it with `true`.
+
+Each change waits until the one before it has been applied. Without that, a quick return
+while the light was turning off could set the foreground before the older change set the
+background, and leave an interval series or Astro run paused with no previews until the
+next trip to the background (final review of 1.0.0, S4). Call it from the scene phase's
+change, once for each change.
+
+- Parameter isInBackground: Whether the app is now in the background.
 
 ## `CameraModel/selectedLens`
 
@@ -8832,6 +8880,18 @@ public, declared in `Sources/NopeCore/SelfTimer.swift`
 
 Whether a countdown is running.
 
+## `Countdown/longestSeconds`
+
+public, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+@MainActor static let longestSeconds: Int
+```
+
+The longest countdown, in seconds: one day. Longer requests are shortened to it, so the
+deadline's arithmetic can't overflow (final review of 1.0.0, minor 6). The app asks for at
+most 60 seconds; the limit only guards the public API.
+
 ## `Countdown/remainingSeconds`
 
 public, declared in `Sources/NopeCore/SelfTimer.swift`
@@ -8877,7 +8937,8 @@ started, late only by its last wake (issue #122). A wake more than a second late
 number rather than moving the deadline.
 
 - Parameters:
-  - seconds: The delay, in seconds.
+  - seconds: The delay, in seconds, at most ``longestSeconds``; a longer one is shortened
+    to it.
   - fire: What happens at zero, such as taking a photo. It doesn't run when the countdown
     is cancelled.
 
@@ -31181,6 +31242,10 @@ for the one before it to finish.
   ``ShortcutOutcome/busyWithEarlierRequest`` when a camera screen is open but still
   performing an earlier request.
 
+When the calling task is cancelled (the system ended the intent) while the request still
+waits in the queue, the request is withdrawn and never performed (final review of 1.0.0,
+S9); one a camera screen already took runs to its end.
+
 ## `ShortcutInbox/wait(timeoutSeconds:until:)`
 
 internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
@@ -32749,6 +32814,36 @@ case low(photosThatFit: Int)
 ```
 
 About this many more photos fit, fewer than ``DeviceStatus/lowStoragePhotoCount``.
+
+## `SubmittedShortcut`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor final class SubmittedShortcut
+```
+
+The request a ``ShortcutInbox/submit(_:)`` call queued, so the call's cancellation can find it.
+
+## `SubmittedShortcut/init()`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates a holder with no request yet.
+
+## `SubmittedShortcut/pending`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor var pending: PendingShortcut?
+```
+
+The queued request, once the call has queued it.
 
 ## `SystemPressureReading`
 

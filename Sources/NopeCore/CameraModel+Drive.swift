@@ -191,9 +191,22 @@ extension CameraModel {
     /// Ends every shutter press that is down, as if each came up, so a held burst stops after the
     /// photo being taken (issue #101). Call it when the app leaves the active state: a press that
     /// is down then may never report coming up. Sending ``CameraIntent/setInForeground(_:)`` with
-    /// `false` does it too. A burst that needs no holding is not stopped by it.
+    /// `false` does it too. A burst that needs no holding is not stopped by it. A hardware press
+    /// that closed the Last Photo viewer ends too, so the next press takes a photo.
     public func cancelShutterHolds() {
         drive.holds.releaseAll()
+        hardwarePressClosedViewer = false
+    }
+
+    /// Ends a hardware button's press that is down, as if it were cancelled. Call it when
+    /// ``handlesHardwareButtons`` becomes false while the scene stays active (an interruption,
+    /// critical heat, the compare view opening): AVKit may then send no end or cancel for the
+    /// press, and a hold left behind would let the next on-screen burst run on after the finger
+    /// lifts (final review of 1.0.0, S6). A held burst stops after the photo being taken; a burst
+    /// that needs no holding, and an on-screen press, are not affected.
+    public func hardwareButtonsTurnedOff() {
+        if drive.holds.isHeld(.hardware) { _ = handleShutter(.cancelled, from: .hardware, press: nil) }
+        hardwarePressClosedViewer = false
     }
 
     /// Handles a shutter event without counting it as an action (see ``shutter(_:from:press:)``).

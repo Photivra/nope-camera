@@ -78,7 +78,9 @@ fi
 #    provider and control is listed in security/assistant-entry-points.txt with its kind; a
 #    gated intent's type calls the Assistant Access check (gate.answer) and requires an unlocked
 #    device; results carry a sentence and at most a number; no URL scheme, search indexing,
-#    donation, user activity or assistant schema exists.
+#    donation, user activity or assistant schema exists. A conformance added in an extension
+#    (`extension Name: AppIntent`) counts as a declaration of Name; its checks read the
+#    extension's body.
 entry_list=$(grep -vE '^\s*(#|$)' security/assistant-entry-points.txt 2>/dev/null || true)
 entry_protocols='AppIntent|SetValueIntent|LiveActivityIntent|CameraCaptureIntent|AudioPlaybackIntent|ForegroundContinuableIntent|SnippetIntent|AppEntity|IndexedEntity|TransientAppEntity|EntityQuery|EntityStringQuery|EnumerableEntityQuery|EntityPropertyQuery|AppShortcutsProvider|ControlWidget'
 entry_banned='NSUserActivity|CoreSpotlight|CSSearchableItem|IndexedEntity|IntentDonationManager|\.donate\(|onOpenURL|CFBundleURLTypes|@AssistantIntent|@AssistantEntity|@AssistantEnum|@AppIntent\(schema|@AppEntity\(schema|@AppEnum\(schema|ShowsSnippetView|OpensIntent|Transferable'
@@ -93,7 +95,7 @@ while IFS= read -r f; do
   fi
   while IFS= read -r decl; do
     [[ -z "$decl" ]] && continue
-    line=${decl%%:*}; name=$(sed -E 's/^[0-9]+:[[:space:]]*(public |private |fileprivate |internal )?(final )?(struct|class|enum|actor)[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\4/' <<<"$decl")
+    line=${decl%%:*}; name=$(sed -E 's/^[0-9]+:[[:space:]]*(public |private |fileprivate |internal )?(final )?(struct|class|enum|actor|extension)[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\4/' <<<"$decl")
     kind=$(awk -v n="$name" '$1 == n { print $2 }' <<<"$entry_list")
     if [[ -z "$kind" ]]; then report "$name in $f is not in security/assistant-entry-points.txt"; continue; fi
     if [[ "$kind" == takes-photos || "$kind" == changes ]]; then
@@ -101,7 +103,7 @@ while IFS= read -r f; do
       grep -q 'gate\.answer(' <<<"$body" || report "$name in $f doesn't run the Assistant Access check (gate.answer) in perform()"
       grep -q 'authenticationPolicy.*\.requiresAuthentication' <<<"$body" || report "$name in $f doesn't require an unlocked device (authenticationPolicy)"
     fi
-  done < <(grep -nE "^[[:space:]]*(public |private |fileprivate |internal )?(final )?(struct|class|enum|actor)[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*:[^{]*\b($entry_protocols)\b" "$f" || true)
+  done < <(grep -nE "^[[:space:]]*(public |private |fileprivate |internal )?(final )?(struct|class|enum|actor|extension)[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*:[^{]*\b($entry_protocols)\b" "$f" || true)
 done < <(files)
 
 # 7. Debug tools (UI-test scenarios, the simulated viewfinder still, the tag check): every Swift

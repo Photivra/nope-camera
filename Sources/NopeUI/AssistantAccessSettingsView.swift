@@ -472,7 +472,7 @@ enum AssistantAccessText {
     static func name(of result: AssistantRequestResult) -> LocalizedStringResource {
         switch result {
         case .askedAllowed: LocalizedStringResource("Asked, allowed.", table: "Honesty", bundle: bundle, comment: "In the This Session list on nope.'s Assistant Access page: nope. asked and the person allowed the action.")
-        case .askedCancelled: LocalizedStringResource("Asked, cancelled.", table: "Honesty", bundle: bundle, comment: "In the This Session list on nope.'s Assistant Access page: nope. asked and the person cancelled.")
+        case .askedCancelled: LocalizedStringResource("Asked, canceled.", table: "Honesty", bundle: bundle, comment: "In the This Session list on nope.'s Assistant Access page: nope. asked and the person cancelled.")
         case .ranWithoutAsking: LocalizedStringResource("Ran without asking.", table: "Honesty", bundle: bundle, comment: "In the This Session list on nope.'s Assistant Access page: the action ran without a question.")
         case .refused: LocalizedStringResource("Refused.", table: "Honesty", bundle: bundle, comment: "In the This Session list on nope.'s Assistant Access page: nope. refused the action.")
         }

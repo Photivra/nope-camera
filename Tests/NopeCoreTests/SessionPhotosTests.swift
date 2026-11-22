@@ -405,6 +405,20 @@ struct SessionPhotosTests {
         #expect(await backend.captureRequests.count == 1)
     }
 
+    /// Final review of 1.0.0, minor 1: the release of a press that closed the viewer never came.
+    @Test(arguments: [false, true])
+    func aLostReleaseAfterClosingTheViewerDoesNotEatTheNextPress(buttonsGivenBack: Bool) async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await Self.model(backend)
+        await model.send(.setViewerOpen(true))
+        await model.send(.drive(.hardwareButton(.pressed)))
+        #expect(!model.isViewerOpen)
+        if buttonsGivenBack { model.hardwareButtonsTurnedOff() } else { model.cancelShutterHolds() }
+        await model.send(.drive(.hardwareButton(.pressed)))
+        await model.send(.drive(.hardwareButton(.released)))
+        #expect(await backend.captureRequests.count == 1)
+    }
+
     @Test func aReleaseAloneClosesTheViewerAndTakesNoPhoto() async {
         let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
         let model = await Self.model(backend)

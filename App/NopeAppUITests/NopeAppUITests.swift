@@ -336,18 +336,26 @@ final class NopeAppUITests: XCTestCase {
     /// iOS 27.2, now and then on the iPhone 18 Pro with iOS 27.2; the recordings show the texts
     /// whole. Without the Dim After menu row the Live Activity finding didn't appear; giving that
     /// row a plain identifier instead of a container, or taking its label's fixed size away,
-    /// didn't remove it (docs/TESTING.md). A finding of any other type on these rows, and every
-    /// clipped text elsewhere, still fails.
+    /// didn't remove it (docs/TESTING.md). Only in Settings: the element carries one of their
+    /// texts, and the Settings page that shows the Dim After row (`settings.dimAfter`) or the Live
+    /// Activity row (`settings.liveActivity`) is open (final review of 1.0.0, S13). A finding of any other type on
+    /// these rows, and every clipped text elsewhere, the same words on another screen included,
+    /// still fails.
     @MainActor
-    static func isDimAfterOrLiveActivityClippedText(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
+    static func isDimAfterOrLiveActivityClippedText(_ issue: XCUIAccessibilityAuditIssue, in app: XCUIApplication) -> Bool {
         guard issue.auditType == .textClipped, let element = issue.element, element.exists else { return false }
         // Without the direction marks iOS may put around a label (U+200E and the like).
         let label = String(element.label.unicodeScalars.filter { $0.properties.generalCategory != .format })
-        return label == "Live Activity"
+        let isRowText =
+            label == "Live Activity"
             || label.hasPrefix("Shows a series' progress on the Lock Screen and in the Dynamic Island")
             || label == "Dim After"
             || label.hasPrefix("With Keep Screen On, the screen dims after this long without a touch or photo.")
             || label.hasPrefix("Never uses more battery and can warm the")
+        guard isRowText else { return false }
+        return ["settings.dimAfter", "settings.liveActivity"].contains { identifier in
+            app.descendants(matching: .any).matching(identifier: identifier).firstMatch.exists
+        }
     }
 
     /// Whether an issue is a contrast finding on a disabled control, drawn at the tokens' disabled
@@ -356,7 +364,7 @@ final class NopeAppUITests: XCTestCase {
     /// from the contrast minimum (docs/design/tokens.md; chunk 0's note on "Contrast nearly
     /// passed"). Every audit helper applies it, ``audit(_:afterScrolling:)`` and
     /// ``auditScrollingScreen(_:checksContrast:file:line:)`` alike. An enabled control is never
-    /// exempt.
+    /// exempt. Whether to keep the exemption is issue #142 (1.1.0).
     @MainActor
     static func isDisabledControlContrast(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
         guard let element = issue.element, element.exists else { return false }
@@ -690,7 +698,7 @@ final class NopeAppUITests: XCTestCase {
                 || Self.isMeasuredDynamicTypeFinding(issue)
                 || Self.isTextCutByAPopover(issue, in: app)
                 || Self.isViewerTextBesideIPadDetails(issue, in: app)
-                || Self.isDimAfterOrLiveActivityClippedText(issue)
+                || Self.isDimAfterOrLiveActivityClippedText(issue, in: app)
                 || Self.isEnlargedPastTheLowerEdge(issue, of: scrollFrame)
                 || Self.isIgnored(issue, in: app, afterScrolling: afterScrolling)
                 || Self.isGuidePictureText(issue, in: app)
@@ -1818,7 +1826,7 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testSpaceTakesAPhoto() throws {
-        // Open finding (docs/TESTING.md): on the iPad Simulator the Space bar reaches the
+        // Open finding (docs/TESTING.md, issue #145): on the iPad Simulator the Space bar reaches the
         // focused button instead of the Camera menu's command, so no photo is taken.
         try XCTSkipIf(isPad, "Space bar shutter on iPad: open finding")
         let app = launch("noRAW", extraArguments: Self.signingOn)

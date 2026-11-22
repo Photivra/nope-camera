@@ -331,7 +331,7 @@ UI, each with an accessibility audit: `testBracketTypeFocus`, `testFocusRangeSet
 | Even steps on this lens's own focus scale, from 0 (its closest focus) to 1 (far). iPhone doesn't report focus as a distance, so nope. shows none. | Honesty table; footer |
 | Nearest First · Farthest First | Order choices |
 | Return Focus When Done | Switch |
-| Exposure and white balance are locked at the first frame, so every frame matches. | Footer |
+| Where the lens allows, exposure and white balance are held at the first frame, so the frames match. | Footer |
 | Closest Focus of This Lens · About %@ | Row |
 | Use a tripod. Nothing in the picture should move between frames. | Sheet |
 | Each frame is a separate single-frame photo. Nothing is merged. Stack them in other software. | Honesty table; sheet |

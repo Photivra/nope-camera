@@ -29,6 +29,7 @@ info = {
     "CFBundleIdentifier": "org.example.nope",
     "UILaunchScreen": {"UIColorName": "LaunchBackground", "UIImageName": "LaunchMark", "UIImageRespectsSafeAreaInsets": False},
     "UIStatusBarStyle": "UIStatusBarStyleLightContent",
+    "UIApplicationSceneManifest": {"UIApplicationSupportsMultipleScenes": False},
 }
 exec(sys.argv[2])
 with open(sys.argv[1], "wb") as handle:
@@ -68,6 +69,8 @@ case_edit fail "a built app whose image respects the safe area" ":" "info['UILau
 case_edit fail "a built app with the empty generated dictionary" ":" "info['UILaunchScreen'] = {}"
 case_edit fail "a built app with dark status bar content" ":" "info['UIStatusBarStyle'] = 'UIStatusBarStyleDefault'"
 case_edit fail "a built app with a launch storyboard too" ":" "info['UILaunchStoryboardName'] = 'LaunchScreen'"
+case_edit fail "a built app with multiple windows" ":" "info['UIApplicationSceneManifest'] = {'UIApplicationSupportsMultipleScenes': True, 'UISceneConfigurations': {}}"
+case_edit fail "a built app with no scene manifest" ":" "del info['UIApplicationSceneManifest']"
 
 if [[ $failures -ne 0 ]]; then echo "$failures case(s) failed"; exit 1; fi
 echo "all launch screen check tests passed"

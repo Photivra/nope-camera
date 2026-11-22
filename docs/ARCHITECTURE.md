@@ -1145,7 +1145,9 @@ frames with the `slowStart` scenario (docs/TESTING.md, "Launch screen").
 
 ## Signing and secrets
 
-Development builds use automatic signing with the bundle identifier `com.photivra.nope.dev`. The
+Development builds use automatic signing with the bundle identifier `com.photivra.nope.dev`; the
+App Store build uses `com.photivra.nope`, set in `Config/Local.xcconfig` for that build only
+(`docs/RELEASING.md`, "The app build"). The
 development team is read from `Config/Local.xcconfig`, which git ignores; copy
 `Config/Local.xcconfig.example` to create it. No team ID, certificate or profile is committed.
 CI builds for the Simulator with `CODE_SIGNING_ALLOWED=NO`.

@@ -96,7 +96,7 @@ After FOR EVERYONE's place in the order, before it:
 
 > MORE CONTROL WHEN YOU WANT IT
 > • Manual Controls: set focus, shutter, ISO and white balance yourself, or leave any of them on auto.
-> • Timer, Burst, Interval, Astro and Bracket. Every frame is saved as its own photo. The app never merges frames.
+> • Timer, Burst, Interval, Astro and Bracket. Every frame is saved as its own photo, never merged with others.
 > • Night Mode turns the whole screen red on black.
 > • Pinch to switch lenses. There is no digital zoom: the picture is never enlarged or cropped.
 

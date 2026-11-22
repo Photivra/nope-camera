@@ -353,6 +353,36 @@ struct ShortcutTests {
         #expect(await inbox.submit(.selectLens(.telephoto)) == .lensSelected(.telephoto))
     }
 
+    /// Final review of 1.0.0, S9: the system ended the intent while its request waited.
+    @Test func aCancelledRequestStillQueuedIsNeverPerformed() async {
+        let inbox = ShortcutInbox(sleep: Self.neverTimesOut)
+        let withdrawn = Task { await inbox.submit(.takePhoto(PhotoShortcut(lensKind: .telephoto))) }
+        await settle()
+        withdrawn.cancel()
+        #expect(await withdrawn.value == .cameraUnavailable(.notRunning))
+        // The camera screen that opens later gets only the next request.
+        let server = Task { await inbox.next() }
+        let next = Task { await inbox.submit(.takePhoto(PhotoShortcut())) }
+        let pending = await server.value
+        #expect(pending?.request == .takePhoto(PhotoShortcut()))
+        guard let pending else { return next.cancel() }
+        pending.finish(.busy)
+        #expect(await next.value == .busy)
+    }
+
+    @Test func aCancelledRequestAlreadyTakenRunsToItsEnd() async {
+        let inbox = ShortcutInbox(sleep: Self.neverTimesOut)
+        let server = Task { await inbox.next() }
+        await waitUntil { inbox.isServed }
+        let request = Task { await inbox.submit(.takePhoto(PhotoShortcut())) }
+        let pending = await server.value
+        request.cancel()
+        await settle()
+        guard let pending else { return }
+        pending.finish(.saved(isSigned: false))
+        #expect(await request.value == .saved(isSigned: false))
+    }
+
     @Test func aRequestTakenAtOnceDoesNotTimeOut() async {
         let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
         let model = await makeModel(backend)

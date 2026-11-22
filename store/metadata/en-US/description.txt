@@ -1,7 +1,7 @@
 Photivra Nope Camera takes photos with as little processing as the camera allows, can sign each one, and keeps nothing that tracks you. Open it and shoot: there's nothing to set up.
 
 AS LITTLE PROCESSING AS THE CAMERA ALLOWS
-• On a lens that can save RAW, each photo is a single-frame Bayer RAW (DNG). The app never uses ProRAW or merges frames.
+• On a lens that can save RAW, each photo is a single-frame Bayer RAW (DNG). These photos are never ProRAW or merged frames.
 • If a lens can't save unprocessed RAW, the app tells you before you shoot, unless you turn that marker off, and labels the photo.
 • You can also save HEIF or JPEG, developed by the app from the same RAW, with noise reduction, sharpening and local tone mapping turned off.
 

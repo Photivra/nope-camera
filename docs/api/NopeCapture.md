@@ -3986,7 +3986,9 @@ Writes a file with ``protection``, never over an existing file.
 
 - Parameter file: The file to write.
 - Returns: Where it was written.
-- Throws: The file system's error, for example while the device is locked.
+- Throws: The file system's error, for example while the device is locked. A file the
+  failed write left behind, part of it written, is deleted first (Privacy: photos never
+  linger; final review of 1.0.0, minor 2).
 
 ## `SessionConfiguration`
 

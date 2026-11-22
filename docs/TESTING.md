@@ -406,6 +406,11 @@ xcodebuild test -project App/NopeCamera.xcodeproj -scheme NopeApp \
   -destination 'platform=iOS Simulator,name=iPad Air 11-inch (M4),OS=27.2' CODE_SIGNING_ALLOWED=NO
 ```
 
+The `NopeApp` scheme also holds the `NopeAppIntentsUITests` bundle ("Siri and Shortcuts in the
+UI tests"), which needs iOS 27 and a signed build. On an iOS 26 Simulator add
+`-only-testing:NopeAppUITests` (or `-skip-testing:NopeAppIntentsUITests`): `xcodebuild test -scheme
+NopeApp` loads that bundle too and fails there. The CI shards already pass `-only-testing`.
+
 The same tests run on an iPhone and an iPad Simulator, one at a time (running both at once
 stalled the test runner on the CI runner), in portrait and landscape (`XCUIDevice.orientation`).
 The iPhone camera layout stays in portrait when the device turns, and its icons and text turn
@@ -518,25 +523,36 @@ other finding fails the test:
     on the iPad with iOS 26.5;
   - for 1.0.0 only (owner, 2026-11-22; to be removed with issue #141), "Text clipped" on the
     Dim After row's title or notes and on the Live Activity row's title or explanation in
-    Settings (`isDimAfterOrLiveActivityClippedText`): every time on the iPhone 17 Pro with
+    Settings (`isDimAfterOrLiveActivityClippedText`, only while the Settings page that shows the
+    Dim After row, `settings.dimAfter`, or the Live Activity row, `settings.liveActivity`, is
+    open: the same words on any other screen fail): every time on the iPhone 17 Pro with
     iOS 26.5 and the iPad with iOS 27.2, now and then on the iPhone 18 Pro with iOS 27.2, while
     the recordings show the texts whole. Without the Dim After menu row the Live Activity finding
     didn't appear; giving that row a plain identifier instead of a container, or taking its
     label's fixed size away, didn't remove it, and moving its notes out of the menu's label would
-    move the menu's value, a visual change. Any other finding on these rows still fails;
+    move the menu's value, a visual change. Any other finding on these rows still fails. Since
+    this hides the one automated check of the Dim After row's text, the manual accessibility pass
+    before a release reads the Dim After and Live Activity rows at the largest text size;
   - a contrast finding on a disabled control (the RAW row while it is the only format, the
     button gallery's disabled states, a lens button's "No RAW" caption while the self-timer
     counts down, at the tokens' 40% opacity): WCAG 2.2, 1.4.3, exempts inactive user interface
     components from the contrast minimum. Every audit helper applies it, the scrolling layout's
     `auditScrollingScreen` too (owner, 2026-11-22: it lacked the rule, and
     `testSelfTimerAtTheLargestTextSizeAndRightToLeft` failed on the iPad at 2.96:1 measured);
-    an enabled control is never exempt (`MeasuredContrastTests`);
+    an enabled control is never exempt (`MeasuredContrastTests`). Whether to keep this exemption
+    is issue #142 (1.1.0);
   - in the scrolling camera layout, a contrast finding on a row partly under the pinned Q and
     shutter row (it runs from above the pinned row into it): the audit measures the part the
     pinned row covers. The pinned row's own buttons, and every row wholly above it, are checked;
   - in the button gallery's and the Photo Format sheet's contrast passes, a finding on a
     control cut by the window's edge, and in the sheet's pass one with no element: the same
-    two rules as the first item of this list, in helpers that run the contrast check alone.
+    two rules as the first item of this list, in helpers that run the contrast check alone;
+  - while the how-to-use guide is open, "Potentially inaccessible text" with no element
+    (`GuideUITests.isGuidePictureText`): each page's picture is the camera's own control, shown
+    as decoration and hidden from VoiceOver by design, so the audit finds text with no element.
+    It is matched by the finding's description, where the other rules match the audit type,
+    and only while the guide's Close button exists; every text of the page itself is an element
+    and is audited (see "The how-to-use guide on a device").
   - on the Photo Format sheet after it was scrolled, every "Text clipped" finding: the audit
     reported the Show Processed Marker explanation on iPhone and the switch's title in the iPad
     popover (184.5 points wide beside the switch at the default size) as text that may be
@@ -584,11 +600,14 @@ other finding fails the test:
   layout at the largest text size) are skipped on iPad in `testControlsOverWhiteAndYellowFrames`,
   `testLargestTextSize` and `testBlankPictureAtTheLargestTextSize`, which run every check on
   iPhone;
-- `testSpaceTakesAPhoto` is skipped on iPad, an open finding: on the iPad Simulator the Space
-  bar reached the focused button instead of the Camera menu's command, and no photo was taken; it
-  passes on iPhone. The device check below covers a hardware keyboard on iPad;
+- `testSpaceTakesAPhoto` is skipped on iPad, an open finding (issue #145, 1.0.0): on the iPad
+  Simulator the Space bar reached the focused button instead of the Camera menu's command, and no
+  photo was taken; it passes on iPhone. The device check below covers a hardware keyboard on iPad;
+- `testBurstSpeedMenu` fails on the iPhone 17 Pro Simulator with iOS 26.5, an open finding (issue
+  #151): the speed menu opens, but no element holds the Fast choice's explanation. It passes on
+  iOS 27.2; the CI iOS 26 job runs iPhone shard 1, which doesn't hold it;
 - the press-and-hold step of `testTapToFocusLocksWithTheButtonAndUnlocksWithThePill` is skipped
-  on iPad, an open finding: on the iPad Simulator the test's 1.2-second press arrived as a tap
+  on iPad, an open finding (issue #146): on the iPad Simulator the test's 1.2-second press arrived as a tap
   (the focus square moved to the pressed point, unlocked), at the center and off it; it passes
   on iPhone. The device check below covers press and hold on iPad;
 - two findings from the 1.0.0 integration, each set aside on one text in one test (an owner
@@ -790,19 +809,36 @@ the local toolchain). Jobs:
 | `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator (they also write and upload the file compatibility fixtures), the coverage gate |
 | `ui-build` | Builds the app and the UI tests once (`build-for-testing`) and uploads the test run and the apps |
 | `ui-tests 1/6` … `6/6` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
-| `ui-tests-ipad 1/5` … `5/5` | The same tests in five shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
-| `ui-tests`, `ui-tests-ipad` | Pass only when every iPhone (iPad) shard passed; these are the required status checks |
+| `ui-tests-ipad 1/5` … `5/5` | The same tests in five shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding (issue #147) |
+| `ui-tests`, `ui-tests-ipad` | Pass only when every iPhone (iPad) shard passed; both are required status checks |
 | `file-compat` | The pinned c2patool and exiftool (`scripts/install-file-validators.sh`) on the fixtures from `unit-tests`; both are required (see "File compatibility") |
 | `ui-tests-watch 1/1` | The Apple Watch app's UI tests with accessibility audits on the Apple Watch Series 12 (46mm) Simulator (`NopeWatch` scheme) |
 | `ui-tests-watch 1/1 (second runner)` | The same, only when the first job's runner was lost before the job ended |
-| `ui-tests-watch` | Passes when the watch tests passed on the first runner or on the second; the required status check |
+| `ui-tests-watch` | Passes when the watch tests passed on the first runner or on the second; a required status check |
 | `unit-tests (iOS 26)` | The NopeKit unit tests on an iPhone 17 Pro Simulator with iOS 26.5 (no coverage gate: `unit-tests` has it) |
 | `ui-tests 1/6 (iOS 26)` | The first iPhone UI test shard on the same iOS 26.5 Simulator, from the `ui-build` build, with `scripts/run-ui-test-shard.sh` and `SIMULATOR_OS=26.5` |
 | `ui-tests-watch (watchOS 26)` | The watch UI tests on an Apple Watch Series 11 (46mm) Simulator with watchOS 26.5 |
-| `oldest-os` | Passes when the three iOS and watchOS 26 jobs passed |
+| `oldest-os` | Passes when the three iOS and watchOS 26 jobs passed; advisory, not a required check (read by eye before a release merge: its runtime download depends on Apple's servers) |
 | `docs` | `scripts/check-docs.sh` |
 
 `.github/workflows/repo-checks.yml` (`repo-checks`) runs the quick checks above.
+
+The ruleset on `main` requires `repo-checks`, `unit-tests`, `ui-tests`, `ui-tests-ipad`,
+`ui-tests-watch` and `docs` (since 2026-11-22; before, only `repo-checks`, `unit-tests`,
+`ui-tests` and `docs`). `file-compat` and `oldest-os` are not required. Read them before merging a
+release.
+
+Four steps added after the last `build` run on GitHub were run locally first, on 2026-11-22 on
+`int-1.0.0` with the final review's fixes: the Release build's `strings` check for Debug-only
+tools (all four binaries clean) and its networking check; `scripts/check-launch-screen.sh` on the
+built Debug and Release apps; `scripts/check-docs.sh` with its DocC build (100% documented,
+`docs/api/` matching); and the `site` workflow's steps, `npm ci --ignore-scripts`,
+`scripts/test-check-site.sh` (90 passed) and `scripts/check-site.sh --preview`, whose site checks,
+browser and axe checks and Lighthouse floors passed in a copy with
+`site/content/accessibility.json`'s "Last updated" set to the day its text changed (the branch
+keeps the earlier date until the release pull request's last push, `docs/RELEASING.md`, so the
+build stops at that date rule until then). The Nu HTML Checker step wasn't run locally
+(it needs Java, which that Mac doesn't have); it runs in the workflow.
 
 The jobs above the `oldest-os` rows use the iOS 27.2 and watchOS 27.2 Simulators. The app
 supports iOS, iPadOS and watchOS 26 and 27 (issue #78). The `xcode-27` image has no iOS 26 or
@@ -836,24 +872,28 @@ the deployment target at
 
 ### UI test shards
 
-By the listed times the UI suite takes about 512 minutes of test time on the iPhone Simulator
-and 534 on the iPad Simulator on the GitHub macOS runner (about twice as long as on a recent
-Mac, so CI limits are sized from runner times, never from local ones). About four fifths of
+By the listed times the UI suite takes about 573 minutes of test time on the iPhone Simulator
+and 595 on the iPad Simulator on the GitHub macOS runner (about twice as long as on a recent
+Mac, so CI limits are sized from runner times, never from local ones). About seven tenths of
 those times are estimates (`e`, twice a local time), so the runner is expected to measure
 less. CI runs it in six iPhone shards and five iPad shards, each its own job:
 
 | Job | Tests (listed times) | With about 7 minutes of setup | Limit |
 |---|---|---|---|
-| `ui-tests 1/6` … `6/6` | 84 to 90 minutes each | 91 to 97 minutes | 130 minutes |
-| `ui-tests-ipad 1/5` … `5/5` | 106 to 109 minutes each | 113 to 116 minutes | 160 minutes |
-| `ui-tests 1/6 (iOS 26)` | 84 minutes | 101 minutes, with the runtime download | 140 minutes |
+| `ui-tests 1/6` … `6/6` | 93 to 102 minutes each | 100 to 109 minutes | 150 minutes |
+| `ui-tests-ipad 1/5` … `5/5` | 117 to 124 minutes each | 124 to 131 minutes | 180 minutes |
+| `ui-tests 1/6 (iOS 26)` | 94 minutes | 111 minutes, with the runtime download | 160 minutes |
 | `ui-tests-watch` | 2 minutes | 13 minutes, with its build | 45 minutes |
 | `ui-tests-watch (watchOS 26)` | 2 minutes | 23 minutes, with the runtime download | 70 minutes, with room for the runtime wait |
 
 The 1.0.0 merges (device feedback, Honesty, the first start's plate) brought the listed times
 to 122 minutes for each of four iPhone shards and 171 for each of three iPad shards, past the
 limits, so 1.0.0 runs six iPhone and five iPad shards, rebalanced from the listed times, with
-the limits raised to fit them.
+the limits raised to fit them. Later 1.0.0 tests brought the listed times to 93 to 102 minutes
+(iPhone) and 117 to 124 (iPad) per shard (`scripts/ui-test-shards.sh times`, 2026-11-22), so the
+limits went from 130 to 150 and from 160 to 180 minutes: the worst case, with setup and the
+remount wait, is about 122 of 150 and 144 of 180, which leaves room for a second run of
+unfinished tests.
 
 Before that, the 1.0.0 interface had added about 75 UI tests, listed with estimates, and with
 three iPhone and two iPad shards an iPad shard came to 124 of its 130 minutes with setup, so a
@@ -1265,13 +1305,16 @@ the request through the Assistant Access check and the same `ShortcutInbox` the 
 `ShortcutUITests` launch with `-NopeSettings.assistantAccess YES -NopeSettings.assistantAsk never`;
 `-NopeSimulatedAssistantAnswer cancel` cancels the question that Every Action and Only Before a
 Photo ask (it is confirmed otherwise); a cancelled question gets no answer from the app, so the
-result reads "No answer: the question was cancelled." `TakePhotoIntentUITests.swift` (iOS 27 only)
+result reads "No answer: the question was canceled." `TakePhotoIntentUITests.swift` (iOS 27 only)
 runs the real Take Photo intent through the system's App Intents runner (`AppIntentsTesting`)
 instead, in its own UI test target, `NopeAppIntentsUITests`, which isn't in the CI shards:
 `AppIntentsTesting` links `AppIntentsTypeSupport`, which iOS 26 doesn't have, and while these
 tests were in `NopeAppUITests` the test bundle couldn't be loaded on the iOS 26.5 Simulator, so
 no UI test ran there ("Failed to load the test bundle"). Run them with
-`-only-testing:NopeAppIntentsUITests` on an iOS 27 Simulator. They cover: access off, on with Never, on with Every Action (the runner confirms the question), a
+`-only-testing:NopeAppIntentsUITests` on an iOS 27 Simulator; no CI job runs them, so they are a
+release gate, run by hand on a signed build before the release CI run. Last run: 2026-11-22, on
+`int-1.0.0` with the final review's fixes, iPhone 18 Pro Simulator with iOS 27.2, Simulator
+signing: all 5 passed. They cover: access off, on with Never, on with Every Action (the runner confirms the question), a
 40-second delay answered when the timer starts, and the app closed. The runner refuses an app
 built with `CODE_SIGNING_ALLOWED=NO` ("Unable to run internal tests on a Customer build"), so
 these tests are skipped in such a build and run with the Simulator's own signing (leave the
@@ -1597,7 +1640,7 @@ version in the section named, or list it in the changelog as not yet checked:
   entry points, the viewer's Open in Photos and the camera's Open Photos (P1 under "Device
   feedback for 1.0.0"). Record that each opens the Photos app; the app ignores the result of the
   call, so if a future iOS stops opening the address, both buttons would do nothing without a
-  message.
+  message (issue #148, 1.1.0).
 
 ### Open device check named by the fourth code review of 1.0.0
 
@@ -1752,6 +1795,12 @@ whether a photo was saved, the device and the iOS version.
 | S8 | "Take a photo in 10 seconds with nope", app open, access on, Never | The countdown runs on the camera; Siri answers after the photo, as S1 | Not run |
 | S9 | Shortcuts app: Take Photo with Custom Delay 40, app open, access on, Never | At once: "Timer started, 40 seconds. nope. shows the result."; Photos Saved 0; the photo is taken when the countdown ends | Not run |
 | S10 | S1 in low light with the steady hint showing | As S1, within Siri's time | Not run |
+| S11 | Shortcuts app: Take Photo with Number of Photos 50, no delay, app open on the camera, access on, Never; time it from Run to the answer | Record the time, the answer and the photos saved. Expected: "Photos saved …" with 50 saved. If the system's generic error appears instead (its time limit is about 30 seconds, `LNConnectionErrorDomain` 1014 in the Simulator), record when, and whether the photos kept saving | Not run |
+| S12 | Shortcuts app: Take Bracket with Type Focus and Focus Frames 50, the same settings; time it the same way | As S11, for the bracket's 50 frames | Not run |
+
+S11 and S12 check the final review's S8 (owner decision, 2026-11-22: a device check, no code
+change for 1.0.0): `perform()` waits for the whole run, and only a delay over 10 seconds is
+answered at the start. If either ends with the system's error, file an issue with the timings.
 
 If S1 works and S2 fails the same way as the report, the phrase or the name was the cause; if
 both fail, watch the device log while repeating S1 (Console on a Mac, the app's process and the
@@ -1880,7 +1929,7 @@ what needs no hardware, the watchOS Simulator.
 - Delays: 3 and 10 seconds start the iPhone's own self-timer (its countdown shows and speaks on
   the iPhone); the watch shows "Photo in 3 seconds" and counts down with a light haptic each
   second; Cancel Timer on the watch stops it and nothing is taken; cancelling on the iPhone shows
-  "Timer cancelled. No photo taken." on the watch.
+  "Timer canceled. No photo taken." on the watch.
 - Nothing taken when the camera isn't available: with the iPhone app in the background, closed,
   or with Settings open over the camera, the watch says "Camera not available. Open nope. on your
   phone." and Take Photo is disabled; opening the app later takes no photo. With camera access

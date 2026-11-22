@@ -37,6 +37,11 @@ public enum SelfTimerDelay: Int, CaseIterable, Sendable {
 @MainActor
 @Observable
 public final class Countdown {
+    /// The longest countdown, in seconds: one day. Longer requests are shortened to it, so the
+    /// deadline's arithmetic can't overflow (final review of 1.0.0, minor 6). The app asks for at
+    /// most 60 seconds; the limit only guards the public API.
+    public static let longestSeconds = 86_400
+
     /// The seconds left, from the starting number down to 1, or `nil` when no countdown runs:
     /// the whole seconds until ``deadline``, rounded up. When the app is held up for more than a
     /// second, a number is skipped; the photo is still on time (issue #122).
@@ -86,11 +91,13 @@ public final class Countdown {
     /// number rather than moving the deadline.
     ///
     /// - Parameters:
-    ///   - seconds: The delay, in seconds.
+    ///   - seconds: The delay, in seconds, at most ``longestSeconds``; a longer one is shortened
+    ///     to it.
     ///   - fire: What happens at zero, such as taking a photo. It doesn't run when the countdown
     ///     is cancelled.
     public func start(seconds: Int, fire: @escaping @MainActor () async -> Void) {
         guard seconds > 0, task == nil else { return }
+        let seconds = min(seconds, Self.longestSeconds)
         let deadline = clock.now() + .seconds(seconds)
         self.deadline = deadline
         remainingSeconds = seconds

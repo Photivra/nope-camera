@@ -476,6 +476,42 @@ struct BurstTests {
         #expect(model.drive.lastBurst?.saved == 2)
     }
 
+    /// Final review of 1.0.0, S6: the hardware buttons are given back with a press down, and
+    /// AVKit sends no end for it.
+    @Test func aHardwareHoldEndsWhenTheButtonsAreGivenBack() async {
+        let hooked = HookedBackend(ScriptedBackend(capabilities: CameraModelTests.oneLens))
+        let model = await makeModel(backend: hooked)
+        await hooked.setOnCapture { [model] count in
+            if count == 2 { await model.hardwareButtonsTurnedOff() }
+        }
+        await model.shutter(.pressed, from: .hardware)?.value
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 2))
+        #expect(!model.drive.holds.isHeld(.hardware))
+        // The next on-screen burst ends when its finger lifts.
+        await hooked.setOnCapture { [model] count in
+            if count == 4 { await model.shutter(.released, from: .onScreen, press: 1) }
+        }
+        await model.shutter(.pressed, from: .onScreen, press: 1)?.value
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 2))
+    }
+
+    @Test func givingBackTheButtonsLeavesAnOnScreenHoldAndABurstThatNeedsNoHolding() async {
+        let hooked = HookedBackend(ScriptedBackend(capabilities: CameraModelTests.oneLens))
+        let model = await makeModel(backend: hooked)
+        await hooked.setOnCapture { [model] count in
+            if count == 2 { await model.hardwareButtonsTurnedOff() }
+            if count == 3 { await model.send(.drive(.stopBurst)) }
+        }
+        await model.send(.drive(.startBurst))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 3))
+        await hooked.setOnCapture { [model] count in
+            if count == 5 { await model.hardwareButtonsTurnedOff() }
+            if count == 6 { await model.shutter(.released, from: .onScreen, press: 1) }
+        }
+        await model.shutter(.pressed, from: .onScreen, press: 1)?.value
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 3))
+    }
+
     @Test func endingTheHoldsLeavesABurstThatNeedsNoHolding() async {
         let hooked = HookedBackend(ScriptedBackend(capabilities: CameraModelTests.oneLens))
         let model = await makeModel(backend: hooked)

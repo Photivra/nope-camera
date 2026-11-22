@@ -64,8 +64,9 @@ extension CameraModel {
     /// The final content of an activity whose run has ended: how it ended, how many photos were
     /// saved and whether they are signed.
     ///
-    /// The model doesn't keep every run's result, so an ended interval series and a self-timer
-    /// are judged from the last content shown. That content is current when the app is out of
+    /// The model doesn't keep every run's result, so a self-timer is judged from the last content
+    /// shown, and an interval series by ``ManualControlsModel/lastIntervalEnd``, or from the last
+    /// content when no series has ended. That content is current when the app is out of
     /// the foreground, the only time an activity is on screen: the camera has stopped, so nothing
     /// changes unseen.
     ///
@@ -84,7 +85,12 @@ extension CameraModel {
             // A series that stops after a time ends when its time is up, however many photos it took.
             outcome.phase = manual.lastIntervalEnd == .finished ? .finished : .stopped
         case .interval:
-            outcome.phase = last.taken >= (last.total ?? 0) ? .finished : .stopped
+            // How the series ended, where the model knows it: the content shown last can be one
+            // photo behind, when the last photo was saved and the series ended in one turn while
+            // the phone was locked (final review of 1.0.0, S7). A finished series took its count.
+            let isFinished = manual.lastIntervalEnd.map { $0 == .finished } ?? (last.taken >= (last.total ?? 0))
+            outcome.phase = isFinished ? .finished : .stopped
+            if isFinished, let total = last.total { outcome.taken = total }
         case .astro:
             apply(astro.lastRun, finishesWhenStopped: false, to: &outcome)
         case .burst:

@@ -237,6 +237,15 @@ struct DriveTests {
         countdown.cancel()
     }
 
+    /// Final review of 1.0.0, minor 6: an absurd delay is shortened, not a crash.
+    @Test func aDelayLongerThanADayIsShortenedToADay() async {
+        let ticker = Ticker()
+        let countdown = Countdown(sleep: { _ in await ticker.sleep() })
+        countdown.start(seconds: .max) {}
+        #expect(countdown.remainingSeconds == Countdown.longestSeconds)
+        countdown.cancel()
+    }
+
     // MARK: - Countdown to a fixed deadline (issue #122)
 
     @Test func aCountdownWhoseTicksWakeLateStillFiresAtItsDeadline() async {

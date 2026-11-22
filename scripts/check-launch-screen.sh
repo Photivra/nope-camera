@@ -11,7 +11,9 @@
 #     colors (the period's written as Display P3, as the SVG's comment explains).
 # Given a built app it also reads the app's Info.plist: UILaunchScreen holds exactly
 # UIColorName = LaunchBackground, UIImageName = LaunchMark and UIImageRespectsSafeAreaInsets =
-# false; UIStatusBarStyle is UIStatusBarStyleLightContent; no launch storyboard is named. On
+# false; UIStatusBarStyle is UIStatusBarStyleLightContent; no launch storyboard is named; and
+# UIApplicationSceneManifest's UIApplicationSupportsMultipleScenes is false (one window on iPad
+# for 1.0.0: the one camera screen serves Siri, Shortcuts and the watch). On
 # macOS, where `xcrun assetutil` exists, it also checks that the app's compiled asset catalog
 # holds both assets.
 # The plist is read with Python's plistlib, which reads binary and XML plists on any runner.
@@ -112,6 +114,9 @@ if app:
             fail(f"the built Info.plist's UIStatusBarStyle is {info.get('UIStatusBarStyle')!r}; it must be UIStatusBarStyleLightContent")
         if "UILaunchStoryboardName" in info:
             fail("the built Info.plist names a launch storyboard; the UILaunchScreen dictionary is used alone")
+        scenes = info.get("UIApplicationSceneManifest")
+        if not isinstance(scenes, dict) or scenes.get("UIApplicationSupportsMultipleScenes") is not False:
+            fail(f"the built Info.plist's UIApplicationSceneManifest is {scenes!r}; UIApplicationSupportsMultipleScenes must be false")
     except (OSError, plistlib.InvalidFileException) as error:
         fail(f"can't read the built app's Info.plist: {error}")
     assets = os.environ.get("ASSETS_INFO", "")

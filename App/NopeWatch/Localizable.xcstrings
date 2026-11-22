@@ -58,7 +58,7 @@
     "The camera was busy. No photo taken." : {
       "comment" : "Watch result: the phone was already taking a photo, counting down or in a burst, so nothing was taken."
     },
-    "Timer cancelled. No photo taken." : {
+    "Timer canceled. No photo taken." : {
       "comment" : "Watch result: the self-timer was cancelled, so no photo was taken."
     },
     "Update nope. on your phone and watch." : {

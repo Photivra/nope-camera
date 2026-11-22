@@ -109,7 +109,7 @@ final class NopeWatchUITests: XCTestCase {
         try audit(app)
         cancel.tap()
         XCTAssertTrue(result(in: app).waitForExistence(timeout: 10))
-        XCTAssertEqual(result(in: app).label, "Timer cancelled. No photo taken.")
+        XCTAssertEqual(result(in: app).label, "Timer canceled. No photo taken.")
         XCTAssertTrue(app.buttons["WatchShutter"].waitForExistence(timeout: 10))
     }
 

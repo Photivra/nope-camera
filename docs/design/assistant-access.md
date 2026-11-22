@@ -162,7 +162,7 @@ Each is a whole sentence with placeholders, formatted by the system (numbers, du
 | The question | The system's. The app sets no timer and cannot extend it | iOS | Treated as Cancel. Nothing changes |
 | After Confirm, for the camera screen and the camera | 10 seconds, as today (`ShortcutInbox.startTimeoutSeconds`) | The app | "The camera isn't available right now." Nothing was taken |
 | Behind an earlier request | As today | The app | "nope. is still doing an earlier request. Nothing changed." |
-| A self-timer the person asked for | The delay named in the question | The person | Cancel on the camera ends it: "The timer was cancelled. No photo was taken." |
+| A self-timer the person asked for | The delay named in the question | The person | Cancel on the camera ends it: "The timer was canceled. No photo was taken." |
 
 The rule "nothing leaves on a timer" (ACCESSIBILITY.md) is kept for everything the app draws. The question is the system's, and an unanswered question fails safe: nothing happens.
 
@@ -287,7 +287,7 @@ Three things show a person what assistants did. None is written to disk.
 
 1. **On the camera, after an action that ran** (figure `assistant-camera-notice`): a hint in the bottom stack with a caption, "Siri or Shortcuts", and under it the same sentence the assistant got ("Now using the telephoto camera."). It stays until the next action on the camera or its Close button, and never leaves on a timer (ACCESSIBILITY.md), so VoiceOver, Switch Control and a slow reader at the largest text size all have as long as they need (owner decision on the third review of 1.0.0). A photo also gets its usual capture feedback. The caption says "Siri or Shortcuts" because the app cannot tell which.
 2. **On the camera, after a refusal** (figure `assistant-camera-refused`): the next time the camera is on screen, a card: "Assistant Access is off. nope. refused 2 requests since it opened." with Settings and a close button. It stays until dismissed and is shown once per count; a new refusal brings it back. This is how a person learns that something tried, and how someone whose shortcut stopped working finds the setting.
-3. **On the page, This Session** (figure `assistant-page-on`): up to 20 lines, newest first, each an action's name and what happened: Asked, allowed · Asked, cancelled · Ran without asking · Refused. No values, no times, no preset names. Under it: "Kept in memory only. Cleared when nope. closes." With none: "No requests since nope. opened."
+3. **On the page, This Session** (figure `assistant-page-on`): up to 20 lines, newest first, each an action's name and what happened: Asked, allowed · Asked, canceled · Ran without asking · Refused. No values, no times, no preset names. Under it: "Kept in memory only. Cleared when nope. closes." With none: "No requests since nope. opened."
 
 Not kept: a log file, a history across launches, counts in the settings store. A lasting record of what a person asked their phone to photograph is itself something left behind, which issue 83 works to reduce. The one stored number is the tip's counter (section 11), which stops at five.
 
@@ -376,7 +376,7 @@ US English. Drafts for the owner's Honesty review; none ships until reviewed. Al
 | 11 | What Assistants Get, 2 | While access is on, assistants can see the names of your presets. No action changes a Privacy setting, and a preset applied this way leaves your privacy settings as they are. |
 | 12 | What Assistants Get, 3 | This covers nope.'s own actions. The shutter, the volume buttons, Camera Control, the Apple Watch app and the Control Center controls are not affected. Photos saved to Photos, and what Siri or other apps can see or do outside nope., are up to iOS. |
 | 13 | Session header, empty text, footer | This Session · No requests since nope. opened. · Kept in memory only. Cleared when nope. closes. |
-| 14 | Session results | Asked, allowed · Asked, cancelled · Ran without asking · Refused |
+| 14 | Session results | Asked, allowed · Asked, canceled · Ran without asking · Refused |
 | 15 | The off answer | Assistant Access is off. You can turn it on in nope. › Settings › Privacy. |
 | 16 | Its button | Open Settings |
 | 17 | Under each question | You can change this in nope. › Settings › Privacy. |

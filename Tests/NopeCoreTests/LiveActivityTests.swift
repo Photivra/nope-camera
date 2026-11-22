@@ -221,6 +221,25 @@ struct LiveActivityTests {
         await model.send(.manual(.stopInterval))
     }
 
+    /// Final review of 1.0.0, S7: the last content shown is one photo behind the series' end.
+    @Test func anIntervalSeriesIsJudgedByHowItEnded() async {
+        let model = await makeModel()
+        await model.send(.manual(.setEnabled(true)))
+        await model.send(.manual(.setInterval(IntervalSettings(interval: 60, count: 2))))
+        await model.send(.manual(.startInterval))
+        await waitUntil { model.manual.lastIntervalEnd != nil }
+        #expect(model.manual.lastIntervalEnd == .finished)
+        let behind = Content(kind: .interval, phase: .paused, taken: 1, total: 2)
+        #expect(model.liveActivityOutcome(after: behind) == Content(kind: .interval, phase: .finished, taken: 2, total: 2))
+        // A series stopped by the person is stopped, whatever was shown last.
+        let waiting = await makeModel(sleep: { _ in try await Task.sleep(for: .seconds(3600)) })
+        await startInterval(waiting)
+        await waiting.send(.manual(.stopInterval))
+        #expect(waiting.manual.lastIntervalEnd == .stopped)
+        let shown = Content(kind: .interval, phase: .paused, taken: 5, total: 5)
+        #expect(waiting.liveActivityOutcome(after: shown) == Content(kind: .interval, phase: .stopped, taken: 5, total: 5))
+    }
+
     @Test func outcomes() async {
         let model = await makeModel()
         let signed = photo(.signed)

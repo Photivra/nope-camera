@@ -262,7 +262,7 @@ Draft copy, in the state of 2026-11-19 (no manual pass done):
 >
 > **Taking photos.** The volume buttons, and the Camera Control on iPhones that have one, take a photo. With a hardware keyboard, the Space bar takes a photo. Pinching to switch lenses is optional. The lens buttons do the same.
 >
-> **Self-timer and burst.** Timer, above the shutter, sets a self-timer of 3 or 10 seconds. Burst is beside it: hold the shutter for a burst, or use Start Burst so nothing has to be held. VoiceOver says each second of the countdown.
+> **Self-timer and burst.** Timer sets a self-timer of 3 or 10 seconds. In Burst, hold the shutter, use Start Burst, or set a Burst Limit so one press takes the series. VoiceOver says each second of the countdown.
 >
 > **Focus and exposure lock.** Tap the picture to focus there. Lock appears under the focus square for a few seconds. Touch and hold the picture to lock right away. With VoiceOver or Switch Control on, the focus square and Lock stay until the scene changes. VoiceOver also has the action Lock Focus and Exposure on the viewfinder.
 >

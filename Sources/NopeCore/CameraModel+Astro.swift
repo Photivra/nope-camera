@@ -246,6 +246,29 @@ extension CameraModel {
         await takeFrames(limit: astro.frameCount, tracker: astro, stopsOnLowBattery: true, pausesWithCamera: true)
     }
 
+    /// Applies a change of the app's scene phase to or from the background: going to the
+    /// background turns the light off (AGENTS.md, "Battery"), then sends
+    /// ``CameraIntent/setInForeground(_:)`` with `false`; coming back sends it with `true`.
+    ///
+    /// Each change waits until the one before it has been applied. Without that, a quick return
+    /// while the light was turning off could set the foreground before the older change set the
+    /// background, and leave an interval series or Astro run paused with no previews until the
+    /// next trip to the background (final review of 1.0.0, S4). Call it from the scene phase's
+    /// change, once for each change.
+    ///
+    /// - Parameter isInBackground: Whether the app is now in the background.
+    public func sceneDidChange(isInBackground: Bool) async {
+        let previous = sceneChange
+        // The task holds the model only until the change is applied.
+        let change = Task {
+            await previous?.value
+            if isInBackground { await send(.light(.setTorch(false))) }
+            await send(.setInForeground(!isInBackground))
+        }
+        sceneChange = change
+        await change.value
+    }
+
     /// Records whether the app is in the foreground, and applies it to the self-timer and the
     /// astro helper (``CameraIntent/setInForeground(_:)``).
     ///

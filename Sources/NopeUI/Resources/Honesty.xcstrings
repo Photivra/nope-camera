@@ -386,8 +386,8 @@
       "comment" : "Claim 1 in docs/research/privacy-claims.md. iOS and iCloud Photos are Apple's names. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
-    "iOS may detect faces in the viewfinder to decide where to focus. Focus on Faces in nope.'s settings decides only whether nope.'s autofocus and auto exposure follow them. nope. doesn't read or save which faces it found." : {
-      "comment" : "Honesty statement under Faces and Autofocus. Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus and auto exposure); issue #80. Focus on Faces is the name of nope.'s own switch; use its translation. Must not say that the switch turns face detection off. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
+    "iOS may detect faces in the viewfinder to decide where to focus. Focus on Faces in nope.'s settings decides only whether nope.'s autofocus and auto exposure follow them. nope. doesn't read or save which faces it found. With Exposure Settings on in Details in Each Photo, the files can record the area the camera focused on." : {
+      "comment" : "Honesty statement under Faces and Autofocus. Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus and auto exposure); issue #80. Focus on Faces is the name of nope.'s own switch; use its translation. Must not say that the switch turns face detection off. Exposure Settings and Details in Each Photo are nope.'s own names; use their translations. The last sentence is the EXIF SubjectArea tag (docs/PRIVACY.md); final review of 1.0.0, S22. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
     "iOS Version" : {
@@ -1482,7 +1482,7 @@
       "comment" : "In the This Session list on nope.'s Assistant Access page: nope. asked and the person allowed the action.",
       "extractionState" : "manual"
     },
-    "Asked, cancelled." : {
+    "Asked, canceled." : {
       "comment" : "In the This Session list on nope.'s Assistant Access page: nope. asked and the person cancelled.",
       "extractionState" : "manual"
     },

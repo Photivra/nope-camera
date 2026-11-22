@@ -189,6 +189,10 @@ public final class CameraModel {
         try await Task.sleep(for: .seconds(CameraModel.pauseAfterErrorSeconds))
     }
 
+    /// The latest change of the scene phase being applied (``sceneDidChange(isInBackground:)``),
+    /// which the next change waits for, so the changes apply in the order they happened.
+    @ObservationIgnored var sceneChange: Task<Void, Never>?
+
     /// Creates a model in the ``CameraState/starting`` state.
     ///
     /// - Parameters:

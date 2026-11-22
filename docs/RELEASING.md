@@ -19,6 +19,64 @@ each publication of the website. None of these steps needs a coding agent.
   build, so a failure here would otherwise first show after the tag exists.
 - The tag is `vMAJOR.MINOR.PATCH`. Pushing it also republishes the website.
 
+- In the release pull request's last push before merging, set the dates that must be the merge
+  day: `CHANGELOG.md`'s release heading (`## [X.Y.Z] - YYYY-MM-DD`), and the "Last updated" dates
+  of `site/content/support.json` and `site/content/accessibility.json` (and the policy's), in UTC
+  (see "What can stop a publication" below). For 1.0.0 these were left at their earlier dates on
+  the integration branch on purpose, for this step.
+
+## The app build
+
+The App Store build is made on your Mac with Xcode, from the release commit. No step needs a
+coding agent.
+
+1. **Bundle identifier.** The App Store app is `com.photivra.nope`. It can't be changed after the
+   first upload. `Config/Base.xcconfig` keeps `com.photivra.nope.dev` for development builds, so a
+   development build and the App Store app are separate apps with separate settings on a device.
+   For the release build, add this line to your untracked `Config/Local.xcconfig`, beside
+   `DEVELOPMENT_TEAM`:
+
+   ```
+   NOPE_BUNDLE_IDENTIFIER = com.photivra.nope
+   ```
+
+   The extensions, the Apple Watch app and the App Group follow it
+   (`com.photivra.nope.capture`, `.controls`, `.watchkitapp` and `group.com.photivra.nope`), and
+   Xcode's automatic signing registers them the first time. Never commit `Local.xcconfig`. Remove
+   the line again for development builds.
+2. **App Store record and App Store ID.** In App Store Connect, create the app with the bundle
+   identifier `com.photivra.nope` (Apps, "+", New App). Its Apple ID (App Information, a number)
+   is the App Store ID. Set `AboutScreen.appStoreID` in `Sources/NopeUI/AboutScreen.swift` to that
+   number, in quotes, in a pull request, and run `scripts/check-app-store-id.sh`: it must print
+   "app store id set". Without it the About screen has no Rate or Review row.
+3. **Version and build number.** `MARKETING_VERSION` in `Config/Base.xcconfig` is the release
+   version and matches the `CHANGELOG.md` entry (`scripts/check-repo.sh` checks this).
+   `CURRENT_PROJECT_VERSION` is the build number: raise it by one, in a pull request, before every
+   upload after the first one, since App Store Connect refuses a build number it already has for
+   that version.
+4. **Archive.** In Xcode, open `App/NopeCamera.xcodeproj`, choose the `NopeApp` scheme and the
+   destination "Any iOS Device (arm64)", then Product › Archive. Or, in Terminal:
+
+   ```sh
+   xcodebuild archive -project App/NopeCamera.xcodeproj -scheme NopeApp -configuration Release \
+     -destination 'generic/platform=iOS' -archivePath build/nope.xcarchive -allowProvisioningUpdates
+   ```
+
+5. **Check the archive.** The bundle identifier and versions:
+
+   ```sh
+   plutil -p build/nope.xcarchive/Products/Applications/nope.app/Info.plist \
+     | grep -E 'CFBundleIdentifier|CFBundleShortVersionString|CFBundleVersion'
+   scripts/check-launch-screen.sh build/nope.xcarchive/Products/Applications/nope.app
+   scripts/check-app-store-id.sh
+   ```
+
+   The first command shows `com.photivra.nope`, the release version and the build number. Then
+   run the security audit's checks on this archive (`docs/SECURITY_AUDIT.md`).
+6. **Upload.** In Xcode's Organizer (Window › Organizer), select the archive, then Distribute App,
+   App Store Connect, Upload. The build appears in App Store Connect, under TestFlight, after
+   processing. Submitting it for review is a separate step, and yours (AGENTS.md, rule 5).
+
 ## The website, nope.photivra.com
 
 The site is built from `site/` by `scripts/build-site.py` and published to GitHub Pages by the

@@ -32,11 +32,19 @@ struct ResourceStaging: Sendable {
     ///
     /// - Parameter file: The file to write.
     /// - Returns: Where it was written.
-    /// - Throws: The file system's error, for example while the device is locked.
+    /// - Throws: The file system's error, for example while the device is locked. A file the
+    ///   failed write left behind, part of it written, is deleted first (Privacy: photos never
+    ///   linger; final review of 1.0.0, minor 2).
     func stage(_ file: PhotoFile) throws -> URL {
         let url = directory.appendingPathComponent(UUID().uuidString)
             .appendingPathExtension(PhotoKitMapping.fileExtension(for: file.format))
-        try file.data.write(to: url, options: [Self.protection, .withoutOverwriting])
+        do {
+            // Not atomic: `.withoutOverwriting` can't be combined with `.atomic`.
+            try file.data.write(to: url, options: [Self.protection, .withoutOverwriting])
+        } catch {
+            remove([url])
+            throw error
+        }
         return url
     }
 

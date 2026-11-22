@@ -204,6 +204,15 @@ expect fail "a gated intent without the unlock requirement" "$d"
 d=$(new_tree); mkdir -p "$d/App"; printf 'struct PhotoEntity: AppEntity {\n    let id: String\n}\n' >"$d/App/E.swift"
 expect fail "an entity not listed" "$d"
 
+d=$(new_tree); mkdir -p "$d/App"; printf 'struct Sneaky {}\nextension Sneaky: AppIntent {\n    func perform() async throws -> some IntentResult { .result() }\n}\n' >"$d/App/I.swift"
+expect fail "an intent declared in an extension and not listed" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'struct TakePhotoIntent {}\nextension TakePhotoIntent: AppIntent {\n    func perform() async throws -> some IntentResult { await inbox.submit(.x) }\n}\n' >"$d/App/I.swift"
+expect fail "a gated intent declared in an extension that skips the check" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'struct TakePhotoIntent {}\nextension TakePhotoIntent: AppIntent {\n    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication\n    func perform() async throws -> some IntentResult & ReturnsValue<Int> {\n        let a = await gate.answer(.takePhoto) {}\n    }\n}\n' >"$d/App/I.swift"
+expect pass "a listed gated intent declared in an extension" "$d"
+
 d=$(new_tree); mkdir -p "$d/App"; printf 'struct OpenCameraIntent: CameraCaptureIntent {\n    func perform() async throws -> some IntentResult { .result() }\n}\n' >"$d/App/I.swift"
 expect pass "an intent that only opens a screen needs no check" "$d"
 

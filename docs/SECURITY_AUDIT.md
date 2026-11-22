@@ -95,7 +95,7 @@ MASVS-CODE (supply chain), AGENTS.md "Keep the repository clean".
 ### 3. Binary review
 
 MASVS-CODE, MASVS-RESILIENCE (information in the binary). Run on the Release `.app` inside the
-archive (`Products/Applications/NopeApp.app`).
+archive (`Products/Applications/nope.app`).
 
 - **Run:**
   - `strings -a NopeApp.app/NopeApp | grep -iE 'BEGIN (EC |RSA )?PRIVATE KEY|api[_-]?key|secret|token|password|/Users/|http://|https://'`

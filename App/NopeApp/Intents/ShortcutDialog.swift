@@ -31,7 +31,7 @@ enum ShortcutDialog {
                 comment: "Siri's answer when the photo couldn't be taken or saved. Keep \"nope.\" unchanged.")
         case .cancelled:
             LocalizedStringResource(
-                "The timer was cancelled. No photo was taken.",
+                "The timer was canceled. No photo was taken.",
                 comment: "Siri's answer when the self-timer was cancelled on the phone before the photo.")
         case .timerStarted(let seconds):
             LocalizedStringResource(

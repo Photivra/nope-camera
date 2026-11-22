@@ -653,7 +653,7 @@ struct FocusBracketSections: View {
                 Text("Return Focus When Done", bundle: .module, comment: "Switch in Bracket Settings: after a focus bracket, focus goes back to automatic or to the position set by hand before.")
             }
         } footer: {
-            Text("Exposure and white balance are locked at the first frame, so every frame matches.", bundle: .module, comment: "Footer in Bracket Settings for a focus bracket.")
+            Text("Where the lens allows, exposure and white balance are held at the first frame, so the frames match.", bundle: .module, comment: "Footer in Bracket Settings for a focus bracket.")
         }
         if let bytes = model.focusBracketStorageBytes {
             Section {

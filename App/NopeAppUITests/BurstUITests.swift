@@ -294,7 +294,9 @@ extension NopeAppUITests {
         XCTAssertTrue(app.buttons["Stop Burst"].waitForExistence(timeout: 5))
         XCTAssertTrue(element(app, containing: " of 50").waitForExistence(timeout: 5))
         XCTAssertTrue(burstWaitForValue(shutter, containing: "Taking a burst. Press to stop."))
-        try audit(app)
+        // The second press comes before any audit: on a slow runner the 50 photos could finish
+        // during one (final review of 1.0.0, minor 3). The running card is audited in
+        // testBurstRightToLeft and testBurstNightModeIsAllRed.
         shutter.tap()
         let summary = element(app, containing: "of 50 photos saved")
         XCTAssertTrue(summary.waitForExistence(timeout: 20))

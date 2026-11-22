@@ -371,7 +371,7 @@ extension NopeAppUITests {
     @MainActor
     func testViewerEscapeAndHardwareShutterClose() throws {
         // Space reaches the Camera menu's command on iPhone only (testSpaceTakesAPhoto).
-        try XCTSkipIf(isPad, "Space bar shutter on iPad: open finding")
+        try XCTSkipIf(isPad, "Space bar shutter on iPad: open finding (issue #145)")
         let app = launch("noRAW", extraArguments: Self.signingOn)
         takeViewerPhoto(app)
         let photo = openViewer(app)

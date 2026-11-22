@@ -100,7 +100,10 @@ struct NopeApp: App {
         Self.watchSession.activate()
     }
 
-    /// The app's single window, showing the camera screen.
+    /// The app's single window, showing the camera screen. iPad multiple windows are off for 1.0.0
+    /// (`UIApplicationSupportsMultipleScenes` is false in `NopeApp-Info.plist`, and the generated
+    /// scene manifest, which allows them, is off): one camera screen serves Siri, Shortcuts and the
+    /// watch, and reports the scene phase to the one model.
     var body: some Scene {
         WindowGroup {
             #if DEBUG
@@ -196,7 +199,8 @@ struct NopeApp: App {
         // Photos app only when the person taps. Add-only access can't read the library, and iOS
         // has no documented way to open Photos at one asset, so this opens Photos with its
         // `photos-redirect:` URL, which isn't documented by Apple either (an owner decision;
-        // docs/TESTING.md, "On-device checks"). The Lock Screen camera has neither.
+        // docs/TESTING.md, "On-device checks"; a failed open says nothing yet, issue #148). The
+        // Lock Screen camera has neither.
         .environment(
             \.openPhotosApp,
             Self.simulatesLockScreenCamera
@@ -215,6 +219,10 @@ struct NopeApp: App {
             // Straight to the model, with no task in between: the events arrive on the main
             // actor in the order the system made them (issue #100).
             model.shutter(phase, from: .hardware)
+        }
+        // A press that is down as the buttons are given back may never report its end (S6).
+        .onChange(of: model.handlesHardwareButtons) { _, isOn in
+            if !isOn { model.hardwareButtonsTurnedOff() }
         }
         // After a relaunch during Astro (off at every launch), night mode stays as it was, so the
         // screen opens red in the dark; it becomes the person's (owner decision, 2026-11-18). Only

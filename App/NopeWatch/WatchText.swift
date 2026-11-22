@@ -108,7 +108,7 @@ enum WatchText {
                 symbol: warningSymbol, tone: .warning)
         case .cancelled:
             StatusLine(
-                text: String(localized: "Timer cancelled. No photo taken.", comment: "Watch result: the self-timer was cancelled, so no photo was taken."),
+                text: String(localized: "Timer canceled. No photo taken.", comment: "Watch result: the self-timer was cancelled, so no photo was taken."),
                 symbol: "timer", tone: .plain)
         case .busy:
             StatusLine(

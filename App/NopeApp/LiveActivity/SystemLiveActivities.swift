@@ -21,9 +21,12 @@ final class SystemLiveActivities: LiveActivityPresenting {
 
     /// Ends any activity left from an earlier run of the app, which can no longer be updated:
     /// a series doesn't outlive the app's process.
+    /// They are read here, at launch, so an activity this run starts before the change runs is
+    /// never ended with them (final review of 1.0.0, minor 7).
     init() {
-        guard !SeriesActivity.activities.isEmpty else { return }
-        send { await Self.endLeftovers() }
+        let leftovers = Set(SeriesActivity.activities.map(\.id))
+        guard !leftovers.isEmpty else { return }
+        send { await Self.endLeftovers(leftovers) }
     }
 
     /// Whether the person allows Live Activities for the app.
@@ -109,9 +112,11 @@ final class SystemLiveActivities: LiveActivityPresenting {
         await activity.end(ActivityContent(state: content, staleDate: nil), dismissalPolicy: policy)
     }
 
-    /// Ends every activity left from an earlier run of the app.
-    private nonisolated static func endLeftovers() async {
-        for activity in SeriesActivity.activities {
+    /// Ends the activities left from an earlier run of the app.
+    ///
+    /// - Parameter ids: Their identifiers, read at launch.
+    private nonisolated static func endLeftovers(_ ids: Set<String>) async {
+        for activity in SeriesActivity.activities where ids.contains(activity.id) {
             await activity.end(nil, dismissalPolicy: .immediate)
         }
     }

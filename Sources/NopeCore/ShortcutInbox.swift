@@ -68,19 +68,31 @@ public final class ShortcutInbox {
     ///   ``ShortcutOutcome/cameraUnavailable(_:)`` with ``CameraUnavailability/notRunning``, or
     ///   ``ShortcutOutcome/busyWithEarlierRequest`` when a camera screen is open but still
     ///   performing an earlier request.
+    ///
+    /// When the calling task is cancelled (the system ended the intent) while the request still
+    /// waits in the queue, the request is withdrawn and never performed (final review of 1.0.0,
+    /// S9); one a camera screen already took runs to its end.
     public func submit(_ request: ShortcutRequest) async -> ShortcutOutcome {
         if !isServed, let outcome = request.outcomeWithoutCameraScreen { return outcome }
-        return await withCheckedContinuation { continuation in
-            let pending = PendingShortcut(request: request, continuation: continuation)
-            pending.onFinish = { [weak self] in self?.finished($0) }
-            // Cancelled when a camera screen takes the request; a request already taken is no
-            // longer queued, so a late expiry does nothing.
-            pending.timeout = Task { [weak self, sleep] in
-                try? await sleep(Self.startTimeoutSeconds)
-                self?.expire(pending)
+        let submission = SubmittedShortcut()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                let pending = PendingShortcut(request: request, continuation: continuation)
+                submission.pending = pending
+                pending.onFinish = { [weak self] in self?.finished($0) }
+                // Cancelled when a camera screen takes the request; a request already taken is no
+                // longer queued, so a late expiry does nothing.
+                pending.timeout = Task { [weak self, sleep] in
+                    try? await sleep(Self.startTimeoutSeconds)
+                    self?.expire(pending)
+                }
+                queue.append(pending)
+                handOver()
             }
-            queue.append(pending)
-            handOver()
+        } onCancel: {
+            // On the main actor after the request was queued: the continuation's closure runs
+            // without a suspension, before any task can run there.
+            Task { @MainActor [weak self] in self?.expire(submission.pending) }
         }
     }
 
@@ -150,14 +162,16 @@ public final class ShortcutInbox {
         isServed = false
     }
 
-    /// Ends a request no camera screen took in time: the camera screen is still busy with an
-    /// earlier request, or no camera screen is open.
+    /// Ends a request no camera screen took in time, or whose intent was cancelled: the camera
+    /// screen is still busy with an earlier request, or no camera screen is open. A request no
+    /// longer queued is left alone.
     ///
     /// - Parameter pending: The request.
-    private func expire(_ pending: PendingShortcut) {
+    private func expire(_ pending: PendingShortcut?) {
         guard let index = queue.firstIndex(where: { $0 === pending }) else { return }
-        queue.remove(at: index)
-        pending.finish(isServed ? .busyWithEarlierRequest : .cameraUnavailable(.notRunning))
+        let expired = queue.remove(at: index)
+        expired.timeout?.cancel()
+        expired.finish(isServed ? .busyWithEarlierRequest : .cameraUnavailable(.notRunning))
     }
 
     /// Waits, without polling, until the condition holds, or until the timeout passes.
@@ -172,6 +186,16 @@ public final class ShortcutInbox {
     func wait(timeoutSeconds: Double? = nil, until condition: @escaping @MainActor () -> Bool) async -> Bool {
         await ChangeWaiter.wait(timeoutSeconds: timeoutSeconds, sleep: sleep, until: condition)
     }
+}
+
+/// The request a ``ShortcutInbox/submit(_:)`` call queued, so the call's cancellation can find it.
+@MainActor
+final class SubmittedShortcut {
+    /// The queued request, once the call has queued it.
+    var pending: PendingShortcut?
+
+    /// Creates a holder with no request yet.
+    init() {}
 }
 
 /// One request in a ``ShortcutInbox``, with the intent's wait for its outcome.

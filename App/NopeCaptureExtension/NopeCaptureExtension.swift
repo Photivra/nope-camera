@@ -86,6 +86,10 @@ struct LockedCameraView: View {
             // actor in the order the system made them (issue #100).
             model.shutter(phase, from: .hardware)
         }
+        // A press that is down as the buttons are given back may never report its end (S6).
+        .onChange(of: model.handlesHardwareButtons) { _, isOn in
+            if !isOn { model.hardwareButtonsTurnedOff() }
+        }
         .onChange(of: settings.save, initial: true) { _, save in
             model.saveSettings = save
         }
