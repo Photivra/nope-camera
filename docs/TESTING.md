@@ -516,6 +516,14 @@ other finding fails the test:
     and hiding it before the sheet presents) and left every viewer element in the tree: iOS
     ignores accessibility hiding on the presenting view while a sheet is up. The same test passes
     on the iPad with iOS 26.5;
+  - for 1.0.0 only (owner, 2026-11-22; to be removed with issue #141), "Text clipped" on the
+    Live Activity row's title or explanation in Settings, under the Dim After menu row
+    (`isLiveActivityRowClippedText`): every time on the iPhone 17 Pro with iOS 26.5 and the iPad
+    with iOS 27.2, now and then on the iPhone 18 Pro with iOS 27.2, while the recordings show
+    both texts whole. Without the Dim After row the finding didn't appear; giving that row a
+    plain identifier instead of a container, or taking its label's fixed size away, didn't
+    remove it, and moving its notes out of the menu's label would move the menu's value, a
+    visual change. Any other finding on the row still fails;
   - a contrast finding on a disabled control (the RAW row while it is the only format, the
     button gallery's disabled states, a lens button's "No RAW" caption while the self-timer
     counts down, at the tokens' 40% opacity): WCAG 2.2, 1.4.3, exempts inactive user interface

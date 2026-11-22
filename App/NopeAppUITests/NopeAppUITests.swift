@@ -329,6 +329,24 @@ final class NopeAppUITests: XCTestCase {
         return app.descendants(matching: .any)["PhotoDetails"].exists && app.descendants(matching: .any)["ViewerPhoto"].exists
     }
 
+    /// Whether an issue is the open "Text clipped" finding on the Live Activity row, set aside
+    /// for 1.0.0 only (owner, 2026-11-22; remove with issue #141): the row's title, "Live
+    /// Activity", or its explanation, reported as clipped in Settings under the Dim After menu row.
+    /// Every time on the iPhone 17 Pro with iOS 26.5 and the iPad Air 11-inch (M4) with iOS 27.2,
+    /// now and then on the iPhone 18 Pro with iOS 27.2; the recordings show both texts whole.
+    /// Without the Dim After row the finding didn't appear; giving that row a plain identifier
+    /// instead of a container, or taking its label's fixed size away, didn't remove it
+    /// (docs/TESTING.md). A finding of any other type on the row, and every clipped text
+    /// elsewhere, still fails.
+    @MainActor
+    static func isLiveActivityRowClippedText(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
+        guard issue.auditType == .textClipped, let element = issue.element, element.exists else { return false }
+        // Without the direction marks iOS may put around a label (U+200E and the like).
+        let label = String(element.label.unicodeScalars.filter { $0.properties.generalCategory != .format })
+        return label == "Live Activity"
+            || label.hasPrefix("Shows a series' progress on the Lock Screen and in the Dynamic Island")
+    }
+
     /// Whether an issue is a contrast finding on a disabled control, drawn at the tokens' disabled
     /// opacity (the RAW row while it is the only format, a lens button's "No RAW" caption while
     /// the self-timer counts down): WCAG 2.2, 1.4.3, exempts inactive user interface components
@@ -669,6 +687,7 @@ final class NopeAppUITests: XCTestCase {
                 || Self.isMeasuredDynamicTypeFinding(issue)
                 || Self.isTextCutByAPopover(issue, in: app)
                 || Self.isViewerTextBesideIPadDetails(issue, in: app)
+                || Self.isLiveActivityRowClippedText(issue)
                 || Self.isEnlargedPastTheLowerEdge(issue, of: scrollFrame)
                 || Self.isIgnored(issue, in: app, afterScrolling: afterScrolling)
                 || Self.isGuidePictureText(issue, in: app)
