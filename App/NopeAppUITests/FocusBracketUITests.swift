@@ -239,10 +239,13 @@ extension NopeAppUITests {
         let app = launch("manual")
         chooseFocusBracket(app, frames: "3")
         openPhotoDetails(app)
-        XCTAssertTrue(element(app, containing: "Planned Focus").waitForExistence(timeout: 5))
-        XCTAssertTrue(element(app, containing: "Reported by the lens").exists)
-        XCTAssertTrue(element(app, containing: "not a distance").exists)
+        // The sheet as it opens is audited first. The rows are below the summary card, which
+        // since its rebuild (#118) can push them under the sheet's lower edge, so they are
+        // scrolled to, as the other details checks do.
         try audit(app, checksDynamicType: false, checksContrast: !isPad)
+        XCTAssertTrue(scrollDetails(app, to: element(app, containing: "Reported by the lens")))
+        XCTAssertTrue(scrollDetails(app, to: element(app, containing: "Planned Focus")))
+        XCTAssertTrue(scrollDetails(app, to: element(app, containing: "not a distance")))
         app.buttons["Done"].firstMatch.tap()
         let photo = app.descendants(matching: .any)["ViewerPhoto"]
         XCTAssertTrue(photo.waitForExistence(timeout: 10))

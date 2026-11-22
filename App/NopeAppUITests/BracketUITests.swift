@@ -271,11 +271,15 @@ extension NopeAppUITests {
         chooseInBracketSettings(app, "Order", "Brightest First")
         closeBracketSettings(app)
         openPhotoDetails(app)
-        XCTAssertTrue(element(app, containing: "Planned Exposure").waitForExistence(timeout: 5))
-        XCTAssertTrue(element(app, containing: "This Frame").exists)
-        XCTAssertTrue(element(app, containing: "Brightest First").exists)
-        XCTAssertTrue(element(app, containing: "Not written to the files").exists)
+        // The sheet as it opens is audited first. The bracket rows are below the summary card,
+        // which since its rebuild (#118) can push them under the sheet's lower edge, so they are
+        // scrolled to, as the other details checks do.
+        XCTAssertTrue(element(app, containing: "RAW").waitForExistence(timeout: 5))
         try audit(app, checksDynamicType: false, checksContrast: !isPad)
+        XCTAssertTrue(scrollDetails(app, to: element(app, containing: "This Frame")))
+        XCTAssertTrue(scrollDetails(app, to: element(app, containing: "Planned Exposure")))
+        XCTAssertTrue(scrollDetails(app, to: element(app, containing: "Brightest First")))
+        XCTAssertTrue(scrollDetails(app, to: element(app, containing: "Not written to the files")))
     }
 
     /// Bracket isn't offered on a lens that can't bracket; switching to one with Bracket selected
