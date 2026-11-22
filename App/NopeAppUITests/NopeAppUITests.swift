@@ -930,11 +930,19 @@ final class NopeAppUITests: XCTestCase {
         func point(_ fraction: CGFloat) -> XCUICoordinate {
             origin.withOffset(CGVector(dx: frame.midX, dy: frame.minY + frame.height * fraction))
         }
+        // Until the row can be tapped or the list stops moving (``settingsListPosition(_:)``):
+        // at the largest text size a fixed 30 drags stopped short of About and Licenses once
+        // How to Use nope. (#117) and Dim After (#119) made the list longer.
+        let list = settingsList(app)
         for towardEnd in [true, false] {
             var steps = 0
-            while !row.isHittable && steps < 30 {
+            var position = settingsListPosition(list)
+            while !row.isHittable && steps < Self.maximumSettingsDrags {
                 point(towardEnd ? 0.7 : 0.4).press(forDuration: 0.05, thenDragTo: point(towardEnd ? 0.4 : 0.7))
                 steps += 1
+                let next = settingsListPosition(list)
+                if let next, next == position { break }
+                position = next
             }
         }
         row.tap()
