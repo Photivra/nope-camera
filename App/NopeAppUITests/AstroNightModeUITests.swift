@@ -61,8 +61,11 @@ extension NopeAppUITests {
         let nightMode = settingsElement(app, "settings.nightMode")
         let row = settingsElement(app, "settings.keepNightModeAfterAstro")
         XCTAssertTrue(row.exists, "the row is shown where the device offers Astro", file: file, line: line)
-        XCTAssertTrue(row.label.contains("Keep Night Mode After Astro"), row.label, file: file, line: line)
-        XCTAssertTrue(row.label.contains("stays on after you leave Astro"), row.label, file: file, line: line)
+        // At the largest text size the switch and its explanation are stacked; on iOS 26.5 the
+        // row's label then holds only the explanation and the title is the switch's own, so the
+        // words are looked for in the row and the elements inside it (`row(_:shows:)`).
+        XCTAssertTrue(self.row(row, shows: "Keep Night Mode After Astro"), row.debugDescription, file: file, line: line)
+        XCTAssertTrue(self.row(row, shows: "stays on after you leave Astro"), row.debugDescription, file: file, line: line)
         if nightMode.exists, nightMode.isHittable {
             XCTAssertLessThan(nightMode.frame.minY, row.frame.minY, "the row follows Night Mode", file: file, line: line)
         }
