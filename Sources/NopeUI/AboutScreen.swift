@@ -5,8 +5,8 @@ extension EnvironmentValues {
     /// The app's numeric App Store ID, from which the About screen builds its Rate or Review
     /// link, or `nil` while there is none, which hides the row and its search entry
     /// (`docs/store/STORE-PAGE-PLAN.md`, section 12). ``AboutScreen/appStoreID`` by default; the
-    /// app's UI tests set one in Debug builds (`-NopeSimulatedAppStoreID`), because the
-    /// repository has no id until the app's App Store record exists.
+    /// app's UI tests set a test id, or simulate none, in Debug builds
+    /// (`-NopeSimulatedAppStoreID <digits>` or `none`).
     @Entry public var appStoreID: String? = AboutScreen.appStoreID
 }
 
@@ -31,7 +31,7 @@ struct AboutScreen: View {
     /// `nil` until the app's App Store record exists. It is not secret. While it is `nil` the
     /// Rate or Review row is hidden, and `scripts/check-app-store-id.sh`, run before each release,
     /// fails.
-    nonisolated static let appStoreID: String? = nil
+    nonisolated static let appStoreID: String? = "6838151647"
 
     /// The App Store's write-review address for an App Store ID:
     /// `https://apps.apple.com/app/id<ID>?action=write-review`.

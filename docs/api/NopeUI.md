@@ -6240,8 +6240,8 @@ var appStoreID: String? { get set }
 The app's numeric App Store ID, from which the About screen builds its Rate or Review
 link, or `nil` while there is none, which hides the row and its search entry
 (`docs/store/STORE-PAGE-PLAN.md`, section 12). ``AboutScreen/appStoreID`` by default; the
-app's UI tests set one in Debug builds (`-NopeSimulatedAppStoreID`), because the
-repository has no id until the app's App Store record exists.
+app's UI tests set a test id, or simulate none, in Debug builds
+(`-NopeSimulatedAppStoreID <digits>` or `none`).
 
 ## `EnvironmentValues/assistantSession`
 

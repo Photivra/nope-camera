@@ -1,21 +1,9 @@
-# Privacy policy: Photivra Nope Camera (DRAFT)
-
-> **DRAFT, needs human review. Not published.** The maintainer reviews, completes and publishes
-> this policy at `https://nope.photivra.com/privacy/`, the address the app's About screen and the
-> store listing link to. It describes the planned 1.0 app; before publishing,
-> check every statement against the release build and `docs/SECURITY_AUDIT.md`, and remove any
-> that the release doesn't support. Wording follows `docs/PRIVACY.md` and
-> `docs/research/privacy-claims.md`. Items in [brackets] are for the maintainer to fill in.
-> Translations, if any, need fluent human review. This draft is not legal advice.
-
----
-
 # Photivra Nope Camera privacy policy
 
-Effective date: [date]. Last updated: [date]. App version: [1.0.0].
+Effective date: 2026-11-23. Last updated: 2026-11-23. App version: 1.0.0.
 
 This policy covers the Photivra Nope Camera app for iPhone and iPad, and its Apple Watch app, published by
-[LLC legal name]. It doesn't cover photivra.com or other Photivra products, which have their own policies.
+Shackelford Creative, LLC. It doesn't cover photivra.com or other Photivra products, which have their own policies.
 
 ## The short version
 

@@ -11,6 +11,9 @@ extension NopeAppUITests {
     /// An App Store ID for the tests: any digits make the row show.
     static let testAppStoreID = ["-NopeSimulatedAppStoreID", "1234567890"]
 
+    /// Launch arguments that simulate an app with no App Store ID (the real one is set).
+    static let noAppStoreID = ["-NopeSimulatedAppStoreID", "none"]
+
     /// The row's identifier (`SettingsID.rateOrReview`).
     static let rateOrReviewRow = "settings.about.rateOrReview"
 
@@ -36,7 +39,7 @@ extension NopeAppUITests {
 
     @MainActor
     func testRateOrReviewIsHiddenWithoutAnAppStoreID() throws {
-        let app = openAbout([])
+        let app = openAbout(Self.noAppStoreID)
         scrollToTheEndOfTheSettingsPage(app)
         XCTAssertTrue(sourceCodeLink(app).exists, "the page's end is on screen")
         XCTAssertFalse(app.descendants(matching: .any).matching(identifier: Self.rateOrReviewRow).firstMatch.exists)
