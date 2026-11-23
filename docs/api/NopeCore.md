@@ -33799,8 +33799,8 @@ public, declared in `Sources/NopeCore/WatchRemote.swift`
 case phoneNotReachable
 ```
 
-The iPhone app can't be reached: the phone is away, off or locked out of the link.
-Say to keep the phone nearby with the app open.
+The iPhone app can't be reached: the phone is away, off or locked, or the app is
+closed or in the background. Say to unlock the phone and open the app.
 
 ## `WatchRemote/Display/ready`
 

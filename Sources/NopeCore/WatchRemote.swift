@@ -41,8 +41,8 @@ public final class WatchRemote {
         /// The watch hasn't heard from the phone yet. Show a neutral placeholder.
         case connecting
 
-        /// The iPhone app can't be reached: the phone is away, off or locked out of the link.
-        /// Say to keep the phone nearby with the app open.
+        /// The iPhone app can't be reached: the phone is away, off or locked, or the app is
+        /// closed or in the background. Say to unlock the phone and open the app.
         case phoneNotReachable
 
         /// The phone's camera is ready. Enable the shutter.

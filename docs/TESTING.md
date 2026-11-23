@@ -1930,10 +1930,12 @@ what needs no hardware, the watchOS Simulator.
   the iPhone); the watch shows "Photo in 3 seconds" and counts down with a light haptic each
   second; Cancel Timer on the watch stops it and nothing is taken; cancelling on the iPhone shows
   "Timer canceled. No photo taken." on the watch.
-- Nothing taken when the camera isn't available: with the iPhone app in the background, closed,
-  or with Settings open over the camera, the watch says "Camera not available. Open nope. on your
-  phone." and Take Photo is disabled; opening the app later takes no photo. With camera access
-  declined, the watch says so. With the iPhone out of range or off, "Can't reach your phone".
+- Nothing taken when the camera isn't available: with Settings open over the camera on the
+  iPhone, the watch says "Camera not available. Open nope. on your phone." and Take Photo is
+  disabled; opening the camera later takes no photo. With camera access declined, the watch says
+  so. With the iPhone locked, the iPhone app in the background or closed, or the iPhone out of
+  range or off, the watch says "Can't reach your phone. Unlock it and open nope." and Take Photo
+  is disabled.
 - A photo whose result the watch missed (lower the wrist during the countdown): raising it shows
   the result.
 - VoiceOver on the watch reads the status, the shutter and the delay, and announces each
