@@ -4,6 +4,8 @@ Status: proposed 2026-11-21 for release 1.1.0. Not built, not yet accepted, and 
 
 This document covers the user-facing parts of three issues, and of six more that the owner split out of issue 83 (release 1.2.0) into this release on 2026-11-22: issues 132 to 137, sections 7 to 12. Their designs and strings were moved here from [release-1.2.md](release-1.2.md); the moved strings keep their numbers. Issue 85 (CI) has no interface; its diagram is here because the figures are kept together. Issue 114 (Apple Vision Pro) and issue 127 (the usability test) have no screens: see the plan, sections 3.1 and 3.7, and [docs/research/usability-test-plan.md](../research/usability-test-plan.md).
 
+Sections 13 to 23 were added on 2026-11-22 for the 24 other issues of the milestone, all kept in 1.1.0 by the owner. The largest is the Appearance themes (issue 138, section 13), with a figure for every theme.
+
 | Section | Issue | What |
 | --- | --- | --- |
 | 1 | 120 | The Show Controls button in clean view, made quieter |
@@ -18,10 +20,21 @@ This document covers the user-facing parts of three issues, and of six more that
 | 10 | 136 | The privacy cover in the app switcher |
 | 11 | 135 | Leaving less behind (no screens) |
 | 12 | 137 | Limits on the Honesty screen |
+| 13 | 138 | Appearance themes: two colors, the themes, the tile in Q and the sheet |
+| 14 | 144 | Send Feedback, and Report a Problem on GitHub |
+| 15 | 152 | Level: pointing straight up |
+| 16 | 139 | "Cryptographically signed" |
+| 17 | 143 | The viewer's Close, where Last Photo was |
+| 18 | 142 | Disabled controls and contrast (options) |
+| 19 | 131 | A preview inside RAW files |
+| 20 | 140 | Photo Details on iPad |
+| 21 | 148, 149, 150 | Small changes to words and states |
+| 22 | 141, 146, 147, 151, 153 to 155, 157 to 162 | Changes without a screen (pointers to the plan, and the CI diagram) |
+| 23 | | Draft strings 122 to 151 |
 
 Evidence note: everything about today's behavior was read from the code on branch `n100-H` at `9cef00d`. Nothing here was measured on a device or run on a simulator. Contrast ratios are calculated from the color values with the WCAG 2.2 formula (the same one `MeasuredContrast` uses in the UI tests); they are not measured from a screen. Each statement that needs a device is listed as a device check in the plan, section 7.
 
-Q, the quick menu, is not changed by anything here: no tile is added, removed, moved or made editable, and Q still opens only from its button. The new settings are in Settings, and Share… is in the Last Photo viewer.
+Q, the quick menu, gains one tile: Appearance, fixed and last, a button that opens a sheet (issue 138, section 13; decided by the owner on 2026-11-22). Nothing else here adds, removes or moves a tile; no tile is made editable, reorderable or swipeable; and Q still opens only from its button. The new settings are in Settings, and Share… is in the Last Photo viewer.
 
 Names: the interface says "nope."; documents and the About screen say "Photivra Nope Camera" (AGENTS.md, "Name and wordmark").
 
@@ -228,7 +241,7 @@ Notes on strings 25, 31 to 34, 51 and 101 to 121:
 - **Strings 119 to 121** are written last, by group K, from what the device checks recorded; the text here is the most that can be said if every check passes.
 - **"Share Clean" is not used** in the interface.
 
-The other strings from 13 to 100 are for issue 83 and are in [release-1.2.md](release-1.2.md), section 9, with their numbers unchanged.
+The other strings from 13 to 100 are for issue 83 and are in [release-1.2.md](release-1.2.md), section 9, with their numbers unchanged. Strings 122 to 151, for the issues added on 2026-11-22, are in section 23.
 
 ## 7. Sharing a copy, and When Sharing (issue 132)
 
@@ -374,3 +387,277 @@ Rules:
 - **Release 1.2.0 adds to these** for captures kept in the app (the lock, backups of the store, Advanced Data Protection, the High-Risk Checklist link); it does not rewrite them.
 - Search finds the entries by "delete", "erase", "backup", "update" and "shared".
 - Accessibility: the entries are the existing `HonestyStatement` pattern: a heading and a paragraph, one VoiceOver element each, wrapping at every text size.
+
+## 13. Appearance themes (issue 138)
+
+Figures: [release-1.1/themes-overview.svg](release-1.1/themes-overview.svg) (every theme on the camera), [release-1.1/appearance-sheet.svg](release-1.1/appearance-sheet.svg) (the tile and the sheet), and one file for each theme with the camera, Q, Settings and the viewer: [Standard](release-1.1/theme-standard.svg), [Hot Pink](release-1.1/theme-hot-pink.svg), [Green](release-1.1/theme-green.svg), [Red](release-1.1/theme-red.svg), [Blue](release-1.1/theme-blue.svg), [Orange](release-1.1/theme-orange.svg), [Purple and Yellow](release-1.1/theme-purple-and-yellow.svg), [White](release-1.1/theme-white.svg), [Gray](release-1.1/theme-gray.svg).
+
+### 13.1 Decided
+
+Decided by the owner on 2026-11-22, and taken as fixed:
+
+- **Exactly two colors make a theme:** the background (black today), and one color for text and buttons, which replaces both today's white and today's aqua accent. Nothing else can be chosen.
+- **The themes provided:** Standard (today's look, and the default), hot pink, earth-tone green, red, blue, orange, purple and yellow, white (a white background with dark text) and gray (a neutral gray background). The text and button color may be black, dark gray or white where a theme needs it.
+- **Custom colors** are allowed. They are not checked for contrast, and the app shows no note about readability. Every provided theme must pass the app's contrast rule: 7:1, measured with `MeasuredContrast`.
+- **Night Mode is not affected** in any way.
+- **The theme and the custom colors are saved with presets.**
+- **The entry point is a new fixed tile, last in Q,** that opens a sheet. Q's rule holds: tiles are fixed and opened from the Q button; no tile is edited in place, reordered or swiped.
+
+### 13.2 What exists
+
+Every color in the interface comes from `NopeColor` in `DesignTokens.swift` ([tokens.md](tokens.md)): black for the background, white for text and for a selected control, grays between them (`controlFill` `#333333`, `labelSecondary` `#AEAEB2`, `stripIdle` `#D1D1D6`), and aqua (`fact`, `#40C8E0`) for verified facts and, through `tint`, for links, switches and check marks. Settings pages are the system's dark appearance: rows `#1C1C1E` on black. Night Mode multiplies everything by pure red (`NightModeStyle`). The app has no light appearance and no color setting.
+
+### 13.3 The two colors, and what is worked out from them
+
+A theme is a background **B** and a text-and-buttons color **F**. Every other color of the interface is worked out from the two by one pure function, so there is nothing else to choose:
+
+| Today | In a theme | Rule |
+| --- | --- | --- |
+| Black: the camera's rows, the viewer, pages | B | |
+| White: text, symbols, the shutter, a selected control's fill | F | A selected control is filled with F and its label is B, as white and black are today |
+| Aqua: links, switches, check marks, the RAW and Signed marks | F | Standard is the one question: decision 49 |
+| Rows of settings pages (`#1C1C1E`), the fill of buttons (`#333333`), panels over the picture | B stepped away from F | So text on them keeps its contrast: lighter under dark text, darker under light text. A background with no room to step away (black under light text, white under dark text) steps toward F, which is what the app does today |
+| Secondary text (`#AEAEB2`), idle drive words (`#D1D1D6`) | F mixed toward B | By the share today's grays have (0.69 and 0.83), raised until secondary text keeps 4.5:1 on the background and on rows |
+| Separators and outlines | F mixed into the row color | Outlines added by Increase Contrast are F |
+
+The shares and the stepping rule are in the build notes (13.9). With Standard's two colors the function returns today's values exactly, and a unit test holds every token to its 1.0.0 color.
+
+**What a theme never changes:**
+
+- **The picture.** The viewfinder, the Last Photo thumbnail, the photo in the viewer and in Compare are never tinted, in any theme. The guides drawn on the picture itself (grid, level, focus square, histogram, zebras, focus peaking's magenta) stay as they are; controls that sit on the picture with a backing (pills, readouts, the Q panel) follow the theme.
+- **Warnings and Stop.** Amber still means a warning and red still means Stop, always with a symbol and words. On Standard they are drawn as today. On any other theme, amber text on the theme's background could not be relied on (amber on orange, on pink, on white), so the same mark is drawn as a filled chip: amber with black words, or red with black words, with a 1.5 pt outline in F. The colors inside the chip are fixed, so it reads the same on any background, including custom ones.
+- **Night Mode.** While Night Mode is on, the app draws with Standard's colors under the red multiply, exactly as 1.0.0 does, whatever theme is chosen. The theme returns when Night Mode goes off.
+- **What iOS draws:** the launch screen (black with the mark, as it is fixed in the app's bundle), the privacy cover of section 10 (the same look, so the app switcher still shows what a start shows), menus, alerts, the share sheet, the color picker, the keyboard, the Live Activity, the controls in Control Center and the Apple Watch app. System sheets and the keyboard take the light or the dark appearance, whichever suits the background: light when the text color is the darker of the two.
+- **Photos.** No theme changes how a photo is captured, developed, signed or saved. The sheet says so (string 127).
+
+### 13.4 The themes provided
+
+The recommended variant of each, as drawn. Ratios are calculated with the WCAG 2.2 formula; the UI tests measure them on screen (13.8). "Text on buttons" is text on an unselected button's fill.
+
+| Theme | Background | Text and buttons | Text on background | Text on rows | Text on buttons | Secondary text (least) |
+| --- | --- | --- | --- | --- | --- | --- |
+| Standard | `#000000` | `#FFFFFF` (accent `#40C8E0`, decision 49) | 21.00:1 | 17.04:1 | 12.63:1 | 7.86:1 |
+| Hot Pink | `#FF69B4` | `#000000` | 7.93:1 | 10.47:1 | 12.79:1 | 4.94:1 |
+| Green | `#46552C` | `#FFFFFF` | 8.09:1 | 11.69:1 | 14.85:1 | 4.85:1 |
+| Red | `#A3120F` | `#FFFFFF` | 7.92:1 | 11.81:1 | 14.99:1 | 4.54:1 |
+| Blue | `#0B3C8C` | `#FFFFFF` | 10.30:1 | 13.84:1 | 16.38:1 | 5.76:1 |
+| Orange | `#FF8A1F` | `#000000` | 8.91:1 | 11.41:1 | 13.54:1 | 5.29:1 |
+| Purple and Yellow | `#3F2378` | `#FFD60A` | 8.63:1 | 10.89:1 | 12.26:1 | 4.83:1 |
+| White | `#FFFFFF` | `#1C1C1E` | 17.01:1 | 13.63:1 | 11.25:1 | 4.88:1 |
+| Gray | `#4A4A4A` | `#FFFFFF` | 8.86:1 | 12.45:1 | 15.33:1 | 5.24:1 |
+
+The rule each provided theme must pass, as a unit test on the values and as a measured UI test: text and symbols in F at least 7:1 on the background and on rows; at least 4.5:1 on a button's fill; secondary text at least 4.5:1; a selected control's label at least 7:1 on its fill.
+
+How the list was read, and what else is drawn (decision 50):
+
+- **The color is the background.** The owner's list names white and gray by their backgrounds and allows the text to be black, dark gray or white "where a theme needs it", so each color theme is drawn with the color as its background and a neutral text color. The shade is the brightest or deepest that passes 7:1 with black or with white: hot pink cannot pass with white text and stays hot, so it has black text; red has to be a deep red to carry white text.
+- **"Purple and yellow" is drawn as one theme:** a purple background with yellow text and buttons, the one provided theme whose text is a color. Its file also draws Purple and Yellow as two separate themes, in case that was meant.
+- **Each color theme's file draws an alternate:** black background with the color as text and buttons. These pass too (7.13:1 or more on rows), but they look like Night Mode in another color, and the red one sits close to Night Mode itself. They are not recommended.
+- **Gray:** a mid gray (18% gray, `#777777`) cannot reach 7:1 with black or with white text (4.7:1 and 4.5:1), so a neutral gray theme has to be darker or lighter than that. Drawn: dark gray with white text (recommended, it keeps a dark interface), and light gray `#A6A6A6` with black text as the alternate.
+- **White:** dark gray text `#1C1C1E` is drawn; black text is the alternate.
+- **Standard** has three drawings: [theme-standard.svg](release-1.1/theme-standard.svg) and decision 49.
+
+A photographer's note, for the owner's choice and not for the interface: a bright or saturated surround changes how the brightness and the colors of the picture beside it are judged. Standard stays the default; the themes are a person's own choice.
+
+### 13.5 The tile and the sheet
+
+Figure: [release-1.1/appearance-sheet.svg](release-1.1/appearance-sheet.svg).
+
+- **The tile.** One new tile, **Appearance** (string 122), symbol `paintpalette`, after Presets: always the last tile. Its value is the theme's name. It is a button tile, like Presets: a tap closes Q and opens the sheet. It cannot be moved, removed or edited, and it has no long-press, drag or swipe action, like every other tile. In full auto on a device with every feature Q has fourteen tiles, still in five rows. At accessibility text sizes, where Q is a list, Appearance is its last row. In the Lock Screen camera the theme applies (it is in the settings copy of section 9) and the tile is left out, as tiles a device cannot offer are: the look is changed in the app.
+- **The sheet,** titled Appearance, with Done.
+  - **Themes:** ten tiles in two columns (one column at accessibility text sizes): the nine provided themes and Custom. Each tile is drawn in its own two colors, with its name in its own text color, so the list reads the same whatever colors the app has at the moment. A tap applies the theme at once; the camera behind the sheet and the sheet itself change with it. The current theme has a check mark, a 3 pt outline and the selected trait.
+  - **Custom Colors:** two rows, **Background** and **Text and Buttons** (string 126), each a system color picker without an opacity control. Choosing a color in either selects Custom. The two colors are kept when another theme is chosen, so Custom can be returned to.
+  - **The footer** (string 127) says that themes change the app's colors only, that photos are not changed, that Night Mode keeps its own colors, and that presets save the theme.
+  - **While Night Mode is on** the sheet is red on black like every other sheet, and its first footer line says the theme shows when Night Mode is off (string 128). A theme can still be chosen.
+- **Custom colors are not checked,** as decided: no contrast test, no warning, no note. They pass through the same function as the provided themes, so rows, fills and secondary text are still worked out from them. What stays readable whatever two colors are chosen, by construction and without any note: the theme tiles in the sheet (each drawn in its own colors), warnings and Stop (filled chips with fixed colors), and Night Mode, which can be turned on from Control Center.
+- **Presets** store the theme, or the two custom colors, with their other values; applying a preset applies its look. A preset saved before 1.1.0 holds no theme and leaves the look as it is. **Factory Defaults** returns to Standard and resets the custom colors to Standard's two. People who update from 1.0.0 have Standard.
+- **Not in Settings.** The tile is the entry point, as decided. Settings search does not list it in 1.1.0; the how-to guide's page on Q names it.
+
+### 13.6 Standard: white and aqua
+
+Today Standard has two foreground colors. The figure draws the three ways to settle that; the choice is decision 49.
+
+- **(a) Recommended: Standard keeps today's look.** White for text and buttons, aqua for the accent. It is the one theme with a separate accent; every other theme, and Custom, has one color for both. Nothing changes for people who update, and the screen set of 1.0.0 stays true.
+- **(b) White replaces aqua.** Links, switches, check marks and the Signed mark become white. A verified fact is still told by its seal and its words, which is already the rule (never color alone).
+- **(c) Aqua replaces white.** All text and every button is aqua, 10.56:1 on black.
+
+### 13.7 Accessibility
+
+- **Contrast:** the provided themes by the rule of 13.4. Custom colors are the person's own choice and are not checked (decided).
+- **Never color alone:** unchanged. Selection is a fill with a check mark or the selected trait; warnings keep their triangle and words; a signed photo keeps its seal and the word.
+- **Increase Contrast:** every unselected control gets its outline, in F. **Reduce Transparency:** panels over the picture are solid. **Smart Invert:** the picture stays excluded, as today. **Differentiate Without Color:** nothing depends on the theme's colors.
+- **VoiceOver:** the tile reads "Appearance, Standard, button" with the hint "Opens Appearance." (string 129). In the sheet each theme is a button with its name and the selected trait on the current one; the color rows are the system's pickers with their labels. Labels do not change with the theme.
+- **Dynamic Type, right to left, Voice Control, Switch Control, Full Keyboard Access:** the sheet is a standard sheet with standard controls; theme tiles are at least 44 pt tall and wrap their names.
+- **The store's accessibility statements.** Before 1.1.0 is described as supporting Sufficient Contrast and Dark Interface, Apple's criteria for those labels are read again and cited, because the app will offer a light theme and unchecked custom colors. What the label says is the owner's to decide; nothing in it is changed without the owner.
+
+### 13.8 Tests
+
+In the plan, section 3.16. In short: unit tests on the palette function (every provided theme against the rule; Standard equal to today's tokens; Night Mode resolving to Standard), storage, presets and the settings copy; UI tests that measure text with `MeasuredContrast` on the camera, Q, Settings and the viewer in every provided theme, that the picture's pixels are the same in every theme, and that Night Mode over a White theme has no non-red pixel; and the Q tests, extended to assert that Appearance is last and that no tile has an edit, reorder or swipe action.
+
+### 13.9 Build notes
+
+- `NopeCore`: new `NopeTheme.swift` (the two colors as 8-bit sRGB values, the provided themes, and the pure function from two colors to the full palette; `Foundation` only). Shares: rows 0.30 and button fills 0.50 toward the extreme away from F, panels 0.15, when that step is at least 1.12:1 from the background; otherwise 0.11, 0.20 and 0.06 toward F (today's `#1C1C1E`, `#333333` and the panel backing). Secondary text 0.69 of the way from B to F, raised in steps of 0.01 until it keeps 4.5:1; idle words 0.83 or the secondary share, whichever is higher.
+- `NopeUI`: `NopeColor`'s constants become values read from the current theme, so call sites do not change; a sweep removes the color literals that bypass the tokens. This part is built first and changes nothing on screen (the plan, group T1).
+- A color chosen outside sRGB is clamped to sRGB when stored.
+- [tokens.md](tokens.md): the color table gains the theme column; the rule "no yellow" becomes "no yellow as a status color".
+
+## 14. Send Feedback, and Report a Problem on GitHub (issue 144)
+
+Figure: [release-1.1/feedback-about.svg](release-1.1/feedback-about.svg).
+
+- **Decided (owner, 2026-11-22):** Send Feedback opens the mail app with a message to hello@photivra.com whose body holds the app's version and the iOS version, visible and editable; the app itself sends nothing. A second row links to the project's issues on GitHub. Rate or Review stays as it is.
+- **Place:** a new section, **Feedback**, on the About screen between Source Code and App Store.
+- **Send Feedback** (strings 135 to 137, 140) opens one `mailto:` link when the person taps it. The draft has the address, the subject "Photivra Nope Camera feedback", and two lines: the app's version and build, and the iOS or iPadOS version. Nothing else: no device model, identifier, setting, log, photo or attachment. The person edits or deletes the lines in Mail and decides whether to send. The app adds no network code and no mail framework.
+- **When the mail link does not open** (no mail app, or none set up to take the link): iOS reports it, and the section shows the address as selectable text with one sentence (string 141). The app does not look for a mail account before the tap, and uses no clipboard code: copying is the system's own text selection, as on the license text.
+- **Report a Problem on GitHub** (strings 138, 139) is a plain `https` link to `https://github.com/Photivra/nope-camera/issues`, like the Source Code row. Its footer is the support page's note: issues are public, a free GitHub account is needed, and personal information and photos should be left out.
+- **How mail is handled** (string 136b) is the support page's sentence, word for word, so one review covers the site and the app.
+- **Accessibility:** each row is a link with a hint that says it leaves the app ("Opens Mail.", "Opens in your browser."), and its address as the value. The footers wrap at every text size. Night Mode: red on black, like the rest of About.
+- **Rule to update:** AGENTS.md, "Prevention first", allows an `https` link opened by a tap; the mail link needs the same sentence (decision 54).
+
+## 15. Level: pointing straight up (issue 152)
+
+Figure: [release-1.1/level-up.svg](release-1.1/level-up.svg).
+
+- **Decided (owner):** the two-axis level also shows when the device points straight up, mirroring the top-down level: in within 25° of straight up, out beyond 35°; level when both axes are within 1.0°, released at 1.5°; the level tap; VoiceOver "Pointing straight up, level".
+- **The figure is the top-down level's:** a fixed ring and an inner circle that moves toward the side that is raised. Seen from below, with the screen facing down, the circle must still move the way the tilt looks on the screen: tipping an edge toward the person moves the circle toward that edge of the screen. The signs of pitch and roll are set for that and held by unit tests; the device check confirms them by eye.
+- **Between the three levels:** the horizon level shows between the two ranges. Each two-axis level has its own hysteresis, so near 30° from straight up or down the level that is showing stays.
+- **The tap** (`LevelTapRule`, [level-haptic.md](level-haptic.md)) plays as the up level becomes level, with the same rules and hold-backs as the top-down level. Moving from one level to another never plays it by itself.
+- **Words:** VoiceOver value "Pointing straight up, level" and "Pointing up, not level" (strings 142, 143); the Level explanation and the Accessibility page name straight up as well as straight down (string 144); search keywords gain "up", "ceiling", "sky".
+- **Accessibility:** as the top-down level: an announcement at low priority when it becomes level, never color alone (the circles meet and thicken), white with a dark edge on the picture, red in Night Mode, no animation beyond the circle's movement, which follows the device.
+
+## 16. "Cryptographically signed" (issue 139)
+
+Figure: [release-1.1/welcome-signing.svg](release-1.1/welcome-signing.svg).
+
+- **Decided (owner):** the Welcome screen says photos can be cryptographically signed, and so does the other text where it makes sense.
+- **Welcome, statement 2** (string 130): "You can cryptographically sign each photo, so anyone can check that the file hasn't changed since it was signed. Signing is off until you turn it on."
+- **Where else:** the first mention of signing on a screen says "cryptographically"; later mentions on the same screen say "sign" and "signed".
+  - Sign Each Photo's explanation (string 131).
+  - The Honesty screen's Signing Is Your Choice (string 132).
+  - The how-to guide's page that mentions signing, and the store description's first sentence (string 133).
+- **Not changed:** the short status words (Signed, Not Signed, Saved and signed.), the VoiceOver results, the watch and Siri answers, and Photo Details, which names Content Credentials and its parts already.
+- **"Since it was signed", not "since it was taken".** The issue's sentence says "since it was taken". The signature is made when the file is written, a moment after the capture, and it shows whether the file changed after that. The existing explanation already says "since it was signed"; the new strings keep that.
+- **What the word may claim:** that the signature is a cryptographic one (it is: a Content Credentials signature made with a new key for each photo). It does not say who took the photo, and "It is not proof: anyone could make a file that says the same" stays wherever it is today.
+
+## 17. The viewer's Close, where Last Photo was (issue 143)
+
+Figure: [release-1.1/viewer-close.svg](release-1.1/viewer-close.svg).
+
+- **The rule:** in every layout, the frame of Close in the viewer equals the frame of Last Photo on the camera, to the point. Opening the viewer and closing it are then one tap in one place.
+- **How:** the viewer's bottom row takes its height and top padding from the layout function that sizes the camera's shutter row (`CameraLayout`), and Close is placed by the rule that places Last Photo. Today the viewer gives the row an 88 pt minimum and none of the spare height. In the column layout (iPad, sideways, the iPhone Duo's inner display) Close takes Last Photo's place in the column the same way.
+- **The other actions** stay trailing. When Photo Details, Share… (section 7) and Open in Photos do not fit on one line they wrap into two lines, centered on Close; two lines are 80 pt, inside the smallest row. Close never moves for them.
+- **At accessibility text sizes** both screens use full-width rows and the rule does not apply.
+- **Tests and figures:** a UI test compares the two frames on each size and layout; the viewer figures in `screens/` are redrawn.
+
+## 18. Disabled controls and contrast (issue 142)
+
+Figure: [release-1.1/disabled-contrast.svg](release-1.1/disabled-contrast.svg).
+
+Today a disabled custom control is drawn at 40% opacity, and the audit helpers exempt disabled controls from the contrast check, as WCAG 2.2 does for inactive components. Calculated on black: a disabled white label is 3.66:1, a disabled secondary caption such as "No RAW" about 2.2:1 (2.96:1 was measured on iPad at the largest text size), and a disabled control in Night Mode about 1.6:1. The owner asked to revisit this so that people can read what is unavailable and why. The options (decision 51):
+
+| Option | Disabled text and symbols | Normal | Night Mode | Cost |
+| --- | --- | --- | --- | --- |
+| (a) Recommended: a floor of 3:1 | One disabled color, at least 3:1 on what is directly behind it | `#6B6B6B`: 3.94:1 on black, 3.46:1 on its fill | `#C80000`: 3.46:1 | Disabled still looks clearly dimmer than enabled in both modes. With Increase Contrast, 4.5:1 outside Night Mode |
+| (b) No exemption | 4.5:1 for text, 3:1 for symbols | `#7A7A7A`: 4.89:1 | `#F00000`: 4.71:1, against 5.25:1 for full red | In Night Mode disabled and enabled are nearly the same red, so disabled would need another sign there, such as a dashed outline |
+| (c) As today | 40% opacity, exempt | 3.66:1 and about 2.2:1 | about 1.6:1 | Nothing to build; what is unavailable stays hard to read |
+
+In every option a disabled control keeps what it has today: the not-enabled trait, and its reason in words where there is one (the "No RAW" caption, a footer, a hint). With (a) or (b):
+
+- The disabled look stops being an opacity. Labels and symbols take the disabled color; the fill keeps a dimmed fill; an outline, where there is one, keeps 3:1.
+- The audit helpers lose the exemption. Instead, each disabled state of each custom control is measured with `MeasuredContrast` in normal colors, Night Mode and Increase Contrast, against the option's floor.
+- In a theme (section 13) the disabled color is worked out by the same function: F mixed toward B until the floor is left.
+- [tokens.md](tokens.md) and [ACCESSIBILITY.md](ACCESSIBILITY.md) state the rule; AGENTS.md by decision 54.
+
+## 19. A preview inside RAW files (issue 131)
+
+Figure: [release-1.1/small-changes.svg](release-1.1/small-changes.svg), panel A.
+
+- **Decided (owner):** a saved DNG holds a small embedded preview, so Finder and other file browsers show a thumbnail instead of a generic icon.
+- **What exists:** the DNG holds the RAW image only. `docs/research/capture-and-file-settings.md` lists embedded thumbnails as "fixed off", for a reason that applies to developed files: a thumbnail is a second copy that can keep pixels after an edit. In a DNG the RAW data itself stays whole after any edit, so a preview made from it holds nothing the file does not already hold. HEIF and JPEG files are not changed: browsers already draw them from the image itself, and they keep no embedded thumbnail.
+- **What the preview is:** one JPEG picture, made from the same RAW data as the file, upright, with no metadata of its own. Who makes it, the app's developer or the camera, is decision 52; its size and quality are set from measurements (research step R11), within about 300 KB.
+- **Honesty.** The preview is a processed picture inside a file whose point is as little processing as the camera allows, so it is named wherever the file's contents are listed, and never called the photo:
+  - Photo Details, What's in This Photo: a row "Preview for file browsers" with its format and size, and the file size line names the preview's share (strings 145, 146).
+  - The Honesty screen: one entry (string 147).
+  - `docs/PRIVACY.md`: the allowlist gains the preview's directory and its tags, with the exact set asserted by the metadata tests.
+- **Signing:** the preview is in the file before the file is signed, so the signature covers it like the RAW data. A signed DNG whose preview is changed afterward no longer verifies.
+- **Privacy:** the preview's directory holds only what a picture needs to open (size, compression, orientation). The read-back treats any other tag in it like any tag off the allowlist: removed, or the photo is not saved.
+- **Sharing a copy (section 7):** the preview is image data, not an optional detail. A DNG copy without optional details, if research step R9 passes one, keeps it.
+- **The gates** (whether browsers use a preview placed where the app can place it, and what it costs) are in the plan, section 4.2.
+
+## 20. Photo Details on iPad (issue 140)
+
+No change to how Photo Details looks.
+
+- **The problem:** on iPad, with Photo Details open as a system sheet over the viewer, the viewer's elements stay in the accessibility tree beside the sheet, and the audit reports them. Hiding the presenter is ignored while a system sheet is up. 1.0.0 ships with a scoped audit exception.
+- **The design:** where the width is regular (iPad, and the iPhone Duo's inner display if it shows the same), Photo Details is presented by the viewer itself, inside the viewer's own full-screen cover: a card of the system form sheet's size and corner radius over a dimmed viewer. The viewer behind is hidden from assistive technologies and cannot be touched. Where the width is compact (iPhone) the system sheet stays, because it has no such finding there and system elements are used wherever they work.
+- **The card behaves as the sheet did:** Done closes it; so do a tap outside it, Escape and VoiceOver's escape gesture. Focus moves to its title when it opens and returns to Photo Details in the viewer when it closes. It is modal for VoiceOver, Switch Control and the keyboard. With Reduce Motion it fades; otherwise it rises like a sheet. The privacy cover of section 10 covers it like the sheet.
+- **First step:** run the audit again on the current iPadOS releases. If the system sheet no longer leaves the viewer in the tree on any supported release, nothing is built and the exception is removed.
+
+## 21. Small changes to words and states (issues 148, 149, 150)
+
+Figure: [release-1.1/small-changes.svg](release-1.1/small-changes.svg), panels B and C.
+
+- **Open in Photos (issue 148).** The buttons open Photos through an address Apple does not document. If iOS reports that it did not open, the viewer, or the camera for the Open Photos spot, says "Photos couldn't be opened." with the warning symbol (string 148), announced once to VoiceOver. The button stays: hiding it would leave no way to try again, and the message already says what happened.
+- **Siri and Shortcuts (issue 149).** A self-timer that reaches zero while the photo cannot be taken answers that the timer finished and no photo was taken (string 149), not that it was canceled. A request that waits for a photo stops waiting after a limit and says that it cannot confirm the photo (string 150); the camera is then free for the next request. The limit is the exposure time plus a margin set from the timings of research step R3.
+- **Live Activity (issue 150).** Each update carries a stale date a little after the next expected change: the next photo of an interval series, the end of a countdown. If the app's process has ended and the date passes, the activity stops saying "Running", stops counting down, and says that it may be out of date, with the last count it knew (string 151). Opening the app ends the leftover activity, as today. How iOS draws a stale activity in each place (the Lock Screen, the Dynamic Island, the Apple Watch's Smart Stack) is a device check; the wording is used only where the app draws the text.
+
+## 22. Changes without a screen
+
+These issues change tests, CI, the release steps or internal behavior. Their designs are in the plan.
+
+| Issue | What | Plan |
+| --- | --- | --- |
+| 141, 153 | The Live Activity explanation reported as clipped text in Settings; the audit exception that covers it | 3.19 |
+| 146, 147, 151 | UI tests that do not run, are skipped, or fail on iPad or iOS 26 | 3.23, 3.24, 3.28 |
+| 154 | A late hardware button release after a canceled hold | 3.30 |
+| 155 | The release steps for the App Store record | 3.31 |
+| 157, 158, 159 | Shorter UI test shards, flaky tests, one retry | 3.32 to 3.34 |
+| 160, 161, 162 | TestFlight and the store page from CI, and UI tests on demand | 3.35 to 3.37; figure [release-1.1/ci-release.svg](release-1.1/ci-release.svg) |
+
+## 23. Draft strings added on 2026-11-22
+
+For the Honesty review, as section 6. Numbers continue from 121.
+
+| # | Where | Text | H |
+| --- | --- | --- | --- |
+| 122 | Q, tile | Appearance | |
+| 123 | Sheet, title and button | Appearance · Done | |
+| 124 | Sheet, theme names; the tile's value | Standard · Hot Pink · Green · Red · Blue · Orange · Purple and Yellow · White · Gray · Custom | |
+| 125 | Sheet, headings | Themes · Custom Colors | |
+| 126 | Sheet, color rows | Background · Text and Buttons | |
+| 127 | Sheet, footer | Themes change nope.'s colors only. Your photos are not changed. Night Mode keeps its own colors. Presets save the theme. | H |
+| 128 | Sheet, footer, while Night Mode is on | Night Mode is on. The theme you choose shows when Night Mode is off. | |
+| 129 | Q, tile, VoiceOver hint | Opens Appearance. | |
+| 130 | Welcome, statement 2 | You can cryptographically sign each photo, so anyone can check that the file hasn't changed since it was signed. Signing is off until you turn it on. | H |
+| 131 | Sign Each Photo, explanation | Adds a cryptographic signature to each photo. It lets anyone check that the photo hasn't changed since it was signed. The signature names nope. and its version as the maker. It is not proof: anyone could make a file that says the same. | H |
+| 132 | Honesty, Signing Is Your Choice | Photos aren't signed unless you turn on Sign Each Photo in nope.'s settings. A cryptographically signed photo lets anyone check that it hasn't changed since it was signed. The signature names nope. and its version as the maker. It is not proof: anyone could make a file that says the same. It doesn't identify you or your device. | H |
+| 133 | Store description, first sentence | Photivra Nope Camera takes photos with as little processing as the camera allows, can cryptographically sign each one, and keeps nothing that tracks you. | H |
+| 134 | About, section heading | Feedback | |
+| 135 | About, row | Send Feedback | |
+| 136 | Its footer | Opens Mail with a message to hello@photivra.com. It starts with the app's version and your iOS version; you can edit or delete them. Photivra Nope Camera sends nothing itself. | H |
+| 136b | The same footer, second paragraph (the support page's sentence) | If you write, your message and your email address are forwarded to us by Cloudflare Email Routing and stored by our email provider. We use them only to answer you. We delete messages after 1 year, and sooner if you ask. | H |
+| 137 | Send Feedback, VoiceOver hint | Opens Mail. | |
+| 138 | About, row | Report a Problem on GitHub | |
+| 139 | Its footer | Opens in your browser. Issues are public and need a free GitHub account. Don't include personal information, and attach a photo only if you're willing to make it public: a photo can carry its location and other details. | H |
+| 140 | The mail draft: subject, and the two lines | Photivra Nope Camera feedback · Photivra Nope Camera %1$@ (%2$@) · iOS %@ (iPadOS %@ on iPad) | |
+| 141 | About, when the mail link did not open | Mail didn't open. You can write to this address from any mail app. Touch and hold the address to copy it. | |
+| 142 | Level, VoiceOver, pointing up and level | Pointing straight up, level | |
+| 143 | Level, VoiceOver, pointing up and tilted | Pointing up, not level | |
+| 144 | Level, explanation | A horizon bar, or a two-axis level when you point straight down or straight up. On iPhone, you feel a tap when it's level. Uses the motion sensors only while it shows. | |
+| 145 | Photo Details, What's in This Photo, row and value | Preview for file browsers · JPEG, %lld px | H |
+| 146 | Its explanation | The preview is a small processed picture that nope. makes from the same RAW data, so Finder and Files can show a thumbnail. The RAW data is not changed by it. | H |
+| 147 | Honesty, an entry | A Preview Inside RAW Files · Each RAW file holds a small preview picture, made from the same RAW data, so file browsers can show a thumbnail. The preview is processed; the RAW data is not. The preview holds no details of its own, and a signature covers it with the rest of the file. | H |
+| 148 | Viewer and camera, when Photos did not open | Photos couldn't be opened. | H |
+| 149 | Siri and Shortcuts, the timer reached zero and the photo could not be taken | The timer finished, but the photo couldn't be taken. No photo was taken. | H |
+| 150 | Siri and Shortcuts, the wait for a photo ran out | nope. didn't finish taking the photo in time. Open nope. to see whether it was saved. | H |
+| 151 | Live Activity, out of date | May be out of date · %@ when last updated · Open nope. to see the series | H |
+
+Notes:
+
+- **122 to 129.** The theme names are plain color words. "Purple and Yellow" follows decision 50.
+- **130 to 133** follow section 16. 133 changes `store/metadata/en-US/description.txt`; the promotional text ("Signing if you want it.") is short and stays.
+- **136, 139, 136b** are the support page's wording (`site/content/support.json`). 136b names how mail to the address is handled; it is reviewed with the site's sentence. The About screen uses the full name.
+- **140** is not shown in the app: it is the text of the draft. "iOS" or "iPadOS" comes from the system, not from joined fragments.
+- **146 and 147** say "that nope. makes" only if decision 52 is (a). With (b) they say "made by the camera from the same capture".
+- **149 and 150** replace "The timer was canceled. No photo was taken." only for the cases named; a canceled timer keeps that answer.
+- **151** is used where the app draws the activity's text; what iOS adds to a stale activity is recorded in device check 23.
