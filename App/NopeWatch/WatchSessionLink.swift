@@ -36,10 +36,13 @@ final class WatchSessionLink: NSObject, PhoneLink {
     /// - Returns: The phone's encoded reply.
     /// - Throws: The WatchConnectivity error when the message or its reply wasn't delivered.
     func send(_ message: Data) async throws -> Data {
+        // WatchConnectivity calls these handlers on its own background queue. They are
+        // `@Sendable` so they don't inherit this class's main-actor isolation: an isolated
+        // closure run off the main thread fails Swift's executor check and the app traps.
         try await withCheckedThrowingContinuation { continuation in
             WCSession.default.sendMessageData(
-                message, replyHandler: { continuation.resume(returning: $0) },
-                errorHandler: { continuation.resume(throwing: $0) })
+                message, replyHandler: { @Sendable reply in continuation.resume(returning: reply) },
+                errorHandler: { @Sendable error in continuation.resume(throwing: error) })
         }
     }
 
