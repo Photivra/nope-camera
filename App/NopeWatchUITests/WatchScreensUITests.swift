@@ -248,7 +248,7 @@ extension NopeWatchUITests {
     func testDoubleLengthText() throws {
         let app = launch("unreachable", extraArguments: Self.doubleLength)
         XCTAssertTrue(status(in: app).waitForExistence(timeout: 10))
-        let warning = "Can't reach your phone. Keep it nearby with nope. open."
+        let warning = "Can't reach your phone. Unlock it and open nope."
         XCTAssertEqual(status(in: app).label, "\(warning) \(warning)")
         attachScreenshot(of: app, named: "watch-long-text-warning")
         try audit(app)

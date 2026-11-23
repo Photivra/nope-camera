@@ -94,7 +94,7 @@ final class NopeWatchUITests: XCTestCase {
     func testAPhoneThatCannotBeReachedIsShown() throws {
         let app = launch("unreachable")
         XCTAssertTrue(status(in: app).waitForExistence(timeout: 10))
-        XCTAssertEqual(status(in: app).label, "Can't reach your phone. Keep it nearby with nope. open.")
+        XCTAssertEqual(status(in: app).label, "Can't reach your phone. Unlock it and open nope.")
         XCTAssertFalse(app.buttons["WatchShutter"].isEnabled)
         try audit(app)
     }

@@ -10,8 +10,8 @@
     "Camera ready" : {
       "comment" : "Watch status: the phone's camera can take a photo."
     },
-    "Can't reach your phone. Keep it nearby with nope. open." : {
-      "comment" : "Watch warning: the paired phone can't be reached. Keep \"nope.\" unchanged."
+    "Can't reach your phone. Unlock it and open nope." : {
+      "comment" : "Watch warning: the paired phone can't be reached, for example because it is locked or nope. is closed. Keep \"nope.\" unchanged."
     },
     "Cancel Timer" : {
       "comment" : "Watch button that stops the phone's self-timer countdown, so no photo is taken."

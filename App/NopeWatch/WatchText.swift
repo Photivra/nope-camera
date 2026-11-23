@@ -55,7 +55,7 @@ enum WatchText {
                 symbol: "iphone.radiowaves.left.and.right", tone: .plain)
         case .phoneNotReachable:
             StatusLine(
-                text: String(localized: "Can't reach your phone. Keep it nearby with nope. open.", comment: "Watch warning: the paired phone can't be reached. Keep \"nope.\" unchanged."),
+                text: String(localized: "Can't reach your phone. Unlock it and open nope.", comment: "Watch warning: the paired phone can't be reached, for example because it is locked or nope. is closed. Keep \"nope.\" unchanged."),
                 symbol: "iphone.slash", tone: .warning)
         case .ready:
             StatusLine(
