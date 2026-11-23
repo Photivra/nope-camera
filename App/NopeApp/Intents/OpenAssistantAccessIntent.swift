@@ -14,7 +14,7 @@ struct OpenAssistantAccessIntent: AppIntent {
     /// What the action does, in the Shortcuts app.
     static let description = IntentDescription(
         LocalizedStringResource(
-            "Opens nope.'s Settings at Assistant Access, where you choose whether Siri, Shortcuts and other assistants can use nope. It changes nothing.",
+            "Opens nope.'s Settings at Assistant Access, where you choose which assistants and Shortcuts can use nope. It changes nothing.",
             comment: "Describes nope.'s Open Assistant Access action in the Shortcuts app. Assistant Access is the name of the page in nope.'s Settings. Keep \"nope.\" unchanged. Draft for the Honesty review."))
 
     /// The page is in the app, so the app opens.

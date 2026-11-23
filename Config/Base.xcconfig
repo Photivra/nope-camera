@@ -5,7 +5,7 @@
 
 // Version: semantic versioning, 0.x.y during development (AGENTS.md, "Versioning").
 MARKETING_VERSION = 1.0.0
-CURRENT_PROJECT_VERSION = 1
+CURRENT_PROJECT_VERSION = 2
 
 NOPE_BUNDLE_IDENTIFIER = com.photivra.nope.dev
 PRODUCT_BUNDLE_IDENTIFIER = $(NOPE_BUNDLE_IDENTIFIER)

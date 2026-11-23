@@ -695,7 +695,7 @@
       "comment" : "Describes nope.'s Turn On the Light action in the Shortcuts app. The light is the torch beside the camera. Keep \"nope.\" unchanged.",
       "extractionState" : "manual"
     },
-    "Opens nope.'s Settings at Assistant Access, where you choose whether Siri, Shortcuts and other assistants can use nope. It changes nothing." : {
+    "Opens nope.'s Settings at Assistant Access, where you choose which assistants and Shortcuts can use nope. It changes nothing." : {
       "comment" : "Describes nope.'s Open Assistant Access action in the Shortcuts app. Assistant Access is the name of the page in nope.'s Settings. Keep \"nope.\" unchanged. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
