@@ -51,13 +51,13 @@ The rules for contributors and coding agents are in AGENTS.md. Read it before ch
 - [store/accessibility-status.json](store/accessibility-status.json): the manual accessibility pass and the declared Accessibility Nutrition Labels, per device; the source for the site's accessibility page
 - [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md): threat model, every pre-release security check with how to run it and pass criteria, and the sign-off checklist
 
-## Store and privacy policy (drafts, need human review)
+## Store and privacy policy (store text: drafts, need human review)
 
 - [docs/store/README.md](docs/store/README.md): App Store listing drafts, field limits, and the features each claim depends on
 - [store/metadata/README.md](store/metadata/README.md): App Store listing text (name, subtitle, promotional text, description, keywords) in English (`en-US`), one file per field, and its review status
 - [docs/store/app-privacy-label.md](docs/store/app-privacy-label.md): App Store privacy label answers ("Data Not Collected")
 - [docs/store/accessibility-label.md](docs/store/accessibility-label.md): Accessibility Nutrition Label answers and the evidence each needs
-- [docs/store/privacy-policy-draft.md](docs/store/privacy-policy-draft.md): privacy policy draft, for the maintainer to publish
+- [docs/store/privacy-policy-draft.md](docs/store/privacy-policy-draft.md): privacy policy, published at https://nope.photivra.com/privacy/
 - [docs/store/STORE-PAGE-PLAN.md](docs/store/STORE-PAGE-PLAN.md): the App Store product page plan for 1.0.0, accepted 2026-11-19: screenshots, captions, preview, keywords and the steps in App Store Connect
 
 ## API (generated from DocC comments)

@@ -16,7 +16,7 @@ the other submission answers:
 | [`store/metadata/`](../../store/metadata/README.md) | Name, subtitle, promotional text, description and keywords: English (`en-US`) for 1.0.0; Spanish (`es-ES`, `es-MX`) in the backlog (issue #87) |
 | [`app-privacy-label.md`](app-privacy-label.md) | App Store Connect App Privacy answers ("Data Not Collected") |
 | [`accessibility-label.md`](accessibility-label.md) | Accessibility Nutrition Label answers, and the evidence each one needs |
-| [`privacy-policy-draft.md`](privacy-policy-draft.md) | The privacy policy, for the maintainer to publish |
+| [`privacy-policy-draft.md`](privacy-policy-draft.md) | The privacy policy, published at `https://nope.photivra.com/privacy/` |
 | [`STORE-PAGE-PLAN.md`](STORE-PAGE-PLAN.md) | The product page plan for 1.0.0 (accepted 2026-11-19, every decision as recommended; layout mockups in [`docs/design/store.html`](../design/store.html)): each App Store page feature, screenshot and preview storyboards, the assets to make, the App Store Connect steps and the maintainer's decisions. Section 12 designs the Rate or Review row for the About screen (decided 2026-11-19, built in 1.0.0): a third About link, which opens the App Store's write-review page; the app shows no rating prompt |
 
 ## Field limits (App Store Connect)

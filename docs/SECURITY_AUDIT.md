@@ -498,7 +498,7 @@ MASVS-CODE-4.
 
 ### 19. App Store privacy label and privacy policy
 
-MASVS-PRIVACY-3. The answers are in `docs/store/app-privacy-label.md`; the policy draft is
+MASVS-PRIVACY-3. The answers are in `docs/store/app-privacy-label.md`; the policy is
 `docs/store/privacy-policy-draft.md`.
 
 - **Run:** compare the App Store Connect answers and the published policy with the results of

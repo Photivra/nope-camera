@@ -174,20 +174,15 @@ def build_cases(base):
 
     # The policy: markers stop a publishing build, and are listed.
     tree, out = fresh("markers")
+    tree_policy_markers(tree)
     result = build(tree, out, preview=False)
     expect("policy markers", result, False, "isn't ready to publish")
     expect("policy markers listed", result, False, "line ")
 
     # A finished policy builds; a later change without a new date doesn't.
     tree, out = fresh("finished")
-    policy = tree / "docs/store/privacy-policy-draft.md"
-    text = policy.read_text()
-    text = re.sub(r"^.*?\n---\n", "", text, count=1, flags=re.S)
-    text = text.replace("Effective date: [date]. Last updated: [date]. App version: [1.0.0].",
-                        f"Effective date: {TODAY}. Last updated: {TODAY}. App version: 1.0.0.")
-    text = text.replace("[LLC legal name]", "Example LLC")
-    policy.write_text(text)
-    git(tree, "commit", "-q", "-am", "finish the policy")
+    tree_policy_done(tree)
+    git(tree, "commit", "-q", "--allow-empty", "-am", "finish the policy")
     expect("finished policy builds", build(tree, out, preview=False), True)
     expect("finished policy passes the checks", check(tree, out, preview=False), True)
     edit(tree, "docs/store/privacy-policy-draft.md", f"Last updated: {TODAY}", "Last updated: 2026-01-01")
@@ -292,6 +287,7 @@ def build_cases(base):
     edit(tree, "CHANGELOG.md", "## [Unreleased]\n", "## [Unreleased]\n\n## [1.0.1] - 2026-11-19\n")
     expect("policy: app version, in preview once finished", build(tree, out), False, "isn't the app's (1.0.1)")
     tree, out = fresh("policy-markers-preview")
+    tree_policy_markers(tree)
     edit(tree, "Config/Base.xcconfig", "MARKETING_VERSION = 1.0.0", "MARKETING_VERSION = 1.0.1")
     edit(tree, "CHANGELOG.md", "## [Unreleased]\n", "## [Unreleased]\n\n## [1.0.1] - 2026-11-19\n")
     expect("policy: version and dates skipped in preview while markers remain", build(tree, out), True)
@@ -318,12 +314,19 @@ def build_cases(base):
 
 
 def tree_policy_done(tree):
-    """Fills the policy so a publishing build reaches the later rules."""
+    """Dates the finished policy today, so a publishing build reaches the later rules."""
     policy = tree / "docs/store/privacy-policy-draft.md"
-    text = re.sub(r"^.*?\n---\n", "", policy.read_text(), count=1, flags=re.S)
-    text = text.replace("Effective date: [date]. Last updated: [date]. App version: [1.0.0].",
-                        f"Effective date: {TODAY}. Last updated: {TODAY}. App version: 1.0.0.").replace("[LLC legal name]", "Example LLC")
+    text, count = re.subn(r"^Effective date: .+?\. Last updated: .+?\. App version: .+?\.$",
+                          f"Effective date: {TODAY}. Last updated: {TODAY}. App version: 1.0.0.",
+                          policy.read_text(), count=1, flags=re.M)
+    if count != 1:
+        sys.exit("test setup: the policy has no dates line")
     policy.write_text(text)
+
+
+def tree_policy_markers(tree):
+    """Puts an unfilled item back, as in a policy that isn't finished."""
+    edit(tree, "docs/store/privacy-policy-draft.md", "Shackelford Creative, LLC", "[LLC legal name]")
 
 
 def slug(text):
