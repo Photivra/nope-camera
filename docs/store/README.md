@@ -133,6 +133,7 @@ Test. Draft, for the maintainer to review.
   Guideline 5.1.1(i)); it opens in the browser.
 - **Support URL:** required: `https://nope.photivra.com/support/`, a page the maintainer publishes
   on the same site as the privacy policy.
+- **Description, store only:** App Store Connect's description adds one last line that isn't in `store/metadata/en-US/description.txt`, because the website shows that file word for word and has no screenshots: "The camera screenshots show the app with a photo taken by the developer in place of the live camera picture." The camera screenshots are made in the Simulator with the developer's photo as the viewfinder picture (decided 2026-11-23).
 - **Copyright:** "2026 Shackelford Creative, LLC" (`store/metadata/en-US/copyright.txt`), the copyright holder named in `NOTICE`.
 - **Category:** Photo & Video.
 - **Age rating:** the questionnaire answers are all "None" for an app with no user-generated

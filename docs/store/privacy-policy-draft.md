@@ -17,6 +17,10 @@ Nothing. The app doesn't send any information to us or to anyone else. We can't 
 your settings, how you use the app, or that you use it at all. The App Store privacy label for
 the app says "Data Not Collected".
 
+The App Store gives the developer totals from Apple's own records, such as how many times the app
+was viewed in the store and downloaded. They come from Apple, not from the app. The app itself
+sends nothing.
+
 ## No network connections
 
 The app contains no networking code and makes no network connections. To check, turn on App
