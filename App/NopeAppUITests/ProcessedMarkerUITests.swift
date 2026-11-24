@@ -103,9 +103,11 @@ extension NopeAppUITests {
         XCTAssertEqual(marker.value as? String, "1")
         // On by default; Settings no longer says so in words (BUILD-SPEC.md, section 4).
         XCTAssertFalse(marker.label.contains("On by default."))
-        try audit(app, afterScrolling: swipes > 0, checksDynamicType: false, checksContrast: !isPad)
         marker.switches.firstMatch.tap()
         XCTAssertEqual(marker.value as? String, "0")
+        // The audit runs after the tap: on iPad, Settings is a popover over the camera, and the audit
+        // can make the camera lay itself out again and scroll Settings, so a tap after it can miss.
+        try audit(app, afterScrolling: swipes > 0, checksDynamicType: false, checksContrast: !isPad)
         app.buttons["Done"].tap()
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
         // Only the marker goes: the status names the file without the triangle (BUILD-SPEC.md,
