@@ -119,10 +119,27 @@ actor ScriptedLiveBackend: LiveViewBackend {
     private(set) var needsRequests: [LiveAnalysisNeeds] = []
     private(set) var statsSwitches: [Bool] = []
 
+    /// Yields when a held ``setFrameAnalysis(_:)`` is waiting (``holdNextFrameAnalysis()``).
+    nonisolated let analysisHeld: AsyncStream<Void>
+    private nonisolated let heldContinuation: AsyncStream<Void>.Continuation
+    private var holdsNextFrameAnalysis = false
+    private var heldFrameAnalysis: CheckedContinuation<Void, Never>?
+
     init() {
         (events, _) = AsyncStream.makeStream(of: CaptureEvent.self)
         (frameAnalyses, analysesContinuation) = AsyncStream.makeStream(of: FrameAnalysis.self)
         (statsReadings, statsContinuation) = AsyncStream.makeStream(of: CameraStatsReading.self)
+        (analysisHeld, heldContinuation) = AsyncStream.makeStream(of: Void.self)
+    }
+
+    /// Makes the next ``setFrameAnalysis(_:)`` record its needs, then wait for
+    /// ``releaseFrameAnalysis()``.
+    func holdNextFrameAnalysis() { holdsNextFrameAnalysis = true }
+
+    /// Lets a held ``setFrameAnalysis(_:)`` return.
+    func releaseFrameAnalysis() {
+        heldFrameAnalysis?.resume()
+        heldFrameAnalysis = nil
     }
 
     nonisolated func send(_ analysis: FrameAnalysis) { analysesContinuation.yield(analysis) }
@@ -132,7 +149,15 @@ actor ScriptedLiveBackend: LiveViewBackend {
         statsContinuation.finish()
     }
 
-    func setFrameAnalysis(_ needs: LiveAnalysisNeeds) async { needsRequests.append(needs) }
+    func setFrameAnalysis(_ needs: LiveAnalysisNeeds) async {
+        needsRequests.append(needs)
+        guard holdsNextFrameAnalysis else { return }
+        holdsNextFrameAnalysis = false
+        await withCheckedContinuation { continuation in
+            heldFrameAnalysis = continuation
+            heldContinuation.yield()
+        }
+    }
     func setStatsReadingsEnabled(_ enabled: Bool) async { statsSwitches.append(enabled) }
 
     func currentPermission() async -> CameraPermission { .authorized }
@@ -227,6 +252,29 @@ struct LiveViewModelTests {
         #expect(!model.showsStats)
         #expect(await backend.needsRequests == [.histogram, []])
         #expect(await backend.statsSwitches == [true, false])
+    }
+
+    /// The last copy of the overlays leaves, and a new copy appears and asks for its aids while
+    /// the analysis is being stopped: the new copy keeps them.
+    @Test func anInterfaceAppearingWhileTheLastOneLeavesKeepsItsAids() async {
+        let backend = ScriptedLiveBackend()
+        let model = LiveViewModel(backend: backend)
+        model.interfaceDidAppear()
+        await model.setNeeds(.histogram)
+        await model.setShowsStats(true)
+        await backend.holdNextFrameAnalysis()
+        let leaving = Task { await model.interfaceDidDisappear() }
+        var held = backend.analysisHeld.makeAsyncIterator()
+        _ = await held.next()
+        model.interfaceDidAppear()
+        await model.setNeeds(.histogram)
+        await model.setShowsStats(true)
+        await backend.releaseFrameAnalysis()
+        await leaving.value
+        #expect(model.needs == .histogram)
+        #expect(model.showsStats)
+        #expect(await backend.needsRequests == [.histogram, [], .histogram])
+        #expect(await backend.statsSwitches == [true])
     }
 
     @Test func withoutALiveViewNothingIsAskedOrObserved() async {

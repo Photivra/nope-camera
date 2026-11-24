@@ -20,8 +20,8 @@ extension EnvironmentValues {
 /// clean view; the histogram doesn't, and the readout only when it is pinned.
 ///
 /// It tells the model what the live analysis must measure and whether the readout is on, as
-/// the options and the screen change, and turns both off when it goes away (AGENTS.md,
-/// "Battery").
+/// the options and the screen change; both are turned off when the last copy of the overlays
+/// goes away (a layout change can replace them with a new copy; AGENTS.md, "Battery").
 struct ViewfinderOverlays: View {
     /// The camera model.
     let model: CameraModel

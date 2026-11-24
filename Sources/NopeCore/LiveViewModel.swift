@@ -36,7 +36,9 @@ public protocol LiveViewBackend: CaptureBackend {
 ///
 /// An interface tells it what is shown with ``setNeeds(_:)`` and ``setShowsStats(_:)``, and runs
 /// ``observeAnalyses()`` and ``observeStats()`` for as long as the camera screen is visible.
-/// The model asks the backend for nothing while nothing is shown.
+/// Each copy of the interface also reports itself with ``interfaceDidAppear()`` and
+/// ``interfaceDidDisappear()``; the aids stop when the last copy goes away. The model asks the
+/// backend for nothing while nothing is shown.
 @MainActor
 @Observable
 public final class LiveViewModel {
@@ -113,7 +115,7 @@ public final class LiveViewModel {
     ///
     /// Side effect: when no interface is left, stops the backend's video analysis and readings.
     public func interfaceDidDisappear() async {
-        shownInterfaces -= 1
+        shownInterfaces = max(0, shownInterfaces - 1)
         guard shownInterfaces == 0 else { return }
         await setNeeds([])
         // An interface may have appeared while the analysis stopped; it asks for the readout itself.

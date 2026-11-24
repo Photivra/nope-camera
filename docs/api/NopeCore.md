@@ -17150,7 +17150,9 @@ peaking) and the live camera readout's values.
 
 An interface tells it what is shown with ``setNeeds(_:)`` and ``setShowsStats(_:)``, and runs
 ``observeAnalyses()`` and ``observeStats()`` for as long as the camera screen is visible.
-The model asks the backend for nothing while nothing is shown.
+Each copy of the interface also reports itself with ``interfaceDidAppear()`` and
+``interfaceDidDisappear()``; the aids stop when the last copy goes away. The model asks the
+backend for nothing while nothing is shown.
 
 ## `LiveViewModel/analysis`
 
