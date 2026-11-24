@@ -17175,6 +17175,35 @@ Creates the model.
 - Parameter backend: The backend, or `nil` when it has no live view; the model then
   reports nothing.
 
+## `LiveViewModel/interfaceDidAppear()`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+@MainActor func interfaceDidAppear()
+```
+
+Records that an interface showing the live aids appeared. Call it as the interface
+appears, before it asks for anything.
+
+## `LiveViewModel/interfaceDidDisappear()`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+@MainActor func interfaceDidDisappear() async
+```
+
+Records that an interface showing the live aids went away, and stops the analysis and the
+readout once no interface is left.
+
+SwiftUI can swap the interface for a new copy (when a layout moves the picture to another
+container) and tell the old copy it disappeared after the new one appeared and asked for
+the same needs. Stopping then left the new copy with nothing: its requests had changed
+nothing, so they weren't made again, and the histogram and readout never showed.
+
+Side effect: when no interface is left, stops the backend's video analysis and readings.
+
 ## `LiveViewModel/isSupported`
 
 public, declared in `Sources/NopeCore/LiveViewModel.swift`

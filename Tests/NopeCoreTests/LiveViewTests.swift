@@ -202,6 +202,33 @@ struct LiveViewModelTests {
         #expect(model.stats == nil)
     }
 
+    /// A layout change replaces the overlays with a new copy, and the old copy's disappearance
+    /// can arrive after the new copy appeared and asked for the same aids (which changed
+    /// nothing): the aids stay on until the last copy goes.
+    @Test func aReplacedInterfaceLeavingDoesNotStopTheAids() async {
+        let backend = ScriptedLiveBackend()
+        let model = LiveViewModel(backend: backend)
+        model.interfaceDidAppear()
+        await model.setNeeds(.histogram)
+        await model.setShowsStats(true)
+        // The new copy appears and asks for the same, then the old copy disappears.
+        model.interfaceDidAppear()
+        await model.setNeeds(.histogram)
+        await model.setShowsStats(true)
+        await model.interfaceDidDisappear()
+        #expect(model.needs == .histogram)
+        #expect(model.showsStats)
+        #expect(await backend.needsRequests == [.histogram])
+        #expect(await backend.statsSwitches == [true])
+
+        // The last copy leaving stops both.
+        await model.interfaceDidDisappear()
+        #expect(model.needs == [])
+        #expect(!model.showsStats)
+        #expect(await backend.needsRequests == [.histogram, []])
+        #expect(await backend.statsSwitches == [true, false])
+    }
+
     @Test func withoutALiveViewNothingIsAskedOrObserved() async {
         let model = LiveViewModel(backend: nil)
         #expect(!model.isSupported)

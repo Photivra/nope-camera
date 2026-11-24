@@ -108,14 +108,12 @@ struct ViewfinderOverlays: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: panelAlignment)
             }
         }
+        .onAppear { model.live.interfaceDidAppear() }
         .task(id: needs) { await model.live.setNeeds(needs) }
         .task(id: showsStats) { await model.live.setShowsStats(showsStats) }
-        .onDisappear {
-            Task {
-                await model.live.setNeeds([])
-                await model.live.setShowsStats(false)
-            }
-        }
+        // Stops the aids only when no copy of the overlays is left: a layout change replaces
+        // them with a new copy, which has already asked for what it shows.
+        .onDisappear { Task { await model.live.interfaceDidDisappear() } }
     }
 
     /// The corner that is the person's top trailing corner: the screen's in portrait, and the

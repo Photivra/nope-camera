@@ -767,7 +767,10 @@ Nothing they show is written to a photo, stored or logged, and nothing takes tou
   critical heat, `LiveUpdateRate`) are sampled to about 160 × 120 cells (`LumaSampler`), turned to
   the viewfinder's orientation and analyzed (`Histogram`, `FocusPeakingMap`). The photo output
   and its settings are untouched. Peaking is drawn on the picture itself, so the focus magnifier
-  enlarges it with the preview; the grid and level stay on the whole frame.
+  enlarges it with the preview; the grid and level stay on the whole frame. The overlays report
+  when they appear and disappear (`LiveViewModel.interfaceDidAppear()`/`interfaceDidDisappear()`);
+  the analysis and readout stop only when no copy of them is left, because a layout change can
+  replace the overlays with a new copy that has already asked for the same aids.
 - **Live camera readout** ("stats for nerds"): the values AVFoundation reports
   (`CameraStatsReading`), built from the camera readings' own key-value observations (at most
   four a second) while the readout is shown; no second set of observations and no video. Hidden
