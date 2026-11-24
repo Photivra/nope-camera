@@ -142,7 +142,12 @@ mkdir -p "$work/bin"
 cat >"$work/bin/xcodebuild" <<'EOF2'
 #!/usr/bin/env bash
 [[ $1 == -version ]] || { echo "xcodebuild stand-in: no build in these tests" >&2; exit 1; }
+# Like the real one: two lines, and more than a pipe buffer, so a reader that stops after the
+# first line (head -1) breaks the pipe and, with pipefail, stops the proof (exit 141).
 echo "Xcode 27.2"
+echo "Build version 27C52"
+head -c 200000 /dev/zero | tr '\0' ' '
+echo
 EOF2
 chmod +x "$work/bin/xcodebuild"
 real_proof() { (cd "$repo" && PATH="$work/bin:$PATH" NOPE_GH="$work/gh" NOPE_PROOF_DIR="$work/proof-tree-$FAKE_SHARDS" scripts/owner-mac-ui-proof.sh); }

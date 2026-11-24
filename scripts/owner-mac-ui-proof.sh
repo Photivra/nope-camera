@@ -60,7 +60,7 @@ key=$(scripts/ui-content-key.sh HEAD)
 
 login=$("$gh" api user --jq .login) || { echo "error: gh couldn't read the signed-in login (gh auth login)" >&2; exit 1; }
 if ! git show "HEAD:.github/owner-mac-proof-allowed.txt" 2>/dev/null | sed 's/#.*//' | tr -d ' \t' \
-    | grep -qixF -- "$login"; then
+    | grep -ixF -- "$login" >/dev/null; then
   echo "error: $login is not listed in .github/owner-mac-proof-allowed.txt, so CI wouldn't accept the proof" >&2
   exit 1
 fi
@@ -82,7 +82,8 @@ if [[ -n $dry_run ]]; then
   exit 0
 fi
 
-version=$(xcodebuild -version | head -1)
+# sed reads all of xcodebuild's output: with pipefail, head would end it early and stop the script (141).
+version=$(xcodebuild -version | sed -n 1p)
 [[ $version == "Xcode 27.2" ]] || { echo "error: CI uses Xcode 27.2, this is $version (select it with xcode-select or DEVELOPER_DIR)" >&2; exit 1; }
 
 [[ ! -e $work ]] || { echo "error: $work exists; remove it (git worktree remove --force) or set NOPE_PROOF_DIR" >&2; exit 1; }
@@ -119,7 +120,7 @@ for (( shard = 1; shard <= ipad_shards; shard++ )); do
   step scripts/run-ui-test-shard.sh "$shard" "$ipad" DerivedData/Build/Products "results/ui-tests-ipad-$shard.xcresult" "$ipad_skip"
 done
 
-udid=$(scripts/prepare-simulator.sh --find "$watch" | sed -n 's/^udid=//p' | head -1)
+udid=$(scripts/prepare-simulator.sh --find "$watch" | sed -n 's/^udid=//p' | sed -n 1p)
 [[ -n $udid ]] || { echo "error: no watch Simulator for $watch" >&2; false; }
 step xcodebuild build-for-testing -project App/NopeCamera.xcodeproj -scheme NopeWatch \
   -destination "id=$udid" -derivedDataPath DerivedData-watch CODE_SIGNING_ALLOWED=NO
