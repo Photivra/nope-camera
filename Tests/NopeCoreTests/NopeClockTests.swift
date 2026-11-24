@@ -111,9 +111,13 @@ struct NopeClockTests {
     @Test func theModelsWithASecondsSleepKeepTheirOwnClocks() async {
         let model = CameraModel(backend: ScriptedBackend(capabilities: CameraModelTests.oneLens), sleep: { _ in })
         let before = model.clock.now()
+        let systemBefore = ContinuousClock.now
         try? await model.clock.sleep(seconds: 10)
+        let elapsed = ContinuousClock.now - systemBefore
         #expect(model.clock.now() == before + .seconds(10))
-        #expect(model.now() < before + .seconds(10), "captures are still timed on the system clock")
+        // The model's own clock moved 10 s; the system clock moved only as long as the test ran (a
+        // loaded CI runner can take more than 10 s, so the bound is the measured time, not 10 s).
+        #expect(model.now() < before + elapsed + .seconds(1), "captures are still timed on the system clock")
 
         let manual = ManualControlsModel(backend: nil, sleep: { _ in })
         let manualBefore = manual.clock.now()
