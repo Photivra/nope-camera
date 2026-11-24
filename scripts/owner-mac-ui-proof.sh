@@ -94,6 +94,8 @@ export NOPE_HEAD_SHA=$sha
 # The shards run as build.yml runs them: on iOS 27.2, with the published C2PA library (pinned by
 # checksum in Package.swift) and the default result files.
 unset SIMULATOR_OS NOPE_C2PA_LIB_FROM_SOURCE NOPE_TEST_RESULTS NOPE_CRASH_REPORTS
+# The Simulator runtimes are already in use on this Mac: no first-use settling wait.
+export SIMULATOR_RUNTIME_SETTLE_SECONDS=0
 mkdir -p results
 
 step() { echo; echo "==> $*"; "$@"; }
@@ -128,7 +130,8 @@ step scripts/run-watch-ui-tests.sh "$watch" DerivedData-watch results/ui-tests-w
 
 trap - ERR
 [[ $(scripts/ui-content-key.sh HEAD) == "$key" ]] || { echo "error: the worktree's content key changed; nothing was posted" >&2; exit 1; }
-"$gh" api "repos/$repo/statuses/$sha" -f state=success -f context="$context" -f description="$description" --silent
+"$gh" api "repos/$repo/statuses/$sha" -f state=success -f context="$context" -f description="$description" --silent \
+  || { echo "error: every test passed but the status couldn't be posted; nothing was posted. The worktree is $work" >&2; exit 1; }
 echo
 echo "Posted \"$context\" (success) on $sha with content key $key."
 cd "$root"
