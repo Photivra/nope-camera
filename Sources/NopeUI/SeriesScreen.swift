@@ -96,11 +96,16 @@ struct SeriesScreen: ViewModifier {
         content
             .onPreferenceChange(CameraCoveredPreference.self) { isCoveredByCamera = $0 }
             .overlay {
-                if let keeper, keeper.isDimmed {
-                    BrightenScreenButton { keeper.brighten() }
-                        .nightModeStyle(settings.isNightModeOn)
-                        .transition(.opacity)
+                ZStack {
+                    if let keeper, keeper.isDimmed {
+                        BrightenScreenButton { keeper.brighten() }
+                            .nightModeStyle(settings.isNightModeOn)
+                            .transition(.opacity)
+                    }
                 }
+                // The cover fades out once the screen is brightened, but no longer takes touches:
+                // a tap during the fade reaches the camera, such as the card's Stop.
+                .allowsHitTesting(keeper?.isDimmed == true)
             }
             .animation(NopeMotion.fade, value: keeper?.isDimmed)
             .onChange(of: isSeriesRunning, initial: true) { update() }
