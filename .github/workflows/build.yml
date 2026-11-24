@@ -1,7 +1,10 @@
 name: build
 
 # Builds and tests the app on GitHub-hosted macOS runners (AGENTS.md, "Keep the repository
-# clean"). The job names are stable so they can be required status checks.
+# clean"). The job names are stable so they can be required status checks. The three UI checks,
+# `ui-tests`, `ui-tests-ipad` and `ui-tests-watch`, also accept a valid proof from the owner's
+# Mac when their shards didn't pass (scripts/check-owner-mac-proof.sh; docs/TESTING.md, "When
+# the GitHub UI runners are failing: a proof from the owner's Mac").
 #
 # Runner: the `xcode-27` image (macOS with Xcode 27), with Xcode 27.2 selected explicitly so CI
 # matches the local toolchain. See docs/TESTING.md, "Continuous integration".
@@ -195,8 +198,9 @@ jobs:
   # summary whether a failure is a test failure or an infrastructure failure, runs an
   # infrastructure failure's unfinished tests once more, and uploads its per-test results. The iPhone and iPad Simulators run in
   # separate jobs: running both in one job stalled the test runner before the second
-  # destination's first test. The `ui-tests` and `ui-tests-ipad` jobs pass only when all their shards pass, so the
-  # required status checks keep their names.
+  # destination's first test. The `ui-tests` and `ui-tests-ipad` jobs pass when all their shards
+  # pass, or else with a valid proof from the owner's Mac, so the required status checks keep
+  # their names.
   ui-build:
     name: ui-build
     needs: c2pa-lib

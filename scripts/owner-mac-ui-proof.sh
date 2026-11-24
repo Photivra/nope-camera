@@ -10,13 +10,17 @@
 # iOS and watchOS 27.2 Simulators. It refuses a tree with changes or untracked files, checks that
 # the gh login is listed in .github/owner-mac-proof-allowed.txt and that GitHub has the commit,
 # then in a new detached worktree of the commit (so ignored local files such as
-# Config/Local.xcconfig don't take part) runs, one after another and as build.yml does:
+# Config/Local.xcconfig don't take part) runs, one after another, with build.yml's scripts and
+# devices (and the published C2PA library):
+#   0. scripts/ui-test-shards.sh check, and reads the iPhone and iPad shard counts;
 #   1. xcodebuild build-for-testing of the NopeApp scheme for the iPhone 18 Pro Simulator;
 #   2. every iPhone shard on the iPhone 18 Pro Simulator (scripts/run-ui-test-shard.sh);
 #   3. every iPad shard on the iPad Air 11-inch (M4) Simulator, without the test the iPad jobs skip;
 #   4. the NopeWatch build and its UI tests on the Apple Watch Series 12 (46mm) Simulator
 #      (scripts/run-watch-ui-tests.sh).
 # It stops at the first failure, leaving the worktree and its result bundles for inspection.
+# Unlike build.yml it builds against the published C2PA library that Package.swift pins by
+# checksum, not one built from source (the c2pa-lib job checks that they are the same).
 # When all pass it posts the status on the commit, with the content key of its UI test inputs
 # (scripts/ui-content-key.sh) in the description, and removes the worktree.
 #
@@ -86,18 +90,32 @@ git worktree add --detach "$work" "$sha"
 cd "$work"
 trap 'echo "error: the proof stopped at a failure; nothing was posted. The worktree is $work" >&2' ERR
 export NOPE_HEAD_SHA=$sha
+# The shards run as build.yml runs them: on iOS 27.2, with the published C2PA library (pinned by
+# checksum in Package.swift) and the default result files.
+unset SIMULATOR_OS NOPE_C2PA_LIB_FROM_SOURCE NOPE_TEST_RESULTS NOPE_CRASH_REPORTS
 mkdir -p results
 
 step() { echo; echo "==> $*"; "$@"; }
+
+# The counts are read into variables and checked: a failing command substitution inside (( ))
+# would end the loop at once without stopping the script (bash 3.2, even with set -e).
+step scripts/ui-test-shards.sh check
+iphone_shards=$(scripts/ui-test-shards.sh count iphone) || iphone_shards=
+ipad_shards=$(scripts/ui-test-shards.sh count ipad) || ipad_shards=
+if [[ ! $iphone_shards =~ ^[1-9][0-9]*$ || ! $ipad_shards =~ ^[1-9][0-9]*$ ]]; then
+  trap - ERR
+  echo "error: the shard counts couldn't be read; nothing was posted. The worktree is $work" >&2
+  exit 1
+fi
 
 step xcodebuild build-for-testing -project App/NopeCamera.xcodeproj -scheme NopeApp \
   -destination "$simulator" -derivedDataPath DerivedData CODE_SIGNING_ALLOWED=NO
 step scripts/check-launch-screen.sh DerivedData/Build/Products/Debug-iphonesimulator/nope.app
 
-for (( shard = 1; shard <= $(scripts/ui-test-shards.sh count iphone); shard++ )); do
+for (( shard = 1; shard <= iphone_shards; shard++ )); do
   step scripts/run-ui-test-shard.sh "$shard" "$iphone" DerivedData/Build/Products "results/ui-tests-$shard.xcresult"
 done
-for (( shard = 1; shard <= $(scripts/ui-test-shards.sh count ipad); shard++ )); do
+for (( shard = 1; shard <= ipad_shards; shard++ )); do
   step scripts/run-ui-test-shard.sh "$shard" "$ipad" DerivedData/Build/Products "results/ui-tests-ipad-$shard.xcresult" "$ipad_skip"
 done
 

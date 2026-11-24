@@ -411,7 +411,12 @@ Code is written for the next person to read it, whether a human contributor or a
   - checks of local data, permissions, the privacy manifest, the supply chain and secrets.
 - **Keep the repository clean:**
   - Never commit secrets, certificates, provisioning profiles or signing keys.
-  - CI uses GitHub-hosted runners only, with Actions pinned by commit SHA.
+  - CI uses GitHub-hosted runners only, with Actions pinned by commit SHA; no self-hosted
+    runner is registered. One fallback: when GitHub's macOS runners fail the UI shards,
+    `ui-tests`, `ui-tests-ipad` and `ui-tests-watch` accept a proof from the owner's Mac
+    (docs/TESTING.md, "When the GitHub UI runners are failing: a proof from the owner's Mac").
+    The `ui-tests (owner Mac)` status is posted only by `scripts/owner-mac-ui-proof.sh` after its
+    full run passed, never by hand and never by an agent on its own.
 - The name, icon, logo and wordmark are trademarks and are not covered by the GPL.
 
 ## Writing in this repository

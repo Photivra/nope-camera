@@ -887,10 +887,12 @@ commit the job checked out. A cancelled, skipped or failed shard never passes wi
 job summary says which path passed, or why the check failed.
 
 The content key (`scripts/ui-content-key.sh`; `--inputs` prints what it hashes) is the SHA-256 of
-the git object ids of `App`, `Sources`, `Tests`, `Config`, `Vendor`, `Tools`, `c2pa-lib`,
-`scripts`, `Package.swift` and `Package.resolved`. The workflow files and the documentation are
-not inputs, so a later commit that changes only them keeps the key, but the status must still be
-on that commit. For a pull request the job checks out the merge with the base branch, so a proof
+the git tree ids of `App`, `Sources`, `Tests`, `Config`, `Vendor`, `Tools` and `c2pa-lib`, of
+`Package.swift` and `Package.resolved`, and of every file under `scripts/` except the four proof
+scripts (`owner-mac-ui-proof.sh`, `check-owner-mac-proof.sh`, `test-owner-mac-proof.sh` and
+`ui-content-key.sh`). The workflow files, the documentation and the proof scripts are not
+inputs, so a later commit that changes only them keeps the key, but the status must still be on
+that commit. For a pull request the job checks out the merge with the base branch, so a proof
 stops matching when the base branch changes a UI test input: update the branch and make a new
 proof.
 
@@ -911,10 +913,21 @@ app and runs its UI tests (`scripts/run-watch-ui-tests.sh`). It refuses a tree w
 untracked files, a gh login that isn't listed and a commit GitHub doesn't have. It stops at the
 first failure and then posts nothing, leaving the worktree and its result bundles.
 
+Two differences from the GitHub shards:
+
+- The proof builds against the published C2PA library that `Package.swift` pins by checksum,
+  not one built from source; the `c2pa-lib` job, which `unit-tests` needs, still checks that the
+  two are the same.
+- The check can't tell why the GitHub shards didn't pass: a valid proof stands in whether they
+  failed on the runner or on a test. Before making a proof, read the failed shards' summaries
+  (each says whether it was a test failure or an infrastructure failure); when a shard reports a
+  test failure, run that test on the Mac first, and fix it or open an issue.
+
 When the status is posted after the run's UI checks failed, re-run each failed check's job
 (`ui-tests`, `ui-tests-ipad` or `ui-tests-watch`) with "Re-run job" on the run's page; "Re-run
-failed jobs" would run the shards again too. While the shards are still running, the checks read
-the status when the shards end. To withdraw a proof, post a newer status with the same context
+failed jobs" would run the shards again too. "Re-run job" checks the merge with the base branch
+as it was when the run started. While the shards are still running, the checks read the status
+when the shards end. To withdraw a proof, post a newer status with the same context
 and another state:
 
 ```sh

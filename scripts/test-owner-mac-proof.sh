@@ -29,6 +29,17 @@ echo cfg >"$repo/Config/Base.xcconfig"; echo pkg >"$repo/Package.swift"; echo '{
 echo doc >"$repo/docs/D.md"; echo 'name: build' >"$repo/.github/workflows/build.yml"
 printf '# comment\nbshack  # the owner\n' >"$repo/.github/owner-mac-proof-allowed.txt"
 cp "$here/ui-content-key.sh" "$here/check-owner-mac-proof.sh" "$here/owner-mac-ui-proof.sh" "$repo/scripts/"
+echo '# stand-in' >"$repo/scripts/run-ui-test-shard.sh"
+# Stand-in for scripts/ui-test-shards.sh: "check" passes; "count" prints FAKE_SHARDS, or fails
+# when it is "fail".
+cat >"$repo/scripts/ui-test-shards.sh" <<'EOF2'
+#!/usr/bin/env bash
+case $1 in
+  check) exit 0 ;;
+  count) [[ ${FAKE_SHARDS:-6} != fail ]] || exit 1; echo "${FAKE_SHARDS:-6}" ;;
+esac
+EOF2
+chmod +x "$repo/scripts/ui-test-shards.sh"
 git init -q "$repo"
 g add -A && g commit -qm one
 key() { (cd "$repo" && scripts/ui-content-key.sh "$@"); }
@@ -44,9 +55,12 @@ expect pass "a given commit's key" test "$(key HEAD~1)" = "$k1"
 echo changed >"$repo/App/A.swift"; g commit -qam app
 k2=$(key)
 expect pass "an App change changes the key" test "$k2" != "$k1"
-echo '# x' >>"$repo/scripts/ui-content-key.sh"; g commit -qam script
+echo '# x' >>"$repo/scripts/run-ui-test-shard.sh"; g commit -qam script
 k3=$(key)
 expect pass "a scripts change changes the key" test "$k3" != "$k2"
+for f in owner-mac-ui-proof check-owner-mac-proof ui-content-key; do echo '# x' >>"$repo/scripts/$f.sh"; done
+echo '# x' >"$repo/scripts/test-owner-mac-proof.sh"; g add -A; g commit -qm "proof scripts"
+expect pass "a change to a proof script keeps the key" test "$(key)" = "$k3"
 mkdir -p "$repo/Vendor"; echo v >"$repo/Vendor/V.swift"; g add -A; g commit -qm vendor
 expect pass "adding Vendor changes the key" test "$(key)" != "$k3"
 g rm -q Package.resolved; g commit -qm resolved
@@ -54,7 +68,6 @@ expect_output_key() { key --inputs >"$work/out"; expect_output "$1" "$2"; }
 expect_output_key "a missing path counts as -" "Package.resolved -"
 expect fail "a commit that doesn't exist" key 0000000000000000000000000000000000000000
 expect fail "two commits" key HEAD HEAD~1
-cp "$here/ui-content-key.sh" "$repo/scripts/"; g commit -qam "restore script"
 
 # --- scripts/check-owner-mac-proof.sh
 head_sha=$(g rev-parse HEAD)
@@ -122,6 +135,26 @@ rm "$repo/App/New.swift"
 export GH_LOGIN=someone; expect fail "a login not in the list" proof --dry-run; unset GH_LOGIN
 export GH_NO_COMMIT=1; expect fail "a commit GitHub doesn't have" proof --dry-run; unset GH_NO_COMMIT
 expect fail "an unknown option" proof --post
+
+# Past the dry run, with a stand-in xcodebuild that only reports its version: shard counts that
+# can't be read stop the proof before any build, and nothing is posted.
+mkdir -p "$work/bin"
+cat >"$work/bin/xcodebuild" <<'EOF2'
+#!/usr/bin/env bash
+[[ $1 == -version ]] || { echo "xcodebuild stand-in: no build in these tests" >&2; exit 1; }
+echo "Xcode 27.2"
+EOF2
+chmod +x "$work/bin/xcodebuild"
+real_proof() { (cd "$repo" && PATH="$work/bin:$PATH" NOPE_GH="$work/gh" NOPE_PROOF_DIR="$work/proof-tree-$FAKE_SHARDS" scripts/owner-mac-ui-proof.sh); }
+for FAKE_SHARDS in fail 0 x; do
+  export FAKE_SHARDS
+  expect fail "shard count \"$FAKE_SHARDS\" stops the proof" real_proof
+  expect_output "it says the counts couldn't be read ($FAKE_SHARDS)" "the shard counts couldn't be read; nothing was posted"
+  cp "$work/out" "$work/proof-out"
+  expect fail "no build ran and nothing was posted ($FAKE_SHARDS)" grep -qE "xcodebuild stand-in|Posted" "$work/proof-out"
+done
+unset FAKE_SHARDS
+git -C "$repo" worktree prune
 
 if [[ $failures -gt 0 ]]; then echo "$failures failure(s)"; exit 1; fi
 echo "all owner Mac proof tests passed"
