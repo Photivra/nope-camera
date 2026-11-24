@@ -17,6 +17,7 @@ scripts/test-check-file-compat.sh
 scripts/test-check-launch-screen.sh && scripts/check-launch-screen.sh   # add a built .app to check its Info.plist
 scripts/test-check-app-store-id.sh
 scripts/test-count-design-screens.sh   # the design screen counts (docs/design/README.md)
+scripts/test-owner-mac-proof.sh   # the content key, the proof check and the proof dry run
 ```
 
 Before the release build, `scripts/check-app-store-id.sh` must pass: it fails while
@@ -810,11 +811,11 @@ the local toolchain). Jobs:
 | `ui-build` | Builds the app and the UI tests once (`build-for-testing`) and uploads the test run and the apps |
 | `ui-tests 1/6` … `6/6` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
 | `ui-tests-ipad 1/5` … `5/5` | The same tests in five shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding (issue #147) |
-| `ui-tests`, `ui-tests-ipad` | Pass only when every iPhone (iPad) shard passed; both are required status checks |
+| `ui-tests`, `ui-tests-ipad` | Pass when every iPhone (iPad) shard passed, or else with a valid proof from the owner's Mac (below); both are required status checks |
 | `file-compat` | The pinned c2patool and exiftool (`scripts/install-file-validators.sh`) on the fixtures from `unit-tests`; both are required (see "File compatibility") |
 | `ui-tests-watch 1/1` | The Apple Watch app's UI tests with accessibility audits on the Apple Watch Series 12 (46mm) Simulator (`NopeWatch` scheme) |
 | `ui-tests-watch 1/1 (second runner)` | The same, only when the first job's runner was lost before the job ended |
-| `ui-tests-watch` | Passes when the watch tests passed on the first runner or on the second; a required status check |
+| `ui-tests-watch` | Passes when the watch tests passed on the first runner or on the second, or else with a valid proof from the owner's Mac (below); a required status check |
 | `unit-tests (iOS 26)` | The NopeKit unit tests on an iPhone 17 Pro Simulator with iOS 26.5 (no coverage gate: `unit-tests` has it) |
 | `ui-tests 1/6 (iOS 26)` | The first iPhone UI test shard on the same iOS 26.5 Simulator, from the `ui-build` build, with `scripts/run-ui-test-shard.sh` and `SIMULATOR_OS=26.5` |
 | `ui-tests-watch (watchOS 26)` | The watch UI tests on an Apple Watch Series 11 (46mm) Simulator with watchOS 26.5 |
@@ -869,6 +870,57 @@ on 2026-11-19). Whether VoiceOver on an iOS 26 device says "link" is a device ch
 the deployment target at
 26.0, the compiler also rejects any API newer than iOS or watchOS 26 that isn't behind an
 `#available` check. Running on a version 26 device is part of the on-device checks below.
+
+### When the GitHub UI runners are failing: a proof from the owner's Mac
+
+A fallback for when GitHub's macOS runners fail the UI shards for reasons outside the tests
+(Simulator setup failures, lost runners) run after run. The GitHub shards remain the default and
+run on every pull request and push; the ruleset and its required checks don't change, and
+`repo-checks`, `unit-tests` and `docs` run only on GitHub.
+
+`ui-tests`, `ui-tests-ipad` and `ui-tests-watch` pass when their shards pass. When they don't,
+each passes only with a valid proof (`scripts/check-owner-mac-proof.sh`): the newest commit
+status with the context `ui-tests (owner Mac)` on the pull request's head commit (on a push, the
+pushed commit) is a success, was created by a login listed in
+`.github/owner-mac-proof-allowed.txt`, and its description ends with the content key of the
+commit the job checked out. A cancelled, skipped or failed shard never passes without one. The
+job summary says which path passed, or why the check failed.
+
+The content key (`scripts/ui-content-key.sh`; `--inputs` prints what it hashes) is the SHA-256 of
+the git object ids of `App`, `Sources`, `Tests`, `Config`, `Vendor`, `Tools`, `c2pa-lib`,
+`scripts`, `Package.swift` and `Package.resolved`. The workflow files and the documentation are
+not inputs, so a later commit that changes only them keeps the key, but the status must still be
+on that commit. For a pull request the job checks out the merge with the base branch, so a proof
+stops matching when the base branch changes a UI test input: update the branch and make a new
+proof.
+
+To make a proof, on the owner's Mac with Xcode 27.2 and the iOS and watchOS 27.2 Simulators
+named in `build.yml`, in a clean checkout of the pull request's head commit, pushed:
+
+```sh
+gh auth status                            # signed in as a login in .github/owner-mac-proof-allowed.txt
+scripts/owner-mac-ui-proof.sh --dry-run   # the checks, the steps and the status it would post
+scripts/owner-mac-ui-proof.sh             # several hours; posts the status only when all passed
+```
+
+In a new worktree of the commit (so ignored local files such as `Config/Local.xcconfig` take no
+part) it builds the app and its UI tests and runs, one after another, every iPhone shard on the
+iPhone 18 Pro Simulator and every iPad shard on the iPad Air 11-inch (M4) Simulator
+(`scripts/run-ui-test-shard.sh`, with the test the iPad jobs skip skipped), then builds the watch
+app and runs its UI tests (`scripts/run-watch-ui-tests.sh`). It refuses a tree with changes or
+untracked files, a gh login that isn't listed and a commit GitHub doesn't have. It stops at the
+first failure and then posts nothing, leaving the worktree and its result bundles.
+
+When the status is posted after the run's UI checks failed, re-run each failed check's job
+(`ui-tests`, `ui-tests-ipad` or `ui-tests-watch`) with "Re-run job" on the run's page; "Re-run
+failed jobs" would run the shards again too. While the shards are still running, the checks read
+the status when the shards end. To withdraw a proof, post a newer status with the same context
+and another state:
+
+```sh
+gh api repos/Photivra/nope-camera/statuses/<commit> -f state=failure \
+  -f context="ui-tests (owner Mac)" -f description="withdrawn"
+```
 
 ### UI test shards
 

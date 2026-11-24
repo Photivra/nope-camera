@@ -1,0 +1,4 @@
+# GitHub logins whose "ui-tests (owner Mac)" commit status the ui-tests, ui-tests-ipad and
+# ui-tests-watch checks accept in place of their shards (scripts/check-owner-mac-proof.sh;
+# docs/TESTING.md, "When the GitHub UI runners are failing: a proof from the owner's Mac").
+bshack

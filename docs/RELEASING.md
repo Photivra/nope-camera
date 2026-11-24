@@ -25,6 +25,25 @@ each publication of the website. None of these steps needs a coding agent.
   (see "What can stop a publication" below). For 1.0.0 these were left at their earlier dates on
   the integration branch on purpose, for this step.
 
+## When the GitHub UI runners are failing: a proof from the owner's Mac
+
+If GitHub's macOS runners keep failing the UI shards for reasons outside the tests, a passing run
+of the same UI suite on your Mac can stand in for the `ui-tests`, `ui-tests-ipad` and
+`ui-tests-watch` checks of the release pull request. It is a fallback: the GitHub shards remain
+the default, the ruleset doesn't change, and `repo-checks`, `unit-tests` and `docs` still have to
+pass on GitHub. In a clean checkout of the pull request's head commit, pushed, with Xcode 27.2:
+
+```sh
+gh auth status                            # signed in as a login in .github/owner-mac-proof-allowed.txt
+scripts/owner-mac-ui-proof.sh --dry-run
+scripts/owner-mac-ui-proof.sh             # several hours; posts "ui-tests (owner Mac)" only when all passed
+```
+
+Then re-run each failed UI check's job with "Re-run job". The proof counts only for the commit it
+was posted on and only while that commit's UI test inputs match; any push of a new commit needs
+the GitHub shards or a new proof. Details, and how to withdraw a proof, are in `docs/TESTING.md`,
+"When the GitHub UI runners are failing: a proof from the owner's Mac".
+
 ## The app build
 
 The App Store build is made on your Mac with Xcode, from the release commit. No step needs a

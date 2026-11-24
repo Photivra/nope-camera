@@ -283,15 +283,29 @@ jobs:
             ui-tests-interrupted.xcresult
           retention-days: 7
 
+  # Passes when every shard passed; otherwise only with a valid proof from the owner's Mac, a
+  # "ui-tests (owner Mac)" commit status for this commit's UI test inputs
+  # (scripts/check-owner-mac-proof.sh; docs/TESTING.md, "When the GitHub UI runners are failing:
+  # a proof from the owner's Mac").
   ui-tests:
     name: ui-tests
     needs: ui-tests-shard
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      statuses: read
     steps:
-      - name: All iPhone shards passed
-        run: '[[ "${{ needs.ui-tests-shard.result }}" == success ]]'
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: All iPhone shards passed, or a proof from the owner's Mac
+        env:
+          SHARDS: ${{ needs.ui-tests-shard.result }}
+          NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/check-owner-mac-proof.sh ui-tests "$SHARDS"
 
   # The source link test is skipped on iPad: there the source link wasn't found in the Settings
   # popover (docs/TESTING.md, issue #147). The privacy policy link test runs on iPad.
@@ -341,15 +355,29 @@ jobs:
             ui-tests-ipad-interrupted.xcresult
           retention-days: 7
 
+  # Passes when every shard passed; otherwise only with a valid proof from the owner's Mac, a
+  # "ui-tests (owner Mac)" commit status for this commit's UI test inputs
+  # (scripts/check-owner-mac-proof.sh; docs/TESTING.md, "When the GitHub UI runners are failing:
+  # a proof from the owner's Mac").
   ui-tests-ipad:
     name: ui-tests-ipad
     needs: ui-tests-ipad-shard
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      statuses: read
     steps:
-      - name: All iPad shards passed
-        run: '[[ "${{ needs.ui-tests-ipad-shard.result }}" == success ]]'
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: All iPad shards passed, or a proof from the owner's Mac
+        env:
+          SHARDS: ${{ needs.ui-tests-ipad-shard.result }}
+          NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/check-owner-mac-proof.sh ui-tests-ipad "$SHARDS"
 
   # The Apple Watch app's UI tests (issue #63), with a simulated phone and accessibility audits.
   # Three jobs, so the required check keeps its name: the tests ("ui-tests-watch 1/1"); the same
@@ -487,15 +515,27 @@ jobs:
             ui-tests-watch-interrupted.xcresult
           retention-days: 7
 
+  # Passes when the watch tests passed on either runner; otherwise only with a valid proof from
+  # the owner's Mac, as `ui-tests` (scripts/check-owner-mac-proof.sh).
   ui-tests-watch:
     name: ui-tests-watch
     needs: [ui-tests-watch-run, ui-tests-watch-again]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      statuses: read
     steps:
-      - name: The watch tests passed, on the first runner or on the second
-        run: '[[ "${{ needs.ui-tests-watch-run.result }}" == success || "${{ needs.ui-tests-watch-again.result }}" == success ]]'
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The watch tests passed, on the first runner or on the second, or a proof from the owner's Mac
+        env:
+          SHARDS: ${{ (needs.ui-tests-watch-run.result == 'success' || needs.ui-tests-watch-again.result == 'success') && 'success' || needs.ui-tests-watch-run.result }}
+          NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/check-owner-mac-proof.sh ui-tests-watch "$SHARDS"
 
   # The oldest supported versions, iOS and watchOS 26 (AGENTS.md, "Code"; docs/TESTING.md,
   # "Continuous integration"), on the same Xcode 27 runner: the unit tests, the first iPhone UI

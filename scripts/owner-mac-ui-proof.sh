@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# Runs the whole UI suite on the owner's Mac and, only when every part passes, posts the
+# "ui-tests (owner Mac)" commit status that the `ui-tests`, `ui-tests-ipad` and `ui-tests-watch`
+# checks accept in place of their GitHub shards (docs/TESTING.md, "When the GitHub UI runners are
+# failing: a proof from the owner's Mac"). A fallback: the GitHub shards remain the default.
+#
+#   scripts/owner-mac-ui-proof.sh [--dry-run]
+#
+# Run it in a clean checkout of the commit to prove, pushed to GitHub, with Xcode 27.2 and the
+# iOS and watchOS 27.2 Simulators. It refuses a tree with changes or untracked files, checks that
+# the gh login is listed in .github/owner-mac-proof-allowed.txt and that GitHub has the commit,
+# then in a new detached worktree of the commit (so ignored local files such as
+# Config/Local.xcconfig don't take part) runs, one after another and as build.yml does:
+#   1. xcodebuild build-for-testing of the NopeApp scheme for the iPhone 18 Pro Simulator;
+#   2. every iPhone shard on the iPhone 18 Pro Simulator (scripts/run-ui-test-shard.sh);
+#   3. every iPad shard on the iPad Air 11-inch (M4) Simulator, without the test the iPad jobs skip;
+#   4. the NopeWatch build and its UI tests on the Apple Watch Series 12 (46mm) Simulator
+#      (scripts/run-watch-ui-tests.sh).
+# It stops at the first failure, leaving the worktree and its result bundles for inspection.
+# When all pass it posts the status on the commit, with the content key of its UI test inputs
+# (scripts/ui-content-key.sh) in the description, and removes the worktree.
+#
+# --dry-run does the checks, prints the steps and the status it would post, and stops: it runs
+# no build or test and posts nothing.
+#
+# Environment: NOPE_PROOF_REPO (default Photivra/nope-camera), NOPE_PROOF_DIR (the worktree,
+# default a new directory under TMPDIR), NOPE_GH (the gh command, default gh).
+set -euo pipefail
+
+dry_run=
+case ${1:-} in
+  --dry-run) dry_run=1 ;;
+  "") ;;
+  *) echo "usage: $0 [--dry-run]" >&2; exit 2 ;;
+esac
+[[ $# -le 1 ]] || { echo "usage: $0 [--dry-run]" >&2; exit 2; }
+
+repo=${NOPE_PROOF_REPO:-Photivra/nope-camera}
+gh=${NOPE_GH:-gh}
+context="ui-tests (owner Mac)"
+iphone="iPhone 18 Pro"
+ipad="iPad Air 11-inch (M4)"
+simulator="platform=iOS Simulator,name=$iphone,OS=27.2"
+watch="platform=watchOS Simulator,name=Apple Watch Series 12 (46mm),OS=27.2"
+ipad_skip=-skip-testing:NopeAppUITests/NopeAppUITests/testSourceCodeIsAnHTTPSLink
+
+root=$(git rev-parse --show-toplevel)
+cd "$root"
+if [[ -n $(git status --porcelain) ]]; then
+  echo "error: the working tree has changes or untracked files; commit or stash them first:" >&2
+  git status --short >&2
+  exit 1
+fi
+sha=$(git rev-parse HEAD)
+key=$(scripts/ui-content-key.sh HEAD)
+
+login=$("$gh" api user --jq .login) || { echo "error: gh couldn't read the signed-in login (gh auth login)" >&2; exit 1; }
+if ! git show "HEAD:.github/owner-mac-proof-allowed.txt" 2>/dev/null | sed 's/#.*//' | tr -d ' \t' \
+    | grep -qixF -- "$login"; then
+  echo "error: $login is not listed in .github/owner-mac-proof-allowed.txt, so CI wouldn't accept the proof" >&2
+  exit 1
+fi
+"$gh" api "repos/$repo/commits/$sha" --silent 2>/dev/null \
+  || { echo "error: $repo has no commit $sha; push it first" >&2; exit 1; }
+
+description="iPhone, iPad and watch UI tests passed; key $key"
+work=${NOPE_PROOF_DIR:-${TMPDIR:-/tmp}/nope-owner-mac-proof-${sha:0:12}}
+
+echo "Commit:      $sha ($repo)"
+echo "Content key: $key"
+echo "gh login:    $login"
+echo "Worktree:    $work"
+echo "Steps:       build-for-testing NopeApp; every iPhone shard on $iphone; every iPad shard on $ipad;"
+echo "             build-for-testing NopeWatch and its UI tests on the watch Simulator"
+echo "Then posts:  gh api repos/$repo/statuses/$sha -f state=success -f context=\"$context\" -f description=\"$description\""
+if [[ -n $dry_run ]]; then
+  echo "Dry run: nothing was built, tested or posted."
+  exit 0
+fi
+
+version=$(xcodebuild -version | head -1)
+[[ $version == "Xcode 27.2" ]] || { echo "error: CI uses Xcode 27.2, this is $version (select it with xcode-select or DEVELOPER_DIR)" >&2; exit 1; }
+
+[[ ! -e $work ]] || { echo "error: $work exists; remove it (git worktree remove --force) or set NOPE_PROOF_DIR" >&2; exit 1; }
+git worktree add --detach "$work" "$sha"
+cd "$work"
+trap 'echo "error: the proof stopped at a failure; nothing was posted. The worktree is $work" >&2' ERR
+export NOPE_HEAD_SHA=$sha
+mkdir -p results
+
+step() { echo; echo "==> $*"; "$@"; }
+
+step xcodebuild build-for-testing -project App/NopeCamera.xcodeproj -scheme NopeApp \
+  -destination "$simulator" -derivedDataPath DerivedData CODE_SIGNING_ALLOWED=NO
+step scripts/check-launch-screen.sh DerivedData/Build/Products/Debug-iphonesimulator/nope.app
+
+for (( shard = 1; shard <= $(scripts/ui-test-shards.sh count iphone); shard++ )); do
+  step scripts/run-ui-test-shard.sh "$shard" "$iphone" DerivedData/Build/Products "results/ui-tests-$shard.xcresult"
+done
+for (( shard = 1; shard <= $(scripts/ui-test-shards.sh count ipad); shard++ )); do
+  step scripts/run-ui-test-shard.sh "$shard" "$ipad" DerivedData/Build/Products "results/ui-tests-ipad-$shard.xcresult" "$ipad_skip"
+done
+
+udid=$(scripts/prepare-simulator.sh --find "$watch" | sed -n 's/^udid=//p' | head -1)
+[[ -n $udid ]] || { echo "error: no watch Simulator for $watch" >&2; false; }
+step xcodebuild build-for-testing -project App/NopeCamera.xcodeproj -scheme NopeWatch \
+  -destination "id=$udid" -derivedDataPath DerivedData-watch CODE_SIGNING_ALLOWED=NO
+step scripts/run-watch-ui-tests.sh "$watch" DerivedData-watch results/ui-tests-watch.xcresult
+
+trap - ERR
+[[ $(scripts/ui-content-key.sh HEAD) == "$key" ]] || { echo "error: the worktree's content key changed; nothing was posted" >&2; exit 1; }
+"$gh" api "repos/$repo/statuses/$sha" -f state=success -f context="$context" -f description="$description" --silent
+echo
+echo "Posted \"$context\" (success) on $sha with content key $key."
+cd "$root"
+git worktree remove --force "$work"
