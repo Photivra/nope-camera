@@ -36,7 +36,9 @@ public protocol LiveViewBackend: CaptureBackend {
 ///
 /// An interface tells it what is shown with ``setNeeds(_:)`` and ``setShowsStats(_:)``, and runs
 /// ``observeAnalyses()`` and ``observeStats()`` for as long as the camera screen is visible.
-/// The model asks the backend for nothing while nothing is shown.
+/// Each copy of the interface also reports itself with ``interfaceDidAppear()`` and
+/// ``interfaceDidDisappear()``; the aids stop when the last copy goes away. The model asks the
+/// backend for nothing while nothing is shown.
 @MainActor
 @Observable
 public final class LiveViewModel {
@@ -54,6 +56,10 @@ public final class LiveViewModel {
 
     /// The hardware, or `nil` when the backend has no live view.
     private let backend: (any LiveViewBackend)?
+
+    /// How many copies of the interface that shows the live aids are on screen now
+    /// (``interfaceDidAppear()`` and ``interfaceDidDisappear()``).
+    private var shownInterfaces = 0
 
     /// Creates the model.
     ///
@@ -91,6 +97,30 @@ public final class LiveViewModel {
         showsStats = isOn
         if !isOn { stats = nil }
         await backend?.setStatsReadingsEnabled(isOn)
+    }
+
+    /// Records that an interface showing the live aids appeared. Call it as the interface
+    /// appears, before it asks for anything.
+    public func interfaceDidAppear() {
+        shownInterfaces += 1
+    }
+
+    /// Records that an interface showing the live aids went away, and stops the analysis and the
+    /// readout once no interface is left.
+    ///
+    /// SwiftUI can swap the interface for a new copy (when a layout moves the picture to another
+    /// container) and tell the old copy it disappeared after the new one appeared and asked for
+    /// the same needs. Stopping then left the new copy with nothing: its requests had changed
+    /// nothing, so they weren't made again, and the histogram and readout never showed.
+    ///
+    /// Side effect: when no interface is left, stops the backend's video analysis and readings.
+    public func interfaceDidDisappear() async {
+        shownInterfaces = max(0, shownInterfaces - 1)
+        guard shownInterfaces == 0 else { return }
+        await setNeeds([])
+        // An interface may have appeared while the analysis stopped; it asks for the readout itself.
+        guard shownInterfaces == 0 else { return }
+        await setShowsStats(false)
     }
 
     /// Applies the backend's analyses until its stream ends, keeping only what is needed (an

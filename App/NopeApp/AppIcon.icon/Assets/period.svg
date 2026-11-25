@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- nope. app icon, period layer. From docs/design/icon.html (circle cx 97 cy 72 r 6) scaled by 8. Its color is set in icon.json. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<path fill="#40C8E0" d="M824 576A48 48 0 1 1 728 576A48 48 0 1 1 824 576Z"/>
+</svg>

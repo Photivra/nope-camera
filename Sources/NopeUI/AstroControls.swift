@@ -23,6 +23,20 @@ enum AstroText {
             comment: "Explains the night sky (astro) helper. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English: the frames are never combined. Honesty wording: a fluent human must review every translation before release.")
     }
 
+    /// What VoiceOver hears when Astro comes on. From the drive strip it also turns on the
+    /// manual controls and night mode (docs/design/BUILD-SPEC.md, section 4); from a preset it
+    /// turns on the manual controls only, so night mode is named only while it is on.
+    ///
+    /// - Parameter isNightModeOn: Whether night mode is on.
+    /// - Returns: The announcement.
+    static func turnedOn(isNightModeOn: Bool) -> String {
+        if isNightModeOn {
+            String(localized: "Astro on. Manual controls and night mode are on.", bundle: .module, comment: "Announced to VoiceOver when Astro is chosen on the drive strip: Astro also turns on the manual controls and night mode.")
+        } else {
+            String(localized: "Astro on. Manual controls are on.", bundle: .module, comment: "Announced to VoiceOver when Astro comes on while night mode is off, for example from a settings preset: Astro also turns on the manual controls.")
+        }
+    }
+
     /// What the shutter does while the helper is on, for VoiceOver, or `nil` while it is off.
     ///
     /// - Parameter model: The camera model.
@@ -59,114 +73,6 @@ enum AstroText {
     }
 }
 
-extension QuickControls {
-    /// Astro: the night sky helper (issue #60). Shown on a lens it can use, or while it is on.
-    /// Turning it on also turns night mode on (issue #60: "turns it on by default"); turning it
-    /// off leaves night mode as it is.
-    ///
-    /// - Parameter context: The model and settings.
-    static func astro(_ context: CameraControlContext) -> QuickControlItem? {
-        let model = context.model
-        guard model.astro.isOn || model.canUseAstro else { return nil }
-        let settings = context.settings
-        return QuickControlItem(
-            id: "astro", title: AstroText.title, systemImage: "moon.stars",
-            kind: .toggle(isOn: model.astro.isOn) { isOn in
-                if isOn { settings.setNightMode(true) }
-                context.send(.astro(.setOn(isOn)))
-            })
-    }
-}
-
-extension StatePills {
-    /// "Astro" while the night sky helper is on; its action turns it off.
-    ///
-    /// - Parameter context: The model and settings.
-    static func astro(_ context: CameraControlContext) -> StatePill? {
-        guard context.model.astro.isOn else { return nil }
-        return StatePill(
-            id: "astro", systemImage: "moon.stars", text: AstroText.title, label: AstroText.title,
-            actions: [
-                StatePill.Action(
-                    id: "off", title: Text("Turn Off Astro", bundle: .module, comment: "Action of the Astro pill on the camera: turns the night sky helper off.")
-                ) {
-                    context.send(.astro(.setOn(false)))
-                }
-            ])
-    }
-}
-
-/// The astro helper over the picture while it is on: the frames the shutter will take and a
-/// button for the settings, or while the frames run, the count and a Stop button. The running
-/// count stays in clean view, so stopping never depends on a gesture.
-struct AstroPanel: View {
-    /// The camera model.
-    let model: CameraModel
-
-    /// Whether the other controls are shown (not clean view).
-    let showsControls: Bool
-
-    /// Opens the astro settings.
-    let openSettings: () -> Void
-
-    /// Creates the panel.
-    ///
-    /// - Parameters:
-    ///   - model: The camera model.
-    ///   - showsControls: Whether the other controls are shown.
-    ///   - openSettings: Opens the astro settings.
-    init(model: CameraModel, showsControls: Bool, openSettings: @escaping () -> Void) {
-        self.model = model
-        self.showsControls = showsControls
-        self.openSettings = openSettings
-    }
-
-    /// The row, or nothing.
-    var body: some View {
-        if let progress = model.astro.progress {
-            row(
-                model.astro.isPaused
-                    ? Text("Paused: \(progress.taken) of \(model.astro.frameCount) frames", bundle: .module, comment: "Shown on the camera while the night sky helper's frames are paused because the camera is paused (for example by a call): they continue, after the start delay, when the camera is back. Both numbers are counts of frames.")
-                    : Text("Frame \(min(progress.taken + 1, model.astro.frameCount)) of \(model.astro.frameCount)", bundle: .module, comment: "Progress of the night sky helper on the camera: which frame is being taken, of how many. Both numbers are counts of frames."),
-                button: Button(role: .destructive) {
-                    Task { await model.send(.astro(.stop)) }
-                } label: {
-                    Text("Stop Frames", bundle: .module, comment: "Button that stops the night sky helper's frames. Every frame already taken is saved.")
-                        .frame(minHeight: CameraStyle.minimumTarget)
-                })
-        } else if model.astro.isOn, showsControls, !model.drive.countdown.isRunning {
-            row(
-                Text("Astro frames: \(model.astro.frameCount)", bundle: .module, comment: "Shown on the camera while the night sky helper is on: how many frames the shutter will take."),
-                button: Button(action: openSettings) {
-                    AstroText.settings
-                        .frame(minHeight: CameraStyle.minimumTarget)
-                })
-        }
-    }
-
-    /// One row: the text and its button, on black.
-    ///
-    /// - Parameters:
-    ///   - text: What the helper does.
-    ///   - button: Its button.
-    private func row(_ text: Text, button: some View) -> some View {
-        HStack(spacing: 12) {
-            Label {
-                text.fixedSize(horizontal: false, vertical: true)
-            } icon: {
-                Image(systemName: "moon.stars")
-            }
-            .font(.callout.monospacedDigit())
-            .foregroundStyle(.white)
-            // Borderless on black, as the drive and interval progress are: the system colors
-            // pass the contrast audit there.
-            button
-        }
-        .padding(.horizontal, 12)
-        .background(.black, in: .rect(cornerRadius: CameraStyle.cornerRadius))
-    }
-}
-
 /// The astro helper's settings: what the app does with the frames, the frame count and start
 /// delay, each frame's exposure, and what the run will take. A standard form with pushed-list
 /// pickers.
@@ -187,7 +93,7 @@ struct AstroSheet: View {
     /// The form.
     var body: some View {
         NavigationStack {
-            Form {
+            NopeForm {
                 Section {
                     AstroText.honesty
                 }
@@ -305,18 +211,24 @@ struct AstroSheet: View {
     }
 }
 
-/// Announcements for the astro helper without looking at the screen: the start and the end of
-/// the frames (AGENTS.md, "Taking photos without seeing the screen"). The countdown before the
+/// Announcements for the astro helper without looking at the screen: that it came on, with the
+/// manual controls and night mode, and the start and the end of the frames (AGENTS.md, "Taking photos without seeing the screen"). The countdown before the
 /// first frame has the self-timer's own ticks and numbers (``DriveFeedback``).
 struct AstroFeedback: ViewModifier {
     /// The astro helper.
     let astro: AstroModel
 
+    /// Whether night mode is on, so the announcement names it only then.
+    let isNightModeOn: Bool
+
     /// Creates the feedback.
     ///
-    /// - Parameter astro: The astro helper.
-    init(astro: AstroModel) {
+    /// - Parameters:
+    ///   - astro: The astro helper.
+    ///   - isNightModeOn: Whether night mode is on.
+    init(astro: AstroModel, isNightModeOn: Bool) {
         self.astro = astro
+        self.isNightModeOn = isNightModeOn
     }
 
     /// The content with the feedback attached.
@@ -324,6 +236,9 @@ struct AstroFeedback: ViewModifier {
     /// - Parameter content: The camera.
     func body(content: Content) -> some View {
         content
+            .onChange(of: astro.isOn) { _, isOn in
+                if isOn { Self.announce(AstroText.turnedOn(isNightModeOn: isNightModeOn)) }
+            }
             .onChange(of: astro.isRunning) { _, isRunning in
                 if isRunning {
                     Self.announce(String(localized: "Astro frames started.", bundle: .module, comment: "Announced to VoiceOver when the night sky helper starts taking its frames."))
@@ -345,8 +260,10 @@ struct AstroFeedback: ViewModifier {
 extension View {
     /// Adds the astro helper's announcements (``AstroFeedback``).
     ///
-    /// - Parameter astro: The astro helper.
-    func astroFeedback(_ astro: AstroModel) -> some View {
-        modifier(AstroFeedback(astro: astro))
+    /// - Parameters:
+    ///   - astro: The astro helper.
+    ///   - isNightModeOn: Whether night mode is on.
+    func astroFeedback(_ astro: AstroModel, isNightModeOn: Bool) -> some View {
+        modifier(AstroFeedback(astro: astro, isNightModeOn: isNightModeOn))
     }
 }

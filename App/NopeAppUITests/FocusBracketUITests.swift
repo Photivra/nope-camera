@@ -1,0 +1,375 @@
+import XCTest
+
+/// UI tests for focus bracketing (docs/design/BRACKETING.md, section 8): the Type control, the
+/// range set on the picture, a series that runs, stops, pauses and ends, the viewer and What's in
+/// This Photo, a lens whose focus can't be set, and the accessibility audit at the largest text
+/// size, right to left, in night mode and on iPad.
+extension NopeAppUITests {
+    /// Chooses Bracket, then Focus in Bracket Settings, with no start delay and `frames` frames,
+    /// and closes the sheet.
+    @MainActor
+    private func chooseFocusBracket(
+        _ app: XCUIApplication, frames: String? = nil, file: StaticString = #filePath, line: UInt = #line
+    ) {
+        chooseBracket(app, file: file, line: line)
+        openBracketSettings(app, file: file, line: line)
+        chooseFocusType(app, file: file, line: line)
+        chooseInBracketSettings(app, "Start Delay", "Off", file: file, line: line)
+        if let frames { chooseInBracketSettings(app, "Frames", frames, file: file, line: line) }
+        closeBracketSettings(app)
+        XCTAssertTrue(waitForValue(bracketCard(app), containing: "Focus bracket:"), file: file, line: line)
+    }
+
+    /// Chooses Focus in the Type control of the open Bracket Settings.
+    @MainActor
+    private func chooseFocusType(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        let segment = app.segmentedControls.buttons["Focus"]
+        if segment.waitForExistence(timeout: 3) {
+            segment.tap()
+        } else {
+            // At accessibility sizes Type is a row that opens its choices.
+            chooseInBracketSettings(app, "Type", "Focus", file: file, line: line)
+        }
+        XCTAssertTrue(element(app, containing: "Focus Range").waitForExistence(timeout: 5), "no focus sections", file: file, line: line)
+    }
+
+    /// Taps Brighten Screen if the series has dimmed the screen.
+    @MainActor
+    private func brightenIfDimmed(_ app: XCUIApplication) {
+        let brighten = app.buttons["Brighten Screen"]
+        if brighten.waitForExistence(timeout: 2) { brighten.tap() }
+    }
+
+    /// Bracket Settings offers Type; Focus shows the range, frames, step, order, start delay,
+    /// Return Focus When Done, storage and the Honesty sentences, and no distance. The idle card
+    /// names the type, the frames and the range, with Nearest and Farthest.
+    @MainActor
+    func testBracketTypeFocus() throws {
+        let app = launch("manual")
+        chooseBracket(app)
+        openBracketSettings(app)
+        chooseFocusType(app)
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Nearest Focus")).firstMatch.exists)
+        XCTAssertTrue(element(app, containing: "Focus Step").exists)
+        XCTAssertTrue(element(app, containing: "doesn’t report focus as a distance").exists)
+        XCTAssertFalse(element(app, containing: " cm").exists, "a distance is shown")
+        let returns = app.switches["Return Focus When Done"]
+        scrollUntilHittable(app, returns)
+        XCTAssertEqual(returns.value as? String, "1")
+        let honesty = element(app, containing: "Stack them in other software")
+        scrollUntilHittable(app, honesty)
+        XCTAssertTrue(honesty.exists)
+        try auditBracketSettings(app, afterScrolling: true)
+        closeBracketSettings(app)
+        let card = bracketCard(app)
+        XCTAssertTrue(waitForValue(card, containing: "Focus bracket: 10 frames"))
+        XCTAssertTrue(waitForValue(card, containing: "Focus 0.00 to 1.00, nearest first"))
+        XCTAssertEqual(app.buttons["Nearest Focus"].value as? String, "0.00")
+        XCTAssertEqual(app.buttons["Farthest Focus"].value as? String, "1.00")
+        XCTAssertTrue(waitForValue(app.buttons["Take Photo"], containing: "Bracket, focus, 10 frames"))
+        // The idle card covers no more than 30% of the picture.
+        let top = app.descendants(matching: .any).matching(identifier: "ModeCard").firstMatch.frame.minY
+        XCTAssertLessThanOrEqual(pictureShareFromCard(app, top: top), 0.3)
+        try audit(app)
+    }
+
+    /// Nearest Focus opens the dial on the picture; Increase moves it in steps of 0.01 and Set
+    /// keeps it; Cancel leaves the range as it was.
+    @MainActor
+    func testFocusRangeSetOnThePicture() throws {
+        let app = launch("manual")
+        chooseFocusBracket(app)
+        app.buttons["Nearest Focus"].tap()
+        let dial = app.descendants(matching: .any)["FocusRangeDial"]
+        XCTAssertTrue(dial.waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "Tap the nearest thing you want sharp").exists)
+        for _ in 0..<3 { app.buttons["Increase"].tap() }
+        XCTAssertTrue(element(app, containing: "0.03").waitForExistence(timeout: 5))
+        try audit(app)
+        app.buttons["Set Nearest Focus"].tap()
+        XCTAssertTrue(app.buttons["Nearest Focus"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.buttons["Nearest Focus"].value as? String, "0.03")
+        app.buttons["Farthest Focus"].tap()
+        XCTAssertTrue(app.buttons["Set Farthest Focus"].waitForExistence(timeout: 5))
+        app.buttons["Decrease"].tap()
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(app.buttons["Farthest Focus"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.buttons["Farthest Focus"].value as? String, "1.00")
+    }
+
+    /// Use the Whole Range is never dimmed or disabled: with the whole range in use it is
+    /// selected with the value "In use"; after an end is set on the picture it isn't, and a
+    /// press returns the range to 0.00 to 1.00 and selects it (docs/design/device-feedback-1.0.md,
+    /// section 2).
+    @MainActor
+    func testUseTheWholeRangeIsSelectedNotDimmed() throws {
+        let app = launch("manual")
+        chooseFocusBracket(app)
+        openBracketSettings(app)
+        let whole = app.buttons["useWholeRange"]
+        scrollUntilHittable(app, whole)
+        XCTAssertTrue(whole.isEnabled)
+        XCTAssertTrue(whole.isSelected)
+        XCTAssertEqual(whole.value as? String, "In use")
+        try auditBracketSettings(app, afterScrolling: true)
+        closeBracketSettings(app)
+        app.buttons["Nearest Focus"].tap()
+        XCTAssertTrue(app.buttons["Set Nearest Focus"].waitForExistence(timeout: 5))
+        for _ in 0..<3 { app.buttons["Increase"].tap() }
+        app.buttons["Set Nearest Focus"].tap()
+        XCTAssertTrue(app.buttons["Nearest Focus"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.buttons["Nearest Focus"].value as? String, "0.03")
+        openBracketSettings(app)
+        scrollUntilHittable(app, whole)
+        XCTAssertTrue(whole.isEnabled)
+        XCTAssertFalse(whole.isSelected)
+        whole.tap()
+        XCTAssertTrue(
+            XCTWaiter().wait(
+                for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "selected == YES"), object: whole)], timeout: 5)
+                == .completed)
+        XCTAssertEqual(whole.value as? String, "In use")
+        closeBracketSettings(app)
+        XCTAssertEqual(app.buttons["Nearest Focus"].value as? String, "0.00")
+        XCTAssertEqual(app.buttons["Farthest Focus"].value as? String, "1.00")
+    }
+
+    /// Use the Whole Range selected in night mode, at the largest text size and right to left:
+    /// the audit of Bracket Settings, Focus, with no contrast finding skipped.
+    @MainActor
+    func testUseTheWholeRangePassesTheAuditInEveryForm() throws {
+        for arguments in [Self.nightModeOn, Self.largestTextSize, Self.rightToLeft] {
+            let app = launch("manual", extraArguments: arguments)
+            chooseBracket(app)
+            openBracketSettings(app)
+            chooseFocusType(app)
+            let whole = app.buttons["useWholeRange"]
+            scrollUntilHittable(app, whole)
+            XCTAssertTrue(whole.isSelected)
+            settle()
+            try app.performCompleteAccessibilityAudit(for: Self.auditTypes(contrast: true, dynamicType: false)) { issue in
+                // Every finding on Use the Whole Range fails, contrast included. The other rows
+                // are audited in the focus bracket tests with their known exceptions; after the
+                // scroll one may sit under the navigation bar's scroll edge effect. A finding on an
+                // element that is gone can't be told apart from one on Use the Whole Range, so it fails.
+                guard let element = issue.currentElement else { return issue.element == nil }
+                return !element.label.contains("Use the Whole Range")
+            }
+        }
+    }
+
+    /// The shutter starts the series; the card counts the frames with the focus the lens reports
+    /// and has Stop Bracket; Stop keeps every photo taken and the end card says how many.
+    @MainActor
+    func testFocusBracketRunsAndStops() throws {
+        // Each save takes half a second here.
+        let app = launch("astro")
+        chooseFocusBracket(app, frames: "20")
+        app.buttons["Take Photo"].tap()
+        brightenIfDimmed(app)
+        let stop = app.buttons["Stop Bracket"]
+        XCTAssertTrue(stop.waitForExistence(timeout: 10))
+        XCTAssertTrue(element(app, containing: "Frame ").waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "Focus 0.").exists)
+        XCTAssertTrue(waitForValue(app.buttons["Take Photo"], containing: "Press to stop"))
+        XCTAssertFalse(bracketWord(app, "Single").isEnabled, "the other words are dimmed")
+        try audit(app, checksContrast: false)
+        stop.tap()
+        XCTAssertTrue(element(app, containing: "Bracket stopped:").waitForExistence(timeout: 15))
+        XCTAssertTrue(element(app, containing: "of 20 photos saved").exists)
+        XCTAssertTrue(element(app, containing: "Focus is back to Auto").exists)
+        XCTAssertTrue(bracketLastPhoto(app, says: "Saved"))
+    }
+
+    /// Leaving the app pauses the series; it continues on return and finishes.
+    @MainActor
+    func testFocusBracketPausesAndContinues() throws {
+        let app = launch("astro")
+        chooseFocusBracket(app, frames: "12")
+        app.buttons["Take Photo"].tap()
+        brightenIfDimmed(app)
+        XCTAssertTrue(app.buttons["Stop Bracket"].waitForExistence(timeout: 10))
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackgroundSuspended, timeout: 10) || app.state == .runningBackground)
+        _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Away from the app")], timeout: 3)
+        app.activate()
+        brightenIfDimmed(app)
+        XCTAssertTrue(element(app, containing: "12 photos saved").waitForExistence(timeout: 40), "the series didn't continue")
+    }
+
+    /// The end cards: every photo saved, and the frames whose focus the lens reported off their
+    /// plan counted (the `focusShort` lens stops 0.05 short).
+    @MainActor
+    func testFocusBracketEndCards() throws {
+        let app = launch("focusShort")
+        chooseFocusBracket(app, frames: "3")
+        app.buttons["Take Photo"].tap()
+        brightenIfDimmed(app)
+        XCTAssertTrue(element(app, containing: "3 photos saved").waitForExistence(timeout: 20))
+        XCTAssertTrue(element(app, containing: "frames were not at their planned focus").exists)
+        XCTAssertTrue(element(app, containing: "Focus is back to Auto").exists)
+        try audit(app)
+    }
+
+    /// A lens whose focus can't be set: with the focus bracket on, switching to it turns
+    /// Bracket off and selects Single; a lens that can only take a focus bracket has the Type
+    /// control dimmed on Focus.
+    @MainActor
+    func testFocusNotOfferedWithoutManualFocus() throws {
+        let app = launch("manual")
+        chooseFocusBracket(app)
+        let flip = app.buttons["Switch Camera"]
+        XCTAssertTrue(flip.waitForExistence(timeout: 5))
+        flip.tap()
+        XCTAssertTrue(bracketWord(app, "Single").waitForExistence(timeout: 10))
+        waitUntil(timeout: .seconds(10)) { !bracketWord(app).exists }
+        XCTAssertFalse(bracketWord(app).exists, "the front camera's focus can't be set")
+        XCTAssertTrue(bracketWord(app, "Single").isSelected)
+        // The aid lenses take no exposure bracket but can take a focus bracket.
+        let aids = launch("aids")
+        chooseBracket(aids)
+        XCTAssertTrue(waitForValue(bracketCard(aids), containing: "Focus bracket:"))
+        openBracketSettings(aids)
+        XCTAssertFalse(aids.segmentedControls.firstMatch.isEnabled, "the Type control isn't dimmed")
+        try auditBracketSettings(aids)
+    }
+
+    /// Each frame is a page of the viewer with its chip, and What's in This Photo shows the focus
+    /// the lens reported and the planned focus.
+    @MainActor
+    func testFocusBracketViewerAndDetails() throws {
+        let app = launch("manual")
+        chooseFocusBracket(app, frames: "3")
+        openPhotoDetails(app)
+        // The sheet as it opens is audited first. The rows are below the summary card, which
+        // since its rebuild (#118) can push them under the sheet's lower edge, so they are
+        // scrolled to, as the other details checks do.
+        try audit(app, checksDynamicType: false, checksContrast: !isPad)
+        XCTAssertTrue(scrollDetails(app, to: element(app, containing: "Reported by the lens")))
+        XCTAssertTrue(scrollDetails(app, to: element(app, containing: "Planned Focus")))
+        XCTAssertTrue(scrollDetails(app, to: element(app, containing: "not a distance")))
+        app.buttons["Done"].firstMatch.tap()
+        let photo = app.descendants(matching: .any)["ViewerPhoto"]
+        XCTAssertTrue(photo.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.descendants(matching: .any)["BracketChip"].waitForExistence(timeout: 5))
+        XCTAssertTrue(photo.label.contains("Focus bracket, frame 3 of 3, focus 1.00."), photo.label)
+    }
+
+    /// At the largest text size the card's buttons stack, the track is left out, and Bracket
+    /// Settings wraps each value; both pass the audit.
+    @MainActor
+    func testFocusBracketAtTheLargestTextSize() throws {
+        let app = launch("manual", extraArguments: Self.largestTextSize)
+        let word = app.buttons["Bracket"]
+        XCTAssertTrue(word.waitForExistence(timeout: 20))
+        scrollUntilHittable(app, word)
+        word.tap()
+        let card = bracketCard(app)
+        XCTAssertTrue(card.waitForExistence(timeout: 5))
+        // The scrolling camera can still be settling after the word's tap; try the card again.
+        // After the swipe that brought the word into view the card can sit mostly above the
+        // window, with only its lower strip on screen behind the status bar, where a tap does
+        // nothing; it is scrolled down below the status bar first.
+        for _ in 0..<3 where !app.navigationBars["Bracket Settings"].exists {
+            scrollUntilHittable(app, card)
+            scrollBelowTheStatusBar(app, card)
+            card.tap()
+            _ = app.navigationBars["Bracket Settings"].waitForExistence(timeout: 5)
+        }
+        XCTAssertTrue(app.navigationBars["Bracket Settings"].exists)
+        // The Type row, its title over its value, grows with the text (about 44 points high at
+        // the default size).
+        let typeRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Type")).firstMatch
+        XCTAssertTrue(typeRow.waitForExistence(timeout: 5))
+        XCTAssertGreaterThan(typeRow.frame.height, 110, "the Type row doesn't grow")
+        // The audit's skip for this row's texts finds them by these identifiers only.
+        for identifier in Self.measuredTypeRowIdentifiers {
+            XCTAssertTrue(app.staticTexts[identifier].exists, "no text \(identifier) in the Type row")
+        }
+        chooseFocusType(app)
+        try audit(app)
+        closeBracketSettings(app)
+        XCTAssertTrue(waitForValue(bracketCard(app), containing: "Focus bracket:"))
+        try auditScrollingScreen(app)
+    }
+
+    /// The space at the top of the window that the status bar covers, with a margin: on an
+    /// iPhone with the Dynamic Island the status bar area is about 60 points high.
+    static let statusBarClearance: CGFloat = 70
+
+    /// Scrolls the scrolling camera down, by dragging the element's visible part, until the whole
+    /// element is below the status bar (``statusBarClearance``). An element whose top is already
+    /// there is left as it is.
+    @MainActor
+    func scrollBelowTheStatusBar(_ app: XCUIApplication, _ element: XCUIElement) {
+        let window = app.windows.firstMatch.frame
+        let top = window.minY + Self.statusBarClearance
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        var drags = 0
+        while element.exists && element.frame.minY < top && element.frame.maxY > top && drags < 6 {
+            let frame = element.frame
+            let start = CGPoint(x: frame.midX, y: (top + min(frame.maxY, window.maxY)) / 2)
+            // Slow, with a hold at the end, so the scroll view doesn't keep moving after the drag.
+            let distance = min(top - frame.minY + 20, window.height * 0.4)
+            origin.withOffset(CGVector(dx: start.x, dy: start.y)).press(
+                forDuration: 0.05, thenDragTo: origin.withOffset(CGVector(dx: start.x, dy: start.y + distance)),
+                withVelocity: .slow, thenHoldForDuration: 0.2)
+            drags += 1
+        }
+    }
+
+    /// Right to left: the card, the dial and Bracket Settings mirror and pass the audit.
+    @MainActor
+    func testFocusBracketRightToLeft() throws {
+        let app = launch("manual", extraArguments: Self.rightToLeft)
+        chooseFocusBracket(app)
+        try audit(app)
+        app.buttons["Farthest Focus"].tap()
+        XCTAssertTrue(app.buttons["Set Farthest Focus"].waitForExistence(timeout: 5))
+        try audit(app)
+        app.buttons["Cancel"].tap()
+        openBracketSettings(app)
+        try auditBracketSettings(app)
+    }
+
+    /// Night mode: the card, the track, the dial and Bracket Settings are red on black; the
+    /// marks differ by fill, not color.
+    @MainActor
+    func testFocusBracketNightMode() throws {
+        let app = launch("manual", extraArguments: Self.nightModeOn)
+        chooseFocusBracket(app)
+        let viewfinderFrame = app.otherElements["Viewfinder"].frame
+        XCTAssertEqual(bracketNonRedPixels(app, outside: viewfinderFrame), 0, "white, blue or other colors remain")
+        try audit(app)
+        app.buttons["Nearest Focus"].tap()
+        XCTAssertTrue(app.buttons["Set Nearest Focus"].waitForExistence(timeout: 5))
+        XCTAssertEqual(bracketNonRedPixels(app, outside: viewfinderFrame), 0, "the dial isn't all red")
+        app.buttons["Cancel"].tap()
+        openBracketSettings(app)
+        settle()
+        XCTAssertEqual(bracketNonRedPixels(app, outside: viewfinderFrame), 0, "Bracket Settings isn't all red")
+        try auditBracketSettings(app)
+    }
+
+    /// On iPad the card sits on the picture's lower edge and Bracket Settings is a centered
+    /// sheet; a series runs and ends.
+    @MainActor
+    func testFocusBracketOnIPad() throws {
+        guard isPad else { throw XCTSkip("The iPad layout; the iPhone tests cover the stacked layout.") }
+        let app = launch("manual")
+        chooseFocusBracket(app, frames: "3")
+        try audit(app)
+        openBracketSettings(app)
+        try auditBracketSettings(app)
+        closeBracketSettings(app)
+        app.buttons["Take Photo"].tap()
+        XCTAssertTrue(element(app, containing: "3 photos saved").waitForExistence(timeout: 20))
+    }
+
+    /// The share of the picture from a card's top down to the picture's lower edge.
+    @MainActor
+    private func pictureShareFromCard(_ app: XCUIApplication, top: CGFloat) -> CGFloat {
+        let picture = app.otherElements["Viewfinder"].frame
+        return max(picture.maxY - top, 0) / picture.height
+    }
+}

@@ -47,6 +47,14 @@ actor FakeHardware: CaptureHardware {
 
     func setReadingsEnabled(_ enabled: Bool) async { readingSwitches.append(enabled) }
 
+    private(set) var focusPositions: [Double] = []
+
+    func setFocus(lensPosition: Double) async throws(CaptureError) -> Double {
+        focusPositions.append(lensPosition)
+        if let applyError { throw applyError }
+        return lensPosition - 0.01
+    }
+
     func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame], metadata: MetadataPlan)
         async throws(CaptureError) -> [HardwarePhoto]
     {
@@ -65,18 +73,44 @@ actor FakeHardware: CaptureHardware {
     func discoverCameras() async -> [CameraDeviceDescription] { cameras }
 
     private(set) var torchRequests: [Double?] = []
+    /// Whether a camera input is attached, as `SystemCaptureHardware`'s `currentInput`.
+    private(set) var isInputAttached = false
+    /// Whether the system allows the torch; `false` simulates a device too hot for it.
+    private var torchAvailable = true
+    /// Whether `configure(_:)` waits for `releaseConfigure()` before attaching the input.
+    private var holdsConfigure = false
+    /// The configure call waiting for `releaseConfigure()`, if any.
+    private var heldConfigure: CheckedContinuation<Void, Never>?
 
+    func setTorchAvailable(_ isAvailable: Bool) { torchAvailable = isAvailable }
+    func holdConfigure() { holdsConfigure = true }
+    var isConfigureHeld: Bool { heldConfigure != nil }
+    func releaseConfigure() {
+        holdsConfigure = false
+        heldConfigure?.resume()
+        heldConfigure = nil
+    }
+
+    /// Answers as `SystemCaptureHardware.switchTorch(level:)` does: without an attached input a
+    /// request for the light is pending (issue #75).
     func setTorch(level: Double?) async -> TorchStatus {
         torchRequests.append(level)
-        return level.map { .on(level: $0) } ?? .off
+        guard let level else { return .off }
+        guard isInputAttached else { return .pending }
+        return torchAvailable ? .on(level: level) : .unavailable
     }
 
     func configure(_ configuration: SessionConfiguration) async throws(CaptureError) {
         configurations.append(configuration)
+        if holdsConfigure { await withCheckedContinuation { heldConfigure = $0 } }
         if let configureError { throw configureError }
+        isInputAttached = true
     }
 
-    func stop() async { stopCount += 1 }
+    func stop() async {
+        stopCount += 1
+        isInputAttached = false
+    }
 
     func capture(_ plan: PhotoSettingsPlan, metadata: MetadataPlan) async throws(CaptureError) -> HardwarePhoto {
         plans.append(plan)
@@ -184,7 +218,8 @@ struct AVFoundationCaptureBackendTests {
         #expect(photo.dimensions == PhotoDimensions(width: 4032, height: 3024))
         #expect(photo.exposureDuration == 1.0 / 30.0)
         #expect(photo.iso == 400)
-        #expect(await hardware.plans == [CapturePolicy.photoSettings(for: .processedFallback(.heif))])
+        // The plan names the camera it was made for, which the hardware checks (issue #96).
+        #expect(await hardware.plans == [CapturePolicy.photoSettings(for: .processedFallback(.heif))?.forCamera("tele")])
     }
 
     @Test func captureNeedsAMatchingRunningSession() async throws {
@@ -244,7 +279,7 @@ struct AVFoundationCaptureBackendTests {
         try await backend.startSession(request)
         let photo = try await backend.capturePhoto(request)
         #expect(photo.format == .processedFallback(.heif))
-        #expect(await hardware.plans == [CapturePolicy.photoSettings(for: .processedFallback(.heif))])
+        #expect(await hardware.plans == [CapturePolicy.photoSettings(for: .processedFallback(.heif))?.forCamera("wide")])
         await #expect(throws: CaptureError.notRunning) {
             try await backend.capturePhoto(CaptureRequest(lens: wide))
         }
@@ -318,6 +353,18 @@ struct ManualCaptureBackendTests {
         #expect(await hardware.appliedControls == [.automatic])
         await hardware.setApplyError(.configurationFailed)
         await #expect(throws: CaptureError.configurationFailed) { try await running.applyControls(.automatic) }
+    }
+
+    @Test func focusForABracketNeedsARunningSessionAndReportsTheLensPosition() async throws {
+        let hardware = FakeHardware(cameras: [Self.manualCamera])
+        let backend = AVFoundationCaptureBackendTests.makeBackend(hardware)
+        await #expect(throws: CaptureError.notRunning) { _ = try await backend.setFocus(lensPosition: 0.5) }
+        let (running, _) = try await started(hardware)
+        let reported = try await running.setFocus(lensPosition: 0.5)
+        #expect(abs(reported - 0.49) < 1e-9)
+        #expect(await hardware.focusPositions == [0.5])
+        await hardware.setApplyError(.configurationFailed)
+        await #expect(throws: CaptureError.configurationFailed) { _ = try await running.setFocus(lensPosition: 0.2) }
     }
 
     @Test func readingsPassThrough() async {

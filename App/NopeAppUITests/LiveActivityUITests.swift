@@ -29,6 +29,7 @@ extension NopeAppUITests {
         }
         XCTAssertTrue(last.exists)
         XCTAssertTrue(element(app, containing: "Not signed. Open nope. for details.").exists)
+        XCTAssertTrue(element(app, containing: "Not signed: signing is off in Settings.").exists)
         try audit(app, afterScrolling: true, checksDynamicType: checksDynamicType)
     }
 
@@ -56,8 +57,7 @@ extension NopeAppUITests {
     func testLiveActivitySwitchIsOffByDefaultAndTurnsOn() throws {
         let app = launch("photosDenied")
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
-        app.buttons["Settings"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        openSettings(app)
         let toggle = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Live Activity")).firstMatch
         var swipes = 0
         while !(toggle.exists && toggle.isHittable) && swipes < 8 {
@@ -66,7 +66,7 @@ extension NopeAppUITests {
         }
         XCTAssertTrue(toggle.exists, "Settings offers the Live Activity where the device shows them")
         XCTAssertEqual(toggle.value as? String, "0", "off by default")
-        XCTAssertTrue(element(app, containing: "never sent anywhere").exists)
+        XCTAssertTrue(element(app, containing: "Counts only; nope. sends nothing.").exists)
         toggle.switches.firstMatch.tap()
         XCTAssertEqual(toggle.value as? String, "1")
         // Dynamic Type is checked at the largest size by the Settings audits
@@ -81,8 +81,7 @@ extension NopeAppUITests {
     func testLiveActivitySwitchAtTheLargestTextSize() throws {
         let app = launch("photosDenied", extraArguments: Self.largestTextSize)
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
-        app.buttons["Settings"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        openSettings(app)
         let toggle = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Live Activity")).firstMatch
         var swipes = 0
         while !(toggle.exists && toggle.isHittable) && swipes < 20 {
@@ -90,7 +89,7 @@ extension NopeAppUITests {
             swipes += 1
         }
         XCTAssertTrue(toggle.exists)
-        XCTAssertTrue(toggle.label.contains("never sent anywhere"), "the explanation is read with the switch")
+        XCTAssertTrue(toggle.label.contains("nope. sends nothing."), "the explanation is read with the switch: \(toggle.label)")
         // The form's width: the window on iPhone, the Settings sheet on iPad.
         let form = app.navigationBars["Settings"].frame
         XCTAssertGreaterThan(toggle.frame.width, form.width * 0.8, "the explanation runs across the row")

@@ -56,7 +56,9 @@ struct IntervalPauseTests {
         await waitUntil { model.sessionStatus == .interrupted(.inUseElsewhere) }
         await tick(ticker)
         await waitUntil { model.manual.intervalProgress?.isPaused == true }
-        #expect(model.manual.intervalProgress == IntervalProgress(taken: 1, total: 3, isPaused: true))
+        #expect(model.manual.intervalProgress?.taken == 1)
+        #expect(model.manual.intervalProgress?.total == 3)
+        #expect(model.manual.intervalProgress?.isPaused == true)
         #expect(await backend.captures == 1, "no photo is taken, or counted, while the camera is paused")
         #expect(
             model.liveActivityContent(continuing: .interval, isInForeground: true, now: Date())

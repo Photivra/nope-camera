@@ -1,6 +1,6 @@
 # Photivra Nope Camera
 
-> A free, open-source (GPL-3.0-only) camera app for iPhone and iPad, with Android planned. It captures a photo with as little processing as the device allows, signs it with C2PA Content Credentials, and saves it to Photos. It makes no network calls, has no analytics, and removes private metadata by default. Status: in development (0.x). The app is a buildable, tested scaffold with no camera features yet.
+> A free, open-source (GPL-3.0-only) camera app for iPhone and iPad, with Android planned. It captures a photo with as little processing as the device allows, can sign it with C2PA Content Credentials (off by default), and saves it to Photos. It makes no network calls, has no analytics, and removes private metadata by default. Status: release 1.0.0 in preparation.
 
 The rules for contributors and coding agents are in AGENTS.md. Read it before changing anything.
 
@@ -23,16 +23,42 @@ The rules for contributors and coding agents are in AGENTS.md. Read it before ch
 - [docs/BUILDING-AN-INTERFACE.md](docs/BUILDING-AN-INTERFACE.md): how to replace the SwiftUI interface
 - [docs/TESTING.md](docs/TESTING.md): how to run the checks, unit tests, UI tests and documentation build; CI jobs
 - [docs/PRIVACY.md](docs/PRIVACY.md): what the app writes and removes, and the metadata plan
-- [docs/design/README.md](docs/design/README.md): the current design set (camera, settings and system screens, manual controls, icon), matching the app
+- [docs/design/README.md](docs/design/README.md): the design set for release 1.0.0 (direction B, Reach): every screen as an HTML mockup with a PNG, for iPhone, iPad, iPhone Duo and Apple Watch, and the index of the files below
+- [docs/design/overview.html](docs/design/overview.html): entry page of the design set, with the decisions made and what is beyond interface work
+- [docs/design/BUILD-SPEC.md](docs/design/BUILD-SPEC.md): build specification: component trees mapped to Swift files, acceptance criteria, new strings, work chunks
+- [docs/design/tokens.md](docs/design/tokens.md): design tokens (spacing, radii, sizes, type, color, materials, motion, button types) named as Swift constants
+- [docs/design/ACCESSIBILITY.md](docs/design/ACCESSIBILITY.md): accessibility and Siri specification for each screen
+- [docs/design/navigation.md](docs/design/navigation.md): every option, the path to it and tap counts before and after
+- [docs/design/photo-details.html](docs/design/photo-details.html): the What's in This Photo sheet (Photo Details): its groups, what is behind disclosure rows, and where each value comes from
+- [docs/design/pinch-lens.md](docs/design/pinch-lens.md): pinch to switch lenses, accepted 2026-11-18 for release 1.0.0: steps, where a pinch does nothing, Magnify, the Pinch setting, wording and tests
+- [docs/design/assistant-access.md](docs/design/assistant-access.md): the Assistant Access design, accepted for 1.0.0 on 2026-11-18 (issue 82): the setting for Siri, Shortcuts and other assistants, the check and the question, what an assistant can read, devices, accessibility, tests and the decisions
+- [docs/design/level-haptic.md](docs/design/level-haptic.md): the level haptic design, accepted 2026-11-18: when the tap plays and when it is held back, the feedback, wording, devices, accessibility and tests
+- [docs/design/SETTINGS-PLAN.md](docs/design/SETTINGS-PLAN.md): the Settings review and its twelve decisions, accepted 2026-11-17; the record behind the Settings structure and the device coverage
+- [docs/design/nope-site.md](docs/design/nope-site.md): the public site design, accepted 2026-11-19 for release 1.0.0: nope.photivra.com on GitHub Pages (landing page, privacy policy, support, accessibility), with no cookies, analytics, JavaScript or external requests; draft copy, tokens, accessibility, search, performance budgets, the build and its checks, publishing steps and the decisions
+- [docs/design/finish-1.0.md](docs/design/finish-1.0.md): the last designs proposed for release 1.0.0 (2026-11-21): control-row spacing, the how-to-use guide, the Photo Details summary card, Dim After, Burst Limit, the self-timer deadline and start-to-start intervals, with the draft strings
+- [docs/plans/1.0.0-finish.md](docs/plans/1.0.0-finish.md): the plan for finishing release 1.0.0: an audit of every open 1.0.0 issue, the technical plan for the clock, shutter, burst, interval and Siri work, the build order in parallel groups, and the decisions for the owner
+- [docs/design/BRACKETING.md](docs/design/BRACKETING.md): bracketing for release 1.0.0: the menu, exposure bracketing and focus bracketing, with the build specification and device checks
+- [docs/design/BURST.md](docs/design/BURST.md): Burst, continuous shooting, accepted 2026-11-18 for release 1.0.0: behavior, interaction, build specification, strings and decisions
+- [docs/design/LAUNCH-SCREEN.md](docs/design/LAUNCH-SCREEN.md): the launch screen, accepted 2026-11-18 for release 1.0.0, and its checks
+- [docs/design/SETTING-SCOPE.md](docs/design/SETTING-SCOPE.md): where a setting applies, starting with Fast Shutter: the note beside it, its wording and VoiceOver
+- [docs/design/device-feedback-1.0.md](docs/design/device-feedback-1.0.md): device feedback for 1.0.0, accepted 2026-11-18: five changes after use on an iPhone, and how each was built
+- [docs/design/keep-screen-on.md](docs/design/keep-screen-on.md): Keep Screen On, accepted 2026-11-18 for release 1.0.0 (issue 97): the setting, dimming, battery and decisions
+- [docs/design/lens-while-busy.md](docs/design/lens-while-busy.md): the lens controls while the camera is busy (issue 96): the one rule, the hint and the wording
+- [docs/design/night-search-field.md](docs/design/night-search-field.md): Settings search in Night Mode, the red search field (issue 88)
+- [docs/design/layouts.html](docs/design/layouts.html): the rule that gives each window its layout, and which screens are drawn for iPhone, iPad, iPhone Duo and Apple Watch
+- [docs/RELEASING.md](docs/RELEASING.md): what the maintainer does to release: the app build (bundle identifier, App Store ID, build number, archive, upload), the one-time setup and publication of the public site
+- [site/site.json](site/site.json): the public site, https://nope.photivra.com/ (privacy policy, support, accessibility), built from `site/` by `scripts/build-site.py` and checked by `scripts/check-site.sh`
+- [store/accessibility-status.json](store/accessibility-status.json): the manual accessibility pass and the declared Accessibility Nutrition Labels, per device; the source for the site's accessibility page
 - [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md): threat model, every pre-release security check with how to run it and pass criteria, and the sign-off checklist
 
-## Store and privacy policy (drafts, need human review)
+## Store and privacy policy (store text: drafts, need human review)
 
 - [docs/store/README.md](docs/store/README.md): App Store listing drafts, field limits, and the features each claim depends on
-- [store/metadata/README.md](store/metadata/README.md): App Store listing text (name, subtitle, promotional text, description, keywords) in 13 App Store locales (11 languages), one file per field, and its review status
+- [store/metadata/README.md](store/metadata/README.md): App Store listing text (name, subtitle, promotional text, description, keywords) in English (`en-US`), one file per field, and its review status
 - [docs/store/app-privacy-label.md](docs/store/app-privacy-label.md): App Store privacy label answers ("Data Not Collected")
 - [docs/store/accessibility-label.md](docs/store/accessibility-label.md): Accessibility Nutrition Label answers and the evidence each needs
-- [docs/store/privacy-policy-draft.md](docs/store/privacy-policy-draft.md): privacy policy draft, for the maintainer to publish
+- [docs/store/privacy-policy-draft.md](docs/store/privacy-policy-draft.md): privacy policy, published at https://nope.photivra.com/privacy/
+- [docs/store/STORE-PAGE-PLAN.md](docs/store/STORE-PAGE-PLAN.md): the App Store product page plan for 1.0.0, accepted 2026-11-19: screenshots, captions, preview, keywords and the steps in App Store Connect
 
 ## API (generated from DocC comments)
 

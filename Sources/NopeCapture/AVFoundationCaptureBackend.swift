@@ -135,6 +135,18 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend, LightCaptureBacke
         try await hardware.apply(controls)
     }
 
+    /// Locks focus at a lens position and returns the position the camera reports once it is
+    /// applied: the step before each frame of a focus bracket.
+    ///
+    /// - Parameter lensPosition: The position, from 0 to 1.
+    /// - Returns: The reported position.
+    /// - Throws: `CaptureError.notRunning` if the camera isn't running, or
+    ///   `CaptureError.configurationFailed` if its focus can't be locked at a position.
+    public func setFocus(lensPosition: Double) async throws(CaptureError) -> Double {
+        guard activeConfiguration != nil else { throw .notRunning }
+        return try await hardware.setFocus(lensPosition: lensPosition)
+    }
+
     /// Turns the camera's readings on or off.
     ///
     /// - Parameter enabled: Whether to send readings.
@@ -181,9 +193,11 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend, LightCaptureBacke
     /// Turns the running lens's torch on at a level, or off.
     ///
     /// - Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
-    /// - Returns: The light's state; `TorchStatus.off` while the session isn't configured.
+    /// - Returns: The light's state. While the session isn't configured (before a start, or
+    ///   while it is reconfigured), a request for the light is `TorchStatus.pending`, never a
+    ///   silent `TorchStatus.off` (issue #75); `LightModel` applies it after the start.
     public func setTorch(level: Double?) async -> TorchStatus {
-        guard activeConfiguration != nil else { return .off }
+        guard activeConfiguration != nil else { return level == nil ? .off : .pending }
         return await hardware.setTorch(level: level)
     }
 }

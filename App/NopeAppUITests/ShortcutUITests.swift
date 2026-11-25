@@ -18,7 +18,13 @@ final class ShortcutUITests: XCTestCase {
     @MainActor
     func launch(_ scenario: String, request: String) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-NopeSimulatedCamera", scenario, "-NopeSimulatedShortcut", request]
+        // Signing on (off by default, issue #80), so Siri's answers about signed photos show.
+        // Assistant Access on with no question (off by default, issue #82), so each request runs
+        // as before; AssistantAccessUITests covers the check itself.
+        app.launchArguments = [
+            "-NopeSimulatedCamera", scenario, "-NopeSimulatedShortcut", request, "-NopeSimulatedSigning",
+            "-NopeSettings.assistantAccess", "YES", "-NopeSettings.assistantAsk", "never",
+        ]
         app.launchAfterThePreviousRunExits()
         return app
     }
@@ -50,7 +56,7 @@ final class ShortcutUITests: XCTestCase {
         cancel.tap()
         let message = result(app)
         XCTAssertTrue(message.waitForExistence(timeout: 10))
-        XCTAssertEqual(message.label, "The timer was cancelled. No photo was taken.")
+        XCTAssertEqual(message.label, "The timer was canceled. No photo was taken.")
     }
 
     @MainActor
@@ -80,6 +86,24 @@ final class ShortcutUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Ultra Wide"].isSelected)
     }
 
+    /// Switch Lens during an interval series (issue #96): Siri says the app is busy and the lens
+    /// didn't change, and the lens in use stays selected.
+    @MainActor
+    func testSwitchingLensesDuringASeriesSaysTheLensDidNotChange() {
+        let app = launch("slowSaving", request: "interval,lens-ultraWide")
+        let message = result(app)
+        XCTAssertTrue(message.waitForExistence(timeout: 30))
+        XCTAssertEqual(message.label, "nope. is busy. The lens didn't change.")
+        let brighten = app.buttons["Brighten Screen"]
+        if brighten.waitForExistence(timeout: 5) { brighten.tap() }
+        XCTAssertTrue(app.buttons["Wide"].isSelected)
+        XCTAssertFalse(app.buttons["Ultra Wide"].isSelected)
+        XCTAssertFalse(app.buttons["Ultra Wide"].isEnabled)
+        let stop = app.buttons["Stop"]
+        XCTAssertTrue(stop.waitForExistence(timeout: 5))
+        stop.tap()
+    }
+
     @MainActor
     func testABracketIsTakenOnceInFullAuto() {
         // Manual controls stay off: the bracket is taken once without turning them on.
@@ -90,6 +114,43 @@ final class ShortcutUITests: XCTestCase {
         XCTAssertFalse(app.buttons["More Manual Controls"].exists)
     }
 
+    /// Take Bracket's Order: the frames are taken in the order asked for, as the photos' details
+    /// show, and the bracket chosen on the drive strip stays off.
+    @MainActor
+    func testABracketIsTakenInTheOrderAsked() {
+        let app = launch("manual", request: "bracket3-brightest")
+        let message = result(app)
+        XCTAssertTrue(message.waitForExistence(timeout: 30))
+        XCTAssertEqual(message.label, "Photos saved and signed.")
+        XCTAssertFalse(app.buttons["Bracket Settings"].exists, "the drive strip's bracket was turned on")
+        let thumbnail = app.buttons["Last Photo"]
+        XCTAssertTrue(thumbnail.waitForExistence(timeout: 10))
+        thumbnail.press(forDuration: 1.2)
+        let details = app.buttons["Photo Details"]
+        XCTAssertTrue(details.waitForExistence(timeout: 15))
+        details.tap()
+        let bracket = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Brightest First")).firstMatch
+        XCTAssertTrue(bracket.waitForExistence(timeout: 5))
+        XCTAssertTrue(bracket.label.contains("+1, 0, -1 EV") || bracket.label.contains("+1, 0, −1 EV"), bracket.label)
+    }
+
+    /// Take Bracket with the type Focus takes one focus bracket over the whole range and leaves
+    /// the drive strip's bracket as it was.
+    @MainActor
+    func testAFocusBracketIsTakenOnce() {
+        let app = launch("manual", request: "focus3-whole")
+        let message = result(app)
+        XCTAssertTrue(message.waitForExistence(timeout: 30))
+        XCTAssertTrue(message.label.hasPrefix("Photos saved"), message.label)
+        XCTAssertFalse(app.buttons["Bracket Settings"].exists, "the drive strip's bracket was turned on")
+        let thumbnail = app.buttons["Last Photo"]
+        XCTAssertTrue(thumbnail.waitForExistence(timeout: 10))
+        thumbnail.tap()
+        let photo = app.descendants(matching: .any)["ViewerPhoto"]
+        XCTAssertTrue(photo.waitForExistence(timeout: 10))
+        XCTAssertTrue(photo.label.contains("Focus bracket, frame 3 of 3, focus 1.00."), photo.label)
+    }
+
     @MainActor
     func testApplyPresetSaysWhatChangedAndCanBeUndone() throws {
         // Apply Preset with Factory Defaults, through the same path as the Presets list.
@@ -97,8 +158,14 @@ final class ShortcutUITests: XCTestCase {
         let message = result(app)
         XCTAssertTrue(message.waitForExistence(timeout: 30))
         XCTAssertEqual(message.label, "Factory Defaults applied. You can undo it in Presets.")
-        // The Presets list shows the result with Undo, as after applying it there.
-        app.buttons["Settings"].tap()
+        // The Presets list shows the result with Undo, as after applying it there. Settings is
+        // in Q on the stacked camera (BUILD-SPEC.md, 3.1) and in the column on iPad.
+        let settings = app.buttons["Settings"]
+        if !settings.waitForExistence(timeout: 5) {
+            app.buttons["Quick Menu"].tap()
+            XCTAssertTrue(settings.waitForExistence(timeout: 5))
+        }
+        settings.tap()
         let presets = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Presets")).firstMatch
         XCTAssertTrue(presets.waitForExistence(timeout: 5))
         presets.tap()

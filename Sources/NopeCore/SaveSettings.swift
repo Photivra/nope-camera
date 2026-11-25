@@ -4,7 +4,7 @@ import Foundation
 /// choices.
 ///
 /// ``CameraModel/saveSettings`` holds the current value. The format rule from issue #1,
-/// "Formats", lives here: RAW plus HEIF by default, any combination of RAW, HEIF and JPEG, and
+/// "Formats", lives here: RAW only by default (issue #80), any combination of RAW, HEIF and JPEG, and
 /// never none. A lens without Bayer RAW always saves its labeled processed fallback instead.
 public struct SaveSettings: Equatable, Codable, Sendable {
     /// The formats saved for a photo taken with a Bayer RAW lens. Never empty.
@@ -17,8 +17,9 @@ public struct SaveSettings: Equatable, Codable, Sendable {
     /// or ``DevelopedLook/flat``. Never affects the RAW.
     public var developedLook: DevelopedLook
 
-    /// The settings on first launch: RAW plus HEIF, ``MetadataSettings/init()``, and the
-    /// standard look.
+    /// The settings on first launch and for Factory Defaults: RAW only, ``MetadataSettings/init()``
+    /// (signing off), and the standard look. Stored settings are decoded as saved, so a person's
+    /// own choices are kept.
     public init() {
         formats = PhotoFormat.defaultSelection
         metadata = MetadataSettings()

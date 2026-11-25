@@ -1,25 +1,25 @@
-nope. takes photos with as little processing as your phone allows, signs each one, and keeps nothing that tracks you. Open it and shoot: there's nothing to set up.
+Photivra Nope Camera takes photos with as little processing as the camera allows, can sign each one, and keeps nothing that tracks you. Open it and shoot: there's nothing to set up.
 
-AS LITTLE PROCESSING AS YOUR PHONE ALLOWS
-• Each photo is a single-frame Bayer RAW (DNG). nope. never uses ProRAW or merges frames.
-• If a lens can't save unprocessed RAW, nope. tells you before you shoot and labels the photo.
-• You can also save HEIF or JPEG, developed by nope. from the same RAW with no noise reduction, sharpening or local tone mapping.
+AS LITTLE PROCESSING AS THE CAMERA ALLOWS
+• On a lens that can save RAW, each photo is a single-frame Bayer RAW (DNG). These photos are never ProRAW or merged frames.
+• If a lens can't save unprocessed RAW, the app tells you before you shoot, unless you turn that marker off, and labels the photo.
+• You can also save HEIF or JPEG, developed by the app from the same RAW, with noise reduction, sharpening and local tone mapping turned off.
 
 NOTHING TRACKS YOU
-• nope. contains no networking code and makes no network connections. No analytics, no ads, no accounts.
-• Check it yourself with App Privacy Report in Settings: nope. should list no domains.
+• The app contains no networking code and makes no network connections. No analytics, no ads, no accounts.
+• Check it yourself with App Privacy Report in Settings: the app should list no domains.
 • Optional details, such as the time zone, iOS version and maker notes, are removed by default. You choose what each photo keeps.
-• Location is off by default.
-• nope. can only add photos to your library. iOS doesn't let it see your existing photos.
+• Location is off by default. So is Focus on Faces: autofocus and auto exposure don't follow faces unless you turn it on.
+• The app can only add photos to your library. iOS doesn't let it see your existing photos.
 
-SIGNED
-• Every photo carries Content Credentials, signed with a new key each time, so signatures can't link your photos together.
-• The signature shows whether the file has changed since nope. saved it. It doesn't prove who took the photo.
+SIGNED, IF YOU CHOOSE
+• Turn on signing and each photo carries Content Credentials, signed with a new key each time, so signatures can't link your photos together. Signing is off by default.
+• The signature shows whether the file has changed since it was signed, and names Photivra Nope Camera and its version as the maker. It is not proof: anyone could make a file that says the same, and it doesn't show who took the photo.
 
 HONEST ABOUT THE LIMITS
-• The Honesty screen (ⓘ) lists every detail in your last photo, what your phone may still do outside nope.'s control, and what no app can remove, such as the sensor's faint noise pattern.
+• What's in This Photo lists the details in the files of your last photo. The Honesty screen says what your device may still do outside the app's control, and what no app can remove, such as the sensor's faint noise pattern.
 
 FOR EVERYONE
-• Works with VoiceOver, Voice Control and the largest text sizes. The volume buttons work as a shutter.
+• The volume buttons work as a shutter.
 
 Free and open source under the GNU GPL, version 3.

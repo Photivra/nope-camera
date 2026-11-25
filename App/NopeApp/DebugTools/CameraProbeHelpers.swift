@@ -112,8 +112,10 @@ final class VideoFrameCounter: NSObject, AVCaptureVideoDataOutputSampleBufferDel
             $0.snapshot = nil
             $0.wantsSnapshot = true
         }
-        let start = Date()
-        while Date().timeIntervalSince(start) < timeout {
+        // The monotonic clock, so a change to the device's time can't cut the wait short or
+        // stretch it (issue #124).
+        let deadline = ContinuousClock.now + .seconds(timeout)
+        while ContinuousClock.now < deadline {
             if let frame = state.withLockUnchecked({ $0.snapshot }) { return frame }
             Thread.sleep(forTimeInterval: 0.02)
         }

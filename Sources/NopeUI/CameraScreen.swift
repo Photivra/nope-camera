@@ -14,8 +14,10 @@ import SwiftUI
 /// passes a closure that turns the model's `CameraPreviewSource` into a view (for example one
 /// backed by `AVCaptureVideoPreviewLayer`).
 ///
-/// A Settings button opens ``SettingsScreen`` (a popover on iPad, a sheet on iPhone) in every
-/// state, so settings and the Honesty screen are reachable before the camera is allowed. Before
+/// Settings (``SettingsScreen``, a popover in a regular-width window, a sheet otherwise) is
+/// reachable in every state, so settings and the Honesty screen are reachable before the camera
+/// is allowed: from a Settings button above the screens shown before the camera is ready, from
+/// the column layout's Settings button, and from Q in the stacked and scrolling layouts. Before
 /// camera access is asked, ``FirstRunView`` says what the app does, then asks.
 ///
 /// The app target can set ``SwiftUICore/EnvironmentValues/openAppSettings`` (Open Settings buttons),
@@ -42,6 +44,14 @@ public struct CameraScreen<Viewfinder: View>: View {
     /// Whether the settings sheet is open.
     @State private var showsSettings = false
 
+    /// Where Settings is, kept outside its presentation so it stays on its page when the
+    /// presentation changes (night mode on iPad, a fold on the iPhone Duo).
+    @State private var settingsNavigation = SettingsNavigation()
+
+    /// Whether Q's list is open in the scrolling layout, where it takes the place of the
+    /// scrolling content under the first start's indicator (``QuickMenuListIsOpen``).
+    @State private var quickMenuListIsOpen = false
+
     /// Makes the live viewfinder for the model's preview source.
     private let viewfinder: (any CameraPreviewSource) -> Viewfinder
 
@@ -51,7 +61,7 @@ public struct CameraScreen<Viewfinder: View>: View {
     ///   - model: The model to render. The screen sends `CameraIntent.start` when it appears
     ///     and runs `CameraModel.observeEvents()` while it is visible.
     ///   - settings: The person's settings, opened from the Settings button.
-    ///   - presets: The saved settings presets, shown in Settings and the quick-controls tray, or
+    ///   - presets: The saved settings presets, shown in Settings and the quick menu, or
     ///     `nil` to offer none (the Lock Screen camera, which can't read them).
     ///   - viewfinder: Makes the live viewfinder from the model's preview source.
     public init(
@@ -73,22 +83,40 @@ public struct CameraScreen<Viewfinder: View>: View {
     /// Whether the app is in the foreground, to turn the light off when it leaves.
     @Environment(\.scenePhase) private var scenePhase
 
+    /// What assistants did since the app opened; its Open Assistant Access request opens
+    /// Settings at that page (issue #82).
+    @Environment(\.assistantSession) private var assistantSession
+
     /// The screen's content for the current state.
     public var body: some View {
         // Outside the ready camera, the Settings button sits above the content, not over it, so
-        // scrolling content at large text sizes never passes under it. The ready camera has it
-        // in its own top bar or control column.
+        // scrolling content at large text sizes never passes under it. The ready camera opens
+        // Settings from Q, or from its control column.
         VStack(spacing: 0) {
-            if !isReady {
+            if showsSettingsButton {
                 HStack {
                     Spacer()
                     SettingsButton { showsSettings = true }
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, NopeSpace.m)
             }
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        // The camera's first start: the launch screen's mark at the same point until the picture
+        // arrives, then a fade (docs/design/LAUNCH-SCREEN.md, 6.3). Inside night mode's style, so
+        // it is red from the first frame. In the scrolling layout it is told where the pinned row
+        // starts, so its words never come near the shutter (13.2).
+        // While Q's list is open there, the mark is shown alone (13.2, part 3).
+        .onPreferenceChange(QuickMenuListIsOpen.self) { quickMenuListIsOpen = $0 }
+        .overlayPreferenceValue(PinnedRowTop.self) { pinnedRowTop in
+            if model.isFirstStart {
+                StartIndicator(showsWords: isReady && !quickMenuListIsOpen, pinnedRowTop: pinnedRowTop)
+                    .transition(.opacity)
+            }
+        }
+        .animation(NopeMotion.fade, value: model.isFirstStart)
+        .environment(\.showsStartIndicator, model.isFirstStart)
         .nightModeStyle(settings.isNightModeOn)
         // Nothing turns upright in a window that rotates with the device (iPad, or the inner
         // display of a foldable iPhone).
@@ -129,13 +157,18 @@ public struct CameraScreen<Viewfinder: View>: View {
                 .accessibilityHidden(true)
             }
         }
-        .background(.background)
+        // Black whenever the camera's appearance applies, without waiting for the window's dark
+        // style, so the first frame is the launch screen's black in the light appearance too
+        // (docs/design/LAUNCH-SCREEN.md, 6.1). The screens that follow the system keep its
+        // background.
+        .background(usesLaunchBackground ? AnyShapeStyle(NopeColor.launchBackground) : AnyShapeStyle(.background))
         // A popover on iPad (a sheet in night mode, see AdaptivePresentation); a sheet on iPhone.
-        .adaptivePresentation(isPresented: $showsSettings, prefersSheet: settings.isNightModeOn) {
+        // Night mode turned on in the popover moves Settings to the sheet at once, on the same page.
+        .adaptivePresentation(isPresented: $showsSettings, prefersSheet: settings.isNightModeOn, switchesToSheet: true) {
             SettingsScreen(
                 settings: settings, deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true,
                 deviceHasFrontCamera: model.capabilities?.hasFrontCamera ?? true, location: model.location,
-                lenses: model.capabilities?.lenses ?? [], presets: presets, camera: model)
+                lenses: model.capabilities?.lenses ?? [], presets: presets, camera: model, navigation: settingsNavigation)
                 .nightModeStyle(settings.isNightModeOn)
                 // The system's light or dark setting, not the camera's dark appearance.
                 .screenAppearance(.system, isNightMode: settings.isNightModeOn)
@@ -144,21 +177,44 @@ public struct CameraScreen<Viewfinder: View>: View {
                 // audit.
                 .presentationBackground(.background)
         }
-        .onChange(of: showsSettings) { _, isPresenting in presentsSheet(isPresenting) }
+        .onChange(of: showsSettings) { _, isPresenting in
+            presentsSheet(isPresenting)
+            // Settings opens at its list again next time.
+            if !isPresenting { settingsNavigation.reset() }
+        }
+        // Opens Settings at a page or row (the Photo Format sheet's All Photo Settings and Look).
+        .environment(
+            \.openSettingsAt,
+            OpenSettingsAction { id in
+                settingsNavigation.open(id)
+                showsSettings = true
+            })
+        // Open Assistant Access, from Shortcuts or the off answer, opens Settings at the page.
+        .onChange(of: assistantSession?.opensSettingsPage, initial: true) { _, opens in
+            guard opens == true, let assistantSession else { return }
+            assistantSession.settingsPageOpened()
+            settingsNavigation.open(.assistantAccess)
+            showsSettings = true
+        }
         // The light turns off when nope. leaves the foreground (AGENTS.md, "Battery"). The model
         // hears of leaving and coming back: the self-timer is cancelled, and astro frames pause
         // and continue (issue #64).
         .onChange(of: scenePhase) { _, phase in
-            Task {
-                if phase == .background { await model.send(.light(.setTorch(false))) }
-                await model.send(.setInForeground(phase != .background))
-            }
+            // A shutter held down as the app stops being active (Control Center, a call, the
+            // background) may never report coming up, so its burst ends here (issue #101).
+            if phase != .active { model.cancelShutterHolds() }
+            // Applied in order: a quick return can't be overtaken by the older change (S4).
+            Task { await model.sceneDidChange(isInBackground: phase == .background) }
         }
         // Dark for the camera; first run, camera access declined and no camera follow the system.
         .windowAppearance(ScreenAppearance.of(model.state), isNightMode: settings.isNightModeOn)
         // Night mode: the home indicator, a white system bar, fades away until the screen is
         // touched.
         .persistentSystemOverlays(settings.isNightModeOn ? .hidden : .automatic)
+        // After a relaunch during Astro, night mode stays as it was and becomes the person's
+        // (owner decision, 2026-11-18). The app does that at its own launch
+        // (`CameraModel.forgetNightModeFromAstroAtLaunch`), not this screen, which the Lock Screen
+        // camera shows too and which must leave the app's record alone (issue #108).
         .task { await model.send(.start) }
         .task { await model.observeEvents() }
         .task { await model.manual.observeReadings() }
@@ -166,8 +222,9 @@ public struct CameraScreen<Viewfinder: View>: View {
         .task { await model.live.observeStats() }
         // An interval series runs only while the camera screen is shown (AGENTS.md, "Battery").
         .onDisappear { Task { await model.send(.manual(.stopInterval)) } }
-        // The screen stays awake and dimmed during a series; a countdown or burst stops here.
-        .seriesScreen(model, isNightMode: settings.isNightModeOn)
+        // The screen stays awake and dimmed during a series and for Keep Screen On; a countdown
+        // or burst stops here.
+        .seriesScreen(model, settings: settings, showsSettings: showsSettings)
     }
 
     /// Whether the viewfinder is drawn in night mode's red: night mode with Red Viewfinder on.
@@ -175,18 +232,37 @@ public struct CameraScreen<Viewfinder: View>: View {
         settings.isNightModeOn && settings.tintsViewfinderInNightMode
     }
 
-    /// Whether the camera is ready, so the Settings button is in the camera layout.
+    /// Whether the camera is ready, so Settings opens from the camera layout.
     private var isReady: Bool {
         if case .ready = model.state { true } else { false }
+    }
+
+    /// Whether the Settings button sits above the content: on first run, camera access declined
+    /// and no camera. Not while the camera state isn't known yet, a frame or two that is the
+    /// launch screen again (docs/design/LAUNCH-SCREEN.md, 6.1), nor on the ready camera, which
+    /// opens Settings from its own layout.
+    private var showsSettingsButton: Bool {
+        switch model.state {
+        case .starting, .ready: false
+        case .needsPermission, .permissionDenied, .unavailable: true
+        }
+    }
+
+    /// Whether the screen's background is the launch screen's black: whenever the camera's
+    /// appearance applies, or night mode is on.
+    private var usesLaunchBackground: Bool {
+        ScreenAppearance.of(model.state) == .camera || settings.isNightModeOn
     }
 
     /// The view for the model's current state.
     @ViewBuilder private var content: some View {
         switch model.state {
         case .starting:
-            ProgressView {
-                Text("Starting the camera…", bundle: .module, comment: "Shown briefly while the app checks camera access.")
-            }
+            // Only the background: the state lasts as long as reading the camera permission, and
+            // a spinner would be drawn and gone within a frame or two. ``StartIndicator`` is shown
+            // over it, with the one VoiceOver element, "Starting the camera…".
+            Color.clear
+                .accessibilityHidden(true)
         case .needsPermission:
             FirstRunView { Task { await model.send(.requestPermission) } }
         case .permissionDenied:
@@ -204,10 +280,7 @@ public struct CameraScreen<Viewfinder: View>: View {
                         openAppSettings()
                     } label: {
                         Text("Open Settings", bundle: .module, comment: "Button that opens nope.'s page in the system Settings app, where camera or photo library access can be allowed. Keep \"nope.\" unchanged.")
-                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
                 }
             }
         case .unavailable:
@@ -226,6 +299,8 @@ public struct CameraScreen<Viewfinder: View>: View {
             CameraReadyView(
                 model: model, settings: settings, lenses: capabilities.lenses, openSettings: { showsSettings = true },
                 presets: presets)
+            // Settings over the camera holds the level's tap back.
+            .environment(\.cameraIsCovered, showsSettings)
         }
     }
 }

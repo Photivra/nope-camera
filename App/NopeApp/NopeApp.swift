@@ -24,8 +24,8 @@ struct NopeApp: App {
     @State private var model = CameraModel(
         backend: Self.backend, saver: Self.makeSaver(), deviceStatusReader: Self.makeDeviceStatusReader())
 
-    /// Keeps the screen awake and dimmed during an interval series.
-    @State private var screenKeeper = SeriesScreenKeeper(screen: SystemScreen())
+    /// Keeps the screen awake and dimmed during an interval series and for Keep Screen On.
+    @State private var screenKeeper = Self.makeScreenKeeper()
 
     /// The person's settings, stored on the device only.
     @State private var settings = Self.sharedSettings
@@ -51,6 +51,20 @@ struct NopeApp: App {
 
     /// Requests from Siri and Shortcuts (issue #62), which the camera screen serves.
     private static let shortcuts = ShortcutInbox()
+
+    /// What assistants did since the app opened, in memory only, and the Assistant Access check's
+    /// runner (issue #82).
+    private static let assistantSession = AssistantSession(settings: sharedSettings)
+
+    /// The one helper every gated App Intent calls (issue #82). The device counts as locked while
+    /// protected data isn't available (`UIApplication.isProtectedDataAvailable`).
+    private static let assistantGate = AssistantGate(
+        session: assistantSession, settings: sharedSettings,
+        deviceIsLocked: { !UIApplication.shared.isProtectedDataAvailable })
+
+    /// The invitation to the how-to-use guide (issue #117): one Boolean in the settings' store on
+    /// the device, outside the settings themselves, so Factory Defaults doesn't bring the card back.
+    private static let guideInvitation = GuideInvitation(settings: sharedSettings)
 
     /// The link to the Apple Watch app (issue #63), whose commands go through ``shortcuts``.
     private static let watchSession = PhoneWatchSession()
@@ -80,15 +94,20 @@ struct NopeApp: App {
         AppDependencyManager.shared.add(dependency: shortcuts)
         let presets = Self.sharedPresets
         AppDependencyManager.shared.add(dependency: presets)
+        let assistantGate = Self.assistantGate
+        AppDependencyManager.shared.add(dependency: assistantGate)
         _ = Self.settingsSync
         Self.watchSession.activate()
     }
 
-    /// The app's single window, showing the camera screen.
+    /// The app's single window, showing the camera screen. iPad multiple windows are off for 1.0.0
+    /// (`UIApplicationSupportsMultipleScenes` is false in `NopeApp-Info.plist`, and the generated
+    /// scene manifest, which allows them, is off): one camera screen serves Siri, Shortcuts and the
+    /// watch, and reports the scene phase to the one model.
     var body: some Scene {
         WindowGroup {
             #if DEBUG
-            // Debug builds only: `-NopeTagCheck`, `-NopeCameraProbe` or an armed run replace the
+            // Debug builds only: `-NopeTagCheckRun`, `-NopeCameraProbe` or an armed run replace the
             // camera screen (docs/TESTING.md, "Tag check"). Release builds don't contain them.
             switch DebugRunLaunch.decision {
             case .perform(.tagCheck):
@@ -105,6 +124,9 @@ struct NopeApp: App {
             case .none where LiveActivityGallery.isRequested:
                 // UI tests only: the Live Activity layouts (`-NopeLiveActivityGallery`).
                 LiveActivityGallery()
+            case .none where ProcessInfo.processInfo.arguments.contains("-NopeButtonGallery"):
+                // UI tests only: every custom button type and state (`-NopeButtonGallery`).
+                NopeButtonGallery(isNightMode: UserDefaults.standard.bool(forKey: "NopeButtonGallery.night"))
             case .none:
                 cameraScreen
             }
@@ -115,6 +137,29 @@ struct NopeApp: App {
         // The Camera menu: Space takes a photo from a hardware keyboard, listed in the iPad
         // menu bar and keyboard shortcuts overlay.
         .commands { CameraCommands(model: model) }
+    }
+
+    /// Whether the app offers no way to open Photos, as the Lock Screen camera doesn't: Debug
+    /// builds only, with `-NopeSimulatedLockScreenCamera`, for the Last Photo viewer's UI test
+    /// (XCTest can't launch the capture extension).
+    private static var simulatesLockScreenCamera: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-NopeSimulatedLockScreenCamera")
+        #else
+        false
+        #endif
+    }
+
+    /// Whether to behave as with VoiceOver or Switch Control on, which the Simulator can't run,
+    /// so the focus square and Lock don't fade: Debug builds only, with
+    /// `-NopeSimulatedAssistiveTechnology`, for the UI tests (docs/design/device-feedback-1.0.md,
+    /// section 5).
+    private static var simulatesAssistiveTechnology: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-NopeSimulatedAssistiveTechnology")
+        #else
+        false
+        #endif
     }
 
     /// The camera screen with the live viewfinder and the hardware shutter.
@@ -130,6 +175,12 @@ struct NopeApp: App {
             Viewfinder(source: source)
         }
         .environment(\.cameraUprightRotation, orientation.rotation)
+        .environment(\.simulatesAssistiveTechnology, Self.simulatesAssistiveTechnology)
+        // The Assistant Access hints, cards and session list (issue #82). The simulated Lock Screen
+        // camera has none, as the capture extension has none.
+        .environment(\.assistantSession, Self.simulatesLockScreenCamera ? nil : Self.assistantSession)
+        // The how-to-use guide's invitation card (issue #117). The Lock Screen camera shows none.
+        .environment(\.guideInvitation, Self.simulatesLockScreenCamera ? nil : Self.guideInvitation)
         .modifier(FollowsWindowSizeClasses())
         // Settings and the screens that aren't the camera follow the system's light or dark setting.
         .modifier(ProvidesSystemAppearance())
@@ -143,26 +194,46 @@ struct NopeApp: App {
                 guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
                 UIApplication.shared.open(url)
             })
-        // The last-photo thumbnail opens the Photos app (issue #36), only when the person taps
-        // it. Add-only access can't read the library, and iOS has no documented way to open
-        // Photos at one asset, so this opens Photos with its `photos-redirect:` URL, which isn't
-        // documented by Apple either (an owner decision; docs/TESTING.md, "On-device checks").
+        // Open in Photos in the Last Photo viewer, and Open Photos in the Last Photo spot before
+        // the first photo (issue #36; docs/design/device-feedback-1.0.md, section 1), open the
+        // Photos app only when the person taps. Add-only access can't read the library, and iOS
+        // has no documented way to open Photos at one asset, so this opens Photos with its
+        // `photos-redirect:` URL, which isn't documented by Apple either (an owner decision;
+        // docs/TESTING.md, "On-device checks"; a failed open says nothing yet, issue #148). The
+        // Lock Screen camera has neither.
         .environment(
             \.openPhotosApp,
-            CameraAction {
-                guard let url = URL(string: "photos-redirect://") else { return }
-                UIApplication.shared.open(url)
-            })
+            Self.simulatesLockScreenCamera
+                ? nil
+                : CameraAction {
+                    guard let url = URL(string: "photos-redirect://") else { return }
+                    UIApplication.shared.open(url)
+                })
         .onCameraCaptureEvent(isEnabled: model.handlesHardwareButtons) { event in
-            let phase: HardwareButtonPhase =
+            let phase: ShutterPhase =
                 switch event.phase {
                 case .began: .pressed
                 case .ended: .released
                 default: .cancelled
                 }
-            Task { await model.send(.drive(.hardwareButton(phase))) }
+            // Straight to the model, with no task in between: the events arrive on the main
+            // actor in the order the system made them (issue #100).
+            model.shutter(phase, from: .hardware)
         }
+        // A press that is down as the buttons are given back may never report its end (S6).
+        .onChange(of: model.handlesHardwareButtons) { _, isOn in
+            if !isOn { model.hardwareButtonsTurnedOff() }
+        }
+        // After a relaunch during Astro (off at every launch), night mode stays as it was, so the
+        // screen opens red in the dark; it becomes the person's (owner decision, 2026-11-18). Only
+        // the app does this, never the Lock Screen camera, whose camera screen must leave the
+        // app's record alone (issue #108); the simulated Lock Screen camera skips it too.
+        .task { if !Self.simulatesLockScreenCamera { model.forgetNightModeFromAstroAtLaunch(settings: settings) } }
         .environment(\.seriesScreenKeeper, screenKeeper)
+        // Keep Screen On (issue #97): offered here, where the app has a keeper, and told about
+        // touches and VoiceOver focus changes.
+        .environment(\.offersKeepScreenOn, true)
+        .reportsScreenActivity(to: screenKeeper)
         // The Live Activity follows the camera model while the camera screen is shown; its Stop
         // button stops the interval series here (StopSeriesIntent runs in the app).
         .environment(\.offersLiveActivity, ActivityAuthorizationInfo().areActivitiesEnabled)
@@ -184,14 +255,32 @@ struct NopeApp: App {
         .task { await Self.watchSession.serve(model: model, inbox: Self.shortcuts) }
         #if DEBUG
         // UI tests only: `-NopeSimulatedShortcut <seconds>` sends a Take Photo request.
-        .task { await SimulatedShortcut.run(with: Self.shortcuts) }
+        .task { await SimulatedShortcut.run(with: Self.shortcuts, gate: Self.assistantGate) }
+        // UI tests only: `-NopeSimulatedNightModeSwitch <seconds>` switches Night Mode from outside
+        // the screens, as Siri or Control Center do.
+        .task { await SimulatedNightModeSwitch.run(settings: settings) }
+        // UI tests only: `-NopeSimulatedHardwareButton` takes a hardware shutter press from the
+        // test, which the Simulator can't make (issue #109).
+        .task { await SimulatedHardwareButton.run(model: model) }
         .overlay(alignment: .center) { SimulatedShortcut.ResultView() }
+        // UI tests only: `-NopeSimulatedPinchLabelSeconds <seconds>` keeps a pinch's lens label up.
+        .environment(\.lensPinchLabelSeconds, SimulatedPinch.labelSeconds)
+        // UI tests only: `-NopeSimulatedAppStoreID <digits>` shows the Rate or Review row on About.
+        .modifier(SimulatedAppStore.Override())
         #endif
         // The battery and Low Power Mode warnings follow the system's change notifications;
         // nothing polls (AGENTS.md, "Battery").
         .task { await refreshDeviceStatus(on: UIDevice.batteryLevelDidChangeNotification) }
         .task { await refreshDeviceStatus(on: UIDevice.batteryStateDidChangeNotification) }
         .task { await refreshDeviceStatus(on: .NSProcessInfoPowerStateDidChange) }
+        // The Last Photo viewer's previews are the first thing to let go when memory is low;
+        // leaving the foreground releases them too (docs/PRIVACY.md, "Last photo and its
+        // details").
+        .task {
+            for await _ in NotificationCenter.default.notifications(named: UIApplication.didReceiveMemoryWarningNotification) {
+                await model.send(.releasePhotoPreviews)
+            }
+        }
         // The compare view's pictures (issue #55); set once, as for the location below.
         .task { if model.comparison.renderer == nil { model.comparison.renderer = Self.makeComparisonRenderer() } }
         // The person's save settings (formats, metadata, signing) apply from the next photo.
@@ -238,6 +327,11 @@ struct NopeApp: App {
         .task(id: settings.torchLevel) {
             await model.send(.light(.setTorchLevel(settings.torchLevel)))
         }
+        // Burst Limit (issue #121): how many photos a press takes in Burst, applied when the
+        // camera opens and whenever the setting changes (in Settings or by a preset).
+        .task(id: settings.burstLimit) {
+            await model.send(.drive(.setBurstLimit(settings.burstLimit)))
+        }
         // A control's change normally arrives at once (`SharedSettingsSync`); reading the store
         // again on return to the foreground also covers a signal sent while the app was suspended.
         .onChange(of: scenePhase) { _, phase in
@@ -257,6 +351,18 @@ struct NopeApp: App {
         for await _ in NotificationCenter.default.notifications(named: name) {
             model.deviceStatus.refresh()
         }
+    }
+
+    /// The screen keeper: the system's screen and Keep Screen On's standard times, or in Debug
+    /// builds launched by the UI tests, a starting brightness and shorter times
+    /// (``SimulatedScreen``).
+    @MainActor private static func makeScreenKeeper() -> SeriesScreenKeeper {
+        #if DEBUG
+        return SeriesScreenKeeper(
+            screen: SimulatedScreen.screen() ?? SystemScreen(), rule: SimulatedScreen.rule() ?? .standard)
+        #else
+        return SeriesScreenKeeper(screen: SystemScreen())
+        #endif
     }
 
     /// The storage and battery reader: fixed values for a UI test in Debug builds, otherwise
@@ -327,12 +433,22 @@ struct NopeApp: App {
         #if DEBUG
         if let saver = SimulatedCameraLaunch.saver(appVersion: version) { return saver }
         #endif
+        #if DEBUG
+        // Debug builds time each preview with a signpost, and can make none, to measure what
+        // previews cost a burst on a device (issue #104; docs/TESTING.md, "Burst rate").
+        let previewer: any PhotoPreviewing = SignpostedPreviewer(ImageIOPreviewer())
+        let makesPreviews = PreviewCostLaunch.makesPreviews
+        #else
+        let previewer: any PhotoPreviewing = ImageIOPreviewer()
+        let makesPreviews = true
+        #endif
         return PhotoSaver(
             developer: RAWDeveloper(),
             signer: ContentCredentialsSigner(
                 keyProvider: platformKeyProvider(), generator: ClaimGenerator(version: version)),
             reader: ImageIOReadBack(), library: PhotoKitLibrary(),
-            appVersion: version, thumbnailer: ImageIOThumbnailer())
+            appVersion: version, thumbnailer: ImageIOThumbnailer(),
+            previewer: previewer, makesPreviews: makesPreviews)
     }
 
     /// Decodes both photos of the comparison shot for the compare view (issue #55): ImageIO, in

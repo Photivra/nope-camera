@@ -1,7 +1,7 @@
 import XCTest
 
 /// UI tests for the viewfinder overlays (issues #40, #47, #51 and #52) against the simulated
-/// backend: the grid and level from the quick-controls tray, the histogram and live readout with
+/// backend: the grid and level from Q, the quick menu, the histogram and live readout with
 /// the manual controls, their switches in Settings and Pro Tools, and accessibility audits of
 /// each state at the default and largest text sizes and right-to-left.
 final class OverlayUITests: XCTestCase {
@@ -63,22 +63,67 @@ final class OverlayUITests: XCTestCase {
             // scroll at the largest text size the audit reports such Dynamic Type findings for
             // rows it pushed past the edge. Findings on real elements still fail.
             if issue.element == nil && [.contrast, .textClipped, .dynamicType].contains(issue.auditType) { continue }
-            if let element = issue.element, element.exists, !window.contains(element.frame) { continue }
-            if let element = issue.element, element.exists, belowTheFold.contains(element.label) { continue }
-            if issue.auditType == .contrast, let element = issue.element, element.exists, element.frame.minY < barBottom { continue }
+            // Text of the camera screen cut by the edge of the Settings popover on iPad.
+            if NopeAppUITests.isTextCutByAPopover(issue, in: app) { continue }
+            let element = issue.currentElement
+            if let element, !window.contains(element.frame) { continue }
+            if let element, belowTheFold.contains(element.label) { continue }
+            if issue.auditType == .contrast, let element, element.frame.minY < barBottom { continue }
             // In the scrolling layout the shutter row is pinned over the bottom of the scroll
             // view; an element partly under it is measured against the shutter row.
-            if let visibleBottom, let element = issue.element, element.exists, element.frame.maxY > visibleBottom { continue }
-            XCTFail("\(issue.compactDescription): \(issue.element?.debugDescription ?? "no element")", file: file, line: line)
+            if let visibleBottom, let element, element.frame.maxY > visibleBottom { continue }
+            if isMeasuredGridStyleFinding(issue) { continue }
+            XCTFail(issue.failureDescription, file: file, line: line)
         }
     }
 
-    /// Opens the quick-controls tray.
+    /// Whether an issue is the audit's "Dynamic Type font sizes are partially unsupported"
+    /// finding on the Grid Style text (`settings.overlays.gridStyle`) in
+    /// `testOverlaySettingsAtTheLargestTextSize`, an exception the owner approved after the
+    /// third code review of 1.0.0 (S5; docs/TESTING.md). The inline picker's label is the
+    /// section's title, and the audit reports it at the largest text size on the iPhone 18 Pro
+    /// Simulator, while `testGridStyleTextGrowsAtEveryTextSize` measures it growing at every
+    /// size, from 52 points high at Large to 93.3 at the largest (iOS 27.2, 2026-11-19). Only
+    /// this type, on this text, in this test; every other finding still fails.
+    @MainActor
+    private func isMeasuredGridStyleFinding(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
+        guard name.contains("testOverlaySettingsAtTheLargestTextSize"), issue.auditType == .dynamicType,
+            let element = issue.currentElement
+        else { return false }
+        return element.identifier == "settings.overlays.gridStyle" && element.label == "Grid Style"
+    }
+
+    /// Q, the quick menu that replaced the quick-controls tray (docs/design/BUILD-SPEC.md, 3.6).
+    @MainActor
+    private func quickMenuButton(_ app: XCUIApplication) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "identifier == 'quickMenuButton' OR label == 'Quick Menu'")).firstMatch
+    }
+
+    /// Opens Q.
     @MainActor
     private func openTray(_ app: XCUIApplication) {
-        let tray = app.buttons["Quick Controls"]
-        XCTAssertTrue(tray.waitForExistence(timeout: 10))
-        tray.tap()
+        let quick = quickMenuButton(app)
+        XCTAssertTrue(quick.waitForExistence(timeout: 10))
+        quick.tap()
+    }
+
+    /// Opens Settings: from its button in the iPad's column, otherwise from Q.
+    @MainActor
+    private func openSettings(_ app: XCUIApplication) {
+        let settings = app.buttons["Settings"]
+        if !settings.exists {
+            openTray(app)
+            // At the largest text sizes Settings is the last row of Q's list, created only as
+            // it scrolls into view.
+            var swipes = 0
+            while !(settings.exists && settings.isHittable) && swipes < 8 {
+                app.swipeUp()
+                swipes += 1
+            }
+            XCTAssertTrue(settings.exists)
+        }
+        settings.tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
     }
 
     @MainActor
@@ -97,15 +142,18 @@ final class OverlayUITests: XCTestCase {
 
         let grid = app.buttons["Grid"]
         grid.tap()
-        let spiral = app.buttons["Golden Spiral"]
-        XCTAssertTrue(spiral.waitForExistence(timeout: 5))
-        spiral.tap()
-        // The tray stays open after a menu choice; the tray itself is audited with every item
-        // in NopeAppUITests.testQuickControlsTrayOpensAndCloses.
+        // The golden grids were removed (issue #76); 4 × 4 is a menu choice like them.
+        let fourByFour = app.buttons["4 × 4"]
+        XCTAssertTrue(fourByFour.waitForExistence(timeout: 5))
+        fourByFour.tap()
+        // Q stays open after a menu choice; Q itself is audited with every tile in
+        // QuickMenuUITests.
         let hide = app.buttons["Hide Controls"]
+        XCTAssertTrue(hide.waitForExistence(timeout: 5))
+        XCTAssertEqual(grid.value as? String, "4 × 4")
         for _ in 0..<3 where hide.exists {
-            app.buttons["Quick Controls"].tap()
-            _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Tray closes")], timeout: 1)
+            quickMenuButton(app).tap()
+            _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Q closes")], timeout: 1)
         }
         XCTAssertFalse(hide.exists)
         try audit(app)
@@ -147,13 +195,13 @@ final class OverlayUITests: XCTestCase {
         try audit(app)
 
         // Clean view hides both; the guides and peaking would stay.
-        app.buttons["Quick Controls"].tap()
+        openTray(app)
         app.buttons["Hide Controls"].tap()
         XCTAssertFalse(histogram.waitForExistence(timeout: 2))
         XCTAssertFalse(app.otherElements["Live Camera Readout"].exists)
     }
 
-    /// The readout pinned from the quick-controls tray stays in clean view (issue #52).
+    /// The readout pinned from Q stays in clean view (issue #52).
     @MainActor
     func testPinnedReadoutStaysInCleanView() throws {
         let app = launch("manual", ["-NopeSettings.overlays.showsLiveReadout", "YES"])
@@ -210,15 +258,10 @@ final class OverlayUITests: XCTestCase {
     @MainActor
     func testOverlaySettingsAndProTools() throws {
         let app = launch("manual", ["-NopeSettings.showsManualControls", "YES", "-NopeSettings.overlays.showsLiveReadout", "YES"])
-        app.buttons["Settings"].tap()
-        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Viewfinder Overlays'")).firstMatch
-        var swipes = 0
-        while !row.isHittable && swipes < 6 {
-            app.swipeUp()
-            swipes += 1
-        }
-        row.tap()
-        XCTAssertTrue(app.navigationBars["Viewfinder Overlays"].waitForExistence(timeout: 5))
+        // Short drags inside the popover, not full swipes: on iPad a swipe flung the lazy list
+        // past the row, which the list then removed, so the row was never found (docs/TESTING.md,
+        // "Findings on an element that is gone").
+        openOverlaySettings(app)
         // Dynamic Type is audited at the largest size (testOverlaySettingsAtTheLargestTextSize):
         // at the default size the iOS 27.2 Simulator reports form rows as "partially
         // unsupported", as for the other settings screens (NopeAppUITests). iPad: Settings is a
@@ -231,18 +274,19 @@ final class OverlayUITests: XCTestCase {
         gridSwitch.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
         XCTAssertEqual(gridSwitch.value as? String, "1")
 
-        let spiral = app.buttons["Golden Spiral"].firstMatch
+        // A grid style; the golden grids and Turn Spiral were removed (issue #76).
+        let fourByFour = app.buttons["4 × 4"].firstMatch
+        let popover = app.popovers.firstMatch
+        let page: XCUIElement = popover.exists ? popover : app
         var styleSwipes = 0
-        while !(spiral.exists && spiral.isHittable) && styleSwipes < 6 {
-            app.swipeUp()
+        while !(fourByFour.exists && fourByFour.isHittable && page.frame.contains(fourByFour.frame)) && styleSwipes < 12 {
+            scrollUp(page)
             styleSwipes += 1
         }
-        spiral.tap()
-        let turn = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Turn Spiral'")).firstMatch
-        XCTAssertTrue(turn.waitForExistence(timeout: 5))
-        XCTAssertTrue(turn.label.contains("1 of 8"))
-        turn.tap()
-        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS '2 of 8'")).firstMatch.waitForExistence(timeout: 5))
+        fourByFour.tap()
+        XCTAssertTrue(fourByFour.isSelected)
+        XCTAssertFalse(app.buttons["Golden Spiral"].exists)
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label CONTAINS 'Turn Spiral'")).firstMatch.exists)
         try audit(app, checksDynamicType: false, checksContrast: UIDevice.current.userInterfaceIdiom != .pad)
 
         // Pro Tools has the live aid switches too.
@@ -262,14 +306,84 @@ final class OverlayUITests: XCTestCase {
         }
     }
 
+    /// Opens Settings › Viewfinder Overlays, scrolling Settings itself: on iPad it is a popover,
+    /// which a swipe outside it would close.
+    @MainActor
+    private func openOverlaySettings(_ app: XCUIApplication) {
+        openSettings(app)
+        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Viewfinder Overlays'")).firstMatch
+        let popover = app.popovers.firstMatch
+        let list: XCUIElement = popover.waitForExistence(timeout: 2) ? popover : app
+        // Inside the popover's frame: below it, a row of the lazy list still reads as hittable.
+        var swipes = 0
+        while !(row.exists && row.isHittable && list.frame.contains(row.frame)) && swipes < 40 {
+            scrollUp(list)
+            swipes += 1
+        }
+        row.tap()
+        XCTAssertTrue(app.navigationBars["Viewfinder Overlays"].waitForExistence(timeout: 5))
+    }
+
+    /// Scrolls a list up by about a third of its height: a swipe can pass a row of a lazy list
+    /// in the iPad's popover, which then removes it.
+    @MainActor
+    private func scrollUp(_ element: XCUIElement) {
+        element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+            .press(forDuration: 0.05, thenDragTo: element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)))
+    }
+
+    /// The "Grid Style" text grows at every text size, the measurement behind the audit's
+    /// Dynamic Type finding on it (third review of 1.0.0, S5; docs/TESTING.md): its height at
+    /// each size from Large to the largest, attached to the result, each taller than the last.
+    @MainActor
+    func testGridStyleTextGrowsAtEveryTextSize() throws {
+        let categories = [
+            "L", "XL", "XXL", "XXXL", "AccessibilityM", "AccessibilityL", "AccessibilityXL", "AccessibilityXXL",
+            "AccessibilityXXXL",
+        ]
+        var previous: CGFloat?
+        var measured: [String] = []
+        for category in categories {
+            let app = launch("manual", [
+                "-NopeSettings.overlays.showsGrid", "YES", "-NopeSettings.overlays.gridStyle", "fourByFour",
+                "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategory" + category,
+            ])
+            openOverlaySettings(app)
+            let title = app.staticTexts["Grid Style"]
+            let popover = app.popovers.firstMatch
+            let page: XCUIElement = popover.exists ? popover : app
+            var swipes = 0
+            while !(title.exists && title.isHittable && page.frame.contains(title.frame)) && swipes < 12 {
+                scrollUp(page)
+                swipes += 1
+            }
+            XCTAssertTrue(title.exists, category)
+            let frame = title.frame
+            measured.append("\(category): \(frame.width) × \(frame.height)")
+            if let previous { XCTAssertGreaterThan(frame.height, previous, "Grid Style isn't taller at \(category)") }
+            previous = frame.height
+            if category == categories.last {
+                let shot = XCTAttachment(screenshot: app.screenshot())
+                shot.name = "Grid Style at the largest text size"
+                shot.lifetime = .keepAlways
+                add(shot)
+            }
+            app.terminate()
+        }
+        let attachment = XCTAttachment(string: measured.joined(separator: "\n"))
+        attachment.name = "Grid Style heights"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
     @MainActor
     func testOverlaySettingsAtTheLargestTextSize() throws {
         // The readout on, so its Keep Readout in Clean View switch is audited too.
         let app = launch("manual", Self.largestTextSize + [
-            "-NopeSettings.overlays.showsGrid", "YES", "-NopeSettings.overlays.gridStyle", "goldenSpiral",
+            "-NopeSettings.overlays.showsGrid", "YES", "-NopeSettings.overlays.gridStyle", "fourByFour",
             "-NopeSettings.overlays.showsLiveReadout", "YES",
         ])
-        app.buttons["Settings"].tap()
+        openSettings(app)
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Viewfinder Overlays'")).firstMatch
         var swipes = 0
         while !row.isHittable && swipes < 10 {

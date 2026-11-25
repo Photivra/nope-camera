@@ -83,9 +83,7 @@ extension NopeAppUITests {
         continuePastFirstRun(app)
         assertAppearance(app, isLight: false, "the camera")
 
-        let settingsButton = app.buttons["Settings"]
-        settingsButton.tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        openSettings(app)
         assertAppearance(app, isLight: true, in: presentedSample(app, navigationBar: "Settings"), "Settings")
         app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Formats")).firstMatch.tap()
         XCTAssertTrue(app.navigationBars["Formats"].waitForExistence(timeout: 5))
@@ -101,7 +99,7 @@ extension NopeAppUITests {
         assertAppearance(app, isLight: true, in: presentedSample(app, navigationBar: "Formats"), "Formats back in light")
         app.navigationBars.buttons.element(boundBy: 0).tap()
         app.buttons["Done"].tap()
-        XCTAssertTrue(settingsButton.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Settings"].waitForNonExistence(timeout: 5))
         assertAppearance(app, isLight: false, "the camera after Settings")
 
         quickControl(app, "Presets")
@@ -117,16 +115,13 @@ extension NopeAppUITests {
         useAppearance(.light)
         let app = launch("allow")
         continuePastFirstRun(app)
-        let settingsButton = app.buttons["Settings"]
         useAppearance(.dark)
-        settingsButton.tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        openSettings(app)
         assertAppearance(app, isLight: false, in: presentedSample(app, navigationBar: "Settings"), "Settings in dark")
         app.buttons["Done"].tap()
-        XCTAssertTrue(settingsButton.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Settings"].waitForNonExistence(timeout: 5))
         useAppearance(.light)
-        settingsButton.tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        openSettings(app)
         assertAppearance(app, isLight: true, in: presentedSample(app, navigationBar: "Settings"), "Settings in light")
     }
 
@@ -137,8 +132,7 @@ extension NopeAppUITests {
         let app = launch("allow")
         XCTAssertTrue(app.buttons["Continue"].waitForExistence(timeout: 10))
         assertAppearance(app, isLight: false, "first run")
-        app.buttons["Settings"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        openSettings(app)
         assertAppearance(app, isLight: false, in: presentedSample(app, navigationBar: "Settings"), "Settings")
     }
 
@@ -151,9 +145,13 @@ extension NopeAppUITests {
         continuePastFirstRun(app)
 
         openPhotoDetails(app)
-        XCTAssertTrue(app.staticTexts["Files"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Exposure"].waitForExistence(timeout: 5))
         assertAppearance(app, isLight: false, "What's in This Photo")
+        // Done returns to the Last Photo viewer, and Close to the camera.
         app.buttons["Done"].tap()
+        let close = app.buttons["Close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 5))
+        close.tap()
         XCTAssertTrue(app.buttons["Photo Format"].waitForExistence(timeout: 5))
 
         app.buttons["Photo Format"].tap()
@@ -169,7 +167,7 @@ extension NopeAppUITests {
 
         let manual = launch("manual", extraArguments: ["-NopeSettings.showsManualControls", "YES"])
         manualMenu(manual, "Pro Tools")
-        XCTAssertTrue(manual.switches["Bracketing"].waitForExistence(timeout: 20))
+        XCTAssertTrue(manual.staticTexts["Metering"].waitForExistence(timeout: 20))
         assertAppearance(manual, isLight: false, "Pro Tools")
     }
 

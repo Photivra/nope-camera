@@ -36,7 +36,8 @@ struct SystemDeviceStatusReader: DeviceStatusReading {
     }
 }
 
-/// The screen's brightness and idle timer through UIKit, for interval shooting (issue #48).
+/// The screen's brightness and idle timer through UIKit, for interval shooting (issue #48) and
+/// Keep Screen On (issue #97).
 @MainActor
 final class SystemScreen: ScreenControlling {
     /// The screen of the app's window (`UIWindowScene.screen`), or `nil` before it appears.

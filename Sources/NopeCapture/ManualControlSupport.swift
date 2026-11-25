@@ -27,7 +27,7 @@ struct ManualControlSupport: Equatable, Sendable {
     let lensPositionFocus: Bool
     /// `isLockingWhiteBalanceWithCustomDeviceGainsSupported`.
     let customWhiteBalance: Bool
-    /// iOS 26: `isExposureRectOfInterestSupported`.
+    /// `isExposureRectOfInterestSupported`.
     let exposureRegion: Bool
     /// `isFocusPointOfInterestSupported`.
     let focusPoint: Bool
@@ -196,25 +196,69 @@ struct WhiteBalanceGains: Equatable, Sendable {
 }
 
 /// Lets through at most one reading per interval, so the camera's readings reach the interface
-/// at a reduced rate (AGENTS.md, "Battery").
+/// at a reduced rate (AGENTS.md, "Battery"), and makes sure the last one is not lost.
+///
+/// A reading is triggered by a change the camera reports. When changes stop inside an interval
+/// (the lens comes to rest at its nearest position, autofocus stops searching), the last change
+/// would otherwise never be sent, and the close-up hint would judge an old reading
+/// (docs/design/device-feedback-1.0.md, section 6). So a reading held back schedules one more,
+/// at the end of the interval, that reads the camera's values then.
 struct ReadingThrottle: Sendable {
     /// The shortest time between two readings, in seconds: four readings a second, enough for
     /// a meter that a person reads.
     static let interval = 0.25
 
+    /// What to do with a reading.
+    enum Decision: Equatable, Sendable {
+        /// Send it now.
+        case send
+        /// Hold it back, and call ``sendsLater(_:at:)`` with the ticket after the delay, in
+        /// seconds: a reading of the values then is sent, unless one was sent since.
+        case later(delay: Double, ticket: Int)
+        /// Hold it back: a later reading is already scheduled.
+        case drop
+    }
+
     /// When the last reading was let through, in seconds, or `nil` before the first.
     private var lastTime: Double?
+
+    /// The ticket of the reading scheduled for later, or `nil` when none is.
+    private var pendingTicket: Int?
+
+    /// The number of the next ticket.
+    private var nextTicket = 0
 
     /// Creates a throttle that lets the first reading through.
     init() {}
 
-    /// Whether a reading at a time should be sent, and records it if so.
+    /// What to do with a reading at a time, recorded.
     ///
     /// - Parameter time: The time of the reading, in seconds on any steady clock.
-    /// - Returns: `true` for the first reading and for each one at least ``interval`` after the
-    ///   last one let through.
-    mutating func shouldSend(at time: Double) -> Bool {
-        if let lastTime, time - lastTime < Self.interval { return false }
+    /// - Returns: ``Decision/send`` for the first reading and for each one at least
+    ///   ``interval`` after the last one sent; otherwise ``Decision/later(delay:ticket:)`` once,
+    ///   then ``Decision/drop`` until that one is due.
+    mutating func decide(at time: Double) -> Decision {
+        guard let lastTime, time - lastTime < Self.interval else {
+            lastTime = time
+            pendingTicket = nil
+            return .send
+        }
+        guard pendingTicket == nil else { return .drop }
+        let ticket = nextTicket
+        nextTicket += 1
+        pendingTicket = ticket
+        return .later(delay: lastTime + Self.interval - time, ticket: ticket)
+    }
+
+    /// Whether the reading scheduled with a ticket should be sent now, recorded.
+    ///
+    /// - Parameters:
+    ///   - ticket: The ticket from ``decide(at:)``.
+    ///   - time: The time now, in seconds on the same clock.
+    /// - Returns: `true` when it is still the scheduled one: no reading was sent since.
+    mutating func sendsLater(_ ticket: Int, at time: Double) -> Bool {
+        guard pendingTicket == ticket else { return false }
+        pendingTicket = nil
         lastTime = time
         return true
     }

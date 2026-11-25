@@ -2,8 +2,10 @@ import NopeCore
 import SwiftUI
 
 /// The settings presets (issue #72): Factory Defaults and the saved presets, each applied with
-/// one tap, the result of the last apply with an Undo button, and links to save the current
-/// settings and to rename or delete saved presets.
+/// one tap, the result of the last apply with an Undo button, and a link to save the current
+/// settings. Each saved preset has a More menu (Rename, Delete), with the same two as swipe and
+/// VoiceOver actions; Rename pushes the Rename Preset page and Delete asks first
+/// (`docs/design/BUILD-SPEC.md`, 3.9). No page is more than two levels below Settings.
 ///
 /// The same list opens from Settings (pushed) and from the Presets item of the quick-controls
 /// tray (``PresetsSheet``), and applying works the same from both. A preset is applied only when
@@ -24,6 +26,16 @@ struct PresetsScreen: View {
     /// Whether the last Undo changed nothing, so the result says so.
     @State private var undoFailed = false
 
+    /// The preset being renamed, whose Rename Preset page is pushed, or `nil`.
+    @State private var renaming: UUID?
+
+    /// Where Settings is, to scroll to a row search opened, or `nil` outside Settings.
+    @Environment(SettingsNavigation.self) private var navigation: SettingsNavigation?
+
+    /// What assistants did since the app opened, or `nil` in the Lock Screen camera: told when
+    /// Factory Defaults removed the tip's counter.
+    @Environment(\.assistantSession) private var assistantSession
+
     /// Creates the list.
     ///
     /// - Parameters:
@@ -38,7 +50,7 @@ struct PresetsScreen: View {
 
     /// The list.
     var body: some View {
-        List {
+        NopeList {
             if let result = presets.lastResult {
                 resultSection(result)
             }
@@ -46,8 +58,13 @@ struct PresetsScreen: View {
                 applyButton(.factoryDefaults) {
                     SettingLabel(title: PresetText.factoryDefaults, explanation: PresetText.factoryDefaultsExplanation)
                 }
+                .settingsRow(.factoryDefaults)
                 ForEach(presets.saved) { preset in
-                    applyButton(.saved(preset.id)) { Text(verbatim: preset.name) }
+                    PresetRow(
+                        preset: preset,
+                        apply: { apply(.saved(preset.id)) },
+                        rename: { renaming = preset.id },
+                        delete: { presets.delete(preset.id) })
                 }
             } header: {
                 Text("Apply a Preset", bundle: .module, comment: "Header of the list of settings presets: tapping one applies all of its settings.")
@@ -60,23 +77,23 @@ struct PresetsScreen: View {
                 NavigationLink {
                     PresetNameScreen(presets: presets, camera: camera, editing: nil)
                 } label: {
-                    Text("Save Current Settings", bundle: .module, comment: "Link that saves every current setting as a new named preset.")
+                    Text(SettingsText.saveCurrentSettings)
                 }
-                if !presets.saved.isEmpty {
-                    NavigationLink {
-                        EditPresetsScreen(presets: presets, camera: camera)
-                    } label: {
-                        Text("Rename or Delete", bundle: .module, comment: "Link to the list of saved presets, where each can be renamed or deleted.")
-                    }
-                }
+                .settingsRow(.saveCurrentSettings)
             } footer: {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: NopeSpace.xs) {
                     Text("A preset holds every setting: photos, privacy, camera, and the lens, exposure and drive mode. A preset that includes Location still asks for location access.", bundle: .module, comment: "Explains what a settings preset contains. Location is the name of the privacy switch.")
-                    Text("Presets are kept on this device only.", tableName: "Honesty", bundle: .module, comment: "Privacy note under the settings presets. Must not claim more than the English.")
+                    Text("nope. doesn't sync or send presets. Your device backups include them, like other app settings.", tableName: "Honesty", bundle: .module, comment: "Privacy note under the settings presets. Must not claim more than the English.")
                 }
             }
         }
         .navigationTitle(PresetText.title)
+        .navigationDestination(item: $renaming) { id in
+            if let preset = presets.saved.first(where: { $0.id == id }) {
+                PresetNameScreen(presets: presets, camera: camera, editing: preset)
+            }
+        }
+        .modifier(SettingsScrollTarget(navigation: navigation, page: .presets))
         .onChange(of: presets.lastResult) { _, result in
             guard let result else { return }
             AccessibilityNotification.Announcement(PresetText.summary(of: result)).post()
@@ -88,7 +105,7 @@ struct PresetsScreen: View {
     /// - Parameter result: The last result.
     private func resultSection(_ result: PresetApplyResult) -> some View {
         Section {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: NopeSpace.xxs) {
                 Text(PresetText.summary(of: result))
                     .font(.headline)
                 ForEach(result.notices, id: \.self) { notice in
@@ -128,10 +145,7 @@ struct PresetsScreen: View {
     ///   - label: Its name.
     private func applyButton(_ choice: PresetChoice, @ViewBuilder label: () -> some View) -> some View {
         Button {
-            Task {
-                undoFailed = false
-                await presets.apply(choice, camera: camera, location: camera?.location)
-            }
+            apply(choice)
         } label: {
             label()
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -141,23 +155,106 @@ struct PresetsScreen: View {
         .accessibilityHint(Text("Applies every setting in the preset.", bundle: .module, comment: "VoiceOver hint of a settings preset in the list."))
     }
 
-    /// The Presets row in Settings, with the number of saved presets.
+    /// Applies a preset.
+    ///
+    /// - Parameter choice: The preset.
+    private func apply(_ choice: PresetChoice) {
+        Task {
+            undoFailed = false
+            await presets.apply(choice, camera: camera, location: camera?.location)
+            // Factory Defaults removed the Assistant Access tip's counter from the store.
+            if choice == .factoryDefaults { assistantSession?.reloadTipCounter() }
+        }
+    }
+}
+
+/// A saved preset's row: its name, which applies it, and a More menu with Rename and Delete,
+/// also offered as swipe actions and VoiceOver actions. Delete asks first, in a confirmation
+/// anchored to the More button (a popover on iPad).
+struct PresetRow: View {
+    /// The preset.
+    let preset: SettingsPreset
+
+    /// Applies the preset.
+    let apply: () -> Void
+
+    /// Opens the Rename Preset page.
+    let rename: () -> Void
+
+    /// Deletes the preset, once confirmed.
+    let delete: () -> Void
+
+    /// Whether the delete confirmation is shown.
+    @State private var confirmsDelete = false
+
+    /// Creates the row.
     ///
     /// - Parameters:
-    ///   - presets: The presets.
-    ///   - settings: The settings.
-    ///   - camera: The camera, or `nil`.
-    /// - Returns: The link.
-    static func link(presets: SettingsPresets, settings: NopeSettings, camera: CameraModel?) -> some View {
-        NavigationLink {
-            PresetsScreen(presets: presets, settings: settings, camera: camera)
-        } label: {
-            LabeledContent {
-                Text(presets.saved.count, format: .number)
+    ///   - preset: The preset.
+    ///   - apply: Applies the preset.
+    ///   - rename: Opens the Rename Preset page.
+    ///   - delete: Deletes the preset, once confirmed.
+    init(preset: SettingsPreset, apply: @escaping () -> Void, rename: @escaping () -> Void, delete: @escaping () -> Void) {
+        self.preset = preset
+        self.apply = apply
+        self.rename = rename
+        self.delete = delete
+    }
+
+    /// The name and the More menu.
+    var body: some View {
+        HStack(spacing: NopeSpace.xs) {
+            Button(action: apply) {
+                Text(verbatim: preset.name)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(.rect)
+            }
+            .foregroundStyle(.primary)
+            .buttonStyle(.borderless)
+            .accessibilityHint(Text("Applies every setting in the preset.", bundle: .module, comment: "VoiceOver hint of a settings preset in the list."))
+            .accessibilityActions {
+                Button(action: rename) { PresetText.rename }
+                Button(action: { confirmsDelete = true }) { PresetText.delete }
+            }
+            Menu {
+                Button(action: rename) {
+                    Label { PresetText.rename } icon: { Image(systemName: "pencil") }
+                }
+                Button(role: .destructive) {
+                    confirmsDelete = true
+                } label: {
+                    Label { PresetText.delete } icon: { Image(systemName: "trash") }
+                }
             } label: {
-                PresetText.title
+                Image(systemName: "ellipsis")
+                    .frame(minWidth: NopeSize.minTarget, minHeight: NopeSize.minTarget)
+                    .contentShape(.rect)
+            }
+            .foregroundStyle(CameraStyle.secondaryText)
+            .accessibilityLabel(PresetText.more(preset.name))
+            .accessibilityShowsLargeContentViewer()
+            .confirmationDialog(
+                Text(PresetText.deleteTitle(preset.name)), isPresented: $confirmsDelete, titleVisibility: .visible
+            ) {
+                // The system adds Cancel, in the system's words.
+                Button(role: .destructive, action: delete) {
+                    Text("Delete Preset", bundle: .module, comment: "Button that deletes a saved settings preset. The current settings don't change.")
+                }
+            } message: {
+                Text("Deleting a preset doesn't change your current settings.", bundle: .module, comment: "Shown under the Delete Preset button.")
             }
         }
+        .swipeActions(edge: .trailing) {
+            Button(role: .destructive) {
+                confirmsDelete = true
+            } label: {
+                Label { PresetText.delete } icon: { Image(systemName: "trash") }
+            }
+            Button(action: rename) {
+                Label { PresetText.rename } icon: { Image(systemName: "pencil") }
+            }
+        }
+        .accessibilityIdentifier("settings.presets.saved.\(preset.name)")
     }
 }
 
@@ -200,43 +297,7 @@ struct PresetsSheet: View {
     }
 }
 
-/// The saved presets, each opening its rename and delete screen; swiping a row deletes it.
-struct EditPresetsScreen: View {
-    /// The presets.
-    let presets: SettingsPresets
-
-    /// The camera, or `nil`.
-    let camera: CameraModel?
-
-    /// Creates the list.
-    ///
-    /// - Parameters:
-    ///   - presets: The presets.
-    ///   - camera: The camera, or `nil`.
-    init(presets: SettingsPresets, camera: CameraModel?) {
-        self.presets = presets
-        self.camera = camera
-    }
-
-    /// The list.
-    var body: some View {
-        List {
-            ForEach(presets.saved) { preset in
-                NavigationLink {
-                    PresetNameScreen(presets: presets, camera: camera, editing: preset)
-                } label: {
-                    Text(verbatim: preset.name)
-                }
-            }
-            .onDelete { offsets in
-                for id in offsets.map({ presets.saved[$0].id }) { presets.delete(id) }
-            }
-        }
-        .navigationTitle(Text("Rename or Delete", bundle: .module, comment: "Link to the list of saved presets, where each can be renamed or deleted."))
-    }
-}
-
-/// Names a new preset, or renames or deletes a saved one.
+/// Names a new preset, or renames a saved one. Deleting is in the preset's More menu.
 struct PresetNameScreen: View {
     /// The presets.
     let presets: SettingsPresets
@@ -276,7 +337,7 @@ struct PresetNameScreen: View {
 
     /// The form.
     var body: some View {
-        Form {
+        NopeForm {
             Section {
                 // A field that grows with its text, so a long name or the largest text size is
                 // never cut off (a one-line field's placeholder failed the clipped-text audit).
@@ -299,18 +360,6 @@ struct PresetNameScreen: View {
                 // Shown only once something is typed: an empty new name isn't an error yet.
                 if let problem, !(problem == .empty && name.isEmpty) {
                     Text(PresetText.problem(problem))
-                }
-            }
-            if let editing {
-                Section {
-                    Button(role: .destructive) {
-                        presets.delete(editing.id)
-                        dismiss()
-                    } label: {
-                        Text("Delete Preset", bundle: .module, comment: "Button that deletes a saved settings preset. The current settings don't change.")
-                    }
-                } footer: {
-                    Text("Deleting a preset doesn't change your current settings.", bundle: .module, comment: "Shown under the Delete Preset button.")
                 }
             }
         }
@@ -364,6 +413,38 @@ enum PresetText {
     /// What Factory Defaults does.
     static let factoryDefaultsExplanation = Text("Every setting as on a fresh install. Saved presets are kept.", bundle: .module, comment: "Explains the Factory Defaults preset.")
 
+    /// "Rename", in a preset's More menu.
+    static let rename = Text("Rename", bundle: .module, comment: "Action in a saved preset's More menu, swipe actions and VoiceOver actions: opens the page that renames the preset.")
+
+    /// "Delete", in a preset's More menu.
+    static let delete = Text("Delete", bundle: .module, comment: "Action in a saved preset's More menu, swipe actions and VoiceOver actions: deletes the preset after asking.")
+
+    /// The More menu's name, "More for NAME".
+    ///
+    /// - Parameter name: The preset's name.
+    /// - Returns: The localized name.
+    static func more(_ name: String) -> Text {
+        Text("More for \(name)", bundle: .module, comment: "VoiceOver and Voice Control name of the menu button beside a saved preset, which holds Rename and Delete. The placeholder is the preset's name.")
+    }
+
+    /// The delete confirmation's title, "Delete “NAME”?".
+    ///
+    /// - Parameter name: The preset's name.
+    /// - Returns: The localized title.
+    static func deleteTitle(_ name: String) -> String {
+        String(localized: "Delete “\(name)”?", bundle: .module, comment: "Title of the confirmation before deleting a saved preset. The placeholder is the preset's name, in the language's quotation marks.")
+    }
+
+    /// The Presets row's value in Settings: "None Saved" or "2 Saved".
+    ///
+    /// - Parameter count: The number of saved presets.
+    /// - Returns: The localized value.
+    static func savedCount(_ count: Int) -> Text {
+        count == 0
+            ? Text("None Saved", bundle: .module, comment: "Value of the Presets row in Settings and of the Presets tile in Q: no preset is saved yet.")
+            : Text("\(count) Saved", bundle: .module, comment: "Value of the Presets row in Settings and of the Presets tile in Q: how many presets are saved. Use plural rules.")
+    }
+
     /// What a failed Undo tells the person: nothing changed, and why it can happen.
     static var undoFailed: String {
         String(localized: "Couldn't undo: the camera is busy, or the earlier settings can't be read. Nothing changed.", bundle: .module, comment: "Shown and spoken when Undo in the presets list changed nothing.")
@@ -398,7 +479,7 @@ enum PresetText {
         case .cameraNotReady:
             String(localized: "The camera isn't on, so the lens and camera values didn't change.", bundle: .module, comment: "Shown after applying a settings preset before the camera is allowed or started.")
         case .cameraBusy:
-            String(localized: "The camera is taking photos. Try again when it's done.", bundle: .module, comment: "Shown when a settings preset can't be applied during a countdown, burst, series or astro run.")
+            String(localized: "The camera is taking photos. Try again when it's done.", bundle: .module, comment: "Shown when a settings preset can't be applied, and VoiceOver hint of a dimmed lens button, during a countdown, burst, series or astro run.")
         case .unreadable:
             String(localized: "This preset can't be read.", bundle: .module, comment: "Shown when a saved settings preset is damaged and can't be applied.")
         }

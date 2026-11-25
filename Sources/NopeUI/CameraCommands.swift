@@ -7,7 +7,8 @@ import SwiftUI
 /// Command), so the shortcut can be discovered there. Return is not a shortcut: a bare Return
 /// key command, in the menu or on the shutter button, didn't fire in the iOS 27.2 Simulator's
 /// UI tests, so only Space is offered until a device check shows otherwise. The command sends `CameraIntent.capture`, which the model
-/// ignores when a photo can't be taken, and it is disabled whenever the shutter is.
+/// ignores when a photo can't be taken, and it is disabled whenever the shutter is. While the
+/// Last Photo viewer is open it closes the viewer instead and takes no photo (decision V1).
 ///
 /// Full Keyboard Access keeps the Space bar for the focused control: a key command without
 /// `wantsPriorityOverSystemBehavior` yields to system behavior (UIKit, `UIKeyCommand`).
@@ -33,12 +34,15 @@ public struct CameraCommands: Commands {
     public var body: some Commands {
         CommandMenu(Text("Camera", bundle: .module, comment: "Name of the menu with camera commands, in the iPad menu bar and keyboard shortcuts overlay.")) {
             Button {
-                Task { await model.send(.capture) }
+                // While the Last Photo viewer is open, Take Photo closes it and takes no photo, as
+                // the hardware shutter does (docs/design/BUILD-SPEC.md, 3.14, decision V1).
+                let intent: CameraIntent = model.isViewerOpen ? .setViewerOpen(false) : .capture
+                Task { await model.send(intent) }
             } label: {
                 Text("Take Photo", bundle: .module, comment: "VoiceOver and Voice Control name of the shutter button.")
             }
             .keyboardShortcut(.space, modifiers: [])
-            .disabled(!model.canPressShutter)
+            .disabled(!model.canPressShutter && !model.isViewerOpen)
         }
     }
 }

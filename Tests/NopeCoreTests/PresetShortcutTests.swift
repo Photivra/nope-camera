@@ -51,7 +51,8 @@ struct PresetShortcutTests {
 
         let outcome = await run(.applyPreset(.saved(saved.id)), on: model, presets: presets)
 
-        let result = PresetApplyResult(choice: .saved(saved.id), name: "Night tele", isApplied: true, notices: [])
+        let result = PresetApplyResult(
+            choice: .saved(saved.id), name: "Night tele", isApplied: true, notices: [], keptPrivacySettings: true)
         #expect(outcome == .presetApplied(result))
         #expect(settings.isNightModeOn)
         #expect(model.selectedLensID == "tele")
@@ -110,7 +111,8 @@ struct PresetShortcutTests {
         let outcome = await run(.applyPreset(.factoryDefaults), on: model, presets: presets)
 
         #expect(outcome == .presetApplied(
-            PresetApplyResult(choice: .factoryDefaults, name: nil, isApplied: true, notices: [.cameraNotReady])))
+            PresetApplyResult(
+                choice: .factoryDefaults, name: nil, isApplied: true, notices: [.cameraNotReady], keptPrivacySettings: true)))
         #expect(!settings.isNightModeOn)
     }
 }

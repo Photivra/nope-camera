@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nope. design: The last designs for 1.0.0</title>
+<style>
+
+:root{--bg:#f2f2f7;--card:#fff;--ink:#1c1c1e;--muted:#5f5f64;--rule:#d1d1d6;--pick:#0b6b60}
+@media (prefers-color-scheme: dark){:root{--bg:#000;--card:#1c1c1e;--ink:#f2f2f7;--muted:#a1a1a6;--rule:#3a3a3c;--pick:#5fe0d0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+main{max-width:1120px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:28px;letter-spacing:-.02em;margin:0 0 8px}
+h2{font-size:22px;letter-spacing:-.01em;margin:48px 0 8px}
+h3{font-size:17px;margin:24px 0 4px}
+p{margin:0 0 12px;max-width:820px}
+a{color:inherit}
+.muted{color:var(--muted)}
+nav.set{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0}
+nav.set a{display:inline-block;padding:6px 12px;border-radius:16px;background:var(--card);text-decoration:none;font-size:13px;font-weight:600}
+nav.set a.here{background:var(--ink);color:var(--bg)}
+ul{margin:0 0 12px;padding-left:20px;max-width:820px}li{margin:0 0 4px}
+.figs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:32px 24px;margin-top:16px;align-items:start}
+.figs.wide{grid-template-columns:repeat(auto-fill,minmax(480px,1fr))}
+.figs.small{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+figure{margin:0}
+figure img{display:block;max-width:100%;height:auto;background:#000;box-shadow:0 0 0 1px var(--rule)}
+figcaption{font-size:13px;color:var(--muted);margin-top:12px}
+figcaption b{display:block;color:var(--ink);font-size:14px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:16px 0;background:var(--card);border-radius:12px;overflow:hidden;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:8px 12px;border-bottom:1px solid var(--rule)}
+tr:last-child td{border-bottom:0}
+thead th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+code{font:13px ui-monospace,Menlo,monospace}
+.pick{border-left:4px solid var(--pick);background:var(--card);border-radius:0 12px 12px 0;padding:16px 24px;margin-top:16px}
+.pick p:last-child,.pick ul:last-child{margin-bottom:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:16px}
+.cards a{display:block;background:var(--card);border-radius:16px;padding:16px 20px;text-decoration:none}
+.cards a b{display:block;font-size:17px}.cards a span{color:var(--muted);font-size:13px}
+.sw{border-radius:12px;padding:16px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.swl{font-size:12px;color:var(--muted);margin:16px 0 4px;font-weight:600}
+.scale{display:flex;align-items:flex-end;gap:16px;margin:8px 0 16px}
+.scale div{text-align:center;font-size:12px;color:var(--muted)}
+.scale i{display:block;background:var(--ink);height:16px;margin:0 auto 4px;border-radius:1px}
+.radii{display:flex;gap:16px;margin:8px 0}
+.radii div{text-align:center;font-size:12px;color:var(--muted)}
+.radii i{display:block;width:64px;height:64px;border:2px solid var(--ink);border-bottom-color:transparent;border-right-color:transparent;margin:0 auto 4px}
+.chip2{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;box-shadow:0 0 0 1px var(--rule)}
+
+
+</style>
+</head>
+<body>
+<main>
+<h1>The last designs for 1.0.0</h1>
+<p class="muted">Proposed 2026-11-21 for release 1.0.0 and built in 1.0.0 with the owner’s decisions of 2026-11-21. Seven issues: the space between the camera’s control rows, a how-to-use guide, the summary card of What’s in This Photo, Dim After, Burst Limit, the self-timer’s deadline and interval spacing. The specification is <a href="finish-1.0.md">finish-1.0.md</a>; the plan and the decisions for the owner are in <a href="../plans/1.0.0-finish.md">docs/plans/1.0.0-finish.md</a>. All wording is a draft until the Honesty review. Sample values are examples. 30 figures.</p>
+<nav class="set"><a href="overview.html">Overview</a><a class="here" href="finish-1.0.html">The last designs for 1.0.0</a><a href="burst.html">Burst</a><a href="photo-details.html">Photo Details</a><a href="settings.html">Settings</a></nav>
+<h2>Space between the control rows (issue 116)</h2>
+<p>The picture keeps its size. The spare height below it is shared between the gap under the lens row and the shutter row, instead of all going to the shutter row. The marks at the right edge of each figure give the space between the shapes, in points; they are not part of the screen. <a href="finish-1.0.md#1-space-between-the-control-rows-issue-116">Specification</a>.</p>
+<div class="figs">
+<figure id="spacing-pro-max"><a href="screens/spacing-pro-max.html"><img src="screens/spacing-pro-max.png" width="260" alt="Control rows with the spare height shared, 440 × 956 pt" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Control rows with the spare height shared, 440 × 956 pt</b>A 440 × 956 pt iPhone (62 pt above the status line, 34 pt below the shutter row) with the rule of section 2: the gap between the lens row and the drive strip takes 15 of the 41 spare points and the shutter row keeps 26. The three spaces are 27, 25 and 19 pt; they were 12, 33 and 27 pt when the shutter row took all 41. The picture is unchanged, 440 × 587 pt, and so is every control's size.</figcaption></figure>
+<figure id="spacing-standard"><a href="screens/spacing-standard.html"><img src="screens/spacing-standard.png" width="260" alt="Control rows with the spare height shared, 402 × 874 pt" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Control rows with the spare height shared, 402 × 874 pt</b>A 402 × 874 pt iPhone has 10 spare points with its 62 pt top inset: the gap between the lens row and the drive strip takes 4 and the shutter row 6. The spaces are 16, 15 and 9 pt (12, 17 and 11 today). The picture is unchanged, 402 × 536 pt. The change is small here because the screen has little height to share; nothing is taken from the picture to make more.</figcaption></figure>
+<figure id="spacing-small"><a href="screens/spacing-small.html"><img src="screens/spacing-small.png" width="260" alt="Control rows on the smallest iPhone, 375 × 667 pt" loading="lazy"></a><figcaption><b>Control rows on the smallest iPhone, 375 × 667 pt</b>As built: a 4.7-inch iPhone has no spare height and the rows overlay the picture as before, covering no more of it. The lens controls sit 4 pt below the backing’s top edge instead of 6 and the shutter moves down 2 pt, so two rows’ targets are 8 pt apart (6 before). The spaces between the shapes are 14, 14 and 4 pt (12, 12 and 6 before).</figcaption></figure>
+</div>
+<h2>The how-to-use guide (issue 117)</h2>
+<p>A small card on the camera at first launch, a guide of seven short pages, and the rows that reopen it. <a href="finish-1.0.md#2-the-how-to-use-guide-issue-117">Specification</a>.</p>
+<div class="figs">
+<figure id="guide-invite"><a href="screens/guide-invite.html"><img src="screens/guide-invite.png" width="260" alt="The invitation on the camera, first launch" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>The invitation on the camera, first launch</b>After the first-run screen and the camera permission, the camera opens ready to shoot with one small card on the lower edge of the picture: its name, Open, and a Dismiss button. It covers no control and never the shutter row. Open shows the guide; either button puts the card away for good, and that is stored on the device only. Any other card (a drive card, a dial, a hint) takes its place while shown. Draft wording.</figcaption></figure>
+<figure id="guide-invite-night"><a href="screens/guide-invite-night.html"><img src="screens/guide-invite-night.png" width="260" alt="The invitation in night mode" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>The invitation in night mode</b>The same card in night mode: red on black, the buttons outlined.</figcaption></figure>
+<figure id="guide-page-1"><a href="screens/guide-page-1.html"><img src="screens/guide-page-1.png" width="260" alt="Guide, page 1 of 7: Take a photo" loading="lazy"></a><figcaption><b>Guide, page 1 of 7: Take a photo</b>The first page: the one thing the app is for. The picture area shows the shutter itself, drawn by the camera's own view, so nothing in it is text baked into an image. Back is absent on the first page; Close is always there. Draft wording.</figcaption></figure>
+<figure id="guide-page-2"><a href="screens/guide-page-2.html"><img src="screens/guide-page-2.png" width="260" alt="Guide, page 2 of 7: Photos as the camera took them" loading="lazy"></a><figcaption><b>Guide, page 2 of 7: Photos as the camera took them</b>The first key idea, in one sentence, with a link to Settings › Honesty for the full account. The sentence is the first-run statement's claim and no more: as little processing as the camera allows, never none. Honesty wording, draft. Draft wording.</figcaption></figure>
+<figure id="guide-page-3"><a href="screens/guide-page-3.html"><img src="screens/guide-page-3.png" width="260" alt="Guide, page 3 of 7: Private by design" loading="lazy"></a><figcaption><b>Guide, page 3 of 7: Private by design</b>The second key idea, in one sentence, with a link to Settings › Details in Each Photo. Honesty wording, draft. Draft wording.</figcaption></figure>
+<figure id="guide-page-4"><a href="screens/guide-page-4.html"><img src="screens/guide-page-4.png" width="260" alt="Guide, page 4 of 7: Lenses and manual controls" loading="lazy"></a><figcaption><b>Guide, page 4 of 7: Lenses and manual controls</b>The lens buttons and the Manual Controls button as they look on the camera. On a device with one rear lens the first sentence is left out. Draft wording.</figcaption></figure>
+<figure id="guide-page-5"><a href="screens/guide-page-5.html"><img src="screens/guide-page-5.png" width="260" alt="Guide, page 5 of 7: One photo or a series" loading="lazy"></a><figcaption><b>Guide, page 5 of 7: One photo or a series</b>The drive strip. The sentence names no mode a device may lack; the strip in the picture shows the first three words. Draft wording.</figcaption></figure>
+<figure id="guide-page-6"><a href="screens/guide-page-6.html"><img src="screens/guide-page-6.png" width="260" alt="Guide, page 6 of 7: Q and Settings" loading="lazy"></a><figcaption><b>Guide, page 6 of 7: Q and Settings</b>The Q button and where the rest is. The page describes Q and changes nothing about it. Draft wording.</figcaption></figure>
+<figure id="guide-page-7"><a href="screens/guide-page-7.html"><img src="screens/guide-page-7.png" width="260" alt="Guide, page 7 of 7: Apple Watch" loading="lazy"></a><figcaption><b>Guide, page 7 of 7: Apple Watch</b>The one page about the Apple Watch remote; there is no guide on the watch. The last page's button reads Done. Draft wording.</figcaption></figure>
+<figure id="guide-page-night"><a href="screens/guide-page-night.html"><img src="screens/guide-page-night.png" width="260" alt="Guide in night mode" loading="lazy"></a><figcaption><b>Guide in night mode</b>Page 2 in night mode: red on black, rows and buttons outlined, the link underlined so it is not marked by color alone.</figcaption></figure>
+<figure id="guide-page-largest"><a href="screens/guide-page-largest.html"><img src="screens/guide-page-largest.png" width="260" alt="Guide at the largest text size" loading="lazy"></a><figcaption><b>Guide at the largest text size</b>Page 2 at the largest accessibility text size. The text wraps and the page scrolls; Back, the page number and Next stay pinned below it, as Continue does on the first-run screen.</figcaption></figure>
+<figure id="guide-settings-row"><a href="screens/guide-settings-row.html"><img src="screens/guide-settings-row.png" width="260" alt="Where the guide is reopened" loading="lazy"></a><figcaption><b>Where the guide is reopened</b>Settings › More gains one row, How to Use nope., first in the group. The About screen has a row that opens the same guide. Both open the guide at page 1, whether or not the card was dismissed. Draft wording.</figcaption></figure>
+</div>
+<h2>The summary card of What’s in This Photo (issue 118)</h2>
+<p>One group in the style of the groups under it, with a row for each fact and one symbol column. The card as built is in <a href="screens/sheet-photo-details.html">the Photo Details figures</a>. <a href="finish-1.0.md#3-the-summary-card-of-whats-in-this-photo-issue-118">Specification</a>.</p>
+<div class="figs">
+<figure id="summary-raw"><a href="screens/summary-raw.html"><img src="screens/summary-raw.png" width="260" alt="Summary card, a RAW photo" loading="lazy"></a><figcaption><b>Summary card, a RAW photo</b>The card as one group in the style of the groups under it. The head has the format, then two lines of the same size: lens and time, pixels and file size, all on the leading edge. Under it, one row for each fact, with every symbol centered in a column of one width so the words line up: what kind of file, the signature, the optional details, the location. The signing line is two parts, the state and the reason, instead of one sentence that wraps. Draft wording.</figcaption></figure>
+<figure id="summary-processed"><a href="screens/summary-processed.html"><img src="screens/summary-processed.png" width="260" alt="Summary card, a processed and signed photo with a location" loading="lazy"></a><figcaption><b>Summary card, a processed and signed photo with a location</b>The same card for a photo from a lens without RAW, signed, with five optional details and the location. Warnings keep their triangle and words and take the amber; the signature, a verified fact, takes the teal. The order of the rows never changes. Draft wording.</figcaption></figure>
+<figure id="summary-night"><a href="screens/summary-night.html"><img src="screens/summary-night.png" width="260" alt="Summary card in night mode" loading="lazy"></a><figcaption><b>Summary card in night mode</b>Night mode: red on black, rows on the night row color. A warning is told from the other rows by its triangle and its words, not by color.</figcaption></figure>
+<figure id="summary-largest"><a href="screens/summary-largest.html"><img src="screens/summary-largest.png" width="260" alt="Summary card at the largest text size" loading="lazy"></a><figcaption><b>Summary card at the largest text size</b>The largest accessibility text size. The symbol column grows with the text, each line wraps under its own first word, and the head's lines stack. Nothing is cut off.</figcaption></figure>
+<figure id="summary-rtl"><a href="screens/summary-rtl.html"><img src="screens/summary-rtl.png" width="260" alt="Summary card, right to left" loading="lazy"></a><figcaption><b>Summary card, right to left</b>A right-to-left layout with the English text kept for reading: the symbol column moves to the right edge and the lines align right; the numbers keep their order.</figcaption></figure>
+</div>
+<h2>Dim After (issue 119)</h2>
+<p>A choice under Keep Screen On, with Never, and the note that gives its cost. <a href="finish-1.0.md#4-dim-after-issue-119">Specification</a>.</p>
+<div class="figs">
+<figure id="dim-after-row"><a href="screens/dim-after-row.html"><img src="screens/dim-after-row.png" width="260" alt="Dim After, in the Screen group" loading="lazy"></a><figcaption><b>Dim After, in the Screen group</b>Dim After is a row under Keep Screen On, always shown, with 2 Minutes, today's behavior, as its value. Keep Screen On's explanation loses its words about dimming, which now belong to this row. Only the end of the Screen group is drawn. Draft wording.</figcaption></figure>
+<figure id="dim-after-menu"><a href="screens/dim-after-menu.html"><img src="screens/dim-after-menu.png" width="260" alt="Dim After, the choices" loading="lazy"></a><figcaption><b>Dim After, the choices</b>The row opens a menu, as Pinch does in the Camera group: 1 Minute, 2 Minutes, 5 Minutes and Never, with a check mark on the one in use. Draft wording.</figcaption></figure>
+<figure id="dim-after-never"><a href="screens/dim-after-never.html"><img src="screens/dim-after-never.png" width="260" alt="Dim After set to Never" loading="lazy"></a><figcaption><b>Dim After set to Never</b>With Never chosen, the note under the row gains the cost and the two cases where the screen still dims. Keep Screen On's own explanation, above it, already gives the 30-minute limit and Battery Low. VoiceOver reads the note with the row. Honesty wording, draft.</figcaption></figure>
+<figure id="dim-after-night"><a href="screens/dim-after-night.html"><img src="screens/dim-after-night.png" width="260" alt="Dim After in night mode" loading="lazy"></a><figcaption><b>Dim After in night mode</b>The same rows in night mode.</figcaption></figure>
+</div>
+<h2>Burst Limit (issue 121)</h2>
+<p>The setting, and the burst card with a limit set. The burst card without a limit is in <a href="burst.html">Burst</a>. <a href="finish-1.0.md#5-burst-limit-issue-121">Specification</a>.</p>
+<div class="figs">
+<figure id="burst-count-setting"><a href="screens/burst-count-setting.html"><img src="screens/burst-count-setting.png" width="260" alt="Burst Limit, in the Camera group" loading="lazy"></a><figcaption><b>Burst Limit, in the Camera group</b>Burst Limit is the last row of the Camera group, a menu like Pinch: Off (the default), 3, 5, 10, 20 and 50. The explanation says what a press does with a limit and without one. Draft wording.</figcaption></figure>
+<figure id="burst-count-idle"><a href="screens/burst-count-idle.html"><img src="screens/burst-count-idle.png" width="260" alt="Burst with a limit of 10, idle" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Burst with a limit of 10, idle</b>Burst selected with Burst Limit at 10. The card's title adds the count to the speed, and its second line says what a press does now. Start Burst is not shown: a press already starts the whole burst, and VoiceOver keeps the Start Burst action. Draft wording.</figcaption></figure>
+<figure id="burst-count-running"><a href="screens/burst-count-running.html"><img src="screens/burst-count-running.png" width="260" alt="Burst with a limit of 10, running" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Burst with a limit of 10, running</b>The burst runs to its count without the shutter being held. The card shows the count against the limit and a bar; the shutter shows the stop square, as it does during a series, and a press stops the burst after the photo being taken. The rate is measured from this burst. Draft wording.</figcaption></figure>
+<figure id="burst-count-summary"><a href="screens/burst-count-summary.html"><img src="screens/burst-count-summary.png" width="260" alt="Burst with a limit of 10, finished" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Burst with a limit of 10, finished</b>The summary after the burst reached its count: saved against asked for, then the time and the measured rate. A burst stopped early reads, for example, 4 of 10 photos saved, with the reason it stopped on the second line. Draft wording.</figcaption></figure>
+</div>
+<h2>Interval, start to start (issue 123)</h2>
+<p>The sentence in Interval Shooting, and the card when photos take longer than the interval. The self-timer’s deadline (issue 122) changes nothing that can be drawn. <a href="finish-1.0.md#7-interval-photos-are-spaced-start-to-start-issue-123">Specification</a>.</p>
+<div class="figs">
+<figure id="interval-start-settings"><a href="screens/interval-start-settings.html"><img src="screens/interval-start-settings.png" width="260" alt="Interval Settings, the note under the rows" loading="lazy"></a><figcaption><b>Interval Settings, the note under the rows</b>Interval Shooting keeps its rows. The sentence under them changes from “10 seconds apart” to “starting one every 10 seconds”, so it says the interval runs from the start of one photo to the start of the next. Draft wording.</figcaption></figure>
+<figure id="interval-start-behind"><a href="screens/interval-start-behind.html"><img src="screens/interval-start-behind.png" width="260" alt="Interval, photos taking longer than the interval" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Interval, photos taking longer than the interval</b>When a photo takes longer than the interval, the next one starts as soon as the camera is ready and no photo is taken twice to catch up. The card's second line says so in place of the countdown; it goes back to Next photo in… once a photo fits its interval again. Plain text, not a warning: the series is doing what it can. Draft wording.</figcaption></figure>
+</div>
+</main>
+</body>
+</html>

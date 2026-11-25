@@ -23,6 +23,8 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         case burst
         /// The self-timer and its photo (issue #39).
         case timer
+        /// A focus bracket's frames (issue #90). Its start delay shows as the self-timer's.
+        case focusBracket
     }
 
     /// How far the run has got.
@@ -52,8 +54,11 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
     public enum Signing: String, Codable, Hashable, Sendable, CaseIterable {
         /// Every saved photo is signed.
         case allSigned
-        /// At least one saved photo isn't signed.
+        /// At least one saved photo isn't signed, although signing was on or couldn't be offered.
         case notAllSigned
+        /// No saved photo is signed, because the person has signing turned off
+        /// (``SignatureStatus/UnsignedReason/turnedOff``): the person's choice, not a problem.
+        case off
     }
 
     /// What runs.
@@ -66,8 +71,15 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
     /// counted, as on the camera screen (``IntervalProgress/taken``).
     public var taken: Int
 
-    /// The photos the run takes, or `nil` when it has no set number (a burst or the self-timer).
+    /// The photos the run takes, or `nil` when it has no set number (a burst, the self-timer, or
+    /// an interval series that stops after a time).
     public var total: Int?
+
+    /// When an interval series that stops after a time started and when it ends, or `nil`. The
+    /// system counts down to the end and fills the progress bar by time on screen, so the content
+    /// isn't updated for it. The time keeps running while the series is paused
+    /// (``IntervalProgress/timeSpan(date:now:)``).
+    public var seriesTime: ClosedRange<Date>?
 
     /// The photos saved so far.
     public var saved: Int
@@ -94,25 +106,33 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
     ///   - countdownEnd: When the countdown ends, or `nil`.
     ///   - signing: Whether the saved photos are signed, or `nil`.
     ///   - isNightMode: Whether night mode is on.
+    ///   - seriesTime: When an interval series that stops after a time started and ends, or
+    ///     `nil`.
     public init(
         kind: Kind, phase: Phase, taken: Int = 0, total: Int? = nil, saved: Int = 0, countdownEnd: Date? = nil,
-        signing: Signing? = nil, isNightMode: Bool = false
+        signing: Signing? = nil, isNightMode: Bool = false, seriesTime: ClosedRange<Date>? = nil
     ) {
         self.kind = kind
         self.phase = phase
         self.taken = taken
         self.total = total
+        self.seriesTime = seriesTime
         self.saved = saved
         self.countdownEnd = countdownEnd
         self.signing = signing
         self.isNightMode = isNightMode
     }
 
-    /// Whether the activity offers Stop: for an interval series or astro run that runs or is
-    /// paused, because they have photos still to take that Stop would prevent. Every photo
-    /// already taken is saved either way.
+    /// Whether the activity offers Stop: for an interval series, astro run or focus bracket that
+    /// runs or is paused, because they have photos still to take that Stop would prevent, and
+    /// for a focus bracket's start delay (docs/design/device-feedback-1.0.md, section 6). Every
+    /// photo already taken is saved either way.
     public var canStop: Bool {
-        (kind == .interval || kind == .astro) && (phase == .running || phase == .paused)
+        switch kind {
+        case .interval, .astro: phase == .running || phase == .paused
+        case .focusBracket: phase == .countingDown || phase == .running || phase == .paused
+        case .burst, .timer: false
+        }
     }
 
     /// Whether the run has ended, so the activity shows its final state.
@@ -145,8 +165,22 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         }
     }
 
+    /// Whether the content holds a date iOS draws from: a countdown's end (``countdownEnd``) or a
+    /// timed series' time (``seriesTime``). Such content is sent again when the device's clock
+    /// changes (``LiveActivityCoordinator/clockChanged(_:)``).
+    public var hasDates: Bool {
+        countdownEnd != nil || seriesTime != nil
+    }
+
+    /// Whether the activity shows the time left of an interval series that stops after a time,
+    /// with a progress bar by time (``seriesTime``): while the series runs or is paused.
+    public var showsTimeLeft: Bool {
+        seriesTime != nil && (phase == .running || phase == .paused)
+    }
+
     /// The main line of text: what is happening, with the counts.
     public var statusLine: LiveActivityStatusLine {
+        if seriesTime != nil, let line = timedSeriesLine { return line }
         let total = total ?? taken
         switch phase {
         case .countingDown:
@@ -154,12 +188,13 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         case .running:
             switch kind {
             case .interval: return .photosTaken(taken: taken, total: total)
-            case .astro: return .frame(number: min(taken + 1, total), total: total)
+            case .astro, .focusBracket: return .frame(number: min(taken + 1, total), total: total)
             case .burst: return .burstPhotosTaken(taken)
             case .timer: return .takingPhoto
             }
         case .paused:
-            return kind == .astro ? .framesPaused(taken: taken, total: total) : .paused(taken: taken, total: total)
+            return kind == .astro || kind == .focusBracket
+                ? .framesPaused(taken: taken, total: total) : .paused(taken: taken, total: total)
         case .saving:
             return kind == .timer ? .savingPhoto : .saving(saved: saved, taken: taken)
         case .savingPaused:
@@ -173,6 +208,18 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         }
     }
 
+    /// The status line of an interval series that stops after a time, or `nil` for a phase it
+    /// shares with other runs.
+    private var timedSeriesLine: LiveActivityStatusLine? {
+        switch phase {
+        case .running: .photosTakenTimeLeft(taken)
+        case .paused: .pausedTimeLeft(taken)
+        case .finished: .seriesDoneAfterTime(taken)
+        case .stopped: .seriesStoppedBeforeTime(taken)
+        case .countingDown, .saving, .savingPaused, .failed: nil
+        }
+    }
+
     /// The status line of a run that ended early.
     ///
     /// - Parameter total: The photos the run was to take.
@@ -182,6 +229,7 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         case .interval: .seriesStopped(taken: taken, total: total)
         case .timer: saved > 0 ? .photosSaved(saved) : .noPhotoTaken
         case .astro, .burst: .stoppedPhotosSaved(saved)
+        case .focusBracket: .bracketStopped(saved: saved, total: total)
         }
     }
 
@@ -192,6 +240,7 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         switch signing {
         case .allSigned: return .signed
         case .notAllSigned: return saved > 1 ? .notAllSigned : .notSigned
+        case .off: return .signingOff
         }
     }
 }
@@ -207,6 +256,16 @@ public enum LiveActivityStatusLine: Equatable, Sendable {
     case takingPhoto
     /// "12 of 120 photos taken": an interval series runs.
     case photosTaken(taken: Int, total: Int)
+    /// "12 photos taken · 1:12:00 left", the time counted down by the system to the end of
+    /// ``LiveActivityContent/seriesTime``: an interval series that stops after a time runs.
+    case photosTakenTimeLeft(Int)
+    /// "Paused: 12 photos taken · 1:12:00 left. Open nope. to continue.": an interval series that
+    /// stops after a time is paused, and its time keeps running.
+    case pausedTimeLeft(Int)
+    /// "Done: 120 photos taken.": an interval series that stops after a time reached its time.
+    case seriesDoneAfterTime(Int)
+    /// "Stopped: 42 photos taken.": an interval series that stops after a time ended before it.
+    case seriesStoppedBeforeTime(Int)
     /// "Frame 5 of 20": the astro helper takes this frame.
     case frame(number: Int, total: Int)
     /// "Photos taken: 12": a burst runs.
@@ -229,6 +288,9 @@ public enum LiveActivityStatusLine: Equatable, Sendable {
     case photosSaved(Int)
     /// "Stopped. Photos saved: 5."
     case stoppedPhotosSaved(Int)
+    /// "Bracket stopped: 4 of 12 photos saved", as the focus bracket's card says it: a focus
+    /// bracket ended before its last frame.
+    case bracketStopped(saved: Int, total: Int)
     /// "Stopped. No photo taken."
     case noPhotoTaken
     /// "A photo wasn't saved. Open nope. for details."
@@ -244,6 +306,9 @@ public enum LiveActivitySigningLine: Equatable, Sendable, CaseIterable {
     case notSigned
     /// "Not every photo is signed. Open nope. for details."
     case notAllSigned
+    /// "Not signed: signing is off in Settings.": signing is off by the person's choice, so the
+    /// line states it without pointing to a problem.
+    case signingOff
 }
 
 /// How long an ended Live Activity stays on the Lock Screen.

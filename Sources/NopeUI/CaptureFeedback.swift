@@ -24,6 +24,8 @@ enum CaptureMessages {
             String(localized: "Not saved: nope. isn't allowed to add photos. You can allow it in the Settings app.", bundle: .module, comment: "Shown when the person hasn't allowed the app to add photos to their photo library. Keep the name nope. unchanged, lowercase with its period.")
         case .saveFailed:
             String(localized: "Not saved: the photo library couldn't add the photo. Try again.", bundle: .module, comment: "Shown when the system photo library reported an error while adding the photo.")
+        case .bracketNotReady:
+            String(localized: "No photos were taken: the camera wasn't ready for the bracket. Try again.", bundle: .module, comment: "Shown when the shutter was pressed with an exposure bracket on, but the camera had not yet measured the exposure the bracket's photos are planned around (for example just after switching lenses), so nothing was taken.")
         case .savingUnavailable:
             String(localized: "Not saved: this version of the app can't save photos.", bundle: .module, comment: "Shown when this build of the app has no way to save photos, for example in a preview.")
         }
@@ -99,15 +101,19 @@ enum FailureAction: Equatable {
     init?(for error: CaptureError) {
         switch error {
         case .photosAccessDenied: self = .openSettings
-        case .configurationFailed, .captureFailed, .developmentFailed, .metadataNotAllowed, .saveFailed: self = .tryAgain
+        case .configurationFailed, .captureFailed, .bracketNotReady, .developmentFailed, .metadataNotAllowed, .saveFailed:
+            self = .tryAgain
         case .notRunning, .blankPicture, .savingUnavailable: return nil
         }
     }
 }
 
-/// The banner for a failed capture or save (issue #68, "Feedback tiers"): it stays until it is
-/// dismissed or the next photo is saved, takes VoiceOver focus when it appears, and offers one
-/// action, Try Again or Open Settings. Its text wraps onto as many lines as it needs.
+/// The banner for a failed capture or save (issue #68, "Feedback tiers"; docs/design/BUILD-SPEC.md,
+/// 3.7): it stays until it is dismissed or the next photo is saved, takes VoiceOver focus when it
+/// appears, and offers one action, Try Again or Open Settings. It sits on the picture's upper
+/// edge on solid black inside an amber outline, the sentence leading and the buttons trailing;
+/// at accessibility text sizes the buttons go below the sentence, which wraps onto as many lines
+/// as it needs.
 struct FailureBanner: View {
     /// What went wrong.
     let error: CaptureError
@@ -121,8 +127,17 @@ struct FailureBanner: View {
     /// Hides the banner.
     let dismiss: () -> Void
 
+    /// How far a bracket got when one of its frames couldn't be saved, or `nil`: the banner then
+    /// starts with "Bracket stopped: 2 of 3 photos saved." and offers only Dismiss, since taking
+    /// the bracket again would save the frames already saved a second time
+    /// (docs/design/BRACKETING.md, section 4).
+    let failedBracket: BracketProgress?
+
     /// Opens Settings, or `nil` when the app can't.
     @Environment(\.openAppSettings) private var openAppSettings
+
+    /// The current text size: at accessibility sizes the buttons go below the sentence.
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     /// Whether VoiceOver focus is on the banner.
     @AccessibilityFocusState private var isFocused: Bool
@@ -134,63 +149,98 @@ struct FailureBanner: View {
     ///   - canCapture: Whether the shutter can take a photo now.
     ///   - tryAgain: Takes the photo again.
     ///   - dismiss: Hides the banner.
-    init(error: CaptureError, canCapture: Bool, tryAgain: @escaping () -> Void, dismiss: @escaping () -> Void) {
+    ///   - failedBracket: How far a bracket got when a frame couldn't be saved, or `nil`.
+    init(
+        error: CaptureError, canCapture: Bool, tryAgain: @escaping () -> Void, dismiss: @escaping () -> Void,
+        failedBracket: BracketProgress? = nil
+    ) {
         self.error = error
         self.canCapture = canCapture
         self.tryAgain = tryAgain
         self.dismiss = dismiss
+        self.failedBracket = failedBracket
+    }
+
+    /// The banner's sentence: what went wrong, after how far a bracket got.
+    private var message: String {
+        let reason = CaptureMessages.message(for: error)
+        guard let failedBracket else { return reason }
+        return "\(BracketText.stopped(failedBracket)) \(reason)"
     }
 
     /// The banner.
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(CameraStyle.warning)
-                    .accessibilityHidden(true)
-                Text(verbatim: CaptureMessages.message(for: error))
-                    .font(.callout)
-                    .foregroundStyle(.white)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityFocused($isFocused)
-            }
-            HStack(spacing: CameraStyle.targetSpacing) {
-                actionButton
-                Spacer(minLength: 0)
-                Button(action: dismiss) {
-                    Image(systemName: "xmark")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: CameraStyle.minimumTarget, height: CameraStyle.minimumTarget)
-                        .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("Dismiss", bundle: .module, comment: "Button that closes the message about a photo that wasn't taken or saved."))
-                .accessibilityShowsLargeContentViewer {
-                    Label {
-                        Text("Dismiss", bundle: .module, comment: "Button that closes the message about a photo that wasn't taken or saved.")
-                    } icon: {
-                        Image(systemName: "xmark")
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: NopeSpace.xs) {
+                    sentence
+                    HStack(spacing: NopeSpace.xs) {
+                        actionButton
+                        Spacer(minLength: 0)
+                        dismissButton
                     }
+                }
+            } else {
+                HStack(alignment: .center, spacing: NopeSpace.s) {
+                    sentence
+                    VStack(alignment: .trailing, spacing: NopeSpace.xs) {
+                        actionButton
+                        dismissButton
+                    }
+                    .fixedSize()
                 }
             }
         }
-        .padding(12)
-        .darkBacking()
+        .padding(.vertical, NopeSpace.s)
+        .padding(.leading, NopeSpace.m)
+        .padding(.trailing, NopeSpace.s)
+        .nopeBackground(.solid, in: RoundedRectangle(cornerRadius: NopeRadius.large))
+        .overlay(RoundedRectangle(cornerRadius: NopeRadius.large).strokeBorder(CameraStyle.warning, lineWidth: NopeSize.warningOutline))
         .accessibilityElement(children: .contain)
         .onAppear { isFocused = true }
         .onChange(of: error) { isFocused = true }
     }
 
+    /// The triangle and what went wrong.
+    private var sentence: some View {
+        HStack(alignment: .firstTextBaseline, spacing: NopeSpace.s) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(CameraStyle.warning)
+                .accessibilityHidden(true)
+            Text(verbatim: message)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(NopeColor.label)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityFocused($isFocused)
+        }
+    }
+
+    /// Hides the banner.
+    private var dismissButton: some View {
+        Button(action: dismiss) {
+            Image(systemName: "xmark")
+                .font(.body.weight(.semibold))
+        }
+        .buttonStyle(NopeIconButtonStyle(size: NopeSize.capsule))
+        .accessibilityLabel(Text("Dismiss", bundle: .module, comment: "Button that closes the message about a photo that wasn't taken or saved."))
+        .accessibilityShowsLargeContentViewer {
+            Label {
+                Text("Dismiss", bundle: .module, comment: "Button that closes the message about a photo that wasn't taken or saved.")
+            } icon: {
+                Image(systemName: "xmark")
+            }
+        }
+    }
+
     /// Try Again or Open Settings, or nothing.
     @ViewBuilder private var actionButton: some View {
-        switch FailureAction(for: error) {
+        switch failedBracket == nil ? FailureAction(for: error) : nil {
         case .tryAgain:
             Button(action: tryAgain) {
                 Text("Try Again", bundle: .module, comment: "Button on the message about a photo that wasn't taken or saved: takes the photo again.")
             }
-            .buttonStyle(SelectableCapsuleStyle(isSelected: true))
+            .buttonStyle(NopeCapsuleStyle(isCompact: true))
             .disabled(!canCapture)
         case .openSettings:
             if let openAppSettings {
@@ -199,7 +249,7 @@ struct FailureBanner: View {
                 } label: {
                     Text("Open Settings", bundle: .module, comment: "Button that opens nope.'s page in the system Settings app, where camera or photo library access can be allowed. Keep \"nope.\" unchanged.")
                 }
-                .buttonStyle(SelectableCapsuleStyle(isSelected: true))
+                .buttonStyle(NopeCapsuleStyle(isCompact: true))
             }
         case nil:
             EmptyView()
@@ -207,14 +257,56 @@ struct FailureBanner: View {
     }
 }
 
-/// The last-photo slot beside the shutter (issue #68, "Feedback tiers"): empty and invisible
-/// until the first photo of the session, never an empty square. Then it shows the last photo with
-/// a teal seal when every file was signed, or an amber mark when one wasn't.
+/// What the Last Photo spot beside the shutter holds (docs/design/device-feedback-1.0.md,
+/// section 1).
+enum LastPhotoSpot: Equatable {
+    /// Nothing: in clean view (Show Controls has the spot), during a countdown or series before
+    /// the first photo, or where Photos can't be opened (the Lock Screen camera).
+    case nothing
+
+    /// Open Photos, which opens the Photos app: before the first photo since the app opened.
+    case openPhotos
+
+    /// The spinner, while a photo is taken or saved.
+    case saving
+
+    /// The last photo, which opens the Last Photo viewer.
+    case lastPhoto
+
+    /// What the spot holds.
+    ///
+    /// - Parameters:
+    ///   - hasPhotos: Whether a photo was saved since the app opened.
+    ///   - isBusy: Whether a photo is being taken or saved now.
+    ///   - isSeriesRunning: Whether a countdown or series runs or is paused: leaving the app for
+    ///     Photos would interrupt it.
+    ///   - isCleanView: Whether clean view hides the controls.
+    ///   - canOpenPhotos: Whether the app can open Photos (not in the Lock Screen camera).
+    /// - Returns: The content.
+    static func content(
+        hasPhotos: Bool, isBusy: Bool, isSeriesRunning: Bool, isCleanView: Bool, canOpenPhotos: Bool
+    ) -> LastPhotoSpot {
+        if isCleanView { return .nothing }
+        if isBusy { return .saving }
+        if hasPhotos { return .lastPhoto }
+        return !isSeriesRunning && canOpenPhotos ? .openPhotos : .nothing
+    }
+}
+
+/// The last-photo slot beside the shutter (issue #68, "Feedback tiers"). Before the first photo
+/// since the app opened, it holds Open Photos, which opens the Photos app; where Photos can't be
+/// opened, or while a countdown or series runs, it is empty, never an empty square
+/// (docs/design/device-feedback-1.0.md, section 1). Then it shows the last photo with
+/// a teal seal when every file was signed, or an amber mark when signing was on and a file
+/// couldn't be signed. With signing off by choice it has no badge (docs/design/BUILD-SPEC.md, 3.3
+/// and 3.7): that isn't a warning, and its value still says "Saved. Not signed: signing is off in
+/// Settings."
 ///
 /// With ``image``, it shows the photo itself (issue #36), made in memory from the saved file;
-/// without one, a photo symbol. With ``openPhoto`` or ``showDetails`` it is a button: a tap opens
-/// Photos (or the details, when the app can't open Photos), and a long press, VoiceOver and Voice
-/// Control offer both, Open in Photos and Photo Details.
+/// without one, a photo symbol. With ``openViewer`` it is a button: a tap opens the Last Photo
+/// viewer (docs/design/BUILD-SPEC.md, 3.14). VoiceOver and Voice Control also offer Open in Photos
+/// and Photo Details as actions, so both are one action away without opening the viewer; there
+/// is no touch-and-hold menu (decision V3).
 struct ThumbnailSlot: View {
     /// The photos saved by the last press of the shutter, or `nil` before the first.
     let photos: [SavedPhoto]?
@@ -225,14 +317,44 @@ struct ThumbnailSlot: View {
     /// Whether a photo is being taken or saved now.
     let isBusy: Bool
 
+    /// Opens the Last Photo viewer, or `nil` for none.
+    let openViewer: (() -> Void)?
+
     /// Opens Photos, or `nil` when the app can't.
     let openPhoto: (() -> Void)?
 
     /// Shows the photo's details (issue #53), or `nil` for none.
     let showDetails: (() -> Void)?
 
-    /// The slot's side, in points: larger than the 44-point minimum, smaller than the shutter.
-    static var side: CGFloat { 52 }
+    /// Whether a countdown or series runs or is paused, so Open Photos isn't offered.
+    let isSeriesRunning: Bool
+
+    /// The slot's side, in points: larger than the 44-point minimum, smaller than the shutter
+    /// (``NopeSize/thumbnail``).
+    static var side: CGFloat { NopeSize.thumbnail }
+
+    /// The mark on the thumbnail's corner.
+    enum Badge: Equatable {
+        /// A teal seal: every file is signed.
+        case signed
+        /// An amber triangle: signing was on and a file couldn't be signed.
+        case notSigned
+    }
+
+    /// The mark for the photos saved by one press of the shutter, or `nil` for none: a teal seal
+    /// when every file is signed, an amber triangle when one couldn't be signed while signing
+    /// was on, and nothing when signing was off by choice.
+    ///
+    /// - Parameter photos: The saved photos.
+    /// - Returns: The badge, or `nil`.
+    static func badge(for photos: [SavedPhoto]) -> Badge? {
+        guard !photos.isEmpty else { return nil }
+        if photos.allSatisfy({ $0.signature == .signed }) { return .signed }
+        let failed = photos.contains { photo in
+            if case .unsigned(let reason) = photo.signature { reason != .turnedOff } else { false }
+        }
+        return failed ? .notSigned : nil
+    }
 
     /// Creates the slot.
     ///
@@ -240,27 +362,35 @@ struct ThumbnailSlot: View {
     ///   - photos: The photos saved by the last press of the shutter, or `nil` before the first.
     ///   - image: The photo's thumbnail, or `nil` to show a photo symbol.
     ///   - isBusy: Whether a photo is being taken or saved now.
+    ///   - openViewer: Opens the Last Photo viewer, or `nil` for none.
     ///   - openPhoto: Opens Photos, or `nil` when the app can't.
     ///   - showDetails: Shows the photo's details, or `nil` for none.
+    ///   - isSeriesRunning: Whether a countdown or series runs or is paused. Defaults to `false`.
     init(
-        photos: [SavedPhoto]?, image: Image? = nil, isBusy: Bool, openPhoto: (() -> Void)? = nil,
-        showDetails: (() -> Void)? = nil
+        photos: [SavedPhoto]?, image: Image? = nil, isBusy: Bool, openViewer: (() -> Void)? = nil,
+        openPhoto: (() -> Void)? = nil, showDetails: (() -> Void)? = nil, isSeriesRunning: Bool = false
     ) {
         self.photos = photos
         self.image = image
         self.isBusy = isBusy
+        self.openViewer = openViewer
         self.openPhoto = openPhoto
         self.showDetails = showDetails
+        self.isSeriesRunning = isSeriesRunning
     }
 
-    /// Whether every saved file is signed.
-    private var isSigned: Bool {
-        photos?.allSatisfy { $0.signature == .signed } ?? false
+    /// What the slot holds now.
+    private var content: LastPhotoSpot {
+        LastPhotoSpot.content(
+            hasPhotos: photos != nil, isBusy: isBusy, isSeriesRunning: isSeriesRunning, isCleanView: false,
+            canOpenPhotos: openPhoto != nil)
     }
 
     /// The slot.
     var body: some View {
-        if isBusy {
+        if content == .openPhotos, let openPhoto {
+            OpenPhotosButton(action: openPhoto)
+        } else if isBusy {
             ProgressView {
                 Text("Saving…", bundle: .module, comment: "Shown while a photo that was just taken is being checked and added to the photo library.")
             }
@@ -268,20 +398,17 @@ struct ThumbnailSlot: View {
             .frame(width: Self.side, height: Self.side)
             .accessibilityLabel(Text("Saving…", bundle: .module, comment: "Shown while a photo that was just taken is being checked and added to the photo library."))
         } else if let photos {
-            if let action = openPhoto ?? showDetails {
-                Button(action: action) { thumbnail }
+            if let openViewer {
+                Button(action: openViewer) { thumbnail }
                     .buttonStyle(.plain)
-                    .contextMenu { menuItems }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(Self.label)
                     .accessibilityValue(Text(verbatim: CaptureMessages.message(forSaved: photos)))
+                    .accessibilityHint(PhotoViewerText.lastPhotoHint)
                     .accessibilityAddTraits([.isButton, .isImage])
                     .accessibilityActions { menuItems }
-                    // No Large Content Viewer here: at the accessibility text sizes it took the
-                    // press and hold that opens this menu, and lifting the finger then counted
-                    // as a tap, which opened Photos, so Photo Details couldn't be reached by
-                    // touch. The thumbnail is the photo itself, not a label or symbol the viewer
-                    // would enlarge; its menu items are also accessibility actions.
+                    // No Large Content Viewer: the thumbnail is the photo itself, not a label or
+                    // symbol the Large Content Viewer would enlarge.
             } else {
                 thumbnail
                     .accessibilityElement(children: .ignore)
@@ -293,11 +420,11 @@ struct ThumbnailSlot: View {
     }
 
     /// The slot's name for VoiceOver and Voice Control.
-    private static var label: Text {
+    static var label: Text {
         Text("Last Photo", bundle: .module, comment: "VoiceOver name of the small picture beside the shutter: the last photo taken in this session.")
     }
 
-    /// Open in Photos and Photo Details, for the long-press menu and the accessibility actions.
+    /// Open in Photos and Photo Details, the accessibility actions.
     @ViewBuilder private var menuItems: some View {
         if let openPhoto {
             Button(action: openPhoto) {
@@ -328,22 +455,72 @@ struct ThumbnailSlot: View {
                 } else {
                     Image(systemName: "photo")
                         .font(.title2)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(NopeColor.label)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color(white: 0.25))
+                        .background(NopeColor.controlFill)
                 }
             }
             .frame(width: Self.side, height: Self.side)
-            .clipShape(.rect(cornerRadius: 8))
-            // A dark hairline, so the thumbnail's edge shows over any scene (issue #68, "Contrast").
-            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.black.opacity(0.6), lineWidth: 1))
-            Image(systemName: isSigned ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
-                .font(.footnote)
-                .foregroundStyle(isSigned ? CameraStyle.fact : CameraStyle.warning)
-                .padding(2)
-                .background(.black, in: .circle)
-                .offset(x: 6, y: 6)
+            .clipShape(.rect(cornerRadius: NopeRadius.small))
+            // A light ring, so the thumbnail's edge shows against the black row and any scene
+            // (issue #68, "Contrast").
+            .overlay(RoundedRectangle(cornerRadius: NopeRadius.small).strokeBorder(NopeColor.stripIdle, lineWidth: NopeSize.warningOutline))
+            if let badge = photos.flatMap(Self.badge(for:)) {
+                Image(systemName: badge == .signed ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(badge == .signed ? CameraStyle.fact : CameraStyle.warning)
+                    .padding(NopeSpace.xxs / 2)
+                    .background(.black, in: .circle)
+                    .padding(NopeSpace.xxs / 2)
+            }
         }
         .accessibilityIgnoresInvertColors()
+    }
+}
+
+/// Open Photos, in the Last Photo spot before the first photo since the app opened
+/// (docs/design/device-feedback-1.0.md, section 1): the thumbnail's size and corner, the fill of
+/// a control, and the symbol Open in Photos uses. No ring: the ring belongs to a photo. It opens
+/// the Photos app where the person left it; the app can't read the library or name a photo, so
+/// nothing here says it shows the last photo.
+struct OpenPhotosButton: View {
+    /// Opens the Photos app.
+    let action: () -> Void
+
+    /// Creates the button.
+    ///
+    /// - Parameter action: Opens the Photos app.
+    init(action: @escaping () -> Void) {
+        self.action = action
+    }
+
+    /// The button's name for VoiceOver, Voice Control and the Large Content Viewer.
+    static var label: Text {
+        Text("Open Photos", bundle: .module, comment: "Button in the Last Photo spot beside the shutter, before the first photo since nope. opened: opens the Photos app. Photos is the system photo library app. Draft for the Honesty review.")
+    }
+
+    /// The button.
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "photo.on.rectangle")
+                .font(.title3.weight(.semibold))
+        }
+        .buttonStyle(NopeIconButtonStyle(size: ThumbnailSlot.side, cornerRadius: NopeRadius.small))
+        .accessibilityLabel(Self.label)
+        .accessibilityInputLabels([
+            Self.label,
+            // Its own key: "Photos" alone is the interval series' picker.
+            Text(String(localized: "Open Photos: second name", defaultValue: "Photos", bundle: .module, comment: "Second Voice Control name of the Open Photos button beside the shutter. Photos is the system photo library app.")),
+        ])
+        .accessibilityHint(
+            Text("Opens the Photos app.", bundle: .module, comment: "VoiceOver hint of the Open Photos button beside the shutter. Photos is the system photo library app. Draft for the Honesty review."))
+        .accessibilityShowsLargeContentViewer {
+            Label {
+                Self.label
+            } icon: {
+                Image(systemName: "photo.on.rectangle")
+            }
+        }
+        .accessibilityIdentifier("openPhotos")
     }
 }

@@ -177,6 +177,932 @@ static let none: AssistSettings
 
 No aids: the camera's defaults.
 
+## `AssistantAccess`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+struct AssistantAccess
+```
+
+The Assistant Access check (issue #82): the one rule every assistant entry point asks before
+it runs, from the person's two settings and whether the device is locked
+(`docs/design/assistant-access.md`, sections 3.3 and 4).
+
+The app's intents read it inside `perform()` (``AssistantSession/perform(_:access:confirm:run:)``),
+and the preset query reads ``offersPresetNames`` before it lists any saved preset. Nothing
+outside this type decides who may run what.
+
+```swift
+let access = settings.assistantAccess(deviceIsLocked: false)
+switch access.decision(for: .takePhoto) {
+case .refuse, .requiresUnlock: break // answer, change nothing
+case .ask: break // confirm, then run
+case .run: break
+}
+```
+
+## `AssistantAccess/ask`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+var ask: AssistantAskLevel
+```
+
+When to ask first (``NopeSettings/assistantAsk``). Kept while access is off.
+
+## `AssistantAccess/decision(for:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+func decision(for action: AssistantAction) -> AssistantDecision
+```
+
+What to do with a request for an action.
+
+- Parameter action: The entry point.
+- Returns: The decision for its kind.
+
+## `AssistantAccess/decision(for:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+func decision(for kind: AssistantActionKind) -> AssistantDecision
+```
+
+What to do with a request of a kind.
+
+`.opensScreen` and `.pressedByPerson` always run. A gated kind is refused while access is
+off, needs an unlock while the device is locked, and otherwise asks or runs as
+``ask`` says.
+
+- Parameter kind: The entry point's kind.
+- Returns: The decision.
+
+## `AssistantAccess/deviceIsLocked`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+var deviceIsLocked: Bool
+```
+
+Whether the device is locked now. Every gated action requires an unlocked device.
+
+## `AssistantAccess/init(isOn:ask:deviceIsLocked:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+init(isOn: Bool, ask: AssistantAskLevel, deviceIsLocked: Bool = false)
+```
+
+Creates the check.
+
+- Parameters:
+  - isOn: Whether Assistant Access is on.
+  - ask: When to ask first.
+  - deviceIsLocked: Whether the device is locked now.
+
+## `AssistantAccess/isOn`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+var isOn: Bool
+```
+
+Whether Assistant Access is on (``NopeSettings/assistantAccess``).
+
+## `AssistantAccess/offeredPresets(_:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+func offeredPresets(_ saved: [SettingsPreset]) -> [SettingsPreset]
+```
+
+The saved presets an assistant may see.
+
+- Parameter saved: The person's saved presets.
+- Returns: All of them while access is on; none while it is off.
+
+## `AssistantAccess/offersPresetNames`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+var offersPresetNames: Bool { get }
+```
+
+Whether the names of saved presets may be offered to assistants: only while access is
+on (`docs/design/assistant-access.md`, section 8). Factory Defaults, a fixed name, is
+always offered.
+
+## `AssistantAction`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+enum AssistantAction
+```
+
+One of the app's entry points for Siri, Shortcuts, other assistants and the system's
+controls (`docs/design/assistant-access.md`, section 7). The raw value names it in the
+session record and in `security/assistant-entry-points.txt`.
+
+## `AssistantAction/applyPreset`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case applyPreset
+```
+
+Apply Preset.
+
+## `AssistantAction/isGated`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+var isGated: Bool { get }
+```
+
+Whether the action goes through the check: it takes photos or changes something.
+
+## `AssistantAction/kind`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+var kind: AssistantActionKind { get }
+```
+
+The action's kind.
+
+## `AssistantAction/liveActivityStop`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case liveActivityStop
+```
+
+The Live Activity's Stop button.
+
+## `AssistantAction/nightModeControl`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case nightModeControl
+```
+
+The Control Center and Lock Screen Night Mode control.
+
+## `AssistantAction/openAssistantAccess`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case openAssistantAccess
+```
+
+Open Assistant Access: opens Settings at the page.
+
+## `AssistantAction/openCamera`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case openCamera
+```
+
+Open the Camera, also the "Open nope." control.
+
+## `AssistantAction/setFastShutter`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case setFastShutter
+```
+
+Set Fast Shutter.
+
+## `AssistantAction/setFocusOnFaces`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case setFocusOnFaces
+```
+
+Set Focus on Faces.
+
+## `AssistantAction/setFocusRange`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case setFocusRange
+```
+
+Set Focus Range.
+
+## `AssistantAction/setNightMode`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case setNightMode
+```
+
+Set Night Mode.
+
+## `AssistantAction/setPhotoSize`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case setPhotoSize
+```
+
+Set Photo Size.
+
+## `AssistantAction/startInterval`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case startInterval
+```
+
+Start Interval Shooting.
+
+## `AssistantAction/stopInterval`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case stopInterval
+```
+
+Stop Interval Shooting.
+
+## `AssistantAction/switchLens`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case switchLens
+```
+
+Switch Lens.
+
+## `AssistantAction/takeBracket`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case takeBracket
+```
+
+Take Bracket.
+
+## `AssistantAction/takePhoto`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case takePhoto
+```
+
+Take Photo.
+
+## `AssistantAction/turnOffLight`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case turnOffLight
+```
+
+Turn Off the Light.
+
+## `AssistantAction/turnOnLight`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case turnOnLight
+```
+
+Turn On the Light.
+
+## `AssistantActionKind`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+enum AssistantActionKind
+```
+
+What an entry point is, for the Assistant Access check (`docs/design/assistant-access.md`,
+section 4). Every entry point of the app declares one, so the entry-point check
+(`scripts/check-security.sh`) sees each with a kind.
+
+## `AssistantActionKind/changes`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case changes
+```
+
+Changes something: every other gated action.
+
+## `AssistantActionKind/opensScreen`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case opensScreen
+```
+
+Only opens a screen of the app (Open the Camera, Open Assistant Access). Never refused:
+the system can open any app for an assistant without the app's help.
+
+## `AssistantActionKind/pressedByPerson`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case pressedByPerson
+```
+
+A control a person presses (the Control Center Night Mode control, the Live Activity's
+Stop button). Never refused, as the shutter and the volume buttons aren't.
+
+## `AssistantActionKind/takesPhotos`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case takesPhotos
+```
+
+Takes photos: Take Photo, Take Bracket, Start Interval Shooting.
+
+## `AssistantAskLevel`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+enum AssistantAskLevel
+```
+
+How often the app asks before an assistant action runs, while Assistant Access is on (issue
+#82, `docs/design/assistant-access.md`, 3.3). ``everyAction`` by default.
+
+## `AssistantAskLevel/beforePhoto`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case beforePhoto
+```
+
+Only actions that take photos are confirmed; changes run without asking ("Only Before a
+Photo").
+
+## `AssistantAskLevel/everyAction`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case everyAction
+```
+
+Every action is named and confirmed before it runs ("Every Action").
+
+## `AssistantAskLevel/never`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case never
+```
+
+Nothing is confirmed ("Never").
+
+## `AssistantDecision`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+enum AssistantDecision
+```
+
+What the Assistant Access check decided for one request.
+
+## `AssistantDecision/ask`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case ask
+```
+
+Asked first: the action is named and confirmed before it runs.
+
+## `AssistantDecision/refuse`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case refuse
+```
+
+Refused because Assistant Access is off. Nothing changes and no photo is taken; the
+answer says that access is off and where to turn it on.
+
+## `AssistantDecision/requiresUnlock`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case requiresUnlock
+```
+
+Refused because the device is locked. Nothing changes and no photo is taken; the answer
+says to unlock. A fallback: the system asks for an unlock first
+(`authenticationPolicy`; `docs/TESTING.md`, Assistant Access device check 5).
+
+## `AssistantDecision/run`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case run
+```
+
+Run without asking.
+
+## `AssistantGateOutcome`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+enum AssistantGateOutcome<Result>
+```
+
+How a request through ``AssistantSession/perform(_:access:confirm:run:)`` ended.
+
+## `AssistantGateOutcome/cancelled`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case cancelled
+```
+
+Asked, and the person cancelled, dismissed the question or let it time out. Nothing ran.
+
+## `AssistantGateOutcome/ran(_:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case ran(Result)
+```
+
+The action ran, with its result.
+
+## `AssistantGateOutcome/refused`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case refused
+```
+
+Refused: access is off (``AssistantDecision/refuse``). Nothing ran.
+
+## `AssistantGateOutcome/requiresUnlock`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case requiresUnlock
+```
+
+Refused: the device is locked (``AssistantDecision/requiresUnlock``). Nothing ran.
+
+## `AssistantNotice`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+struct AssistantNotice
+```
+
+The sentence an assistant got for an action that ran, which the camera shows as a hint
+("Siri or Shortcuts", then the sentence).
+
+## `AssistantNotice/id`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+let id: Int
+```
+
+A number, unique for the process's lifetime, so a new notice replaces an older one.
+
+## `AssistantNotice/init(id:sentence:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+init(id: Int, sentence: String)
+```
+
+Creates a notice.
+
+- Parameters:
+  - id: A unique number.
+  - sentence: The sentence.
+
+## `AssistantNotice/sentence`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+let sentence: String
+```
+
+The sentence, already localized by the app.
+
+## `AssistantRequestRecord`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+struct AssistantRequestRecord
+```
+
+One line of the This Session list: an action's name and what happened. No values, times or
+preset names (`docs/design/assistant-access.md`, section 10).
+
+## `AssistantRequestRecord/action`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+let action: AssistantAction
+```
+
+The action.
+
+## `AssistantRequestRecord/id`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+let id: Int
+```
+
+A number, unique for the process's lifetime.
+
+## `AssistantRequestRecord/init(id:action:result:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+init(id: Int, action: AssistantAction, result: AssistantRequestResult)
+```
+
+Creates a record.
+
+- Parameters:
+  - id: A unique number.
+  - action: The action.
+  - result: What happened.
+
+## `AssistantRequestRecord/result`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+let result: AssistantRequestResult
+```
+
+What happened.
+
+## `AssistantRequestResult`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+enum AssistantRequestResult
+```
+
+What happened to one assistant request, for the This Session list.
+
+## `AssistantRequestResult/askedAllowed`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case askedAllowed
+```
+
+Asked, and allowed.
+
+## `AssistantRequestResult/askedCancelled`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case askedCancelled
+```
+
+Asked, and cancelled.
+
+## `AssistantRequestResult/ranWithoutAsking`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case ranWithoutAsking
+```
+
+Ran without asking.
+
+## `AssistantRequestResult/refused`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case refused
+```
+
+Refused: access was off, or the device was locked.
+
+## `AssistantSession`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor final class AssistantSession
+```
+
+What assistants did since the app opened, and the one rule-runner every gated entry point
+uses (issue #82; `docs/design/assistant-access.md`, sections 4, 10 and 11).
+
+The app owns one session for its lifetime. Each gated App Intent calls
+``perform(_:access:confirm:run:)`` inside `perform()`: it reads the check, refuses, asks or
+goes on, records the request, and runs the existing code. The camera and the Settings page
+read the record: the hint after an action that ran (``notice``), the card after a refusal
+(``showsRefusalCard``), the tip after five confirmations (``showsTip``) and the This Session
+list (``records``).
+
+Privacy rule (`docs/design/assistant-access.md`, section 10): the record is kept in memory
+only and cleared when the process ends. It holds an action's name and what happened, never
+a value, a time or a preset name. The one stored value is the tip's counter, a number that
+stops at ``tipThreshold``; it is stored outside ``SharedSettingsStore/keyPrefix``, so presets
+and the Lock Screen camera's snapshot don't carry it.
+
+## `AssistantSession/announce(_:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor func announce(_ sentence: String)
+```
+
+Shows a sentence an assistant got, as the camera's hint.
+
+- Parameter sentence: The sentence, localized.
+
+## `AssistantSession/clearNotice(_:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor func clearNotice(_ id: Int)
+```
+
+Clears the camera's hint, if it is still this one.
+
+- Parameter id: The notice shown.
+
+## `AssistantSession/dismissRefusalCard()`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor func dismissRefusalCard()
+```
+
+Closes the refusal card until the next refusal.
+
+## `AssistantSession/dismissTip()`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor func dismissTip()
+```
+
+Closes the tip for good.
+
+## `AssistantSession/init(defaults:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor init(defaults: UserDefaults)
+```
+
+Creates an empty session.
+
+- Parameter defaults: The store for the tip's counter, normally the settings' store.
+
+## `AssistantSession/init(settings:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor convenience init(settings: NopeSettings)
+```
+
+Creates an empty session that stores the tip's counter with the settings.
+
+- Parameter settings: The person's settings, whose store keeps the counter.
+
+## `AssistantSession/maximumRecords`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+nonisolated static let maximumRecords: Int
+```
+
+The most lines the This Session list keeps.
+
+## `AssistantSession/notice`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor var notice: AssistantNotice? { get set }
+```
+
+The sentence of the last action that ran, for the camera's hint, or `nil`.
+
+## `AssistantSession/opensSettingsPage`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor var opensSettingsPage: Bool { get set }
+```
+
+Whether Open Assistant Access asked for Settings to open at the page, until the camera
+screen opens it (``settingsPageOpened()``).
+
+## `AssistantSession/perform(_:access:confirm:run:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor func perform<Result>(_ action: AssistantAction, access: () -> AssistantAccess, confirm: () async -> Bool, run: () async -> Result) async -> AssistantGateOutcome<Result>
+```
+
+Runs one assistant request through the check: refuses, asks or goes on, records it, and
+runs the action.
+
+The check is read when the request starts, and again after a confirmation: access turned
+off while the question showed refuses the request. A kind that isn't gated runs without
+a record.
+
+- Parameters:
+  - action: The entry point.
+  - access: Reads the check now (``NopeSettings/assistantAccess(deviceIsLocked:)``).
+  - confirm: Asks the person; `true` when they confirmed. Called only for
+    ``AssistantDecision/ask``.
+  - run: The existing action.
+- Returns: How it ended.
+
+## `AssistantSession/records`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor var records: [AssistantRequestRecord] { get set }
+```
+
+The requests since the app opened, newest first, at most ``maximumRecords``.
+
+## `AssistantSession/refusedCount`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor var refusedCount: Int { get set }
+```
+
+How many requests were refused because access was off since the app opened.
+
+## `AssistantSession/reloadTipCounter()`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor func reloadTipCounter()
+```
+
+Reads the tip's counter from the store again, after Factory Defaults removed it
+(``SettingsPresets/apply(_:camera:location:keepsPrivacySettings:)``): 0 when it is gone,
+so the tip can show again after five more confirmed requests.
+
+## `AssistantSession/requestSettingsPage()`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor func requestSettingsPage()
+```
+
+Asks the camera screen to open Settings at the Assistant Access page.
+
+## `AssistantSession/settingsPageOpened()`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor func settingsPageOpened()
+```
+
+Records that the camera screen opened the page.
+
+## `AssistantSession/showsRefusalCard`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor var showsRefusalCard: Bool { get }
+```
+
+Whether the refusal card shows: a request was refused since the card was last closed.
+
+## `AssistantSession/showsTip`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor var showsTip: Bool { get }
+```
+
+Whether the tip shows: five requests were confirmed, and the tip wasn't closed yet.
+
+## `AssistantSession/tipCounter`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor var tipCounter: Int { get set }
+```
+
+The tip's counter: confirmed requests, up to ``tipThreshold``; one more once the tip was
+closed.
+
+## `AssistantSession/tipCounterKey`
+
+internal, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+nonisolated static let tipCounterKey: String
+```
+
+The store key of the tip's counter.
+
+## `AssistantSession/tipThreshold`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+nonisolated static let tipThreshold: Int
+```
+
+The number of confirmed requests after which the tip shows once.
+
 ## `AstroEstimate`
 
 public, declared in `Sources/NopeCore/AstroHelper.swift`
@@ -405,12 +1331,17 @@ photo that goes through the metadata allowlist, read-back and signing like any o
   fit in storage, when the battery is at or below ``stopBatteryLevel`` and not charging, when
   the camera stops for good (it failed), or at the first frame that can't be taken or saved
   in the foreground. Every frame taken before that is saved.
-- **Turning it off** turns manual controls off again if the helper turned them on.
+- **Turning it off** turns manual controls off again if the helper turned them on, and night
+  mode off again if the helper turned it on and the person hasn't changed it since (unless
+  ``NopeSettings/keepsNightModeAfterAstro`` is on).
 
 ``CameraModel`` owns one as ``CameraModel/astro``; an interface reads it and sends
-``AstroIntent`` values. Turning night mode on is the interface's part, through
-``NopeSettings/setNightMode(_:)``, because night mode is a setting of the screens, not of
-the camera. The helper is off at every launch (AGENTS.md, "Cognitive": no surprise modes).
+``AstroIntent`` values. An interface's Astro control turns it on and off with
+``CameraModel/setAstro(_:settings:)``, which also turns night mode on, because night mode is a
+setting of the screens, kept in ``NopeSettings``, not of the camera. The helper is off at every
+launch (AGENTS.md, "Cognitive": no surprise modes), so the camera screen calls
+``CameraModel/forgetNightModeFromAstroAtLaunch(settings:)`` once: after a relaunch night
+mode stays as it was and is the person's.
 
 ## `AstroModel/beginRun()`
 
@@ -540,6 +1471,19 @@ public, declared in `Sources/NopeCore/AstroHelper.swift`
 ```
 
 How the last run ended, or `nil` before the first one. Cleared when the next starts.
+
+## `AstroModel/nightModeSettings`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var nightModeSettings: NopeSettings? { get set }
+```
+
+The person's settings when the helper was turned on with
+``CameraModel/setAstro(_:settings:)``, so turning it off returns night mode to what it was
+before (``NopeSettings/isNightModeFromAstro``). `nil` while the helper is off or was turned
+on without them.
 
 ## `AstroModel/progress`
 
@@ -896,6 +1840,38 @@ The longest shutter full auto allows for a reading.
 - Returns: The first limit the scene is bright enough for, or `nil` to lift the limit
   (too dark, or a lens without an ISO range or shutter limits).
 
+## `AutoShutter/predatesLimit(_:limit:)`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static func predatesLimit(_ reading: ExposureReading, limit: Double?) -> Bool
+```
+
+Whether a full-auto reading was taken before the camera applied the limit in use, so it
+says nothing about the scene under that limit.
+
+- Parameters:
+  - reading: The reading.
+  - limit: The limit in use, in seconds, or `nil` when it is lifted.
+- Returns: `true` when the reading's shutter is longer than the limit by more than
+  ``predatesLimitMargin``; `false` when the limit is lifted.
+
+## `AutoShutter/predatesLimitMargin`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static let predatesLimitMargin: Double
+```
+
+How much longer than full auto's limit a reading's shutter may be and still count as
+taken under that limit: a quarter stop. Auto exposure keeps the shutter within
+`AVCaptureDevice.activeMaxExposureDuration`, so a reading clearly longer than the limit
+was taken before the camera applied it (after a manual or astro exposure, or on the
+previous lens). The margin allows for a reported shutter rounded to the sensor's timing;
+its size is an assumption, checked on the device (docs/TESTING.md).
+
 ## `AutoShutter/returnMargin`
 
 internal, declared in `Sources/NopeCore/AutoControls.swift`
@@ -909,21 +1885,52 @@ stop, so the limit doesn't switch on and off when the light is near the threshol
 tool setting, chosen to be larger than the meter's frame-to-frame changes (an
 assumption, checked on the device: docs/TESTING.md).
 
-## `AutoShutter/risksBlur(_:on:)`
+## `AutoShutter/showsSteadyHint(shutter:limit:isShown:)`
 
 internal, declared in `Sources/NopeCore/AutoControls.swift`
 
 ```swift
-static func risksBlur(_ duration: Double, on lens: Lens) -> Bool
+static func showsSteadyHint(shutter duration: Double, limit: Double, isShown: Bool) -> Bool
 ```
 
-Whether a shutter is slow enough to risk blur from hand shake, for the hint in manual
-controls.
+Whether "Hold it steady or use a tripod." shows after a reading in full auto, with a
+margin so it doesn't flicker (docs/design/device-feedback-1.0.md, section 4).
 
 - Parameters:
-  - duration: The shutter in use or chosen, in seconds.
-  - lens: The lens.
-- Returns: `true` when it is longer than ``handheldLimit(for:)``; `false` without a limit.
+  - duration: The shutter the camera is using, in seconds.
+  - limit: The lens's ``steadyLimit(for:)``.
+  - isShown: Whether the hint shows now.
+- Returns: `true` when the shutter is slower than the limit; `false` when it is at least
+  ``returnMargin`` (half a stop) faster; otherwise `isShown`, unchanged.
+
+## `AutoShutter/stabilizationAllowance`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static let stabilizationAllowance: Double
+```
+
+How many stops slower than the handheld rule a lens that reports stabilization
+(``Lens/reportsStabilization``) is taken to hold steady, for the steady hint: 2. A
+provisional value until device check S2 sets it (docs/TESTING.md; decision 12 of
+docs/design/device-feedback-1.0.md).
+
+## `AutoShutter/steadyLimit(for:)`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static func steadyLimit(for lens: Lens) -> Double?
+```
+
+The steady limit of a lens: the handheld rule moved by the lens's stabilization,
+`1/(2 × focal length) × 2^allowance`, inside the lens's shutter range. The allowance is
+``stabilizationAllowance`` on a lens that reports stabilization and 0 on any other.
+
+- Parameter lens: The lens.
+- Returns: The slowest shutter in seconds the lens is taken to hold by hand, or `nil`
+  when the lens reports no focal length or no shutter range.
 
 ## `BackgroundTimeRequesting`
 
@@ -1128,6 +2135,805 @@ beyond both limits gets the nearest exposure the lens can give.
   - durationRange: The lens's exposure duration range, in seconds.
 - Returns: One frame per offset, in the same order.
 
+## `BracketFramePlan`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+struct BracketFramePlan
+```
+
+One frame of a planned bracket as an interface lists it (docs/design/BRACKETING.md,
+section 4, "The Frames"): its number, the offset asked for, the offset the lens can really
+give, and the exposure the camera is asked for.
+
+A frame beyond the lens's ISO and shutter ranges gets the nearest exposure the lens can give
+(``BracketFrame/plan(offsets:base:shutterFirst:isoRange:durationRange:)``); ``isLimited`` marks
+it so an interface can say so before the photo is taken.
+
+## `BracketFramePlan/Limit`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+enum Limit
+```
+
+Which way a limited frame falls short.
+
+## `BracketFramePlan/Limit/brightest`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case brightest
+```
+
+The lens can't make the frame as bright as asked.
+
+## `BracketFramePlan/Limit/darkest`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case darkest
+```
+
+The lens can't make the frame as dark as asked.
+
+## `BracketFramePlan/frame`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let frame: BracketFrame
+```
+
+The ISO and exposure duration the camera is asked for.
+
+## `BracketFramePlan/init(number:requestedOffset:offset:frame:limitingFrameNumber:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+init(number: Int, requestedOffset: Double, offset: Double, frame: BracketFrame, limitingFrameNumber: Int?)
+```
+
+Creates a frame plan.
+
+- Parameters:
+  - number: The frame's place in the order, from 1.
+  - requestedOffset: The offset asked for, in EV.
+  - offset: The offset reached, in EV.
+  - frame: The exposure asked for.
+  - limitingFrameNumber: The first frame with the same exposure, for a limited frame.
+
+## `BracketFramePlan/isLimited`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var isLimited: Bool { get }
+```
+
+Whether the lens can't give the offset asked for.
+
+## `BracketFramePlan/limit`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var limit: Limit? { get }
+```
+
+Which way the frame falls short, or `nil` when it isn't limited.
+
+## `BracketFramePlan/limitingFrameNumber`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let limitingFrameNumber: Int?
+```
+
+For a limited frame, the number of the first frame (in the order taken) with the same
+exposure: the lens can't go brighter (or darker) than that frame. `nil` when the frame is
+not limited.
+
+## `BracketFramePlan/number`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let number: Int
+```
+
+The frame's place in the order it is taken, counted from 1.
+
+## `BracketFramePlan/offset`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let offset: Double
+```
+
+The offset the frame really has, in EV, within the lens's ranges.
+
+## `BracketFramePlan/plan(offsets:base:shutterFirst:isoRange:durationRange:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static func plan(offsets: [Double], base: BracketFrame, shutterFirst: Bool, isoRange: ClosedRange<Double>, durationRange: ClosedRange<Double>) -> [BracketFramePlan]
+```
+
+Plans every frame of a bracket around a base exposure, within the lens's ranges, and
+marks the frames the lens can't give.
+
+- Parameters:
+  - offsets: Each frame's offset in EV, in the order taken (``BracketSettings/offsets``).
+  - base: The base ISO and exposure duration.
+  - shutterFirst: Whether to change the shutter before ISO.
+  - isoRange: The lens's ISO range.
+  - durationRange: The lens's exposure duration range, in seconds.
+- Returns: One plan per offset, in the same order.
+
+## `BracketFramePlan/requestedOffset`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let requestedOffset: Double
+```
+
+The offset asked for, in EV, relative to the base exposure.
+
+## `BracketFramePlan/tolerance`
+
+internal, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let tolerance: Double
+```
+
+How far, in EV, the offset reached may differ from the one asked for and still count as
+reached: the planning multiplies and clamps floating-point values, so a reached frame can
+differ by a rounding error. A hundredth of a stop is far below any step the app offers
+(the smallest is 1/3 EV).
+
+## `BracketIntent`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+enum BracketIntent
+```
+
+A request about bracketing, sent as ``CameraIntent/bracket(_:)``.
+
+## `BracketIntent/beginSettingRange(_:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case beginSettingRange(FocusRangeEnd)
+```
+
+Start setting an end of the focus range on the picture: the lens moves to that end's
+position, and the camera's automatic controls hold until the setting ends.
+
+## `BracketIntent/finishSettingRange(keeps:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case finishSettingRange(keeps: Bool)
+```
+
+End setting the range: `true` keeps the value as that end (Set), `false` leaves the range
+as it was (Cancel). Focus returns to what it was before.
+
+## `BracketIntent/focusRange(at:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case focusRange(at: FramePoint)
+```
+
+Focus once at a point of the picture while setting an end of the range; the value then
+follows the lens.
+
+## `BracketIntent/setFocus(_:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case setFocus(FocusBracketSettings)
+```
+
+Choose the focus bracket's settings. Ignored while it runs.
+
+## `BracketIntent/setFocusStartDelay(_:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case setFocusStartDelay(SelfTimerDelay?)
+```
+
+Choose the focus bracket's start delay, or `nil` for none. Ignored while it runs.
+
+## `BracketIntent/setOn(_:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case setOn(Bool)
+```
+
+Turn Bracket on with the session's type (``BracketModel/type``), or off. On a lens that
+can take only one type, that type is turned on.
+
+## `BracketIntent/setRangeValue(_:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case setRangeValue(Double)
+```
+
+Move the lens to a position while setting an end of the range, from 0 to 1, rounded to
+hundredths.
+
+## `BracketIntent/setType(_:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case setType(BracketType)
+```
+
+Choose the type. With Bracket on, the other type is turned off and this one on. Focus is
+ignored on a lens whose focus can't be set, Exposure on one that can't take an exposure
+bracket.
+
+## `BracketIntent/stop`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case stop
+```
+
+Stop a running focus bracket after the current frame, or its countdown.
+
+## `BracketIntent/useWholeRange`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case useWholeRange
+```
+
+Set the focus range back to the whole range, 0 to 1.
+
+## `BracketModel`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor final class BracketModel
+```
+
+Bracketing beyond the exposure bracket that ``ManualControlsModel/bracket`` holds: the chosen
+type, the focus bracket's settings and its progress (docs/design/BRACKETING.md, section 8).
+
+``CameraModel`` owns one as ``CameraModel/bracketing``; an interface reads it and sends
+``BracketIntent`` values. Nothing here is stored between launches, except through a preset.
+
+## `BracketModel/beginRun(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func beginRun(_ settings: FocusBracketSettings)
+```
+
+Marks a run as started.
+
+- Parameter settings: The bracket being taken.
+
+## `BracketModel/endRun(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func endRun(_ result: FocusBracketResult)
+```
+
+Marks the run as ended.
+
+- Parameter result: How it ended.
+
+## `BracketModel/focus`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var focus: FocusBracketSettings { get set }
+```
+
+The focus bracket's settings, for the session.
+
+## `BracketModel/focusStartDelay`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var focusStartDelay: SelfTimerDelay? { get set }
+```
+
+The focus bracket's start delay, or `nil` for none. 3 seconds at first (decision 7).
+
+## `BracketModel/init()`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the model: Exposure, the standard focus bracket, off.
+
+## `BracketModel/isFocusOn`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var isFocusOn: Bool { get set }
+```
+
+Whether the focus bracket is on: a press of the shutter takes it.
+
+## `BracketModel/isRunning`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var isRunning: Bool { get }
+```
+
+Whether a focus bracket is running (or paused).
+
+## `BracketModel/isStopRequested`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var isStopRequested: Bool { get set }
+```
+
+Whether the person asked the running bracket to stop.
+
+## `BracketModel/lastRun`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var lastRun: FocusBracketResult? { get set }
+```
+
+How the last focus bracket ended, or `nil`. Cleared when the next one starts.
+
+## `BracketModel/progress`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var progress: FocusBracketProgress? { get set }
+```
+
+The running focus bracket, or `nil`. The countdown before it is ``DriveModel/countdown``.
+
+## `BracketModel/rangeEditing`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var rangeEditing: FocusRangeEditing? { get set }
+```
+
+The end of the focus range being set on the picture, or `nil`.
+
+## `BracketModel/recordPosition(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func recordPosition(_ position: Double)
+```
+
+Records the position the lens reported for the frame being taken.
+
+- Parameter position: The reported position.
+
+## `BracketModel/recordSaved()`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func recordSaved()
+```
+
+Counts a frame saved.
+
+## `BracketModel/recordTaken()`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func recordTaken()
+```
+
+Counts a frame taken.
+
+## `BracketModel/requestStop()`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func requestStop()
+```
+
+Asks the running bracket to stop after the current frame.
+
+## `BracketModel/runCount`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var runCount: Int { get set }
+```
+
+How many focus brackets have begun since the model was made, so a Siri or Shortcuts
+request can tell whether a bracket it asked for began, and never answers from an earlier
+one's ``lastRun`` (third review of 1.0.0, S2).
+
+## `BracketModel/running`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var running: FocusBracketSettings? { get set }
+```
+
+The settings of the running focus bracket, or `nil` when none runs. They may differ from
+``focus``: Take Bracket can ask for other frames or the whole range.
+
+## `BracketModel/setFocus(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func setFocus(_ settings: FocusBracketSettings)
+```
+
+Records the focus settings.
+
+- Parameter settings: The settings.
+
+## `BracketModel/setFocusOn(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func setFocusOn(_ isOn: Bool)
+```
+
+Records the focus bracket as on or off.
+
+- Parameter isOn: Whether it is on.
+
+## `BracketModel/setFocusStartDelay(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func setFocusStartDelay(_ delay: SelfTimerDelay?)
+```
+
+Records the start delay.
+
+- Parameter delay: The delay, or `nil`.
+
+## `BracketModel/setPaused(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func setPaused(_ isPaused: Bool)
+```
+
+Records the series as paused or not.
+
+- Parameter isPaused: Whether it is paused.
+
+## `BracketModel/setRangeEditing(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func setRangeEditing(_ editing: FocusRangeEditing?)
+```
+
+Records the range being set, or `nil`.
+
+- Parameter editing: The state.
+
+## `BracketModel/setType(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func setType(_ type: BracketType)
+```
+
+Records the type.
+
+- Parameter type: The type.
+
+## `BracketModel/type`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var type: BracketType { get set }
+```
+
+The type Bracket turns on, and the type Bracket Settings shows. Exposure at first.
+
+## `BracketOrder`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+enum BracketOrder
+```
+
+The order in which a bracket's frames are taken and saved (docs/design/BRACKETING.md,
+section 4). The system takes the frames in the order of the request's array
+(`AVCapturePhotoBracketSettings`), so an order is only the order of the frames asked for.
+
+## `BracketOrder/arranged(_:)`
+
+internal, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func arranged(_ darkestFirst: [Double]) -> [Double]
+```
+
+Puts offsets listed darkest first into this order.
+
+- Parameter darkestFirst: The offsets in EV, from the darkest to the brightest.
+- Returns: The same offsets in this order.
+
+## `BracketOrder/brightestFirst`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case brightestFirst
+```
+
+From the brightest frame to the darkest: +1, 0, −1.
+
+## `BracketOrder/darkestFirst`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case darkestFirst
+```
+
+From the darkest frame to the brightest: −1, 0, +1. The order of every earlier version.
+
+## `BracketOrder/meteredFirst`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case meteredFirst
+```
+
+The metered frame first, then outward, darker before brighter: 0, −1, +1, −2, +2.
+
+## `BracketPlace`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+struct BracketPlace
+```
+
+A saved photo's place in its bracket (``SavedPhoto/bracket``), for the Last Photo viewer and
+"What's in This Photo" (docs/design/BRACKETING.md, sections 4 and 5, "The result").
+
+Privacy: these are the session's values, held in memory with the saved photo until the app
+closes. They are never written to a file, so the metadata allowlist doesn't change.
+
+## `BracketPlace/count`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let count: Int
+```
+
+The frames in the bracket.
+
+## `BracketPlace/focus`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let focus: FocusFramePlace?
+```
+
+For a focus bracket, this frame's planned and reported focus. `nil` for an exposure
+bracket.
+
+## `BracketPlace/frame`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let frame: BracketFramePlan?
+```
+
+For an exposure bracket, this frame: the offsets asked for and reached, and its planned
+exposure. `nil` for a focus bracket.
+
+## `BracketPlace/init(focus:count:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+init(focus: FocusFramePlace, count: Int)
+```
+
+Creates a focus bracket's place.
+
+- Parameters:
+  - focus: This frame's planned and reported focus.
+  - count: The frames in the bracket.
+
+## `BracketPlace/init(type:frame:count:offsets:order:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+init(type: BracketType, frame: BracketFramePlan, count: Int, offsets: [Double], order: BracketOrder)
+```
+
+Creates an exposure bracket's place.
+
+- Parameters:
+  - type: The kind of bracket, ``BracketType/exposure``.
+  - frame: This frame's plan.
+  - count: The frames in the bracket.
+  - offsets: Every frame's offset asked for, in the order taken.
+  - order: The order of the frames.
+
+## `BracketPlace/number`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let number: Int
+```
+
+The frame's place in the order taken, from 1.
+
+## `BracketPlace/offsets`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let offsets: [Double]
+```
+
+For an exposure bracket, every frame's offset asked for, in EV, in the order taken. Empty
+for a focus bracket.
+
+## `BracketPlace/order`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let order: BracketOrder?
+```
+
+For an exposure bracket, the order of the frames. `nil` for a focus bracket.
+
+## `BracketPlace/type`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let type: BracketType
+```
+
+The kind of bracket.
+
+## `BracketProgress`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+struct BracketProgress
+```
+
+How far an exposure bracket has got while it is taken and saved
+(``CameraModel/bracketProgress``).
+
+## `BracketProgress/init(taken:saved:total:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+init(taken: Int, saved: Int, total: Int)
+```
+
+Creates a progress value.
+
+- Parameters:
+  - taken: The frames taken.
+  - saved: The frames saved.
+  - total: The frames in the bracket.
+
+## `BracketProgress/isTaking`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var isTaking: Bool { get }
+```
+
+Whether the frames are still being taken (the request hasn't returned).
+
+## `BracketProgress/saved`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let saved: Int
+```
+
+The frames saved to Photos so far.
+
+## `BracketProgress/taken`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let taken: Int
+```
+
+The frames the camera has returned. The system takes all frames in one request, so this is
+0 while the request runs and ``total`` once it returns.
+
+## `BracketProgress/total`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let total: Int
+```
+
+The frames in the bracket.
+
 ## `BracketSettings`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
@@ -1178,12 +2984,12 @@ The frame counts a lens can take.
 - Returns: The members of ``frameCounts`` up to the lens's limit; empty when it can't
   bracket.
 
-## `BracketSettings/init(frameCount:step:)`
+## `BracketSettings/init(frameCount:step:order:)`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
 
 ```swift
-init(frameCount: Int, step: Double)
+init(frameCount: Int, step: Double, order: BracketOrder = .darkestFirst)
 ```
 
 Creates bracket settings.
@@ -1191,6 +2997,7 @@ Creates bracket settings.
 - Parameters:
   - frameCount: The number of frames, one of ``frameCounts``.
   - step: The difference between neighboring frames in EV, one of ``steps``.
+  - order: The order of the frames.
 
 ## `BracketSettings/offsets`
 
@@ -1200,8 +3007,31 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 var offsets: [Double] { get }
 ```
 
-Each frame's exposure relative to the metered one, in EV, darkest first and centered on
-0: for 3 frames 1 EV apart, −1, 0 and +1.
+Each frame's exposure relative to the metered one, in EV, centered on 0, in the order the
+frames are taken (``order``): for 3 frames 1 EV apart, −1, 0, +1 darkest first; 0, −1, +1
+metered first; +1, 0, −1 brightest first.
+
+## `BracketSettings/order`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let order: BracketOrder
+```
+
+The order the frames are taken and saved in. ``BracketOrder/darkestFirst`` by default,
+the order of every earlier version.
+
+## `BracketSettings/standard`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let standard: BracketSettings
+```
+
+The bracket an interface offers first: 3 frames, 1 EV apart, darkest first
+(docs/design/BRACKETING.md, section 4).
 
 ## `BracketSettings/step`
 
@@ -1223,6 +3053,22 @@ static let steps: [Double]
 
 The steps between frames the app offers, in EV: 1/3, 2/3, 1 and 2 stops.
 
+## `BracketSettings/with(frameCount:step:order:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func with(frameCount: Int? = nil, step: Double? = nil, order: BracketOrder? = nil) -> BracketSettings
+```
+
+A copy with another value.
+
+- Parameters:
+  - frameCount: The number of frames, or `nil` to keep it.
+  - step: The step in EV, or `nil` to keep it.
+  - order: The order, or `nil` to keep it.
+- Returns: The new settings.
+
 ## `BracketShortcut`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -1231,11 +3077,11 @@ public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 struct BracketShortcut
 ```
 
-The parameters of a "Take Bracket" request: the frames, the step between them, the delay and
-the lens.
+The parameters of a "Take Bracket" request: the frames, the step between them, their order,
+the delay and the lens.
 
-The bracket is taken once, through the same bracket path as the one in Pro Tools, whether or
-not manual controls are on; the person's own bracket setting doesn't change. Values are moved
+The bracket is taken once, through the same bracket path as the shutter's, whether or not
+manual controls are on; the person's own bracket setting doesn't change. Values are moved
 to the nearest the app offers (``BracketSettings/frameCounts`` and ``BracketSettings/steps``);
 whether the lens can take it is checked when it is taken.
 
@@ -1247,7 +3093,7 @@ public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 let bracket: BracketSettings
 ```
 
-The frames and the step, each one the app offers.
+The frames, the step and the order, each one the app offers.
 
 ## `BracketShortcut/delaySeconds`
 
@@ -1259,20 +3105,45 @@ let delaySeconds: Int
 
 The delay before the bracket, in seconds, from 0 to ``PhotoShortcut/maximumDelaySeconds``.
 
-## `BracketShortcut/init(frameCount:step:delaySeconds:lensKind:)`
+## `BracketShortcut/focusFrameCount`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 
 ```swift
-init(frameCount: Int, step: Double, delaySeconds: Int = 0, lensKind: Lens.Kind? = nil)
+let focusFrameCount: Int
+```
+
+A focus bracket's frames, one of ``FocusBracketSettings/frameCounts``.
+
+## `BracketShortcut/focusRange`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let focusRange: FocusBracketRange
+```
+
+A focus bracket's range: as set in the app, or the whole range.
+
+## `BracketShortcut/init(type:focusFrameCount:focusRange:frameCount:step:order:delaySeconds:lensKind:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+init(type: BracketType = .exposure, focusFrameCount: Int = FocusBracketSettings.defaultFrameCount, focusRange: FocusBracketRange = .asSet, frameCount: Int, step: Double, order: BracketOrder = .darkestFirst, delaySeconds: Int = 0, lensKind: Lens.Kind? = nil)
 ```
 
 Creates a request.
 
 - Parameters:
+  - type: The kind of bracket; ``BracketType/exposure`` by default.
+  - focusFrameCount: A focus bracket's frames, moved to the nearest of
+    ``FocusBracketSettings/frameCounts``; 10 by default.
+  - focusRange: A focus bracket's range; as set in the app by default.
   - frameCount: The number of frames, moved to the nearest of ``BracketSettings/frameCounts``.
   - step: The exposure difference between neighboring frames in EV (stops), moved to the
     nearest of ``BracketSettings/steps``.
+  - order: The order of the frames; ``BracketOrder/darkestFirst`` by default.
   - delaySeconds: The delay in seconds, kept within 0 to ``PhotoShortcut/maximumDelaySeconds``.
   - lensKind: The kind of lens, or `nil` for the lens already selected.
 
@@ -1300,6 +3171,48 @@ The value in a list closest to a value: the first of two equally close ones.
   - value: The value.
   - values: The values offered; not empty.
 - Returns: The closest.
+
+## `BracketShortcut/type`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let type: BracketType
+```
+
+The kind of bracket: ``BracketType/exposure`` by default. A focus bracket uses
+``focusFrameCount`` and ``focusRange``; the step and order are an exposure bracket's.
+
+## `BracketType`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+enum BracketType
+```
+
+The kind of a bracket (docs/design/BRACKETING.md, sections 4 and 5). The type is named on
+the card and in a photo's details.
+
+## `BracketType/exposure`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case exposure
+```
+
+Frames at different exposures.
+
+## `BracketType/focus`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case focus
+```
+
+Frames at different focus positions, for stacking in other software.
 
 ## `BurstEnd`
 
@@ -1340,9 +3253,10 @@ public, declared in `Sources/NopeCore/DriveMode.swift`
 case countReached
 ```
 
-The burst took the number of frames a Siri or Shortcuts request asked for (issue #62),
-fewer than ``DriveModel/maximumBurstFrames``. Siri reports the result, so an interface
-needn't announce it.
+The burst took the number of frames asked for: a Siri or Shortcuts request's count (issue
+#62), fewer than ``DriveModel/maximumBurstFrames``, which Siri reports, so an interface
+needn't announce it; or a Burst Limit's count (``BurstStart/limited``, issue #121), also
+50, which an interface shows as "10 of 10 photos saved".
 
 ## `BurstEnd/failed`
 
@@ -1384,6 +3298,118 @@ case storageFull
 
 The next frame wouldn't fit in the device's free storage (issue #44).
 
+## `BurstLimit`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+enum BurstLimit
+```
+
+How many photos one press takes in Burst (Burst Limit, issue #121,
+`docs/design/finish-1.0.md`, section 5): Off, the default, or 3, 5, 10, 20 or 50.
+
+With the limit Off, a tap takes one photo and holding takes photos until the shutter comes
+up, as before the setting existed. With a limit, a tap or a hold of the shutter (on screen or
+a hardware button), assistive activation and Start Burst start a burst that runs to the count
+even after the finger lifts (``BurstStart/limited``), and a second press stops it after the
+photo being taken (owner decisions, 2026-11-21). Every photo taken is saved; low storage and
+the camera stopping still end it early.
+
+An interface sends the setting with ``DriveIntent/setBurstLimit(_:)`` when the camera screen
+appears and whenever it changes; ``DriveModel/burstLimit`` holds it, and the burst's progress
+and result carry the count (``BurstProgress/limit``, ``BurstResult/limit``).
+
+What the setting doesn't change:
+- Siri and Shortcuts keep their own photo count (``PhotoShortcut/count``).
+- The Apple Watch shutter stays as it is (owner decision 9). Today it takes one photo in
+  Burst: `WatchCommandServer` sends ``PhotoShortcut`` with a count of 1, which takes a single
+  photo, or the exposure bracket on in the manual controls, whatever the drive mode.
+- Drive mode still starts in Single at every launch.
+
+Stored by its raw value, which never changes once released (``NopeSettings/burstLimit``).
+
+## `BurstLimit/fifty`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+case fifty
+```
+
+50 photos a press, the most a burst takes (``DriveModel/maximumBurstFrames``).
+
+## `BurstLimit/five`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+case five
+```
+
+5 photos a press.
+
+## `BurstLimit/frameCount`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+var frameCount: Int? { get }
+```
+
+How many photos one press takes, never more than ``DriveModel/maximumBurstFrames``, or
+`nil` for ``off``.
+
+## `BurstLimit/off`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+case off
+```
+
+No limit: a tap takes one photo, a hold takes photos until it ends. The default.
+
+## `BurstLimit/standard`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+static let standard: BurstLimit
+```
+
+The default: Off, so a burst works as before the setting existed.
+
+## `BurstLimit/ten`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+case ten
+```
+
+10 photos a press.
+
+## `BurstLimit/three`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+case three
+```
+
+3 photos a press.
+
+## `BurstLimit/twenty`
+
+public, declared in `Sources/NopeCore/BurstLimit.swift`
+
+```swift
+case twenty
+```
+
+20 photos a press.
+
 ## `BurstProgress`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
@@ -1392,14 +3418,14 @@ public, declared in `Sources/NopeCore/DriveMode.swift`
 struct BurstProgress
 ```
 
-The progress of a running burst.
+The progress of a running burst, or of an astro run.
 
-## `BurstProgress/init(taken:saved:)`
+## `BurstProgress/init(taken:saved:start:rate:isSaving:limit:)`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
 
 ```swift
-init(taken: Int, saved: Int)
+init(taken: Int, saved: Int, start: BurstStart = .started, rate: Double? = nil, isSaving: Bool = false, limit: Int? = nil)
 ```
 
 Creates a progress value.
@@ -1407,6 +3433,43 @@ Creates a progress value.
 - Parameters:
   - taken: The frames taken so far.
   - saved: The frames saved so far.
+  - start: Who began the burst.
+  - rate: The measured photos a second, or `nil`.
+  - isSaving: Whether only saving is left.
+  - limit: The photos a limited burst asked for, or `nil`.
+
+## `BurstProgress/isSaving`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let isSaving: Bool
+```
+
+Whether no more photos will be taken and the last ones are being saved. A new burst
+can't start until they are.
+
+## `BurstProgress/limit`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let limit: Int?
+```
+
+The photos the press asked for with a Burst Limit set (``BurstStart/limited``), for "3 of
+10"; `nil` for every other burst.
+
+## `BurstProgress/rate`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let rate: Double?
+```
+
+The photos a second over the most recent photos of this burst (``DriveModel/rateWindow``),
+measured from their times, or `nil` before the third photo (docs/design/BURST.md, 3.3).
 
 ## `BurstProgress/saved`
 
@@ -1418,6 +3481,16 @@ let saved: Int
 
 The frames saved so far. Saving follows taking, so it can be one behind.
 
+## `BurstProgress/start`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let start: BurstStart
+```
+
+Who began the burst. An astro run reports ``BurstStart/started``.
+
 ## `BurstProgress/taken`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
@@ -1428,6 +3501,23 @@ let taken: Int
 
 The frames taken so far.
 
+## `BurstProgress/with(taken:saved:rate:isSaving:)`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+func with(taken: Int? = nil, saved: Int? = nil, rate: Double?? = nil, isSaving: Bool? = nil) -> BurstProgress
+```
+
+The same progress with some values changed.
+
+- Parameters:
+  - taken: The frames taken so far.
+  - saved: The frames saved so far.
+  - rate: The measured photos a second.
+  - isSaving: Whether only saving is left.
+- Returns: The new progress.
+
 ## `BurstResult`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
@@ -1436,7 +3526,17 @@ public, declared in `Sources/NopeCore/DriveMode.swift`
 struct BurstResult
 ```
 
-How the last burst went: why it ended and how many frames were saved.
+How the last burst went: why it ended, how many frames were saved, and how fast it ran.
+
+## `BurstResult/duration`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let duration: Duration
+```
+
+The time from the first photo to the last; zero for fewer than two photos.
 
 ## `BurstResult/end`
 
@@ -1448,12 +3548,26 @@ let end: BurstEnd
 
 Why it ended.
 
-## `BurstResult/init(end:saved:)`
+## `BurstResult/hasSummary`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
 
 ```swift
-init(end: BurstEnd, saved: Int)
+var hasSummary: Bool { get }
+```
+
+Whether an interface shows a summary of this burst ("12 photos saved", the time and the
+rate) until the next action: a burst of two photos or more that the person ended, not a
+Siri or Shortcuts count and not a failure. A burst of one photo is a photo. A burst with a
+Burst Limit has one whenever it saved a photo and reached its count or was stopped: the
+person asked for a count, so the summary says how many of it were saved ("4 of 10").
+
+## `BurstResult/init(end:saved:taken:start:duration:rate:limit:)`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+init(end: BurstEnd, saved: Int, taken: Int? = nil, start: BurstStart = .started, duration: Duration = .zero, rate: Double? = nil, limit: Int? = nil)
 ```
 
 Creates a result.
@@ -1461,6 +3575,33 @@ Creates a result.
 - Parameters:
   - end: Why it ended.
   - saved: The frames saved.
+  - taken: The frames taken; `saved` when not given.
+  - start: Who began the burst.
+  - duration: The time from the first photo to the last, in the clock's units.
+  - rate: The photos a second, or `nil`.
+  - limit: The photos a limited burst asked for, or `nil`.
+
+## `BurstResult/limit`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let limit: Int?
+```
+
+The photos a press with a Burst Limit asked for (``BurstStart/limited``), for "4 of 10
+photos saved"; `nil` for every other burst.
+
+## `BurstResult/rate`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let rate: Double?
+```
+
+The photos a second over the whole burst: the photos taken less one, divided by
+``duration``; `nil` under three photos (docs/design/BURST.md, 3.3).
 
 ## `BurstResult/saved`
 
@@ -1471,6 +3612,137 @@ let saved: Int
 ```
 
 The frames saved, each its own photo.
+
+## `BurstResult/start`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let start: BurstStart
+```
+
+Who began the burst. An astro run reports ``BurstStart/started``.
+
+## `BurstResult/taken`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let taken: Int
+```
+
+The frames taken. Every frame taken is saved unless one failed.
+
+## `BurstSpeed`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+enum BurstSpeed
+```
+
+How fast a burst takes its photos (docs/design/BURST.md, 3.2). The speed is held for the
+session and not stored: each launch starts at ``fast``.
+
+## `BurstSpeed/fast`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case fast
+```
+
+Each photo is requested as soon as the camera is ready for it. No rate is promised: the
+rate is the camera's and the saving's.
+
+## `BurstSpeed/maximumPhotosPerSecond`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+var maximumPhotosPerSecond: Int? { get }
+```
+
+The most photos a second this speed takes, or `nil` when only the camera limits it. Slow
+is worded "up to" this figure: it can take fewer.
+
+## `BurstSpeed/minimumFrameInterval`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+var minimumFrameInterval: Duration? { get }
+```
+
+The least time between the starts of two photos, or `nil` for none.
+
+## `BurstSpeed/slow`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case slow
+```
+
+The same, with at least ``minimumFrameInterval`` between the starts of two photos: at
+most ``maximumPhotosPerSecond`` a second, and fewer when the camera needs longer.
+
+## `BurstStart`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+enum BurstStart
+```
+
+Who began a burst, so an interface knows how it ends: "Release to stop" for a held shutter,
+Stop Burst for the others (docs/design/BURST.md, 4.1).
+
+## `BurstStart/counted`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case counted
+```
+
+A set number of photos: a Siri or Shortcuts request (issue #62), or one photo for a press
+of the shutter that reports no phases (``CameraIntent/capture``). Always at ``BurstSpeed/fast``.
+
+## `BurstStart/held`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case held
+```
+
+A shutter held down: the on-screen shutter or a hardware button. It ends when the
+shutter comes up.
+
+## `BurstStart/limited`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case limited
+```
+
+A press of the shutter (on screen, a hardware button, assistive activation or Start
+Burst) with a Burst Limit set (``DriveModel/burstLimit``, issue #121): it takes the
+limit's count of photos at the session's speed and doesn't end when the shutter comes
+up. A second press, Stop Burst or the other stops (storage, the camera) end it early.
+
+## `BurstStart/started`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case started
+```
+
+Start Burst, which needs no holding (``DriveIntent/startBurst``). It ends with the
+shutter, Stop Burst or a limit.
 
 ## `CFAColor`
 
@@ -1547,6 +3819,17 @@ Use an aid that works in full auto too: tap to focus and expose, the focus and e
 lock, exposure compensation, Close-Up, the fast shutter rule and the focus magnifier. See
 ``AutoControlIntent``.
 
+## `CameraIntent/bracket(_:)`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+case bracket(BracketIntent)
+```
+
+Turn Bracket on or off, choose its type, set up or stop a focus bracket: see
+``BracketIntent``.
+
 ## `CameraIntent/capture`
 
 public, declared in `Sources/NopeCore/CameraIntent.swift`
@@ -1583,6 +3866,19 @@ case drive(DriveIntent)
 Change the drive mode, start or cancel the self-timer, stop a burst, or report a hardware
 shutter button: see ``DriveIntent``.
 
+## `CameraIntent/isActivity`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+var isActivity: Bool { get }
+```
+
+Whether the intent is something the person did, by any means (a touch, VoiceOver, Voice
+Control, a keyboard, Siri, a shortcut, the Apple Watch), which Keep Screen On counts as
+activity (``CameraModel/activityCount``). The camera's own lifecycle (starting, the
+permission, the foreground, the photo sizes, releasing previews) isn't.
+
 ## `CameraIntent/light(_:)`
 
 public, declared in `Sources/NopeCore/CameraIntent.swift`
@@ -1604,6 +3900,18 @@ case manual(ManualControlIntent)
 
 Change a manual or pro control: see ``ManualControlIntent``. Ignored while manual
 controls are off, except ``ManualControlIntent/setEnabled(_:)``.
+
+## `CameraIntent/releasePhotoPreviews`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+case releasePhotoPreviews
+```
+
+Release every preview in ``CameraModel/sessionPhotos`` now, keeping the photos' records.
+Send it when the system says memory is low (`UIApplication.didReceiveMemoryWarningNotification`).
+Leaving the foreground releases them too, without this intent.
 
 ## `CameraIntent/requestPermission`
 
@@ -1651,7 +3959,9 @@ case setInForeground(Bool)
 The app came back to the foreground (`true`) or went to the background (`false`). Send it
 whenever the scene phase changes to or from the background (issue #64).
 
-Leaving cancels the self-timer, because the camera stops and can't take its photo. With
+Leaving closes the Last Photo viewer and releases the previews in
+``CameraModel/sessionPhotos`` (docs/PRIVACY.md), ends every shutter press that is down
+(``CameraModel/cancelShutterHolds()``), and cancels the self-timer, because the camera stops and can't take its photo. With
 the astro helper on, leaving pauses its frames instead (``AstroModel/isPaused``), or, during
 its start delay, starts the run paused; coming back with the camera running counts the
 start delay down again and continues the run.
@@ -1672,6 +3982,23 @@ lens's size changes, the camera is reconfigured; a size a lens doesn't offer
 (``Lens/photoSizeChoices``) is ignored.
 
 - Parameter sizes: The chosen size for each lens.
+
+## `CameraIntent/setViewerOpen(_:)`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+case setViewerOpen(Bool)
+```
+
+The Last Photo viewer opened (`true`) or closed (`false`): ``CameraModel/isViewerOpen``.
+Send it when the viewer is shown and when it is dismissed. While it is open, a hardware
+shutter press closes it and takes no photo (docs/design/BUILD-SPEC.md, 3.14, decision V1).
+The interface's Take Photo command (the Space key) does the same by sending
+`setViewerOpen(false)` instead of ``capture`` while the viewer is open; ``capture`` itself
+still takes a photo, as Siri, Shortcuts and the Apple Watch app do.
+
+- Parameter isOpen: Whether the viewer is open now.
 
 ## `CameraIntent/start`
 
@@ -1701,6 +4028,31 @@ facts and decides the next state; the interface holds no rules of its own (AGENT
 direction of flow").
 
 The model is isolated to the main actor, so an interface can read its properties directly.
+
+## `CameraModel/actionCount`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var actionCount: Int { get set }
+```
+
+Counts the person's actions only (``CameraIntent/isActivity``), not the photos saved: a
+series' photos are not an action. An interface watches it to close what stays "until the
+next action", such as the hint after an assistant's action (docs/design/assistant-access.md,
+section 10). Only its changes matter.
+
+## `CameraModel/activityCount`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var activityCount: Int { get set }
+```
+
+Counts the person's actions (``CameraIntent/isActivity``) and the photos saved, however
+they were taken. An interface watches it to tell ``SeriesScreenKeeper/noteActivity()``,
+so Keep Screen On counts from the latest one (issue #97). Only its changes matter.
 
 ## `CameraModel/applyCameraSetup(_:manualControlsOn:)`
 
@@ -1736,7 +4088,8 @@ internal, declared in `Sources/NopeCore/CameraModel+PresetShortcut.swift`
 ```
 
 Applies a preset for a request, through the same path as the Presets list
-(``SettingsPresets/apply(_:camera:location:)``): every setting, then the camera's lens,
+(``SettingsPresets/apply(_:camera:location:keepsPrivacySettings:)``), except that the
+Privacy settings and Assistant Access stay as they are: every other setting, then the camera's lens,
 exposure and drive values, with Location only through its permission prompt. A preset
 never turns the light on (``CameraSetup`` doesn't hold it). The apply can be undone in the
 Presets list, as one made there.
@@ -1809,6 +4162,43 @@ internal, declared in `Sources/NopeCore/CameraModel.swift`
 
 The hardware the model asks for permission, capabilities and photos.
 
+## `CameraModel/bracketDidChange(after:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Bracket.swift`
+
+```swift
+@MainActor func bracketDidChange(after intent: ManualControlIntent)
+```
+
+Keeps the drive mode a bracket can use after a manual intent: turning a bracket on while
+Burst or Interval is chosen chooses Single, and the self-timer's delay, if chosen, becomes
+the bracket's start delay. An interface that turns Bracket on with the session's delay
+sends ``bracketDriveMode``, read before, as the drive mode next.
+
+- Parameter intent: The intent just handled.
+
+## `CameraModel/bracketDriveMode`
+
+public, declared in `Sources/NopeCore/CameraModel+Bracket.swift`
+
+```swift
+@MainActor var bracketDriveMode: DriveMode { get }
+```
+
+The drive mode an interface chooses with the bracket: Single, or the self-timer with the
+bracket's start delay (``bracketStartDelay``).
+
+## `CameraModel/bracketProgress`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var bracketProgress: BracketProgress? { get set }
+```
+
+The exposure bracket being taken and saved, or `nil` when none is (docs/design/BRACKETING.md,
+section 4, "The card and the shutter").
+
 ## `CameraModel/bracketReadingTimeoutSeconds`
 
 internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
@@ -1820,6 +4210,76 @@ internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
 How long a bracket request waits for the camera's first exposure reading, which the
 bracket's frames are planned around, in seconds. An assumption, to be confirmed on a
 device: the camera reports readings several times a second once it runs.
+
+## `CameraModel/bracketReadingWaitSeconds`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor static let bracketReadingWaitSeconds: Double
+```
+
+How long the shutter waits for the camera's first exposure reading before a bracket, in
+seconds (docs/design/BRACKETING.md, section 4). An assumption, to be confirmed on a
+device: the camera reports readings several times a second once it runs, so a reading
+normally arrives well within it.
+
+## `CameraModel/bracketStartDelay`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var bracketStartDelay: SelfTimerDelay? { get set }
+```
+
+The start delay of the bracket, or `nil` for none: the self-timer's delay chosen while a
+bracket was on (``bracketDriveMode``). Kept for the session, so choosing Bracket again
+keeps it.
+
+## `CameraModel/bracketToTurnOn`
+
+public, declared in `Sources/NopeCore/CameraModel+Bracket.swift`
+
+```swift
+@MainActor var bracketToTurnOn: BracketSettings? { get }
+```
+
+The bracket an interface turns on when the person chooses Bracket: the session's
+``ManualControlsModel/lastBracket``, with as many frames as the selected lens can take,
+or `nil` when the lens can't bracket.
+
+## `CameraModel/bracketing`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor let bracketing: BracketModel
+```
+
+The bracket type and the focus bracket (``BracketModel``; docs/design/BRACKETING.md,
+section 8). The exposure bracket itself is ``ManualControlsModel/bracket``.
+
+## `CameraModel/burstSpeed`
+
+public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor var burstSpeed: BurstSpeed { get }
+```
+
+The speed a burst on the selected lens uses: the session's choice
+(``DriveModel/burstSpeed``) when the lens offers it, otherwise Fast.
+
+## `CameraModel/burstSpeeds`
+
+public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor var burstSpeeds: [BurstSpeed] { get }
+```
+
+The burst speeds offered on the selected lens: Fast, and Slow unless Fast measured under
+``DriveModel/slowBurstMinimumFastRate`` on it in this session.
 
 ## `CameraModel/cameraProblem(inbox:)`
 
@@ -1856,6 +4316,42 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 Whether the shutter should be enabled: the camera is running, no photo is being taken
 or saved, and the compare view isn't open.
 
+## `CameraModel/canChangeLens`
+
+public, declared in `Sources/NopeCore/CameraModel+Lens.swift`
+
+```swift
+@MainActor var canChangeLens: Bool { get }
+```
+
+Whether the lens can be changed now: no photo is being taken or saved, no countdown,
+burst, interval series or astro run is in progress, and the compare view isn't open.
+
+The one rule for every way of changing the lens: ``CameraIntent/selectLens(_:)`` does
+nothing while it is false, Siri and Shortcuts refuse a lens change, and presets aren't
+applied (``isBusyForPresets``). An interface disables its lens controls while it is false.
+
+## `CameraModel/canExposureBracket`
+
+public, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor var canExposureBracket: Bool { get }
+```
+
+Whether the selected lens can take an exposure bracket.
+
+## `CameraModel/canFocusBracket`
+
+public, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor var canFocusBracket: Bool { get }
+```
+
+Whether the selected lens can take a focus bracket: its focus can be locked at a lens
+position, and the camera has manual controls.
+
 ## `CameraModel/canPressShutter`
 
 public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
@@ -1865,7 +4361,10 @@ public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 ```
 
 Whether the shutter should be enabled: a photo can be taken now, or a countdown, burst,
-interval series or astro run runs, which pressing the shutter stops.
+interval series or astro run runs, which pressing the shutter stops. Not while a burst's
+last photos are being saved: a new burst waits for them (docs/design/BURST.md, decision 9).
+In the Interval drive mode, not while the interval is as long as the series' time or
+longer (``IntervalBlocker/intervalNotShorterThanTime``): the shutter would start nothing.
 
 ## `CameraModel/canUseAstro`
 
@@ -1879,6 +4378,20 @@ Whether the helper can be turned on: the selected lens suits it, and the storage
 battery can be read, so a run can stop before either runs out (not in the Lock Screen
 capture extension, which has no reader).
 
+## `CameraModel/cancelShutterHolds()`
+
+public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor func cancelShutterHolds()
+```
+
+Ends every shutter press that is down, as if each came up, so a held burst stops after the
+photo being taken (issue #101). Call it when the app leaves the active state: a press that
+is down then may never report coming up. Sending ``CameraIntent/setInForeground(_:)`` with
+`false` does it too. A burst that needs no holding is not stopped by it. A hardware press
+that closed the Last Photo viewer ends too, so the next press takes a photo.
+
 ## `CameraModel/capabilities`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -1889,23 +4402,38 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The device's capabilities while ``state`` is ``CameraState/ready(_:)``, otherwise `nil`.
 
-## `CameraModel/capture(onceBracket:)`
+## `CameraModel/capture(onceBracket:appliesBracketInApp:)`
 
 internal, declared in `Sources/NopeCore/CameraModel.swift`
 
 ```swift
-@MainActor func capture(onceBracket: BracketSettings? = nil) async
+@MainActor func capture(onceBracket: BracketSettings? = nil, appliesBracketInApp: Bool = true) async
 ```
 
-Takes one photo with the selected lens, if the camera can capture now.
+Takes one photo with the selected lens, if the camera can capture now, or the exposure
+bracket (``ManualControlsModel/bracket``) when one is on. A photo of an interval series is
+always a single photo (docs/design/BRACKETING.md, decision 3).
 
 A blank photo (``CaptureError/blankPicture``) is never kept: the model restarts the
 camera once and takes the photo again (`recoverFromBlankPicture(_:settings:)`).
 
-- Parameter onceBracket: A bracket to take this time only, through the same bracket path
-  as the one in Pro Tools, without changing ``ManualControlsModel/bracket`` (a Siri or
-  Shortcuts request, issue #62); `nil` for the shutter's usual photo. The caller checks
-  first that ``ManualControlsModel/bracketFrames(once:)`` can plan it.
+A bracket's frames are planned around the camera's exposure. When the camera has not
+reported one yet (just after a lens change, or after manual controls or the astro helper
+turned on or off), the shutter waits up to ``bracketReadingWaitSeconds`` for it, then
+takes the bracket; if none arrives, it takes nothing and reports
+``CaptureError/bracketNotReady``. A bracket never becomes a single photo, and with a
+bracket on no photo fires the flash (``shutterUsesFlash``).
+
+- Parameters:
+  - onceBracket: A bracket to take this time only, through the same bracket path as the
+    shutter's, without changing ``ManualControlsModel/bracket`` (a Siri or Shortcuts
+    request, issue #62); `nil` for the shutter's usual photo. The caller checks first that
+    ``ManualControlsModel/bracketFrames(once:)`` can plan it.
+  - appliesBracketInApp: Whether the exposure bracket on in the manual controls applies
+    when `onceBracket` is `nil`: `true` for the shutter and the Apple Watch, `false` for
+    Siri and Shortcuts' Take Photo, which always takes one photo
+    (``PhotoShortcut/appliesBracketInApp``). The flash stays off while a bracket is on
+    either way, as the flash control is hidden then.
 
 ## `CameraModel/captureFormat`
 
@@ -1928,6 +4456,22 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The state of the most recent capture.
 
+## `CameraModel/clock`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var clock: NopeClock { get }
+```
+
+The clock the model and everything it owns read: dates from its wall clock, and every
+deadline, wait and duration from its monotonic clock (``NopeClock``, issue #107). An
+interface reads it to count down to a moment the model publishes, such as
+``IntervalProgress/nextPhotoStart``.
+
+Replacing it, or a part of it, later changes only what the model itself reads, such as
+``wallClock``; the manual controls and drive modes keep the clock the model was made with.
+
 ## `CameraModel/closeUpLens`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -1937,9 +4481,15 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 ```
 
 The lens to suggest when the subject seems closer than the selected lens can focus: the
-ultra wide lens, from the wide or a telephoto lens, while
-``ManualControlsModel/suggestsCloseUpLens`` is true. `nil` otherwise. An interface offers
-a button to switch; the app never switches on its own (issue #51).
+ultra wide lens that can autofocus (``DeviceCapabilities/closeUpFocusLens``), from the
+wide or a telephoto lens, while ``ManualControlsModel/suggestsCloseUpLens`` is true. `nil`
+otherwise. An interface offers a button to switch; the app never switches on its own
+(issue #51).
+
+When both lenses report their closest focus distance (``Lens/minimumFocusDistance``),
+the ultra wide lens is offered only if it focuses closer, so the advice can help. When
+either doesn't report one, it is still offered: whether the reported distances can be
+relied on is device check C2 (docs/TESTING.md).
 
 ## `CameraModel/comparison`
 
@@ -1976,6 +4526,30 @@ internal, declared in `Sources/NopeCore/CameraModel+Comparison.swift`
 The backend that takes the phone's version when the next photo is a comparison shot,
 otherwise `nil`.
 
+## `CameraModel/countAction()`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor func countAction()
+```
+
+Counts one of the person's actions (``CameraIntent/isActivity``): in ``activityCount``
+and ``actionCount``.
+
+## `CameraModel/deviceOffersAstro`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor var deviceOffersAstro: Bool { get }
+```
+
+Whether the device offers the helper at all: a lens suits it, and storage and battery can
+be read (not in the Lock Screen capture extension). `false` before the camera is ready.
+An interface shows settings about the helper only then (AGENTS.md, "Progressive
+enhancement"), such as Keep Night Mode After Astro (``NopeSettings/keepsNightModeAfterAstro``).
+
 ## `CameraModel/deviceStatus`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -1986,6 +4560,20 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The device's free storage and battery, for warnings and to stop a burst in time.
 
+## `CameraModel/distortionCorrection(of:)`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor func distortionCorrection(of photo: CapturedPhoto) -> DistortionCorrection?
+```
+
+The distortion correction of the lens a photo was taken with, for its details (issue #80),
+or `nil` when the lens isn't known.
+
+- Parameter photo: A captured photo.
+- Returns: The lens's ``Lens/distortionCorrection``.
+
 ## `CameraModel/drive`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -1995,6 +4583,43 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 ```
 
 The drive mode, the self-timer and bursts. Their intents arrive as ``CameraIntent/drive(_:)``.
+
+## `CameraModel/driveModeDidChange()`
+
+internal, declared in `Sources/NopeCore/CameraModel+Bracket.swift`
+
+```swift
+@MainActor func driveModeDidChange() async
+```
+
+Keeps the bracket and the drive mode together after the drive mode changed: Burst and
+Interval turn the bracket off; with a bracket on, Single and the self-timer's delay become
+the bracket's start delay.
+
+## `CameraModel/endStaleRangeEditing()`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor func endStaleRangeEditing() async
+```
+
+Ends setting an end of the range, as Cancel does, once the focus bracket it belongs to is
+off (another drive word, Astro, the exposure type, a preset, or a lens that can't take
+it), so the camera's own controls never stay held. Called after every intent.
+
+## `CameraModel/failedBracket`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var failedBracket: BracketProgress? { get set }
+```
+
+How far the last bracket got when one of its frames couldn't be saved, or `nil`. It goes
+with ``captureStatus`` ``CaptureStatus/failed(_:)``: an interface says how many photos were
+saved before the error ("Bracket stopped: 2 of 3 photos saved."). Cleared when the next
+capture starts.
 
 ## `CameraModel/failureWasAPause()`
 
@@ -2009,6 +4634,75 @@ pause: the run should pause now, or starts to within ``pauseAfterErrorSeconds``.
 
 - Returns: `true` when the run should pause, so the photo is taken again after the pause.
 
+## `CameraModel/flashModeForShutter`
+
+public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor var flashModeForShutter: FlashMode { get }
+```
+
+The flash mode the shutter's next photo uses: ``LightModel/flashModeForCapture`` while
+the shutter can fire the flash (``shutterUsesFlash``), otherwise ``FlashMode/off``. What
+an interface shows as the flash in use, such as the Flash pill.
+
+## `CameraModel/focusBracketStorageBytes`
+
+public, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor var focusBracketStorageBytes: Int64? { get }
+```
+
+The most bytes the focus bracket's files can take, for "Storage, at Most"
+(``PhotoSizeEstimate``, an upper bound), or `nil` before the camera is ready.
+
+## `CameraModel/focusRangeValue`
+
+public, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor var focusRangeValue: Double? { get }
+```
+
+The value of the range end being set on the picture, or `nil` when none is: the value
+chosen with the slider, or after a tap on the picture the position the lens reports.
+
+## `CameraModel/focusSettleSeconds`
+
+public, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor static let focusSettleSeconds: Double
+```
+
+The wait after the system reports a focus move applied, before the photo: 0.1 seconds.
+An assumption until the device check D7 (docs/design/BRACKETING.md, section 9) measures
+whether a photo taken at once after the handler is sharp where expected.
+
+## `CameraModel/forgetNightModeFromAstroAtLaunch(settings:)`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func forgetNightModeFromAstroAtLaunch(settings: NopeSettings)
+```
+
+Forgets that the astro helper turned night mode on, without changing night mode, when the
+helper ended without leaving it: the app was quit or closed by the system while the helper
+was on, and the helper is off at every launch. Night mode stays as it was, so a relaunch in
+the dark opens red (owner decision, 2026-11-18); it is the person's from then on. It does
+nothing while the helper is on.
+
+Only the app calls it, once its camera screen shows; the Lock Screen camera never does
+(issue #108). The record is the app's state: a process that isn't the app, though it
+shows the same camera screen, must leave it, or leaving Astro in the app would no longer
+turn night mode off.
+
+Side effects: may store that night mode is no longer the helper's.
+
+- Parameter settings: The person's settings, where the record is stored.
+
 ## `CameraModel/handle(_:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
@@ -2022,7 +4716,20 @@ Handles one astro intent.
 - Parameter intent: The intent.
 
 Side effects: turning the helper on may turn manual controls on, sets focus, shutter and
-ISO, and turns the light off; turning it off may turn manual controls off.
+ISO, and turns the light off; turning it off may turn manual controls off, and night mode
+if ``setAstro(_:settings:)`` turned it on.
+
+## `CameraModel/handle(_:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor func handle(_ intent: BracketIntent) async
+```
+
+Handles one bracket intent.
+
+- Parameter intent: The intent.
 
 ## `CameraModel/handle(_:)`
 
@@ -2036,6 +4743,22 @@ Handles one drive intent.
 
 - Parameter intent: The intent.
 
+## `CameraModel/handleShutter(_:from:press:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor func handleShutter(_ phase: ShutterPhase, from source: ShutterSource, press: Int?) -> Task<Void, Never>?
+```
+
+Handles a shutter event without counting it as an action (see ``shutter(_:from:press:)``).
+
+- Parameters:
+  - phase: How the shutter moved.
+  - source: Which shutter.
+  - press: The press's number, or `nil`.
+- Returns: The work the event started, or `nil`.
+
 ## `CameraModel/handlesHardwareButtons`
 
 public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
@@ -2047,14 +4770,69 @@ public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 Whether the app should take the hardware shutter buttons (the volume buttons and the
 Camera Control): while the camera runs. At other times they keep their system behavior,
 as Apple asks of apps that can't respond to them (AVKit, `AVCaptureEventInteraction`,
-"isEnabled"). Not while the compare view is open (issue #55).
+"isEnabled"). Not while the compare view is open (issue #55). While the Last Photo viewer
+is open (``isViewerOpen``) a press closes it and takes no photo.
 
-## `CameraModel/init(backend:saver:sleep:now:deviceStatusReader:)`
+## `CameraModel/hardwareButtonsTurnedOff()`
+
+public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor func hardwareButtonsTurnedOff()
+```
+
+Ends a hardware button's press that is down, as if it were cancelled. Call it when
+``handlesHardwareButtons`` becomes false while the scene stays active (an interruption,
+critical heat, the compare view opening): AVKit may then send no end or cancel for the
+press, and a hold left behind would let the next on-screen burst run on after the finger
+lifts (final review of 1.0.0, S6). A held burst stops after the photo being taken; a burst
+that needs no holding, and an on-screen press, are not affected.
+
+## `CameraModel/hardwarePressClosedViewer`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var hardwarePressClosedViewer: Bool
+```
+
+Whether the press of a hardware shutter button that is down now closed the viewer, so
+its release takes no photo.
+
+## `CameraModel/heatLevel`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
 
 ```swift
-@MainActor init(backend: any CaptureBackend, saver: PhotoSaver? = nil, sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) }, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now }, deviceStatusReader: (any DeviceStatusReading)? = nil)
+@MainActor var heatLevel: HeatLevel { get set }
+```
+
+The last heat level the backend reported. Keep Screen On reads it, to dim sooner when the
+phone is hot (``KeepScreenOnConditions/heatLevel``, issue #119).
+
+## `CameraModel/holdsBackLevelTap`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+@MainActor var holdsBackLevelTap: Bool { get }
+```
+
+Whether the level's tap is held back now (docs/design/level-haptic.md, section 4): while
+a photo is being taken (a bracket and a long exposure included), during a burst or a
+self-timer countdown, for the whole of an interval series (running or paused), while Astro
+or a focus bracket runs (paused included), and whenever the camera isn't running.
+
+The Taptic Engine moves the device, so a tap is kept away from exposures and series; with
+the camera not running there is no live picture to level. An interface also holds the tap
+back while a sheet covers the camera or the app isn't active, which the model can't see.
+
+## `CameraModel/init(backend:saver:clock:deviceStatusReader:)`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor convenience init(backend: any CaptureBackend, saver: PhotoSaver? = nil, clock: NopeClock = .system, deviceStatusReader: (any DeviceStatusReading)? = nil)
 ```
 
 Creates a model in the ``CameraState/starting`` state.
@@ -2063,13 +4841,71 @@ Creates a model in the ``CameraState/starting`` state.
   - backend: The hardware, or a ``SimulatedCaptureBackend`` in tests and previews.
   - saver: The save pipeline. Without one, every photo ends in
     ``CaptureError/savingUnavailable`` and nothing is saved.
-  - sleep: Waits a number of seconds between interval photos and self-timer ticks. Tests
-    pass a faster one.
-  - now: Reads the clock that times each capture. Tests pass a scripted one.
+  - clock: The wall and monotonic clocks, and the wait, for everything the model times:
+    interval photos, timed series, self-timer ticks, Slow bursts and each capture.
+    ``NopeClock/system`` by default; tests pass one they move.
   - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
 
 A ``ManualCaptureBackend`` also gets manual controls (``manual``), and a
 ``LightCaptureBackend`` a torch (``light``).
+
+## `CameraModel/init(backend:saver:clock:measuredBy:deviceStatusReader:)`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor init(backend: any CaptureBackend, saver: PhotoSaver?, clock: NopeClock, measuredBy measure: @escaping @Sendable () -> ContinuousClock.Instant, deviceStatusReader: (any DeviceStatusReading)?)
+```
+
+Creates a model in the ``CameraState/starting`` state.
+
+- Parameters:
+  - backend: The hardware.
+  - saver: The save pipeline.
+  - clock: The clock for dates, deadlines and waits.
+  - measure: Reads the monotonic clock that times each capture, a burst's rate and the
+    camera's readings.
+  - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
+
+## `CameraModel/init(backend:saver:now:deviceStatusReader:)`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor convenience init(backend: any CaptureBackend, saver: PhotoSaver? = nil, now: @escaping @Sendable () -> ContinuousClock.Instant, deviceStatusReader: (any DeviceStatusReading)? = nil)
+```
+
+Creates a model whose monotonic clock is `now`, as tests that time captures pass; its
+wall clock and waits are the system's.
+
+- Parameters:
+  - backend: The hardware.
+  - saver: The save pipeline.
+  - now: Reads the monotonic clock.
+  - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
+
+## `CameraModel/init(backend:saver:sleep:now:deviceStatusReader:)`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor convenience init(backend: any CaptureBackend, saver: PhotoSaver? = nil, sleep: @escaping @Sendable (Double) async throws -> Void, now: (@Sendable () -> ContinuousClock.Instant)? = nil, deviceStatusReader: (any DeviceStatusReading)? = nil)
+```
+
+Creates a model whose waits are a sleep of a number of seconds, as tests written before
+``NopeClock`` pass (``NopeClock/stepped(by:now:)``).
+
+The waits move the clock's own monotonic time by what they asked for, so deadlines are
+reached in step with the sleep. Each capture, and the camera's readings, are still timed
+with `now`.
+
+- Parameters:
+  - backend: The hardware.
+  - saver: The save pipeline.
+  - sleep: Waits a number of seconds, throwing when cancelled.
+  - now: Reads a monotonic clock, or `nil` for the system's. When given, the waits read it
+    too, and the sleep must move it.
+  - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
 
 ## `CameraModel/intervalBlocker`
 
@@ -2084,6 +4920,31 @@ Why an interval series can't start now, or `nil` when it can as far as these rul
 Start and says why; ``CameraIntent/manual(_:)`` with
 ``ManualControlIntent/startInterval`` is ignored while it isn't `nil`.
 
+## `CameraModel/isBracketOn`
+
+public, declared in `Sources/NopeCore/CameraModel+Bracket.swift`
+
+```swift
+@MainActor var isBracketOn: Bool { get }
+```
+
+Whether a press of the shutter takes the bracket: a bracket is on and the astro helper,
+which takes over the shutter, is off. An interface shows the Bracket word selected.
+
+## `CameraModel/isBurstShutter`
+
+public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor var isBurstShutter: Bool { get }
+```
+
+Whether holding the shutter takes a burst (docs/design/BURST.md, 3.1): in Burst mode
+with the astro helper off, while no interval series or focus bracket runs. An interface
+reports the shutter's phases (``DriveIntent/shutter(_:)``) only while this is `true`, and
+sends ``CameraIntent/capture`` otherwise. While a series runs the shutter stops it, in
+every drive mode; that includes a focus bracket that Take Bracket started in Burst mode.
+
 ## `CameraModel/isBusyForPresets`
 
 public, declared in `Sources/NopeCore/CameraSetup.swift`
@@ -2094,7 +4955,8 @@ public, declared in `Sources/NopeCore/CameraSetup.swift`
 
 Whether the camera is in the middle of something a preset must not change: a photo being
 taken or saved, a countdown, a burst, an interval series, an astro run or the comparison
-shot.
+shot. The same rule as for a lens change (``canChangeLens``), because a preset may switch
+the lens.
 
 ## `CameraModel/isCleanView`
 
@@ -2119,6 +4981,39 @@ Whether photos are being taken or saved: a photo, a bracket, a burst or astro fr
 aren't paused. When the app leaves the foreground then, it asks iOS for time to finish
 saving them (``BackgroundTimeRequesting``); a paused astro run has saved every frame taken.
 
+## `CameraModel/isFirstStart`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var isFirstStart: Bool { get set }
+```
+
+Whether the camera is still on its first start since the model was created: `true` from
+creation until the first time the state or the camera's status says how the start went,
+then `false` for good.
+
+It ends when ``state`` becomes ``CameraState/needsPermission``,
+``CameraState/permissionDenied`` or ``CameraState/unavailable``, or when ``sessionStatus``
+becomes anything other than ``SessionStatus/stopped`` or ``SessionStatus/starting``
+(running, failed, interrupted, paused for heat, no picture). A later start (a return from
+the background, a lens change, a restart of the camera) never makes it `true` again.
+
+An interface shows the launch screen's mark for as long as it is `true`, so the first
+frames match the launch screen (docs/design/LAUNCH-SCREEN.md, 6.3); after it, the usual
+starting indicator. It is in `NopeCore` so the app, the Lock Screen camera and any other
+interface read the first start the same way.
+
+## `CameraModel/isFocusBracketOn`
+
+public, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor var isFocusBracketOn: Bool { get }
+```
+
+Whether a press of the shutter takes the focus bracket (and the astro helper is off).
+
 ## `CameraModel/isInForeground`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -2140,6 +5035,115 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 Whether the focus magnifier is shown: an enlarged part of the viewfinder for checking
 focus. Off by default. It changes only the preview, never the photo or the camera's zoom.
+
+## `CameraModel/isRunningSeries`
+
+internal, declared in `Sources/NopeCore/CameraModel+Lens.swift`
+
+```swift
+@MainActor var isRunningSeries: Bool { get }
+```
+
+Whether a countdown, a burst, an interval series, an astro run or a focus bracket is in
+progress.
+
+## `CameraModel/isTakingPhoto`
+
+internal, declared in `Sources/NopeCore/CameraModel+Lens.swift`
+
+```swift
+@MainActor var isTakingPhoto: Bool { get }
+```
+
+Whether a photo or an exposure bracket is being taken or saved. A bracket counts from its
+request to its last frame's save (``bracketProgress``), in full auto as with Manual
+Controls on.
+
+## `CameraModel/isViewerOpen`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var isViewerOpen: Bool { get set }
+```
+
+Whether the Last Photo viewer is open, as the interface last said with
+``CameraIntent/setViewerOpen(_:)``. While it is open, a hardware shutter press closes it
+and takes no photo (decision V1); the model sets it to `false` then, and when the app
+leaves the foreground (decision V7). An interface presents the viewer while it is `true`.
+Siri, Shortcuts, the Apple Watch app and a running series still take photos.
+
+## `CameraModel/keepInSession(_:lens:takenAt:)`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor func keepInSession(_ result: (saved: SavedPhoto, preview: PhotoPreview?), lens: Lens, takenAt: Date)
+```
+
+Adds a saved photo and its preview to ``sessionPhotos``, and the photo to
+``lastPressPhotos``. A preview made after the app left the foreground is released at
+once, so none outlasts the visit.
+
+- Parameters:
+  - result: The saved photo and its preview.
+  - lens: The lens it was taken with.
+  - takenAt: When the shutter took it.
+
+## `CameraModel/keepsScreenForSeries`
+
+public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
+
+```swift
+@MainActor var keepsScreenForSeries: Bool { get }
+```
+
+Whether a series that keeps the screen awake and dims it is going
+(``SeriesScreenKeeper``): an interval series (running or paused), an Astro run or a focus
+bracket (issue #90). Each can outlast the auto-lock. A countdown or a burst isn't one; Keep
+Screen On covers those.
+
+## `CameraModel/lastPressPhotos`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var lastPressPhotos: [SavedPhoto] { get set }
+```
+
+The photos the latest press of the shutter saved, in the order saved: one photo, or a
+bracket's, burst's or astro run's frames. It also holds the frames saved before a
+bracket, burst or run stopped on an error, which ``captureStatus`` then reports only as
+``CaptureStatus/failed(_:)``. Empty from the start of each press until its first save.
+
+An interface shows Last Photo, its badges and a Not Signed warning from these after a
+press ends, so they show the newest saved photo also after a part-way failure.
+
+## `CameraModel/lensChangeBlocker`
+
+public, declared in `Sources/NopeCore/CameraModel+Lens.swift`
+
+```swift
+@MainActor var lensChangeBlocker: LensChangeBlocker? { get }
+```
+
+Why the lens can't be changed now, or `nil` when it can (``canChangeLens``).
+
+A series wins over its own photos, so the reason stays ``LensChangeBlocker/runningSeries``
+for the whole series, the photos and the waits between them included.
+
+## `CameraModel/lensDidChange(hadBracket:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Bracket.swift`
+
+```swift
+@MainActor func lensDidChange(hadBracket: Bool)
+```
+
+Chooses Single when a lens change turned the bracket off, so the drive strip never shows
+a self-timer the person didn't choose.
+
+- Parameter hadBracket: Whether a bracket was on before the lens changed.
 
 ## `CameraModel/light`
 
@@ -2181,7 +5185,8 @@ taken and saved.
 - Parameters:
   - kind: The kind of the activity already shown, or `nil`.
   - isInForeground: Whether the app is in the foreground.
-  - now: The current time, to say when a countdown ends.
+  - now: The wall clock's date now, which the dates of a countdown's end and a timed
+    series' time are counted from; the time left is measured on ``clock``.
 - Returns: The content, without night mode (the coordinator adds it).
 
 ## `CameraModel/liveActivityOutcome(after:)`
@@ -2195,8 +5200,9 @@ public, declared in `Sources/NopeCore/CameraModel+LiveActivity.swift`
 The final content of an activity whose run has ended: how it ended, how many photos were
 saved and whether they are signed.
 
-The model doesn't keep every run's result, so an ended interval series and a self-timer
-are judged from the last content shown. That content is current when the app is out of
+The model doesn't keep every run's result, so a self-timer is judged from the last content
+shown, and an interval series by ``ManualControlsModel/lastIntervalEnd``, or from the last
+content when no series has ended. That content is current when the app is out of
 the foreground, the only time an activity is on screen: the camera has stopped, so nothing
 changes unseen.
 
@@ -2247,7 +5253,8 @@ internal, declared in `Sources/NopeCore/CameraModel.swift`
 @MainActor let now: @Sendable () -> ContinuousClock.Instant
 ```
 
-Reads the monotonic clock, to time each capture for the photo's details (issue #53).
+Reads the monotonic clock, to time each capture for the photo's details (issue #53):
+``clock``'s, unless the model was made with the older seconds sleep and its own clock.
 
 ## `CameraModel/observeEvents()`
 
@@ -2260,6 +5267,16 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 Applies the backend's events until its stream ends. Run it for as long as the camera
 screen is visible, for example in a SwiftUI `.task`.
 
+## `CameraModel/offersBracket`
+
+public, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor var offersBracket: Bool { get }
+```
+
+Whether the drive strip offers Bracket: the lens can take either type, or a bracket is on.
+
 ## `CameraModel/outcome(of:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
@@ -2271,6 +5288,24 @@ internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
 The outcome a capture status reports.
 
 - Parameter status: The status after the photo.
+- Returns: The outcome.
+
+## `CameraModel/outcome(of:planned:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
+
+```swift
+@MainActor func outcome(of status: CaptureStatus, planned: Int) -> ShortcutOutcome
+```
+
+The outcome a capture status reports, with the photos saved before a part-way failure
+(``lastPressPhotos``): a bracket or burst that saved some of its photos and then failed
+answers how many of how many were saved, and Photos Saved is that number (third review
+of 1.0.0, question 6).
+
+- Parameters:
+  - status: The status after the photos.
+  - planned: How many photos were planned.
 - Returns: The outcome.
 
 ## `CameraModel/pauseAfterErrorSeconds`
@@ -2343,6 +5378,38 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 The person's photo size for each lens (``CameraIntent/setPhotoSizes(_:)``), applied when
 the camera starts with a lens. Empty by default: every lens at its default size.
 
+## `CameraModel/pinchSwitchesLenses(setting:)`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+@MainActor func pinchSwitchesLenses(setting: PinchAction) -> Bool
+```
+
+Whether a pinch on the viewfinder switches lenses now (docs/design/pinch-lens.md,
+section 5), as far as the camera knows. An interface adds what only it knows: nothing is
+open over the picture (the quick menu, a dial, a sheet) and the layout isn't the
+scrolling one.
+
+It is `false`, and a pinch does nothing at all:
+- when the Pinch setting is ``PinchAction/off``;
+- while the lens can't be changed (``canChangeLens``, issue #96): a photo is taken or
+  saved, a countdown, burst, bracket, interval series or astro run is going, or the
+  compare view is open;
+- while the astro helper is on, even idle (decision 6);
+- while an end of the focus bracket's range is being set on the picture
+  (``BracketModel/rangeEditing``): its dial is open, and a dial takes the touch (section 5);
+- while the camera isn't running: before it is ready, during its first start, and while it
+  is paused, interrupted, too hot, failed or sends no picture. A restart for a lens change
+  counts as running, so a pinch can go on while the camera switches;
+- on the front camera, and on a device with fewer than two rear lenses.
+
+Night Mode, Manual Controls, clean view, Magnify and a drive mode chosen but idle don't
+change it.
+
+- Parameter setting: The Pinch setting (``NopeSettings/pinch``).
+- Returns: `true` when a pinch may switch lenses.
+
 ## `CameraModel/pressAstroShutter()`
 
 internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
@@ -2354,6 +5421,17 @@ internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
 The shutter while the helper is on: stops a countdown or a run, or starts the self-timer
 and then the run.
 
+## `CameraModel/pressFocusBracketShutter()`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor func pressFocusBracketShutter() async
+```
+
+The shutter while the focus bracket is on or runs: stops a running bracket after its
+current frame, cancels the start delay, or starts the start delay and then the bracket.
+
 ## `CameraModel/pressShutter()`
 
 internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
@@ -2362,9 +5440,11 @@ internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 @MainActor func pressShutter() async
 ```
 
-What the shutter does: stops a running countdown, burst or interval series, or else
-applies the drive mode: one photo, the self-timer, a burst or an interval series. While
-the astro helper is on, it starts or stops an astro run instead (``AstroModel``).
+What the shutter does: stops a running countdown, burst, focus bracket or interval
+series, or else applies the drive mode: one photo, the self-timer, a burst, a focus
+bracket or an interval series. While the astro helper is on, it starts or stops an astro
+run instead (``AstroModel``). While any series runs, the shutter stops it, in every drive
+mode and with either type of bracket on.
 
 ## `CameraModel/previewSource`
 
@@ -2376,12 +5456,12 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The handle the app turns into the live viewfinder, or `nil` when there is no video.
 
-## `CameraModel/saveComparing(_:started:request:settings:backend:)`
+## `CameraModel/saveComparing(_:started:takenAt:request:settings:backend:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Comparison.swift`
 
 ```swift
-@MainActor func saveComparing(_ photo: CapturedPhoto, started: ContinuousClock.Instant, request: CaptureRequest, settings: SaveSettings, backend: any ComparisonCaptureBackend) async
+@MainActor func saveComparing(_ photo: CapturedPhoto, started: ContinuousClock.Instant, takenAt: Date, request: CaptureRequest, settings: SaveSettings, backend: any ComparisonCaptureBackend) async
 ```
 
 Takes the phone's version right after the app's photo, saves the app's photo as usual, and
@@ -2398,6 +5478,7 @@ photo to Photos.
 - Parameters:
   - photo: the app's photo, just taken.
   - started: When the app's photo was started.
+  - takenAt: When the shutter took the app's photo, by the device's clock.
   - request: the app's request, which the phone's version repeats.
   - settings: The settings the app's photo is saved with.
   - backend: The backend that takes the phone's version.
@@ -2422,6 +5503,37 @@ internal, declared in `Sources/NopeCore/CameraModel.swift`
 ```
 
 Builds, checks and saves each photo, or `nil` when this model can't save (previews).
+
+## `CameraModel/sceneChange`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var sceneChange: Task<Void, Never>?
+```
+
+The latest change of the scene phase being applied (``sceneDidChange(isInBackground:)``),
+which the next change waits for, so the changes apply in the order they happened.
+
+## `CameraModel/sceneDidChange(isInBackground:)`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func sceneDidChange(isInBackground: Bool) async
+```
+
+Applies a change of the app's scene phase to or from the background: going to the
+background turns the light off (AGENTS.md, "Battery"), then sends
+``CameraIntent/setInForeground(_:)`` with `false`; coming back sends it with `true`.
+
+Each change waits until the one before it has been applied. Without that, a quick return
+while the light was turning off could set the foreground before the older change set the
+background, and leave an interval series or Astro run paused with no previews until the
+next trip to the background (final review of 1.0.0, S4). Call it from the scene phase's
+change, once for each change.
+
+- Parameter isInBackground: Whether the app is now in the background.
 
 ## `CameraModel/selectedLens`
 
@@ -2457,7 +5569,8 @@ Handles one intent from the interface and updates the model's state.
 
 Side effects: ``CameraIntent/requestPermission`` may show the system camera prompt;
 ``CameraIntent/start``, ``CameraIntent/requestPermission`` and
-``CameraIntent/selectLens(_:)`` start or reconfigure the camera;
+``CameraIntent/selectLens(_:)`` start or reconfigure the camera (a lens change only while
+``canChangeLens`` is true);
 ``CameraIntent/capture`` takes a photo and, once it passes the metadata read-back, adds
 it to Photos (which may show the add-only Photos prompt), or applies the drive mode
 (``pressShutter()``).
@@ -2499,6 +5612,19 @@ may switch the lens, start the self-timer, take a photo and add it to Photos.
   - presets: The person's settings presets, for ``ShortcutRequest/applyPreset(_:)``, or
     `nil` when the interface has none; such a request then says the preset can't be found.
 
+## `CameraModel/sessionPhotos`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor let sessionPhotos: SessionPhotos
+```
+
+This session's saved photos with their compressed previews: the pages of the Last Photo
+viewer (docs/design/BUILD-SPEC.md, 3.14). Every save adds to it; leaving the foreground
+and ``CameraIntent/releasePhotoPreviews`` release the previews (docs/PRIVACY.md, "Last
+photo and its details").
+
 ## `CameraModel/sessionStatus`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -2509,6 +5635,37 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 Whether the camera is running, and if not, why. Meaningful while ``state`` is
 ``CameraState/ready(_:)``.
+
+## `CameraModel/setAstro(_:settings:)`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func setAstro(_ isOn: Bool, settings: NopeSettings) async
+```
+
+Turns the helper on or off from an interface's Astro control, with night mode: turning it
+on turns night mode on too (issue #60), and turning it off, in any way, returns night mode
+to what it was before.
+
+The night mode rule mirrors the one for manual controls:
+- Night mode that was off is turned on, and turned off again when the helper ends: Astro
+  off, another drive mode, a lens without the helper, manual controls off, or a preset. A
+  relaunch keeps night mode as it was (``forgetNightModeFromAstroAtLaunch(settings:)``).
+- Night mode that was already on stays on.
+- A change the person makes to night mode while the helper is on
+  (``NopeSettings/setNightMode(_:)``) is theirs, and is kept.
+- With ``NopeSettings/keepsNightModeAfterAstro`` on, night mode stays on.
+
+The helper alone (``CameraIntent/astro(_:)``, as a preset sends it) never changes night
+mode: night mode is a setting of the screens, and a preset brings its own.
+
+Side effects: as ``AstroIntent/setOn(_:)``; may turn night mode on and store it. Turning on
+is ignored, and night mode left alone, where the helper can't turn on.
+
+- Parameters:
+  - isOn: Whether the helper is on.
+  - settings: The person's settings, where night mode is stored.
 
 ## `CameraModel/setInForeground(_:)`
 
@@ -2522,6 +5679,99 @@ Records whether the app is in the foreground, and applies it to the self-timer a
 astro helper (``CameraIntent/setInForeground(_:)``).
 
 - Parameter isInForeground: Whether the app is in the foreground now.
+
+## `CameraModel/setManualControls(_:settings:)`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func setManualControls(_ isOn: Bool, settings: NopeSettings) async
+```
+
+Turns manual controls on or off and stores the choice as the "Manual controls" option
+(``NopeSettings/showsManualControls``). Use it for every control that turns manual
+controls on or off, such as a Manual Controls button.
+
+Storing the option alone isn't enough: the astro helper turns manual controls on without
+changing the option, so storing "off" while the helper had turned them on changes no
+stored value, and an interface that follows the option (a SwiftUI `.task(id:)`) sends
+nothing. This call stores the option and sends ``ManualControlIntent/setEnabled(_:)``
+itself, so turning manual controls off always turns them and the helper off. An interface
+that also follows the option may send the same intent again; it changes nothing then.
+
+Side effects: as ``ManualControlIntent/setEnabled(_:)``; off returns every control to
+automatic and turns the astro helper off.
+
+- Parameters:
+  - isOn: Whether manual controls are on.
+  - settings: The person's settings, where the option is stored.
+
+## `CameraModel/showsSteadyHint`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor var showsSteadyHint: Bool { get }
+```
+
+Whether the camera should say "Hold it steady or use a tripod.":
+``ManualControlsModel/showsSteadyHint``, except while the astro helper is on. Its long exposures are meant for a tripod, and its
+own guidance already says "Use a tripod.", so the hint would only repeat it (the Astro
+screens in docs/design draw no hint). Interfaces show the hint from this property.
+
+## `CameraModel/shutter(_:from:press:)`
+
+public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@discardableResult @MainActor func shutter(_ phase: ShutterPhase, from source: ShutterSource, press: Int? = nil) -> Task<Void, Never>?
+```
+
+A shutter moved: the on-screen shutter in burst mode, or a hardware shutter button. Call
+it straight from the touch or the button's event, with no task in between, so presses and
+releases are handled in the order they happened (issue #100). The hold changes at once;
+the work (a photo, or a burst) starts in a task, which is returned.
+
+In burst mode a burst runs while the shutter is held: its first photo is requested when
+it goes down, and it ends when no shutter is down any more (each source has its own
+hold). In the other modes a hardware button acts as the shutter when it comes up, as the
+system Camera app does (AVKit, `AVCaptureEventInteraction`, "Capture a photo on press
+up"), and the on-screen shutter's phases are ignored: it sends ``CameraIntent/capture``
+instead. ``DriveIntent/shutter(_:)`` and ``DriveIntent/hardwareButton(_:)`` come here too.
+
+A press is numbered by its source, and its release carries the same number. A press or
+release that arrives late is dropped by its number, and a release that arrives before its
+press makes that press a tap (``ShutterHolds``), so a tap can never leave a burst running.
+
+Counts as the person's action (``activityCount``), as an intent does.
+
+Side effects: may take photos and add them to Photos.
+
+- Parameters:
+  - phase: How the shutter moved.
+  - source: Which shutter.
+  - press: The number of the press, counted by its source from 1, which the release of
+    that press repeats; `nil` for a caller that delivers in order and doesn't count: its
+    press is the next one and its release ends the latest.
+- Returns: The work the event started, or `nil` for none.
+
+## `CameraModel/shutterUsesFlash`
+
+public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor var shutterUsesFlash: Bool { get }
+```
+
+Whether the shutter's photos can fire the flash. Not in Burst (docs/design/BURST.md,
+3.1: "No flash in Burst, for one photo or many"), not with a bracket on
+(`AVCapturePhotoBracketSettings` takes no flash; ``CaptureRequest/flashMode``), and not
+with the astro helper on, whose frames are taken without it as a burst's are
+(`takeFrames`).
+
+An interface shows the flash control and its state only while this is `true` (issue #92,
+docs/design/SETTING-SCOPE.md, 6). The person's choice (``LightModel/flashMode``) is kept
+and is used again in the other modes.
 
 ## `CameraModel/startTimer(seconds:shot:)`
 
@@ -2560,12 +5810,12 @@ public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 The storage warning for the next photo with the selected lens and formats, or `nil`
 (issue #44). The photo's size is estimated with ``PhotoSizeEstimate``.
 
-## `CameraModel/takeBurst(frames:)`
+## `CameraModel/takeBurst(frames:start:isPrepared:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 
 ```swift
-@MainActor func takeBurst(frames: Int = DriveModel.maximumBurstFrames) async
+@MainActor func takeBurst(frames: Int = DriveModel.maximumBurstFrames, start: BurstStart = .counted, isPrepared: Bool = false) async
 ```
 
 Takes a burst: single frames as fast as the camera is ready for them, each saved as its
@@ -2581,17 +5831,45 @@ before that is still saved; nothing is dropped.
 A burst never fires the flash, as brackets don't: the flash can't recharge between rapid
 frames.
 
+A held or started burst runs at the session's speed (``burstSpeed``); a counted one
+always at Fast, so "as fast as the camera allows" in the Siri action stays true. A burst
+at Fast of three photos or more records its rate for the lens, which decides whether Slow
+is offered on it (``DriveModel/offersSlowBurst(on:)``).
+
 Side effects: may show the add-only Photos prompt; adds each photo to Photos.
 
-- Parameter frames: The most frames to take: ``DriveModel/maximumBurstFrames`` for the
-  shutter, or the count a Siri or Shortcuts request asked for (issue #62).
+- Parameters:
+  - frames: The most frames to take: ``DriveModel/maximumBurstFrames`` for a held or
+    started burst, 1 for a press that reports no phases, the count a Siri or Shortcuts
+    request asked for (issue #62), or the Burst Limit's count (issue #121).
+  - start: Who begins the burst.
+  - isPrepared: Whether a shutter press already asked for it (`DriveModel.prepareBurst`),
+    so a stop asked for since then still applies.
 
-## `CameraModel/takeFrames(limit:tracker:stopsOnLowBattery:endAtLimit:pausesWithCamera:)`
+## `CameraModel/takeFocusBracket(_:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@discardableResult @MainActor func takeFocusBracket(_ settings: FocusBracketSettings) async -> Bool
+```
+
+Takes a focus bracket now: for each position, lock focus there and wait for the system's
+handler, read back the position, take one photo, save it, go on.
+
+Side effects: may show the add-only Photos prompt; adds each photo to Photos; sets the
+camera's focus, exposure and white balance while it runs and restores them afterwards.
+
+- Parameter settings: The bracket.
+- Returns: Whether the bracket began: `false` when no photo can be taken, the lens's focus
+  can't be set or there is no save pipeline.
+
+## `CameraModel/takeFrames(limit:tracker:stopsOnLowBattery:endAtLimit:pausesWithCamera:minimumInterval:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 
 ```swift
-@MainActor func takeFrames(limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool, endAtLimit: BurstEnd = .limitReached, pausesWithCamera: Bool = false) async
+@discardableResult @MainActor func takeFrames(limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool, endAtLimit: BurstEnd = .limitReached, pausesWithCamera: Bool = false, minimumInterval: Duration? = nil) async -> Bool
 ```
 
 Takes up to `limit` single frames back to back, each saved as its own photo while the
@@ -2609,6 +5887,11 @@ location when the Location switch is on, as a single photo does.
     foreground or the camera pauses, and continues afterwards (the astro helper, issue
     #64; see `pauseAstroRun()`). A frame cut short by the pause is taken again, also
     when its error arrives before the pause does (`failureWasAPause()`).
+  - minimumInterval: The least time between the starts of two frames (a Slow burst), or
+    `nil` to take each as soon as the camera is ready. The run waits with the drive's
+    sleep and checks again whether to stop after the wait.
+- Returns: Whether the run began: `false` when no photo could be taken, the camera has no
+  lens or there is no save pipeline, and the tracker was not told of a run.
 
 Side effects: may show the add-only Photos prompt; adds each photo to Photos.
 
@@ -2617,7 +5900,7 @@ Side effects: may show the add-only Photos prompt; adds each photo to Photos.
 internal, declared in `Sources/NopeCore/CameraModel+Interval.swift`
 
 ```swift
-@MainActor func takeIntervalPhoto() async -> Bool
+@MainActor func takeIntervalPhoto() async -> IntervalPhotoOutcome
 ```
 
 Takes one photo of the running interval series, the way the shutter does. While the
@@ -2626,9 +5909,22 @@ skipping the photo; it also waits while another photo is being taken or saved (s
 the photo the shutter took just before the series started) or the compare view is open.
 A photo cut short by a pause is taken again after it.
 
-- Returns: Whether the photo was taken and saved. `false` ends the series: it was stopped,
-  the camera stopped for good, or the photo failed for another reason (the camera says
-  why).
+- Returns: ``IntervalPhotoOutcome/taken(startedAt:)`` when the photo was taken and saved,
+  with the moment it started;
+  ``IntervalPhotoOutcome/timeUp`` when the series' time was up while it waited; otherwise
+  ``IntervalPhotoOutcome/failed``: the camera stopped for good, or the photo failed for
+  another reason (the camera says why). A stopped series is cancelled and ignores it.
+
+## `CameraModel/wallClock`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var wallClock: @Sendable () -> Date { get set }
+```
+
+Reads the wall clock of ``clock`` for ``SessionPhoto/takenAt``; setting it replaces that
+part of the clock.
 
 ## `CameraModel/watchStatus`
 
@@ -2768,6 +6064,46 @@ struct BracketValue
 
 An exposure bracket, as stored in a preset.
 
+## `CameraSetup/BracketValue/CodingKeys`
+
+internal, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+enum CodingKeys
+```
+
+The stored names of the values.
+
+## `CameraSetup/BracketValue/CodingKeys/frameCount`
+
+internal, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+case frameCount
+```
+
+``frameCount``.
+
+## `CameraSetup/BracketValue/CodingKeys/order`
+
+internal, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+case order
+```
+
+``order``.
+
+## `CameraSetup/BracketValue/CodingKeys/step`
+
+internal, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+case step
+```
+
+``step``.
+
 ## `CameraSetup/BracketValue/frameCount`
 
 public, declared in `Sources/NopeCore/CameraSetup.swift`
@@ -2789,6 +6125,41 @@ init(_ bracket: BracketSettings)
 Copies a bracket.
 
 - Parameter bracket: The bracket.
+
+## `CameraSetup/BracketValue/init(from:)`
+
+public, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+init(from decoder: any Decoder) throws
+```
+
+Reads a bracket, with ``BracketOrder/darkestFirst`` when the order is missing or
+unknown.
+
+- Parameter decoder: The decoder.
+- Throws: A `DecodingError` when the frame count or the step is missing.
+
+## `CameraSetup/BracketValue/order`
+
+public, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+var order: BracketOrder
+```
+
+The order of the frames. A preset saved before the order existed has none, and reads
+as ``BracketOrder/darkestFirst``, the order it was taken in then.
+
+## `CameraSetup/BracketValue/settings`
+
+public, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+var settings: BracketSettings { get }
+```
+
+The bracket these values describe.
 
 ## `CameraSetup/BracketValue/step`
 
@@ -2890,6 +6261,16 @@ case focus
 
 ``CameraSetup/focus``.
 
+## `CameraSetup/CodingKeys/focusBracket`
+
+internal, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+case focusBracket
+```
+
+``CameraSetup/focusBracket``.
+
 ## `CameraSetup/CodingKeys/intervalCount`
 
 internal, declared in `Sources/NopeCore/CameraSetup.swift`
@@ -2900,6 +6281,16 @@ case intervalCount
 
 ``CameraSetup/intervalCount``.
 
+## `CameraSetup/CodingKeys/intervalDuration`
+
+internal, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+case intervalDuration
+```
+
+``CameraSetup/intervalDuration``.
+
 ## `CameraSetup/CodingKeys/intervalSeconds`
 
 internal, declared in `Sources/NopeCore/CameraSetup.swift`
@@ -2909,6 +6300,16 @@ case intervalSeconds
 ```
 
 ``CameraSetup/intervalSeconds``.
+
+## `CameraSetup/CodingKeys/intervalStopAfter`
+
+internal, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+case intervalStopAfter
+```
+
+``CameraSetup/intervalStopAfter``.
 
 ## `CameraSetup/CodingKeys/iso`
 
@@ -3196,6 +6597,16 @@ var focus: Double?
 
 The relative focus position from 0 to 1, or `nil` for autofocus.
 
+## `CameraSetup/focusBracket`
+
+public, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+var focusBracket: FocusBracketSettings?
+```
+
+The focus bracket, or `nil` when it is off. Absent in presets of earlier versions.
+
 ## `CameraSetup/init()`
 
 public, declared in `Sources/NopeCore/CameraSetup.swift`
@@ -3228,7 +6639,17 @@ public, declared in `Sources/NopeCore/CameraSetup.swift`
 var intervalCount: Int
 ```
 
-How many photos an interval series takes.
+How many photos an interval series takes when it stops after a number of photos.
+
+## `CameraSetup/intervalDuration`
+
+public, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+var intervalDuration: Double
+```
+
+How long an interval series runs when it stops after a time, in seconds.
 
 ## `CameraSetup/intervalSeconds`
 
@@ -3239,6 +6660,29 @@ var intervalSeconds: Double
 ```
 
 The time between interval photos, in seconds.
+
+## `CameraSetup/intervalSettings`
+
+public, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+var intervalSettings: IntervalSettings { get }
+```
+
+The interval series this setup holds. A stored end this version doesn't know reads as
+``IntervalSettings/StopAfter/numberOfPhotos``.
+
+## `CameraSetup/intervalStopAfter`
+
+public, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+var intervalStopAfter: String
+```
+
+What ends an interval series, as an ``IntervalSettings/StopAfter`` raw value:
+`numberOfPhotos` or `time`. A preset saved before the choice existed reads as
+`numberOfPhotos`, the series it ran then.
 
 ## `CameraSetup/iso`
 
@@ -3847,6 +7291,22 @@ is running and sending frames, but no picture. The photo is discarded.
 to ``SessionStatus/noPicture``. Say that no photo was taken because the camera sent a
 blank picture.
 
+## `CaptureError/bracketNotReady`
+
+public, declared in `Sources/NopeCore/CaptureError.swift`
+
+```swift
+case bracketNotReady
+```
+
+A bracket was asked for, but the camera reported no exposure to plan its frames around
+within ``CameraModel/bracketReadingWaitSeconds`` (just after a lens change, or after
+manual controls or the astro helper turned on or off), or the lens can't take it. No
+photo was taken: a bracket never becomes a single photo.
+
+Say that no photos were taken because the camera wasn't ready for the bracket, and that
+the person can try again.
+
 ## `CaptureError/captureFailed`
 
 public, declared in `Sources/NopeCore/CaptureError.swift`
@@ -4256,7 +7716,8 @@ case savedBracket([SavedPhoto])
 ```
 
 An exposure bracket was taken and every frame was saved as its own photo: separate
-single-frame photos, nothing merged, darkest first.
+single-frame photos, nothing merged, in the bracket's order (``BracketOrder``). Each
+photo carries its place in the bracket (``SavedPhoto/bracket``).
 
 Say how many photos were saved, and whether all of them are signed; when one isn't,
 say why, as for ``saved(_:)``. Announce it to VoiceOver.
@@ -4445,6 +7906,25 @@ internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
 
 Whether the timeout passed.
 
+## `ChangeWaiter/wait(timeoutSeconds:sleep:until:)`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor static func wait(timeoutSeconds: Double?, sleep: @escaping @Sendable (Double) async throws -> Void, until condition: @escaping @MainActor () -> Bool) async -> Bool
+```
+
+Waits, without polling, until the condition holds, or until the timeout passes.
+
+The condition is checked again each time a value it read changes (Observation,
+`withObservationTracking`), so it must read only observable state.
+
+- Parameters:
+  - timeoutSeconds: The longest wait in seconds, or `nil` to wait until it holds.
+  - sleep: Waits a number of seconds, for the timeout.
+  - condition: What to wait for.
+- Returns: Whether the condition holds at the end.
+
 ## `ChangeWaiter/waitForChange(of:)`
 
 internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
@@ -4509,12 +7989,19 @@ internal, declared in `Sources/NopeCore/AutoControls.swift`
 struct CloseUpDetector
 ```
 
-Notices when the subject seems closer than the lens can focus: the lens stays at its nearest
-position while autofocus keeps searching (issue #51, "Close-up assist").
+Notices when the subject seems closer than the lens can focus: autofocus searched, and the
+lens then stays at, or keeps coming back to, its nearest position (issue #51, "Close-up
+assist").
 
-It only suggests the ultra wide lens; the app never switches lenses on its own. The thresholds
-are assumptions to check on the device (docs/TESTING.md, "Close-up focus aids"):
-`lensPosition` is relative (0 is the nearest the lens can focus), not a distance.
+It only suggests the ultra wide lens; the app never switches lenses on its own. It judges by
+time, not by a count of readings, because the readings come only when something changes
+(``ExposureReading``; at most four a second). It allows for what autofocus does on a real
+device: the search is often seen only while the lens moves into the near band, and autofocus
+may search again for a moment once there.
+
+Every threshold is an assumption until the device checks (docs/TESTING.md, "Close-up focus
+aids", check C1): `lensPosition` is relative (0 is the nearest the lens can focus), not a
+distance.
 
 ## `CloseUpDetector/init()`
 
@@ -4536,30 +8023,55 @@ static let nearestPosition: Double
 
 How near the nearest position the lens must be, on the 0-to-1 relative scale.
 
-## `CloseUpDetector/record(_:)`
+## `CloseUpDetector/record(_:at:)`
 
 internal, declared in `Sources/NopeCore/AutoControls.swift`
 
 ```swift
-mutating func record(_ reading: ExposureReading) -> Bool
+mutating func record(_ reading: ExposureReading, at time: ContinuousClock.Instant) -> Bool
 ```
 
 Records a reading.
 
-- Parameter reading: The camera's reading.
-- Returns: Whether the subject seems too close: the lens stayed at its nearest position
-  for ``requiredReadings`` readings in a row, and autofocus searched during them.
+- Parameters:
+  - reading: The camera's reading.
+  - time: When it arrived.
+- Returns: Whether the subject seems too close: the lens was in the near band for
+  ``requiredNearTime`` of the last ``window``, and autofocus searched within
+  ``searchMemory`` when this began. Once reported, it stays reported while the lens keeps
+  to the near band that long.
 
-## `CloseUpDetector/requiredReadings`
+## `CloseUpDetector/requiredNearTime`
 
 internal, declared in `Sources/NopeCore/AutoControls.swift`
 
 ```swift
-static let requiredReadings: Int
+static let requiredNearTime: Duration
 ```
 
-How many readings in a row must find the lens there: two seconds at four readings a
-second (``ExposureReading`` rate).
+How much of ``window`` the lens must spend in the near band: 2 seconds, so a short search
+out of the band and back doesn't start the count again.
+
+## `CloseUpDetector/searchMemory`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static let searchMemory: Duration
+```
+
+How long a search counts after it was last seen: 4 seconds, enough for ``requiredNearTime``
+after a search seen on the way into the near band.
+
+## `CloseUpDetector/window`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static let window: Duration
+```
+
+How far back the detector looks: 2.5 seconds.
 
 ## `ComparisonCaptureBackend`
 
@@ -5292,15 +8804,19 @@ public, declared in `Sources/NopeCore/SelfTimer.swift`
 @MainActor final class Countdown
 ```
 
-A countdown in whole seconds that runs an action when it reaches zero: the self-timer.
+A countdown in whole seconds to a deadline that runs an action when it reaches zero: the
+self-timer.
 
 ``CameraModel`` owns one through ``DriveModel/countdown``. The shutter starts it in a timer
 drive mode (``DriveMode/timer(_:)``), and ``DriveIntent/startTimer(seconds:)`` starts it with
 any number of seconds, for example from a Siri or Shortcuts request with a delay (issue #62).
 An interface shows and announces ``remainingSeconds`` and gives a haptic tick when it changes.
 
-Battery rule (AGENTS.md, "Battery"): the countdown only sleeps between ticks; it does no
+Battery rule (AGENTS.md, "Battery"): the countdown only sleeps between numbers; it does no
 other work, and nothing keeps running once it ends or is cancelled.
+
+It counts to a fixed deadline on the camera model's monotonic clock (issue #122), so the
+photo is taken on time however late each wake is.
 
 ```swift
 countdown.start(seconds: 3) { await takePhoto() }
@@ -5317,17 +8833,42 @@ public, declared in `Sources/NopeCore/SelfTimer.swift`
 
 Stops the countdown without running its action. Does nothing when none runs.
 
+## `Countdown/deadline`
+
+public, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+@MainActor var deadline: ContinuousClock.Instant? { get set }
+```
+
+When the running countdown reaches zero, on the monotonic clock (``NopeClock/now``), or
+`nil` when none runs. Set when it starts; a late tick never moves it. The Live Activity
+draws its countdown to this moment.
+
+## `Countdown/init(clock:)`
+
+public, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+@MainActor init(clock: NopeClock)
+```
+
+Creates a countdown that isn't running.
+
+- Parameter clock: The clock it waits on. Tests pass one they move.
+
 ## `Countdown/init(sleep:)`
 
 public, declared in `Sources/NopeCore/SelfTimer.swift`
 
 ```swift
-@MainActor init(sleep: @escaping @Sendable (Double) async throws -> Void)
+@MainActor convenience init(sleep: @escaping @Sendable (Double) async throws -> Void)
 ```
 
-Creates a countdown that isn't running.
+Creates a countdown that waits on a sleep of a number of seconds, as tests written before
+``NopeClock`` pass (``NopeClock/stepped(by:now:)``).
 
-- Parameter sleep: Waits a number of seconds between ticks, throwing when cancelled.
+- Parameter sleep: Waits a number of seconds, throwing when cancelled.
 
 ## `Countdown/isRunning`
 
@@ -5339,6 +8880,18 @@ public, declared in `Sources/NopeCore/SelfTimer.swift`
 
 Whether a countdown is running.
 
+## `Countdown/longestSeconds`
+
+public, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+@MainActor static let longestSeconds: Int
+```
+
+The longest countdown, in seconds: one day. Longer requests are shortened to it, so the
+deadline's arithmetic can't overflow (final review of 1.0.0, minor 6). The app asks for at
+most 60 seconds; the limit only guards the public API.
+
 ## `Countdown/remainingSeconds`
 
 public, declared in `Sources/NopeCore/SelfTimer.swift`
@@ -5347,7 +8900,9 @@ public, declared in `Sources/NopeCore/SelfTimer.swift`
 @MainActor var remainingSeconds: Int? { get set }
 ```
 
-The seconds left, from the starting number down to 1, or `nil` when no countdown runs.
+The seconds left, from the starting number down to 1, or `nil` when no countdown runs:
+the whole seconds until ``deadline``, rounded up. When the app is held up for more than a
+second, a number is skipped; the photo is still on time (issue #122).
 
 ## `Countdown/run(seconds:)`
 
@@ -5372,13 +8927,35 @@ public, declared in `Sources/NopeCore/SelfTimer.swift`
 @MainActor func start(seconds: Int, fire: @escaping @MainActor () async -> Void)
 ```
 
-Starts counting down, one tick a second, and runs the action when the count reaches zero.
-Does nothing when a countdown already runs or `seconds` is less than 1.
+Starts counting down to a deadline `seconds` from now, and runs the action when it is
+reached. Does nothing when a countdown already runs or `seconds` is less than 1.
+
+The count is the whole seconds left until the deadline, rounded up. Between numbers the
+countdown waits until the next whole second before the deadline, so the time the app takes
+to wake doesn't add up from tick to tick: a 10-second timer fires 10 seconds after it was
+started, late only by its last wake (issue #122). A wake more than a second late skips a
+number rather than moving the deadline.
 
 - Parameters:
-  - seconds: The delay, in seconds.
+  - seconds: The delay, in seconds, at most ``longestSeconds``; a longer one is shortened
+    to it.
   - fire: What happens at zero, such as taking a photo. It doesn't run when the countdown
     is cancelled.
+
+## `Countdown/wholeSeconds(until:at:)`
+
+internal, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+nonisolated static func wholeSeconds(until deadline: ContinuousClock.Instant, at now: ContinuousClock.Instant) -> Int
+```
+
+The whole seconds from a moment until the deadline, rounded up, and never less than 0.
+
+- Parameters:
+  - deadline: When the countdown reaches zero.
+  - now: The moment, on the same clock.
+- Returns: The seconds shown.
 
 ## `DarwinNotificationListeners`
 
@@ -5606,8 +9183,8 @@ How the app develops the HEIF and JPEG it makes from the RAW. The RAW (DNG) itse
 affected.
 
 Both looks demosaic the sensor data and apply the file's own white balance and color
-matrices, with no noise reduction, sharpening, local contrast, local tone mapping or lens
-correction (`docs/PRIVACY.md`, "How each file's metadata is built and checked"; owner
+matrices, with noise reduction, sharpening, local contrast, local tone mapping and lens
+correction turned off (`docs/PRIVACY.md`, "How each file's metadata is built and checked"; owner
 decision, 2026-11-12). They differ only in the tone curve.
 
 ``SaveSettings/developedLook`` holds the choice; a Settings screen shows it as a picker.
@@ -5647,6 +9224,19 @@ What the current device's cameras can do, published as plain values.
 
 A ``CaptureBackend`` builds this at run time (progressive enhancement: AGENTS.md, "Code").
 Interfaces show a feature only when the matching value says the device supports it.
+
+## `DeviceCapabilities/closeUpFocusLens`
+
+public, declared in `Sources/NopeCore/DeviceCapabilities.swift`
+
+```swift
+var closeUpFocusLens: Lens? { get }
+```
+
+The rear ultra wide lens when it can autofocus, the lens the close-up hint and the
+Honesty entry Lenses Never Switch on Their Own suggest for a close subject
+(docs/design/device-feedback-1.0.md, section 3). `nil` on a device without one, or whose
+ultra wide lens has fixed focus: suggesting it there might not help.
 
 ## `DeviceCapabilities/defaultLens`
 
@@ -6234,9 +9824,10 @@ public, declared in `Sources/NopeCore/DeviceStatus.swift`
 @MainActor static let lowBatteryLevel: Double
 ```
 
-At or below this charge, unplugged, the battery warning shows: 20%, where iOS itself
-first warns and offers Low Power Mode (Apple Support, "Use Low Power Mode to save
-battery life on your iPhone").
+At or below this charge, unplugged, the battery warning shows: 3%, when the device is
+about to run out. iOS itself already warns and offers Low Power Mode at 20% (Apple
+Support, "Use Low Power Mode to save battery life on your iPhone"), so the camera warns
+only when the battery is nearly empty. An astro run stops earlier, at ``AstroModel/stopBatteryLevel``.
 
 ## `DeviceStatus/lowStoragePhotoCount`
 
@@ -6307,6 +9898,123 @@ public, declared in `Sources/NopeCore/DeviceStatus.swift`
 
 The battery's state, or `nil` on a device without a battery.
 
+## `DimAfter`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+enum DimAfter
+```
+
+How long Keep Screen On waits without a touch or photo before it dims the screen: the person's
+Dim After choice (issue #119, `docs/design/finish-1.0.md`, section 4), under Settings › Screen.
+
+``standard`` (2 minutes) is the time Keep Screen On used before the choice existed, so
+nothing changes for anyone who doesn't open the menu. With ``never`` the screen keeps its
+brightness, except in Low Power Mode and when the phone is hot, where it still dims after
+``KeepScreenOnRule/lowPowerDimDelay`` (``KeepScreenOnConditions/dimsSooner``); Battery Low
+and ``KeepScreenOnRule/limit`` apply under every choice. The choice belongs to Keep Screen
+On only: an interval series or an Astro run still dims the screen at once
+(``SeriesScreenKeeper``; owner decision 8, `docs/plans/1.0.0-finish.md`, section 6).
+
+Stored by its raw value, which never changes once released (``NopeSettings/dimAfter``).
+
+## `DimAfter/fiveMinutes`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+case fiveMinutes
+```
+
+After 5 minutes.
+
+## `DimAfter/never`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+case never
+```
+
+Never, apart from Low Power Mode and heat. Uses more battery and can warm the phone.
+
+## `DimAfter/oneMinute`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+case oneMinute
+```
+
+After 1 minute.
+
+## `DimAfter/standard`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+static let standard: DimAfter
+```
+
+The default: 2 minutes, Keep Screen On's time before the choice existed.
+
+## `DimAfter/twoMinutes`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+case twoMinutes
+```
+
+After 2 minutes: the default.
+
+## `DistortionCorrection`
+
+public, declared in `Sources/NopeCore/DistortionCorrection.swift`
+
+```swift
+enum DistortionCorrection
+```
+
+Whether a lens lets the app turn off the camera's geometric distortion correction, as the
+camera reports it (issue #80).
+
+Geometric distortion correction reshapes the picture to lessen a wide lens's fisheye effect,
+so it changes pixels. The app turns it off wherever the camera allows (`docs/PRIVACY.md`,
+"Processing"). Apple's documentation says "RAW photo captures never have GDC applied,
+regardless of the value of AVCaptureDevice.geometricDistortionCorrectionEnabled"
+(`AVCaptureDevice.h`, `geometricDistortionCorrectionSupported`), so this matters only for a
+lens's processed fallback. An interface discloses it in the lens's processing note and in
+the photo's details.
+
+The value is what the camera reports, not a measurement: whether a lens that offers no
+switch corrects its photos anyway is checked on real devices (`docs/TESTING.md`).
+
+## `DistortionCorrection/notSwitchable`
+
+public, declared in `Sources/NopeCore/DistortionCorrection.swift`
+
+```swift
+case notSwitchable
+```
+
+The camera offers apps no switch for the correction
+(`AVCaptureDevice.isGeometricDistortionCorrectionSupported` is `false`) and doesn't report
+whether its processed photos are corrected, so they may be.
+
+## `DistortionCorrection/turnedOff`
+
+public, declared in `Sources/NopeCore/DistortionCorrection.swift`
+
+```swift
+case turnedOff
+```
+
+The camera lets apps turn the correction off
+(`AVCaptureDevice.isGeometricDistortionCorrectionSupported` is `true`), and the app turns
+it off.
+
 ## `Double/limited(to:)`
 
 internal, declared in `Sources/NopeCore/WhiteBalance.swift`
@@ -6345,12 +10053,39 @@ Stop the countdown without taking a photo.
 public, declared in `Sources/NopeCore/DriveMode.swift`
 
 ```swift
-case hardwareButton(HardwareButtonPhase)
+case hardwareButton(ShutterPhase)
 ```
 
 A hardware shutter button moved. In burst mode, holding it takes a burst until it comes
 up; in the other modes, it acts like the on-screen shutter when it comes up, as the
 system Camera app does.
+
+## `DriveIntent/setBurstLimit(_:)`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case setBurstLimit(BurstLimit)
+```
+
+Use the person's Burst Limit (``NopeSettings/burstLimit``, issue #121): with a limit, a
+press of the shutter in burst mode takes that many photos, and a second press stops it
+early. Send it when the camera screen appears and whenever the setting changes. A
+running burst keeps the count it began with. Siri and Shortcuts keep their own count.
+
+- Parameter limit: The limit, or ``BurstLimit/off``.
+
+## `DriveIntent/setBurstSpeed(_:)`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case setBurstSpeed(BurstSpeed)
+```
+
+Choose the burst speed for this session. Ignored while a countdown or burst runs.
+
+- Parameter speed: The speed.
 
 ## `DriveIntent/setMode(_:)`
 
@@ -6361,6 +10096,31 @@ case setMode(DriveMode)
 ```
 
 Choose what the shutter does. Ignored while a countdown or burst runs.
+
+## `DriveIntent/shutter(_:)`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case shutter(ShutterPhase)
+```
+
+The on-screen shutter moved, in burst mode: touching down takes the first photo at once
+and starts a burst, which ends when the shutter comes up, the finger slides off or the
+touch is cancelled (docs/design/BURST.md, 3.1). Ignored in the other modes, where the
+shutter sends ``CameraIntent/capture`` when it comes up.
+
+## `DriveIntent/startBurst`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case startBurst
+```
+
+Start a burst that needs no holding, in burst mode: it ends with the shutter, Stop Burst
+or a limit. Ignored outside burst mode, with the astro helper on, while a photo can't be
+taken, and while a countdown or burst runs.
 
 ## `DriveIntent/startTimer(seconds:)`
 
@@ -6464,6 +10224,16 @@ The drive mode and the state of the self-timer and of a burst.
 ``CameraIntent/capture``, and the model applies the mode. Single is the default, and the mode
 isn't stored: every launch starts in single (AGENTS.md, "Cognitive": no surprise modes).
 
+## `DriveModel/abandonPreparedBurst()`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func abandonPreparedBurst()
+```
+
+Forgets a burst that was asked for and could not begin.
+
 ## `DriveModel/beginBurst()`
 
 internal, declared in `Sources/NopeCore/DriveMode.swift`
@@ -6484,6 +10254,29 @@ internal, declared in `Sources/NopeCore/AstroHelper.swift`
 
 Marks a burst as started.
 
+## `DriveModel/beginSaving()`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func beginSaving()
+```
+
+Marks the burst as taking no more photos: only the last ones are being saved.
+
+## `DriveModel/burstLimit`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor var burstLimit: BurstLimit { get set }
+```
+
+The person's Burst Limit (``NopeSettings/burstLimit``, issue #121), as the interface last
+sent it with ``DriveIntent/setBurstLimit(_:)``: ``BurstLimit/off`` until then. With a
+limit, a press of the shutter in burst mode takes ``BurstLimit/frameCount`` photos
+(``BurstStart/limited``).
+
 ## `DriveModel/burstProgress`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
@@ -6493,6 +10286,18 @@ public, declared in `Sources/NopeCore/DriveMode.swift`
 ```
 
 The running burst, or `nil` when none runs.
+
+## `DriveModel/burstSpeed`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor var burstSpeed: BurstSpeed { get set }
+```
+
+The burst speed chosen for this session: ``BurstSpeed/fast`` at launch, and never stored
+(docs/design/BURST.md, decision 13). ``CameraModel/burstSpeed`` is the speed a burst on
+the selected lens uses.
 
 ## `DriveModel/countdown`
 
@@ -6528,27 +10333,71 @@ Marks the burst as ended.
 
 - Parameter end: Why it ended.
 
-## `DriveModel/init(sleep:)`
+## `DriveModel/holds`
 
 internal, declared in `Sources/NopeCore/DriveMode.swift`
 
 ```swift
-@MainActor init(sleep: @escaping @Sendable (Double) async throws -> Void)
+@MainActor var holds: ShutterHolds { get set }
 ```
 
-Creates the model in single mode.
+The shutter presses that are down, by source, numbered (issue #100). The model records
+each press and release here as it arrives, before any work starts.
 
-- Parameter sleep: Waits a number of seconds between countdown ticks.
+## `DriveModel/init(clock:measuredBy:)`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor init(clock: NopeClock, measuredBy measure: @escaping @Sendable () -> ContinuousClock.Instant)
+```
+
+Creates the model in single mode, at the Fast burst speed.
+
+- Parameters:
+  - clock: The camera model's clock: the countdown counts to a moment of it, and Slow
+    photos wait on it.
+  - measure: Reads the monotonic clock that times a burst's photos: `clock`'s, unless the
+    camera model was made with the older seconds sleep.
+
+## `DriveModel/init(sleep:now:)`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor init(sleep: @escaping @Sendable (Double) async throws -> Void, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now })
+```
+
+Creates the model with a sleep of a number of seconds, as tests written before
+``NopeClock`` pass: Slow photos wait on it directly, and the countdown on a clock stepped by
+it (``NopeClock/stepped(by:now:)``).
+
+- Parameters:
+  - sleep: Waits a number of seconds between countdown ticks and between Slow photos.
+  - now: Reads the clock that times a burst's photos.
+
+## `DriveModel/isBurstPrepared`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor var isBurstPrepared: Bool { get set }
+```
+
+Whether a press has asked for a burst that hasn't begun yet: the press is handled at once
+and the burst starts in a task just after (issue #100), so a second press in between
+mustn't start a second burst.
 
 ## `DriveModel/isBurstStopRequested`
 
 internal, declared in `Sources/NopeCore/DriveMode.swift`
 
 ```swift
-@MainActor var isBurstStopRequested: Bool { get set }
+@MainActor var isBurstStopRequested: Bool { get }
 ```
 
-Whether the person asked the running burst to stop.
+Whether the running burst should stop before its next photo: the person asked, or the
+shutter that holds it came up after its first photo.
 
 ## `DriveModel/isBusy`
 
@@ -6559,6 +10408,19 @@ public, declared in `Sources/NopeCore/DriveMode.swift`
 ```
 
 Whether a countdown or a burst runs, so the shutter stops it instead of taking a photo.
+
+## `DriveModel/isShutterHeld`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor var isShutterHeld: Bool { get }
+```
+
+Whether a shutter that starts a held burst is down now: the on-screen shutter in burst
+mode or a hardware button. A held burst stops after its first photo once no shutter is
+down, also when it came up before the burst began. Each source has its own hold, so a
+press and release of a second button doesn't end the first one's burst.
 
 ## `DriveModel/isStopRequested`
 
@@ -6592,6 +10454,28 @@ The most frames one burst takes (issue #46, "Limits"). An assumption to be confi
 device: with RAW and HEIF at 12 MP this is under 2 GB, and memory stays bounded at any
 count, because each frame is saved while the next is taken.
 
+## `DriveModel/measuredFastRates`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor var measuredFastRates: [Lens.ID : Double] { get set }
+```
+
+The photos a second measured at Fast in this session's bursts, by lens: the last whole
+burst of three photos or more on each. Not stored. It decides whether Slow is offered
+(``offersSlowBurst(on:)``).
+
+## `DriveModel/minimumPhotosForRate`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+nonisolated static let minimumPhotosForRate: Int
+```
+
+The fewest photos a rate is shown for: with two, one gap would be shown as a rate.
+
 ## `DriveModel/mode`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
@@ -6601,6 +10485,89 @@ public, declared in `Sources/NopeCore/DriveMode.swift`
 ```
 
 What the shutter does.
+
+## `DriveModel/now`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor let now: @Sendable () -> ContinuousClock.Instant
+```
+
+Reads the monotonic clock, to time a burst's photos for its rate.
+
+## `DriveModel/offersSlowBurst(on:)`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func offersSlowBurst(on lensID: Lens.ID?) -> Bool
+```
+
+Whether Slow is offered on a lens: unless a burst at Fast on it measured under
+``slowBurstMinimumFastRate`` in this session.
+
+- Parameter lensID: The lens, or `nil` before the camera is ready.
+- Returns: `false` only when Fast on that lens is known to be slower than the threshold.
+
+## `DriveModel/prepareBurst(start:limit:)`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func prepareBurst(start: BurstStart, limit: Int? = nil)
+```
+
+Sets who begins the next burst, which ``beginBurst()`` uses, and marks it as asked for
+until it begins or ``abandonPreparedBurst()`` says it won't. A stop asked for in between
+(``requestBurstStop()``) applies to it.
+
+- Parameters:
+  - start: Who begins it.
+  - limit: The photos a limited burst asks for, for its progress and result; `nil` for
+    the others.
+
+## `DriveModel/rate(photos:first:last:)`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor static func rate(photos: Int, first: ContinuousClock.Instant?, last: ContinuousClock.Instant?) -> Double?
+```
+
+Photos a second: the photos less one over the time from the first to the last, or `nil`
+under ``minimumPhotosForRate`` photos or without time between them.
+
+- Parameters:
+  - photos: The photos counted.
+  - first: The first one's time.
+  - last: The last one's time.
+- Returns: The rate, or `nil`.
+
+## `DriveModel/rateWindow`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+nonisolated static let rateWindow: Int
+```
+
+How many of the most recent photos the running rate is measured over (docs/design/BURST.md,
+3.3): enough to smooth one slow save, few enough to follow a change.
+
+## `DriveModel/recordFastRate(_:on:)`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func recordFastRate(_ rate: Double, on lensID: Lens.ID)
+```
+
+Keeps the rate a burst at Fast measured on a lens, for ``offersSlowBurst(on:)``.
+
+- Parameters:
+  - rate: The whole burst's photos a second.
+  - lensID: The lens it was taken with.
 
 ## `DriveModel/recordSaved()`
 
@@ -6620,7 +10587,7 @@ internal, declared in `Sources/NopeCore/DriveMode.swift`
 @MainActor func recordTaken()
 ```
 
-Counts a frame taken.
+Counts a frame taken, at the clock's time now, and updates the running rate.
 
 ## `DriveModel/requestBurstStop()`
 
@@ -6631,6 +10598,30 @@ internal, declared in `Sources/NopeCore/DriveMode.swift`
 ```
 
 Asks the running burst to stop after the frame being taken.
+
+## `DriveModel/setBurstLimit(_:)`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func setBurstLimit(_ limit: BurstLimit)
+```
+
+Keeps the person's Burst Limit for the next burst; a running one keeps its count.
+
+- Parameter limit: The limit.
+
+## `DriveModel/setBurstSpeed(_:)`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func setBurstSpeed(_ speed: BurstSpeed)
+```
+
+Chooses the burst speed for the session, unless a countdown or burst runs.
+
+- Parameter speed: The speed.
 
 ## `DriveModel/setMode(_:)`
 
@@ -6643,6 +10634,30 @@ internal, declared in `Sources/NopeCore/DriveMode.swift`
 Changes the mode, unless a countdown or burst runs.
 
 - Parameter mode: The new mode.
+
+## `DriveModel/sleep`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor let sleep: @Sendable (Double) async throws -> Void
+```
+
+Waits a number of seconds: between countdown ticks, and between the photos of a Slow
+burst.
+
+## `DriveModel/slowBurstMinimumFastRate`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+nonisolated static let slowBurstMinimumFastRate: Double
+```
+
+The rate at Fast, in photos a second, below which Slow isn't offered on a lens: about 3 a
+second (owner decision 3, docs/design/BURST.md, 2026-11-18). Below it, Slow at up to 2 a
+second would barely differ from Fast. Measured in this session; no figure is assumed for
+a device.
 
 ## `ExposureMode`
 
@@ -6941,6 +10956,782 @@ case on
 The flash fires for every photo, unless the device is too hot for it (the system then
 takes the photo without it).
 
+## `FocusAfterBracket`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+enum FocusAfterBracket
+```
+
+Where the focus is after a focus bracket.
+
+## `FocusAfterBracket/automatic`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case automatic
+```
+
+Back to automatic focus.
+
+## `FocusAfterBracket/returned(_:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case returned(Double)
+```
+
+Back to the position set by hand before the bracket.
+
+## `FocusAfterBracket/stays(_:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case stays(Double)
+```
+
+It stays at the last frame's position (Return Focus When Done off).
+
+## `FocusBracketOrder`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+enum FocusBracketOrder
+```
+
+The order in which a focus bracket's frames are taken (docs/design/BRACKETING.md, section 5).
+
+## `FocusBracketOrder/farthestFirst`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case farthestFirst
+```
+
+From the farthest focus position to the nearest.
+
+## `FocusBracketOrder/nearestFirst`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case nearestFirst
+```
+
+From the nearest focus position to the farthest. The default.
+
+## `FocusBracketOutcome`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+struct FocusBracketOutcome
+```
+
+What a focus bracket's frame loop returns.
+
+## `FocusBracketOutcome/end`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+var end: BurstEnd
+```
+
+Why the loop ended, when no frame failed.
+
+## `FocusBracketOutcome/failure`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+var failure: CaptureError?
+```
+
+The error of the frame that failed, or `nil`.
+
+## `FocusBracketOutcome/init()`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+init()
+```
+
+Creates an outcome: nothing saved yet, ended at the limit, no failure.
+
+## `FocusBracketOutcome/lastPosition`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+var lastPosition: Double?
+```
+
+The last frame's reported position, or `nil` when no frame was saved.
+
+## `FocusBracketOutcome/offPlan`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+var offPlan: Int
+```
+
+The frames whose reported focus was off their plan.
+
+## `FocusBracketOutcome/saved`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+var saved: [SavedPhoto]
+```
+
+The photos saved, in the order taken.
+
+## `FocusBracketProgress`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+struct FocusBracketProgress
+```
+
+How far a focus bracket has got (``BracketModel/progress``).
+
+## `FocusBracketProgress/frameNumber`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+var frameNumber: Int { get }
+```
+
+The number of the frame being taken now (or next, while paused), from 1, never more than
+``total``.
+
+## `FocusBracketProgress/init(taken:saved:total:position:isPaused:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+init(taken: Int, saved: Int, total: Int, position: Double? = nil, isPaused: Bool = false)
+```
+
+Creates a progress value.
+
+- Parameters:
+  - taken: The frames taken.
+  - saved: The frames saved.
+  - total: The frames in the bracket.
+  - position: The last reported position, or `nil`.
+  - isPaused: Whether the series is paused.
+
+## `FocusBracketProgress/isPaused`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let isPaused: Bool
+```
+
+Whether the series is paused: the app left the foreground, or the camera is paused.
+
+## `FocusBracketProgress/position`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let position: Double?
+```
+
+The lens position the lens last reported, or `nil` before the first move.
+
+## `FocusBracketProgress/saved`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let saved: Int
+```
+
+The frames saved so far.
+
+## `FocusBracketProgress/taken`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let taken: Int
+```
+
+The frames taken so far.
+
+## `FocusBracketProgress/total`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let total: Int
+```
+
+The frames in the bracket.
+
+## `FocusBracketProgress/with(taken:saved:position:isPaused:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+func with(taken: Int? = nil, saved: Int? = nil, position: Double? = nil, isPaused: Bool? = nil) -> FocusBracketProgress
+```
+
+A copy with other values.
+
+## `FocusBracketRange`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+enum FocusBracketRange
+```
+
+The range of a focus bracket asked for from Siri or Shortcuts.
+
+## `FocusBracketRange/asSet`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case asSet
+```
+
+The range set in the app (``BracketModel/focus``).
+
+## `FocusBracketRange/wholeRange`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case wholeRange
+```
+
+The whole range, 0 to 1.
+
+## `FocusBracketResult`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+struct FocusBracketResult
+```
+
+How the last focus bracket ended (``BracketModel/lastRun``).
+
+## `FocusBracketResult/end`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let end: BurstEnd
+```
+
+Why it ended: ``BurstEnd/limitReached`` when every frame was taken.
+
+## `FocusBracketResult/focusAfter`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let focusAfter: FocusAfterBracket
+```
+
+Where the focus is now.
+
+## `FocusBracketResult/init(end:saved:total:offPlan:focusAfter:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+init(end: BurstEnd, saved: Int, total: Int, offPlan: Int, focusAfter: FocusAfterBracket)
+```
+
+Creates a result.
+
+- Parameters:
+  - end: Why it ended.
+  - saved: The photos saved.
+  - total: The frames in the bracket.
+  - offPlan: The frames not at their planned focus.
+  - focusAfter: Where the focus is now.
+
+## `FocusBracketResult/isFinished`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+var isFinished: Bool { get }
+```
+
+Whether every frame was taken and saved.
+
+## `FocusBracketResult/offPlan`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let offPlan: Int
+```
+
+The frames whose reported focus was more than ``FocusFramePlace/tolerance`` from the plan.
+
+## `FocusBracketResult/saved`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let saved: Int
+```
+
+The photos saved.
+
+## `FocusBracketResult/total`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let total: Int
+```
+
+The frames in the bracket.
+
+## `FocusBracketRun`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+struct FocusBracketRun
+```
+
+A focus bracket being taken: its settings and what each frame is taken with.
+
+## `FocusBracketRun/backend`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+let backend: any ManualCaptureBackend
+```
+
+The camera.
+
+## `FocusBracketRun/bytesPerPhoto`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+let bytesPerPhoto: Int64
+```
+
+The estimated size of one frame's files.
+
+## `FocusBracketRun/controls(at:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+func controls(at position: Double) -> DeviceControls
+```
+
+The controls for a frame: the held exposure and white balance, focus at a position, no
+point of interest and no automatic aids.
+
+- Parameter position: The lens position.
+- Returns: The controls.
+
+## `FocusBracketRun/init(settings:lens:request:save:saver:backend:locked:bytesPerPhoto:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+init(settings: FocusBracketSettings, lens: Lens, request: CaptureRequest, save: SaveSettings, saver: PhotoSaver, backend: any ManualCaptureBackend, locked: ManualSettings, bytesPerPhoto: Int64)
+```
+
+Creates a run.
+
+- Parameters:
+  - settings: The bracket.
+  - lens: The lens.
+  - request: Each frame's request.
+  - save: The settings the frames are saved with.
+  - saver: The save pipeline.
+  - backend: The camera.
+  - locked: The exposure and white balance held for every frame.
+  - bytesPerPhoto: The estimated size of one frame's files.
+
+## `FocusBracketRun/lens`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+let lens: Lens
+```
+
+The lens.
+
+## `FocusBracketRun/locked`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+let locked: ManualSettings
+```
+
+The exposure and white balance held for every frame.
+
+## `FocusBracketRun/request`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+let request: CaptureRequest
+```
+
+Each frame's request: the lens, the metadata plan, no flash.
+
+## `FocusBracketRun/save`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+let save: SaveSettings
+```
+
+The settings the frames are saved with.
+
+## `FocusBracketRun/saver`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+let saver: PhotoSaver
+```
+
+The save pipeline.
+
+## `FocusBracketRun/settings`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+let settings: FocusBracketSettings
+```
+
+The bracket.
+
+## `FocusBracketSettings`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+struct FocusBracketSettings
+```
+
+The settings of a focus bracket: a series of separate single-frame photos, each at the next
+focus position, for stacking in other software (docs/design/BRACKETING.md, section 5).
+
+Positions are on the lens's own relative scale (`AVCaptureDevice.lensPosition`): 0 is the
+closest the lens focuses and 1 the farthest. Apple documents that a position "does not
+correspond to an exact physical distance", so the app never turns one into a distance.
+
+## `FocusBracketSettings/defaultFrameCount`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+static let defaultFrameCount: Int
+```
+
+The frame count a focus bracket starts with.
+
+## `FocusBracketSettings/farthest`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let farthest: Double
+```
+
+The farthest focus position, from 0 to 1, never below ``nearest``.
+
+## `FocusBracketSettings/frameCount`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let frameCount: Int
+```
+
+The number of frames, one of ``frameCounts``.
+
+## `FocusBracketSettings/frameCounts`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+static let frameCounts: [Int]
+```
+
+The frame counts the app offers. 50 is the most one burst takes
+(``DriveModel/maximumBurstFrames``; decision 12).
+
+## `FocusBracketSettings/init(nearest:farthest:frameCount:order:returnsFocus:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+init(nearest: Double, farthest: Double, frameCount: Int, order: FocusBracketOrder = .nearestFirst, returnsFocus: Bool = true)
+```
+
+Creates focus bracket settings. Each position is moved into 0…1; a nearest position
+beyond the farthest swaps the two (docs/design/BRACKETING.md, section 5); a frame count
+that isn't offered becomes the nearest one that is.
+
+- Parameters:
+  - nearest: The nearest focus position, from 0 to 1.
+  - farthest: The farthest focus position, from 0 to 1.
+  - frameCount: The number of frames.
+  - order: The order of the frames.
+  - returnsFocus: Whether the focus returns to what it was when the bracket ends.
+
+## `FocusBracketSettings/isAvailable(on:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+static func isAvailable(on lens: Lens) -> Bool
+```
+
+Whether a lens can take a focus bracket: its focus can be locked at a lens position
+(`AVCaptureDevice.isLockingFocusWithCustomLensPositionSupported`).
+
+- Parameter lens: A lens.
+- Returns: `true` when the lens supports manual focus.
+
+## `FocusBracketSettings/isWholeRange`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+var isWholeRange: Bool { get }
+```
+
+Whether the settings span the whole range, 0 to 1.
+
+## `FocusBracketSettings/nearest`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let nearest: Double
+```
+
+The nearest focus position, from 0 to 1, never above ``farthest``.
+
+## `FocusBracketSettings/offeredFrameCount(nearestTo:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+static func offeredFrameCount(nearestTo count: Int) -> Int
+```
+
+The offered frame count nearest to a number; the smaller of two equally near.
+
+- Parameter count: Any number of frames.
+- Returns: One of ``frameCounts``.
+
+## `FocusBracketSettings/order`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let order: FocusBracketOrder
+```
+
+The order of the frames.
+
+## `FocusBracketSettings/positions`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+var positions: [Double] { get }
+```
+
+Each frame's lens position, evenly spaced from ``nearest`` to ``farthest``, in the order
+taken. The last position is exactly the end, with no rounding error.
+
+## `FocusBracketSettings/returnsFocus`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let returnsFocus: Bool
+```
+
+Whether the focus returns to what it was before the bracket (automatic focus, or the
+position set by hand) when the bracket ends. Otherwise it stays at the last frame's.
+
+## `FocusBracketSettings/standard`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+static let standard: FocusBracketSettings
+```
+
+The focus bracket an interface offers first: the whole range, 10 frames, nearest first,
+focus returned when done.
+
+## `FocusBracketSettings/step`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+var step: Double { get }
+```
+
+The step between neighboring frames on the lens's scale:
+(farthest − nearest) ÷ (frames − 1).
+
+## `FocusBracketSettings/with(nearest:farthest:frameCount:order:returnsFocus:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+func with(nearest: Double? = nil, farthest: Double? = nil, frameCount: Int? = nil, order: FocusBracketOrder? = nil, returnsFocus: Bool? = nil) -> FocusBracketSettings
+```
+
+A copy with other values.
+
+- Parameters:
+  - nearest: The nearest position, or `nil` to keep it.
+  - farthest: The farthest position, or `nil` to keep it.
+  - frameCount: The number of frames, or `nil` to keep it.
+  - order: The order, or `nil` to keep it.
+  - returnsFocus: Whether focus returns when done, or `nil` to keep it.
+- Returns: The new settings.
+
+## `FocusFramePlace`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+struct FocusFramePlace
+```
+
+A saved photo's place in a focus bracket (``BracketPlace/focus``): the position planned for
+it and the one the lens reported when the photo was taken.
+
+Privacy: session values, in memory only; no file holds them.
+
+## `FocusFramePlace/init(number:plannedPosition:reportedPosition:positions:order:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+init(number: Int, plannedPosition: Double, reportedPosition: Double, positions: [Double], order: FocusBracketOrder)
+```
+
+Creates a place.
+
+- Parameters:
+  - number: The frame's place in the order, from 1.
+  - plannedPosition: The position asked for.
+  - reportedPosition: The position the lens reported.
+  - positions: Every frame's planned position, in the order taken.
+  - order: The order of the frames.
+
+## `FocusFramePlace/isOffPlan`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+var isOffPlan: Bool { get }
+```
+
+Whether the lens reported a position further from the plan than ``tolerance``. The frame
+is still saved (decision 14); an interface shows both values.
+
+## `FocusFramePlace/number`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let number: Int
+```
+
+The frame's place in the order taken, from 1.
+
+## `FocusFramePlace/order`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let order: FocusBracketOrder
+```
+
+The order of the frames.
+
+## `FocusFramePlace/plannedPosition`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let plannedPosition: Double
+```
+
+The lens position the app asked for.
+
+## `FocusFramePlace/positions`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let positions: [Double]
+```
+
+Every frame's planned position, in the order taken.
+
+## `FocusFramePlace/reportedPosition`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let reportedPosition: Double
+```
+
+The lens position the lens reported after the move.
+
+## `FocusFramePlace/tolerance`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+static let tolerance: Double
+```
+
+How far, on the lens's 0 to 1 scale, the reported position may differ from the planned
+one and still count as at its plan: 0.02. An assumption until the device check D6
+(docs/design/BRACKETING.md, section 9) measures how closely a lens reaches a position.
+
 ## `FocusModeReading`
 
 public, declared in `Sources/NopeCore/CameraStats.swift`
@@ -7124,6 +11915,93 @@ case unlimited
 
 No limit: autofocus searches the whole range, the default.
 
+## `FocusRangeEditing`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+struct FocusRangeEditing
+```
+
+An end of the focus range being set on the picture (``BracketModel/rangeEditing``).
+
+## `FocusRangeEditing/end`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let end: FocusRangeEnd
+```
+
+Which end is being set.
+
+## `FocusRangeEditing/followsLens`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let followsLens: Bool
+```
+
+Whether a tap on the picture focused there, so the value follows the lens's reported
+position (``CameraModel/focusRangeValue``).
+
+## `FocusRangeEditing/init(end:value:followsLens:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+init(end: FocusRangeEnd, value: Double, followsLens: Bool = false)
+```
+
+Creates the state.
+
+- Parameters:
+  - end: Which end is being set.
+  - value: The chosen position.
+  - followsLens: Whether the value follows the lens.
+
+## `FocusRangeEditing/value`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let value: Double
+```
+
+The position chosen with the slider or the buttons, from 0 to 1.
+
+## `FocusRangeEnd`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+enum FocusRangeEnd
+```
+
+An end of the focus range (docs/design/BRACKETING.md, section 5, "Setting the range on the
+picture").
+
+## `FocusRangeEnd/farthest`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case farthest
+```
+
+Farthest Focus.
+
+## `FocusRangeEnd/nearest`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case nearest
+```
+
+Nearest Focus.
+
 ## `FocusRangeReading`
 
 public, declared in `Sources/NopeCore/CameraStats.swift`
@@ -7218,6 +12096,80 @@ let viewfinderPoint: FramePoint
 ```
 
 The tapped point in the viewfinder, as drawn: where an interface draws the focus square.
+
+## `ForegroundMove`
+
+public, declared in `Sources/NopeCore/AssistantForeground.swift`
+
+```swift
+enum ForegroundMove
+```
+
+What an assistant action that needs the camera does to bring the app on screen, once the
+Assistant Access check allowed it (issue #126).
+
+Siri and Shortcuts start a gated action in the background mode, so a refused or cancelled
+request never opens the app (issue #82). The camera runs only while the app is on screen, so
+an allowed request that needs it either finds the app already there, moves it to the
+foreground (App Intents' `continueInForeground`), or, where the system can't do that (a
+voice-only request, for example), ends with a sentence that says to open the app. Apple's
+guidance is to check `systemContext.currentMode.canContinueInForeground` first, because
+`continueInForeground` throws where it can't
+([Apple: continueInForeground](https://developer.apple.com/documentation/appintents/appintent/continueinforeground(_:alwaysconfirm:))).
+
+The intent reads the system's values and does what this says; the decision holds no
+App Intents types, so it is unit tested here.
+
+## `ForegroundMove/cannotOpen`
+
+public, declared in `Sources/NopeCore/AssistantForeground.swift`
+
+```swift
+case cannotOpen
+```
+
+The app isn't on screen and the system can't open it from this request. End with the
+sentence that says to open the app; nothing is taken.
+
+## `ForegroundMove/continueInForeground`
+
+public, declared in `Sources/NopeCore/AssistantForeground.swift`
+
+```swift
+case continueInForeground
+```
+
+Move the app to the foreground, then hand the request to the camera screen.
+
+## `ForegroundMove/init(runsInForeground:appIsOnScreen:canContinueInForeground:)`
+
+public, declared in `Sources/NopeCore/AssistantForeground.swift`
+
+```swift
+init(runsInForeground: Bool, appIsOnScreen: Bool, canContinueInForeground: Bool)
+```
+
+Decides the move.
+
+- Parameters:
+  - runsInForeground: Whether the intent already runs in the foreground mode
+    (`systemContext.currentMode == .foreground`).
+  - appIsOnScreen: Whether the app's window is on screen, active or covered by Siri
+    (`UIApplication.applicationState` isn't `.background`). The camera keeps running
+    then, so moving isn't needed, and a voice request that can't move still works.
+  - canContinueInForeground: Whether the system can move this request to the
+    foreground (`systemContext.currentMode.canContinueInForeground`).
+
+## `ForegroundMove/none`
+
+public, declared in `Sources/NopeCore/AssistantForeground.swift`
+
+```swift
+case none
+```
+
+The app is already on screen, or the intent already runs in the foreground: the camera
+screen takes the request as it is.
 
 ## `FrameAnalysis`
 
@@ -7449,81 +12401,6 @@ internal, declared in `Sources/NopeCore/AstroHelper.swift`
 
 Counts a frame taken.
 
-## `GoldenSpiral`
-
-public, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-enum GoldenSpiral
-```
-
-The golden (Fibonacci) spiral: quarter circles in the squares that a golden rectangle divides
-into, stretched to fill the picture (issue #40).
-
-It is built in a landscape golden rectangle (phi wide, 1 high): a square is cut from the left,
-then from the top, the right and the bottom of what is left, again and again, and each square
-holds a quarter circle that continues the last one. The points are then scaled to the unit
-square and moved to the ``SpiralPlacement``.
-
-## `GoldenSpiral/place(_:_:)`
-
-internal, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static func place(_ point: GuidePoint, _ placement: SpiralPlacement) -> GuidePoint
-```
-
-Moves a point of the standard spiral to a placement: mirrored left to right first if the
-placement is flipped, then turned clockwise a quarter turn at a time.
-
-- Parameters:
-  - point: A point of the standard spiral.
-  - placement: The placement.
-
-## `GoldenSpiral/points(placement:)`
-
-public, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static func points(placement: SpiralPlacement) -> [GuidePoint]
-```
-
-The spiral as a polyline from its outer end to its center, in unit coordinates.
-
-- Parameter placement: Where the spiral sits.
-- Returns: ``squareCount`` × ``pointsPerQuarter`` + 1 points.
-
-## `GoldenSpiral/pointsPerQuarter`
-
-internal, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static let pointsPerQuarter: Int
-```
-
-The points drawn along each quarter circle; enough for a smooth curve at full screen.
-
-## `GoldenSpiral/squareCount`
-
-internal, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static let squareCount: Int
-```
-
-How many squares the spiral passes through. After ten the squares are smaller than a
-hundredth of the picture, too small to see.
-
-## `GoldenSpiral/unplacedPoints()`
-
-internal, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static func unplacedPoints() -> [GuidePoint]
-```
-
-The spiral in the standard placement, in unit coordinates.
-
 ## `GravitySource`
 
 public, declared in `Sources/NopeCore/Level.swift`
@@ -7621,16 +12498,6 @@ enum GridGeometry
 Where each grid style's lines go, in unit coordinates, so every interface draws the same
 guides (issue #40). Guides are on screen only.
 
-## `GridGeometry/goldenRatio`
-
-public, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static let goldenRatio: Double
-```
-
-The golden ratio, phi: (1 + √5) / 2.
-
 ## `GridGeometry/lines(for:aspectRatio:)`
 
 public, declared in `Sources/NopeCore/GridGeometry.swift`
@@ -7642,8 +12509,7 @@ static func lines(for style: GridStyle, aspectRatio: Double) -> [GuideLine]
 The straight lines of a grid style.
 
 - Parameters:
-  - style: The style. ``GridStyle/goldenSpiral`` has no straight lines; draw
-    ``GoldenSpiral/points(placement:)`` instead.
+  - style: The style.
   - aspectRatio: The picture's width divided by its height, such as 0.75 for a 4:3
     picture held upright. Only ``GridStyle/square`` uses it.
 - Returns: The lines, vertical ones first.
@@ -7669,26 +12535,6 @@ case fourByFour
 
 Three lines each way, at quarters.
 
-## `GridStyle/goldenRatio`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-case goldenRatio
-```
-
-Two lines each way at the golden ratio (phi): about 38% and 62%.
-
-## `GridStyle/goldenSpiral`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-case goldenSpiral
-```
-
-A golden (Fibonacci) spiral, in one of eight placements (``SpiralPlacement``).
-
 ## `GridStyle/square`
 
 public, declared in `Sources/NopeCore/OverlayOptions.swift`
@@ -7708,6 +12554,204 @@ case thirds
 ```
 
 Two lines each way, at thirds: the default.
+
+## `GuideCardContext`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+struct GuideCardContext
+```
+
+What the camera shows, for when the guide's invitation card may show
+(``GuideInvitation/showsCard(_:)``).
+
+## `GuideCardContext/init(camera:showsOtherCard:)`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+@MainActor init(camera: CameraModel, showsOtherCard: Bool)
+```
+
+Reads the context from the camera.
+
+- Parameters:
+  - camera: The camera model.
+  - showsOtherCard: Whether the interface shows another card on the picture's lower edge.
+
+## `GuideCardContext/init(isCameraLive:isCleanView:isRunning:showsOtherCard:)`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+init(isCameraLive: Bool, isCleanView: Bool = false, isRunning: Bool = false, showsOtherCard: Bool = false)
+```
+
+Creates a context from plain values.
+
+- Parameters:
+  - isCameraLive: Whether the picture is live.
+  - isCleanView: Whether the camera is in clean view.
+  - isRunning: Whether a countdown or series is going.
+  - showsOtherCard: Whether another card shows on the picture's lower edge.
+
+## `GuideCardContext/isCameraLive`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+var isCameraLive: Bool
+```
+
+Whether the picture is live: the camera is ready, its first start has ended, and its
+session runs (not interrupted, paused for heat or failed).
+
+## `GuideCardContext/isCleanView`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+var isCleanView: Bool
+```
+
+Whether the camera is in clean view.
+
+## `GuideCardContext/isRunning`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+var isRunning: Bool
+```
+
+Whether a countdown, burst, interval series, astro run or bracket is going.
+
+## `GuideCardContext/showsOtherCard`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+var showsOtherCard: Bool
+```
+
+Whether another card of the picture's lower edge shows: a drive mode's card, an open dial
+or a hint. It takes the invitation's place while it shows.
+
+## `GuideInvitation`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+@MainActor final class GuideInvitation
+```
+
+The invitation to the how-to-use guide (issue #117; `docs/design/finish-1.0.md`, section 2):
+a small card on the camera, "How to use nope.", with Open and Dismiss.
+
+The card shows from the first time the camera is live until the person presses Open or
+Dismiss, or opens the guide another way (from Settings or About). Either is final: the card
+doesn't come back on this device. Nothing takes it away on a timer or after a number of
+launches (owner decision 3), and Factory Defaults doesn't bring it back (decision 4); the
+guide itself can always be opened again from Settings and About.
+
+Privacy rule (AGENTS.md, "No network, no analytics"): the one stored value is a Boolean in the
+app's own settings store on the device. It isn't a count or a date, and it is never sent. It
+is kept under a key outside ``SharedSettingsStore/keyPrefix``: it is the app's state, not a
+setting, so presets, Factory Defaults and the Lock Screen camera's snapshot don't carry it.
+
+When the card may show on the camera is ``showsCard(_:)``: never over the first start, clean
+view, a countdown or series, or a paused camera, and it gives way to the other cards of the
+picture's lower edge.
+
+```swift
+let invitation = GuideInvitation(settings: settings)
+if invitation.showsCard(GuideCardContext(camera: model, showsOtherCard: false)) {
+    // Show the card; Open calls invitation.guideOpened(), Dismiss invitation.dismiss().
+}
+```
+
+## `GuideInvitation/answeredKey`
+
+internal, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+nonisolated static let answeredKey: String
+```
+
+The store key: whether the invitation was answered, a Boolean.
+
+## `GuideInvitation/dismiss()`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+@MainActor func dismiss()
+```
+
+Records the card's Dismiss: the card doesn't show again. The guide stays in Settings and
+About. Side effect: stores one Boolean on the device.
+
+## `GuideInvitation/guideOpened()`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+@MainActor func guideOpened()
+```
+
+Records that the guide was opened, from the card's Open or from Settings or About: the
+card is answered and doesn't show again. Side effect: stores one Boolean on the device.
+
+## `GuideInvitation/init(defaults:)`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+@MainActor init(defaults: UserDefaults)
+```
+
+Loads the invitation's answer.
+
+- Parameter defaults: The store, normally the settings' store. Tests pass one of their own.
+
+## `GuideInvitation/init(settings:)`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+@MainActor convenience init(settings: NopeSettings)
+```
+
+Loads the invitation's answer from the settings' store.
+
+- Parameter settings: The person's settings, whose store keeps the answer.
+
+## `GuideInvitation/isAnswered`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+@MainActor var isAnswered: Bool { get set }
+```
+
+Whether the person answered the invitation: pressed Open or Dismiss, or opened the guide
+from Settings or About. `false` on a new install and after an update from a build without
+the guide, so everyone sees the card once.
+
+## `GuideInvitation/showsCard(_:)`
+
+public, declared in `Sources/NopeCore/GuideInvitation.swift`
+
+```swift
+@MainActor func showsCard(_ context: GuideCardContext) -> Bool
+```
+
+Whether the card shows on the camera now.
+
+- Parameter context: What the camera shows.
+- Returns: `true` while the invitation is unanswered, the picture is live, the controls are
+  shown, nothing runs and no other card of the picture's lower edge is shown.
 
 ## `GuideLine`
 
@@ -7929,42 +12973,10 @@ The XMP content type of a `mime` item.
 public, declared in `Sources/NopeCore/DriveMode.swift`
 
 ```swift
-enum HardwareButtonPhase
+typealias HardwareButtonPhase = ShutterPhase
 ```
 
-How a hardware shutter button moved: the volume buttons or the Camera Control (issue #37).
-
-The app maps the system's capture event phases to these values (AVKit, `AVCaptureEvent`).
-
-## `HardwareButtonPhase/cancelled`
-
-public, declared in `Sources/NopeCore/DriveMode.swift`
-
-```swift
-case cancelled
-```
-
-The system cancelled the press.
-
-## `HardwareButtonPhase/pressed`
-
-public, declared in `Sources/NopeCore/DriveMode.swift`
-
-```swift
-case pressed
-```
-
-The button went down.
-
-## `HardwareButtonPhase/released`
-
-public, declared in `Sources/NopeCore/DriveMode.swift`
-
-```swift
-case released
-```
-
-The button came up.
+The earlier name of ``ShutterPhase``, from when only the hardware buttons reported phases.
 
 ## `HeatLevel`
 
@@ -8373,6 +13385,92 @@ case driveIsBusy
 
 The self-timer counts down or a burst runs. Wait until it ends.
 
+## `IntervalBlocker/intervalNotShorterThanTime`
+
+public, declared in `Sources/NopeCore/CameraModel+Interval.swift`
+
+```swift
+case intervalNotShorterThanTime
+```
+
+The series stops after a time, and the interval is as long as the time or longer, so it
+would take only one photo. Choose a shorter interval or a longer time
+(``IntervalSettings/isIntervalShorterThanTime``).
+
+## `IntervalEnd`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+enum IntervalEnd
+```
+
+How the last interval series ended (``ManualControlsModel/lastIntervalEnd``).
+
+## `IntervalEnd/finished`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case finished
+```
+
+It took its number of photos, or its time was up.
+
+## `IntervalEnd/stopped`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case stopped
+```
+
+It ended early: it was stopped, the camera stopped for good, or a photo couldn't be taken
+or saved (the camera says why).
+
+## `IntervalPhotoOutcome`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+enum IntervalPhotoOutcome
+```
+
+What came of one photo of an interval series (`CameraModel.takeIntervalPhoto()`).
+
+## `IntervalPhotoOutcome/failed`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+case failed
+```
+
+The photo couldn't be taken or saved, or the camera stopped for good: the series stopped,
+and the camera says why.
+
+## `IntervalPhotoOutcome/taken(startedAt:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+case taken(startedAt: ContinuousClock.Instant)
+```
+
+The photo was taken and saved. `startedAt` is when it really started, on the monotonic
+clock, after any wait for the camera: the next photo is due one interval later.
+
+## `IntervalPhotoOutcome/timeUp`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+case timeUp
+```
+
+The series stops after a time, and the time was up while the photo waited for the camera:
+the series finished.
+
 ## `IntervalProgress`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
@@ -8383,20 +13481,90 @@ struct IntervalProgress
 
 How far a running interval series has got.
 
-## `IntervalProgress/init(taken:total:isPaused:)`
+## `IntervalProgress/deadline`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
 
 ```swift
-init(taken: Int, total: Int, isPaused: Bool = false)
+let deadline: ContinuousClock.Instant?
+```
+
+When a series that stops after a time ends, on the monotonic clock (``NopeClock/now``), or
+`nil` for a series that stops after a number of photos. It is set when the series starts
+and keeps running while the series is paused and while the device sleeps
+(``IntervalSettings/StopAfter/time``); a change of the device's time doesn't move it
+(issue #106). Show it as a date with ``endDate(clock:)``.
+
+## `IntervalProgress/duration`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let duration: Duration?
+```
+
+How long a series that stops after a time runs, or `nil` for a series that stops after a
+number of photos.
+
+## `IntervalProgress/endDate(clock:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func endDate(clock: NopeClock) -> Date?
+```
+
+When a series that stops after a time ends, as a date on the wall clock for showing it
+("Ends at 9:41 PM") and for the Live Activity: now's date plus the time left, worked out
+at each call, so it follows a change of the device's time without moving the end.
+
+- Parameter clock: The camera model's clock (``CameraModel/clock``).
+- Returns: The end's date, or `nil` for a series that stops after a number of photos.
+
+## `IntervalProgress/fractionDone(at:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func fractionDone(at now: ContinuousClock.Instant) -> Double
+```
+
+How much of the series is done, from 0 to 1: by time for a series that stops after a
+time, otherwise by the photos taken.
+
+- Parameter now: The current moment of the monotonic clock (``NopeClock/now``).
+- Returns: The share done.
+
+## `IntervalProgress/init(taken:total:isPaused:deadline:duration:nextPhotoStart:isBehindSchedule:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+init(taken: Int, total: Int?, isPaused: Bool = false, deadline: ContinuousClock.Instant? = nil, duration: Duration? = nil, nextPhotoStart: ContinuousClock.Instant? = nil, isBehindSchedule: Bool = false)
 ```
 
 Creates a progress value.
 
 - Parameters:
   - taken: The photos taken so far.
-  - total: The photos in the series.
+  - total: The photos in the series, or `nil` for a series that stops after a time.
   - isPaused: Whether the series is paused.
+  - deadline: When a series that stops after a time ends, on the monotonic clock, or `nil`.
+  - duration: How long a series that stops after a time runs, or `nil`.
+  - nextPhotoStart: When the next photo is due to start, on the monotonic clock, or `nil`.
+  - isBehindSchedule: Whether the last photo took longer than the interval.
+
+## `IntervalProgress/isBehindSchedule`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let isBehindSchedule: Bool
+```
+
+Whether the last photo took longer than the interval, so the next one starts as soon as it
+was saved instead of on schedule. It is cleared once a photo fits its interval again. An
+interface says "Each photo takes longer than the interval" in place of the countdown.
 
 ## `IntervalProgress/isPaused`
 
@@ -8409,6 +13577,43 @@ let isPaused: Bool
 Whether the series is paused: the app is out of the foreground or the camera is paused
 (an interruption, heat, or starting again). It continues when both are back.
 
+## `IntervalProgress/isTimed`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var isTimed: Bool { get }
+```
+
+Whether the series stops after a time.
+
+## `IntervalProgress/nextPhotoStart`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let nextPhotoStart: ContinuousClock.Instant?
+```
+
+When the next photo is due to start, on the monotonic clock: one interval after the last
+photo started (issue #123), or `nil` before the first photo is taken. An interface counts
+"Next photo in" down to it. It may be past: the photo is then being taken, waits for the
+camera, or starts at once because the series is behind schedule.
+
+## `IntervalProgress/secondsLeft(at:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func secondsLeft(at now: ContinuousClock.Instant) -> Double?
+```
+
+The time left of a series that stops after a time, in seconds, never less than 0, or
+`nil` for a series that stops after a number of photos.
+
+- Parameter now: The current moment of the monotonic clock (``NopeClock/now``).
+- Returns: The seconds until the end, or `nil`.
+
 ## `IntervalProgress/taken`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
@@ -8420,15 +13625,60 @@ let taken: Int
 The photos taken so far. A photo is counted only once it is taken and saved; while the
 series is paused, nothing is taken or counted.
 
+## `IntervalProgress/timeSpan(date:now:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func timeSpan(date: Date, now: ContinuousClock.Instant) -> ClosedRange<Date>?
+```
+
+When a series that stops after a time started and ends, as dates on the wall clock, worked
+out from now's date: the Live Activity draws its time left and bar from them.
+
+- Parameters:
+  - date: The wall clock's date now.
+  - now: The monotonic clock's moment now.
+- Returns: The span, or `nil` for a series that stops after a number of photos.
+
 ## `IntervalProgress/total`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
 
 ```swift
-let total: Int
+let total: Int?
 ```
 
-The photos in the series.
+The photos in the series, or `nil` for a series that stops after a time.
+
+## `IntervalProgress/with(isPaused:)`
+
+internal, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func with(isPaused: Bool) -> IntervalProgress
+```
+
+This progress, marked as paused or running.
+
+- Parameter isPaused: Whether the series is paused.
+- Returns: The progress.
+
+## `IntervalProgress/with(taken:nextPhotoStart:isBehindSchedule:)`
+
+internal, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func with(taken: Int, nextPhotoStart: ContinuousClock.Instant, isBehindSchedule: Bool) -> IntervalProgress
+```
+
+This progress after another photo was taken, running.
+
+- Parameters:
+  - taken: The photos taken so far.
+  - nextPhotoStart: When the next photo is due to start, on the monotonic clock.
+  - isBehindSchedule: Whether the photo took longer than the interval.
+- Returns: The progress.
 
 ## `IntervalSettings`
 
@@ -8438,10 +13688,44 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 struct IntervalSettings
 ```
 
-Interval shooting: a series of separate photos at a fixed interval.
+Interval shooting: a series of separate photos at a fixed interval, until a number of photos
+is taken or a time is up (``StopAfter``).
 
 Each photo is an ordinary single capture; nothing is combined into a video or merged. The
 timer runs only while a series is running and the app is open (AGENTS.md, "Battery").
+
+## `IntervalSettings/StopAfter`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+enum StopAfter
+```
+
+What ends a series: a number of photos, or a time.
+
+## `IntervalSettings/StopAfter/numberOfPhotos`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case numberOfPhotos
+```
+
+The series ends once ``IntervalSettings/count`` photos are taken. The default.
+
+## `IntervalSettings/StopAfter/time`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case time
+```
+
+The series ends once ``IntervalSettings/duration`` has passed since it started, on the
+monotonic clock: the time keeps running while the series is paused and while the
+device sleeps, so a series of one hour started at 8:41 PM ends at 9:41 PM, and a change
+of the device's time doesn't make it end early or late (``IntervalProgress/deadline``).
 
 ## `IntervalSettings/count`
 
@@ -8451,7 +13735,7 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 let count: Int
 ```
 
-How many photos the series takes.
+How many photos the series takes when it stops after a number of photos.
 
 ## `IntervalSettings/countChoices`
 
@@ -8474,19 +13758,63 @@ static let countRange: ClosedRange<Int>
 
 The photo counts the app offers: 2 to 999.
 
-## `IntervalSettings/init(interval:count:)`
+## `IntervalSettings/duration`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
 
 ```swift
-init(interval: Double, count: Int)
+let duration: Double
+```
+
+How long the series runs when it stops after a time, in seconds.
+
+## `IntervalSettings/durationHours`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var durationHours: Int { get }
+```
+
+The whole hours of ``duration``, for the time's Hours picker.
+
+## `IntervalSettings/durationMinutes`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var durationMinutes: Int { get }
+```
+
+The minutes of ``duration`` past its whole hours, for the time's Minutes picker. Seconds
+left over (from a preset of another version) are dropped.
+
+## `IntervalSettings/durationRange`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let durationRange: ClosedRange<Double>
+```
+
+The times a series can run for, in seconds: 1 minute to 24 hours.
+
+## `IntervalSettings/init(interval:count:stopAfter:duration:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+init(interval: Double, count: Int, stopAfter: StopAfter = .numberOfPhotos, duration: Double = standardDuration)
 ```
 
 Creates interval settings, moving each value into its allowed range.
 
 - Parameters:
   - interval: The time between photos, in seconds.
-  - count: The number of photos.
+  - count: The number of photos, used when the series stops after a number of photos.
+  - stopAfter: What ends the series. ``StopAfter/numberOfPhotos`` by default.
+  - duration: How long the series runs, in seconds, used when it stops after a time.
+    ``standardDuration`` by default.
 
 ## `IntervalSettings/interval`
 
@@ -8496,7 +13824,7 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 let interval: Double
 ```
 
-The time from one photo to the next, in seconds.
+The time from the start of one photo to the start of the next, in seconds.
 
 ## `IntervalSettings/intervalChoices`
 
@@ -8520,6 +13848,19 @@ static let intervalRange: ClosedRange<Double>
 
 The intervals the app offers, in seconds: 1 second to 1 hour.
 
+## `IntervalSettings/isIntervalShorterThanTime`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var isIntervalShorterThanTime: Bool { get }
+```
+
+Whether the interval is shorter than the time, so a series that stops after a time takes
+at least two photos. Always `true` for a series that stops after a number of photos.
+``CameraModel/intervalBlocker`` is ``IntervalBlocker/intervalNotShorterThanTime`` while
+it is `false`.
+
 ## `IntervalSettings/listedCounts`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
@@ -8529,6 +13870,16 @@ static let listedCounts: [Int]
 ```
 
 The photo counts an interface lists, from 2 to the 999 the app allows.
+
+## `IntervalSettings/listedHours`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let listedHours: [Int]
+```
+
+The whole hours an interface lists for the time: 0 to 24.
 
 ## `IntervalSettings/listedIntervals`
 
@@ -8540,6 +13891,30 @@ static let listedIntervals: [Double]
 
 The intervals an interface lists, in seconds: 1 second to 1 hour.
 
+## `IntervalSettings/listedMinutes`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let listedMinutes: [Int]
+```
+
+The minutes an interface lists for the time: 0 to 59.
+
+## `IntervalSettings/maximumPhotoCount`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var maximumPhotoCount: Int { get }
+```
+
+The most photos the series can take: ``count``, or for a series that stops after a time,
+one photo at the start and one at each start, an interval apart, before the time is up.
+Photos are spaced start to start (`ManualControlsModel`, issue #123), so the series takes
+this many while each photo fits its interval; a photo that takes longer delays the ones
+after it, so an interface says "at most".
+
 ## `IntervalSettings/standard`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
@@ -8548,7 +13923,96 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 static let standard: IntervalSettings
 ```
 
-The default series: 10 photos, 10 seconds apart.
+The default series: 10 photos, starting one every 10 seconds.
+
+## `IntervalSettings/standardDuration`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let standardDuration: Double
+```
+
+The time a series runs for until another is chosen, in seconds: 1 hour.
+
+## `IntervalSettings/stopAfter`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let stopAfter: StopAfter
+```
+
+What ends the series.
+
+## `IntervalSettings/with(count:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func with(count: Int) -> IntervalSettings
+```
+
+These settings with another number of photos.
+
+- Parameter count: The number of photos.
+- Returns: The settings, each value inside its allowed range.
+
+## `IntervalSettings/with(duration:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func with(duration: Double) -> IntervalSettings
+```
+
+These settings with another time.
+
+- Parameter duration: How long the series runs, in seconds.
+- Returns: The settings, each value inside its allowed range.
+
+## `IntervalSettings/with(hours:minutes:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func with(hours: Int, minutes: Int) -> IntervalSettings
+```
+
+These settings with a time of whole hours and minutes, moved into ``durationRange``: no
+time becomes 1 minute, and more than 24 hours becomes 24 hours.
+
+- Parameters:
+  - hours: The whole hours.
+  - minutes: The minutes.
+- Returns: The settings.
+
+## `IntervalSettings/with(interval:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func with(interval: Double) -> IntervalSettings
+```
+
+These settings with another interval.
+
+- Parameter interval: The time between photos, in seconds.
+- Returns: The settings, each value inside its allowed range.
+
+## `IntervalSettings/with(stopAfter:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func with(stopAfter: StopAfter) -> IntervalSettings
+```
+
+These settings with another end: a number of photos or a time. The count and the time
+are both kept, so switching back finds them as they were.
+
+- Parameter stopAfter: What ends the series.
+- Returns: The settings.
 
 ## `IntervalShortcut`
 
@@ -8558,10 +14022,13 @@ public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 struct IntervalShortcut
 ```
 
-The parameters of a "Start Interval Shooting" request: the time between photos and how many,
-each `nil` to keep the value chosen in Pro Tools (``ManualControlsModel/interval``).
+The parameters of a "Start Interval Shooting" request: the time between photos, and how many
+photos or for how long, each `nil` to keep the value chosen in Interval Settings
+(``ManualControlsModel/interval``).
 
-Values are moved into the ranges ``IntervalSettings`` allows.
+Values are moved into the ranges ``IntervalSettings`` allows. A time makes the series stop
+after that time, and a count without a time makes it stop after that number of photos; when
+a request has both, the time decides and the count is kept as the chosen number.
 
 ## `IntervalShortcut/count`
 
@@ -8573,12 +14040,22 @@ let count: Int?
 
 How many photos the series takes, or `nil` to keep the chosen number.
 
-## `IntervalShortcut/init(intervalSeconds:count:)`
+## `IntervalShortcut/durationSeconds`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 
 ```swift
-init(intervalSeconds: Double? = nil, count: Int? = nil)
+let durationSeconds: Double?
+```
+
+How long the series runs in seconds, or `nil` to keep the chosen end.
+
+## `IntervalShortcut/init(intervalSeconds:count:durationSeconds:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+init(intervalSeconds: Double? = nil, count: Int? = nil, durationSeconds: Double? = nil)
 ```
 
 Creates a request.
@@ -8586,6 +14063,7 @@ Creates a request.
 - Parameters:
   - intervalSeconds: The time between photos in seconds, or `nil` to keep the chosen one.
   - count: The number of photos, or `nil` to keep the chosen number.
+  - durationSeconds: How long the series runs in seconds, or `nil` to keep the chosen end.
 
 ## `IntervalShortcut/intervalSeconds`
 
@@ -8607,7 +14085,7 @@ func settings(over chosen: IntervalSettings) -> IntervalSettings
 
 The series to run: this request's values over the chosen ones.
 
-- Parameter chosen: The interval and count chosen in Pro Tools.
+- Parameter chosen: The series chosen in Interval Settings.
 - Returns: The settings, each value inside its allowed range.
 
 ## `JPEGReader`
@@ -8739,6 +14217,442 @@ static let xmpIdentifier: [UInt8]
 
 The identifier that starts an XMP APP1 segment.
 
+## `KeepScreenOnConditions`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+struct KeepScreenOnConditions
+```
+
+What Keep Screen On needs to know about the camera screen and the device
+(`docs/design/keep-screen-on.md`, section 3).
+
+An interface fills it in and passes it to ``SeriesScreenKeeper/update(isSeriesRunning:isInForeground:keepScreenOn:)``
+whenever a value changes. Every value is a fact the interface or the model already has; none
+needs a new sensor.
+
+## `KeepScreenOnConditions/dimAfter`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var dimAfter: DimAfter
+```
+
+The person's Dim After choice (``NopeSettings/dimAfter``).
+
+## `KeepScreenOnConditions/dimsSooner`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var dimsSooner: Bool { get }
+```
+
+Whether the screen dims after ``KeepScreenOnRule/lowPowerDimDelay`` whatever
+``dimAfter`` says: in Low Power Mode, and when the device is at ``hotHeatLevel`` or above.
+
+## `KeepScreenOnConditions/heatLevel`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var heatLevel: HeatLevel
+```
+
+How hot the device is, as the camera last reported it (``CameraModel/heatLevel``). At
+``hotHeatLevel`` or above the screen dims sooner, as in Low Power Mode.
+
+## `KeepScreenOnConditions/hotHeatLevel`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+static let hotHeatLevel: HeatLevel
+```
+
+The heat level from which the screen dims after ``KeepScreenOnRule/lowPowerDimDelay``
+whatever ``dimAfter`` says: `serious`, where the system "may reduce performance" and
+Apple asks apps to reduce their work
+([ProcessInfo.ThermalState.serious](https://developer.apple.com/documentation/foundation/processinfo/thermalstate/serious)).
+Owner decision 7 (`docs/plans/1.0.0-finish.md`, section 6). At `critical` the camera
+pauses, so Keep Screen On isn't used at all.
+
+## `KeepScreenOnConditions/init(isSwitchOn:isActive:isCameraInFront:isCameraRunning:isBatteryLow:isLowPowerMode:dimAfter:heatLevel:)`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+init(isSwitchOn: Bool, isActive: Bool, isCameraInFront: Bool, isCameraRunning: Bool, isBatteryLow: Bool, isLowPowerMode: Bool, dimAfter: DimAfter = .standard, heatLevel: HeatLevel = .nominal)
+```
+
+Creates the conditions.
+
+- Parameters:
+  - isSwitchOn: Whether the switch is on.
+  - isActive: Whether the app is active in the foreground.
+  - isCameraInFront: Whether the camera screen is in front.
+  - isCameraRunning: Whether the camera is running.
+  - isBatteryLow: Whether the Battery Low warning shows.
+  - isLowPowerMode: Whether Low Power Mode is on.
+  - dimAfter: The Dim After choice; ``DimAfter/standard`` by default.
+  - heatLevel: How hot the device is; `nominal` by default.
+
+## `KeepScreenOnConditions/isActive`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var isActive: Bool
+```
+
+Whether the app is active in the foreground.
+
+## `KeepScreenOnConditions/isBatteryLow`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var isBatteryLow: Bool
+```
+
+Whether the Battery Low warning shows (``DeviceStatus/batteryWarning``).
+
+## `KeepScreenOnConditions/isCameraInFront`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var isCameraInFront: Bool
+```
+
+Whether the camera screen is in front: no sheet, popover or full-screen cover over it.
+
+## `KeepScreenOnConditions/isCameraRunning`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var isCameraRunning: Bool
+```
+
+Whether the camera is running (``SessionStatus/running``): not starting, paused,
+interrupted, without permission or in first run.
+
+## `KeepScreenOnConditions/isLowPowerMode`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var isLowPowerMode: Bool
+```
+
+Whether Low Power Mode is on, which dims the screen sooner.
+
+## `KeepScreenOnConditions/isSwitchOn`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var isSwitchOn: Bool
+```
+
+Whether the Keep Screen On switch is on (``NopeSettings/keepsScreenOn``).
+
+## `KeepScreenOnConditions/isUsed`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var isUsed: Bool { get }
+```
+
+Whether Keep Screen On is used now: the switch is on, the app is active, the camera
+screen is in front, the camera runs and the Battery Low warning doesn't show.
+
+## `KeepScreenOnConditions/off`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+static let off: KeepScreenOnConditions
+```
+
+The switch off: Keep Screen On is never used.
+
+## `KeepScreenOnDecision`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+struct KeepScreenOnDecision
+```
+
+What Keep Screen On asks of the screen at one moment.
+
+## `KeepScreenOnDecision/dims`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+let dims: Bool
+```
+
+Whether the screen is dimmed.
+
+## `KeepScreenOnDecision/init(isUsed:keepsAwake:dims:nextChange:)`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+init(isUsed: Bool, keepsAwake: Bool, dims: Bool, nextChange: Duration?)
+```
+
+Creates a decision.
+
+- Parameters:
+  - isUsed: Whether the setting is used.
+  - keepsAwake: Whether the idle timer is off.
+  - dims: Whether the screen is dimmed.
+  - nextChange: How long until the decision changes, or `nil`.
+
+## `KeepScreenOnDecision/isUsed`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+let isUsed: Bool
+```
+
+Whether the setting is used at all (``KeepScreenOnConditions/isUsed``). When `false`, the
+idle timer is on and the brightness is the person's.
+
+## `KeepScreenOnDecision/keepsAwake`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+let keepsAwake: Bool
+```
+
+Whether the idle timer is off, so the screen doesn't lock by itself.
+
+## `KeepScreenOnDecision/nextChange`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+let nextChange: Duration?
+```
+
+How long until the decision changes without any new activity (the screen dims, or the
+limit is reached), or `nil` when nothing changes until something else does.
+
+## `KeepScreenOnDecision/unused`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+static let unused: KeepScreenOnDecision
+```
+
+The setting isn't used: nothing is changed.
+
+## `KeepScreenOnRule`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+struct KeepScreenOnRule
+```
+
+The rule of Keep Screen On (issue #97, `docs/design/keep-screen-on.md`): while it is used,
+the screen stays on until ``limit`` after the last touch or photo, and dims after the
+person's Dim After choice without one (issue #119, ``dimDelays``), or after
+``lowPowerDimDelay`` in Low Power Mode and when the phone is hot
+(``KeepScreenOnConditions/dimsSooner``). With Dim After set to Never it doesn't dim otherwise.
+
+A pure value: it reads no clock and changes nothing. ``SeriesScreenKeeper`` gives it the
+conditions, the time of the last activity and the time now, applies its answer to the screen
+and schedules one wake-up for the next change, so nothing polls (AGENTS.md, "Battery").
+
+The times are proposals from the design, not measurements; the UI tests shorten them.
+
+```swift
+let decision = KeepScreenOnRule.standard.decide(conditions, lastActivity: touched, now: .now)
+screen.isIdleTimerDisabled = decision.keepsAwake
+```
+
+## `KeepScreenOnRule/DimDelays`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+struct DimDelays
+```
+
+How long without activity before the screen dims, for each Dim After choice but Never.
+
+## `KeepScreenOnRule/DimDelays/delay(for:)`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+func delay(for choice: DimAfter) -> Duration?
+```
+
+The delay of a choice.
+
+- Parameter choice: The Dim After choice.
+- Returns: The delay, or `nil` for ``DimAfter/never``.
+
+## `KeepScreenOnRule/DimDelays/fiveMinutes`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var fiveMinutes: Duration
+```
+
+For ``DimAfter/fiveMinutes``.
+
+## `KeepScreenOnRule/DimDelays/init(oneMinute:twoMinutes:fiveMinutes:)`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+init(oneMinute: Duration, twoMinutes: Duration, fiveMinutes: Duration)
+```
+
+Creates the delays.
+
+- Parameters:
+  - oneMinute: The delay for 1 Minute.
+  - twoMinutes: The delay for 2 Minutes.
+  - fiveMinutes: The delay for 5 Minutes.
+
+## `KeepScreenOnRule/DimDelays/oneMinute`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var oneMinute: Duration
+```
+
+For ``DimAfter/oneMinute``.
+
+## `KeepScreenOnRule/DimDelays/standard`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+static let standard: KeepScreenOnRule.DimDelays
+```
+
+The design's times: 1, 2 and 5 minutes (`docs/design/finish-1.0.md`, 4.1).
+
+## `KeepScreenOnRule/DimDelays/twoMinutes`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var twoMinutes: Duration
+```
+
+For ``DimAfter/twoMinutes``.
+
+## `KeepScreenOnRule/decide(_:lastActivity:now:)`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+func decide(_ conditions: KeepScreenOnConditions, lastActivity: ContinuousClock.Instant, now: ContinuousClock.Instant) -> KeepScreenOnDecision
+```
+
+What the screen should do now.
+
+- Parameters:
+  - conditions: The camera screen and the device now.
+  - lastActivity: When the person last touched the camera screen, changed a control or
+    took a photo, or when the setting last started being used.
+  - now: The time now, on the same clock.
+- Returns: Whether the idle timer is off, whether the screen is dimmed, and when that
+  next changes. After ``limit`` the idle timer is on again and a dimmed screen stays
+  dimmed until it is touched or locks.
+
+## `KeepScreenOnRule/dimDelays`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var dimDelays: DimDelays
+```
+
+How long without activity before the screen dims, for each Dim After choice.
+
+## `KeepScreenOnRule/init(dimDelay:lowPowerDimDelay:limit:)`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+init(dimDelay: Duration, lowPowerDimDelay: Duration, limit: Duration)
+```
+
+Creates a rule that dims after the same time for every Dim After choice but Never, as the
+UI tests and the clock test need.
+
+- Parameters:
+  - dimDelay: How long without activity before the screen dims, for 1, 2 and 5 minutes.
+  - lowPowerDimDelay: The same in Low Power Mode and when the phone is hot.
+  - limit: How long without activity before the phone's Auto-Lock applies again.
+
+## `KeepScreenOnRule/init(dimDelays:lowPowerDimDelay:limit:)`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+init(dimDelays: DimDelays, lowPowerDimDelay: Duration, limit: Duration)
+```
+
+Creates a rule with its times.
+
+- Parameters:
+  - dimDelays: How long without activity before the screen dims, for each choice.
+  - lowPowerDimDelay: The same in Low Power Mode and when the phone is hot.
+  - limit: How long without activity before the phone's Auto-Lock applies again.
+
+## `KeepScreenOnRule/limit`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var limit: Duration
+```
+
+How long without activity before the phone's Auto-Lock applies again: 30 minutes.
+
+## `KeepScreenOnRule/lowPowerDimDelay`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var lowPowerDimDelay: Duration
+```
+
+How long without activity before the screen dims in Low Power Mode and when the phone is
+hot, whatever Dim After says: 30 seconds, iOS's own shortest Auto-Lock time.
+
+## `KeepScreenOnRule/standard`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+static let standard: KeepScreenOnRule
+```
+
+The times of the design: 1, 2 or 5 minutes, 30 seconds and 30 minutes.
+
 ## `Lens`
 
 public, declared in `Sources/NopeCore/Lens.swift`
@@ -8850,6 +14764,18 @@ The 24 MP size AVFoundation delivers only through deferred photo delivery, which
 turns off: "The maxPhotoDimensions setting for 24MP (5712, 4284), when supported, is only
 serviced as 24MP via deferred photo delivery" (`AVCapturePhotoOutput.h`).
 
+## `Lens/distortionCorrection`
+
+public, declared in `Sources/NopeCore/Lens.swift`
+
+```swift
+let distortionCorrection: DistortionCorrection
+```
+
+Whether the app can turn off the camera's geometric distortion correction on this lens,
+as the camera reports it (issue #80). It affects only the processed fallback: RAW never
+has the correction applied (``DistortionCorrection``).
+
 ## `Lens/equivalentFocalLength`
 
 public, declared in `Sources/NopeCore/Lens.swift`
@@ -8907,12 +14833,12 @@ A stable identifier for this lens on this device, supplied by the backend.
 
 It identifies the lens only within the app and is never written to a photo.
 
-## `Lens/init(id:kind:bayerRAWFormat:processedFallback:magnification:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:manualControls:equivalentFocalLength:flashModes:hasTorch:)`
+## `Lens/init(id:kind:bayerRAWFormat:processedFallback:magnification:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:manualControls:equivalentFocalLength:flashModes:hasTorch:distortionCorrection:minimumFocusDistance:reportsStabilization:)`
 
 public, declared in `Sources/NopeCore/Lens.swift`
 
 ```swift
-init(id: String, kind: Kind, bayerRAWFormat: String?, processedFallback: ProcessedFallback = .heif, magnification: Double? = nil, isoRange: ClosedRange<Double>? = nil, exposureDurationRange: ClosedRange<Double>? = nil, aperture: ApertureRange? = nil, maxBracketedPhotoCount: Int = 0, photoDimensions: [PhotoDimensions] = [], manualControls: ManualCapabilities = .none, equivalentFocalLength: Double? = nil, flashModes: [FlashMode] = [], hasTorch: Bool = false)
+init(id: String, kind: Kind, bayerRAWFormat: String?, processedFallback: ProcessedFallback = .heif, magnification: Double? = nil, isoRange: ClosedRange<Double>? = nil, exposureDurationRange: ClosedRange<Double>? = nil, aperture: ApertureRange? = nil, maxBracketedPhotoCount: Int = 0, photoDimensions: [PhotoDimensions] = [], manualControls: ManualCapabilities = .none, equivalentFocalLength: Double? = nil, flashModes: [FlashMode] = [], hasTorch: Bool = false, distortionCorrection: DistortionCorrection = .notSwitchable, minimumFocusDistance: Double? = nil, reportsStabilization: Bool = false)
 ```
 
 Creates a lens description.
@@ -8933,6 +14859,12 @@ Creates a lens description.
   - equivalentFocalLength: The 35 mm-equivalent focal length in millimeters, or `nil`.
   - flashModes: The flash modes the lens supports. Defaults to none.
   - hasTorch: Whether the lens has a torch. Defaults to `false`.
+  - distortionCorrection: Whether the app can turn off the camera's geometric distortion
+    correction. Defaults to ``DistortionCorrection/notSwitchable``, which claims least.
+  - minimumFocusDistance: The closest focus distance in millimeters, or `nil` when
+    unknown. Defaults to `nil`.
+  - reportsStabilization: Whether the camera reports lens stabilization for the lens.
+    Defaults to `false`, which claims least.
 
 ## `Lens/isoRange`
 
@@ -8990,6 +14922,20 @@ let maxBracketedPhotoCount: Int
 The most frames one bracketed capture may contain on this lens; 0 when bracketing isn't
 supported or the value is unknown.
 
+## `Lens/minimumFocusDistance`
+
+public, declared in `Sources/NopeCore/Lens.swift`
+
+```swift
+let minimumFocusDistance: Double?
+```
+
+The closest distance the lens can focus at, in millimeters, as the camera reports it
+(`AVCaptureDevice.minimumFocusDistance`), or `nil` when the camera reports it as unknown
+(−1). Used only to compare lenses for the close-up hint (``CameraModel/closeUpLens``); it
+is never shown: no device check has confirmed a value yet (docs/design/BRACKETING.md,
+check D5).
+
 ## `Lens/photoDimensions`
 
 public, declared in `Sources/NopeCore/Lens.swift`
@@ -9043,6 +14989,21 @@ let processedFallback: ProcessedFallback
 
 The least-processed format the lens can give when it has no Bayer RAW.
 
+## `Lens/reportsStabilization`
+
+public, declared in `Sources/NopeCore/Lens.swift`
+
+```swift
+let reportsStabilization: Bool
+```
+
+Whether the camera reports lens stabilization for this lens: the photo output's
+`isLensStabilizationDuringBracketedCaptureSupported` with this lens selected, the only
+public signal found (docs/design/device-feedback-1.0.md, section 4). `false` when it
+isn't reported. Whether it is true for each lens, and whether a single RAW photo is in
+fact taken stabilized, are device checks (docs/TESTING.md, checks S1 and S2); it only
+moves the steady hint's limit (``AutoShutter/steadyLimit(for:)``).
+
 ## `Lens/supportsBayerRAW`
 
 public, declared in `Sources/NopeCore/Lens.swift`
@@ -9052,6 +15013,349 @@ var supportsBayerRAW: Bool { get }
 ```
 
 Whether this lens delivers single-frame Bayer RAW.
+
+## `LensChangeBlocker`
+
+public, declared in `Sources/NopeCore/CameraModel+Lens.swift`
+
+```swift
+enum LensChangeBlocker
+```
+
+Why the lens can't be changed now (issue #96; docs/design/lens-while-busy.md).
+
+Changing the lens restarts the camera. During a photo that would reconfigure the session
+under it; during a series it would end the series part-way or mix lenses in it. An interface
+disables its lens controls while ``CameraModel/lensChangeBlocker`` is not `nil`, and may draw
+the cases differently: a single photo is usually over before a person would notice, so the
+design draws the controls dimmed for ``takingPhoto`` only if it lasts, and for the others at
+once.
+
+## `LensChangeBlocker/comparing`
+
+public, declared in `Sources/NopeCore/CameraModel+Lens.swift`
+
+```swift
+case comparing
+```
+
+The compare view is open (issue #55): its photos are taken with the lens in use.
+
+## `LensChangeBlocker/runningSeries`
+
+public, declared in `Sources/NopeCore/CameraModel+Lens.swift`
+
+```swift
+case runningSeries
+```
+
+A self-timer countdown, a burst, an interval series or an astro run is in progress,
+including the waits between its photos.
+
+## `LensChangeBlocker/takingPhoto`
+
+public, declared in `Sources/NopeCore/CameraModel+Lens.swift`
+
+```swift
+case takingPhoto
+```
+
+One photo or one exposure bracket is being taken or saved.
+
+## `LensPinch`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+struct LensPinch
+```
+
+The step logic of a pinch that switches lenses (docs/design/pinch-lens.md, section 3): which
+lens a pinch has reached, given how far the fingers have moved apart or together.
+
+A lens is a separate camera, not a point on a scale, so the steps are equal and don't follow
+the lenses' magnifications. Spreading past ``firstSpreadStep`` moves one lens longer, and each
+further factor of ``furtherStep`` one more; pinching past ``firstPinchStep`` moves one lens
+wider, and each further factor of 1 / ``furtherStep`` one more. Going back over a threshold
+within the same pinch needs the scale to return ``returnMargin`` inside it, so a hand resting
+at a threshold doesn't flip between two lenses. The pinch stops at the first and the last rear
+lens; it never wraps and never reaches the front camera.
+
+The thresholds are starting values for tuning on devices (AGENTS.md, rule 1;
+docs/TESTING.md, "Pinch to switch lenses on a device").
+
+```swift
+var pinch = LensPinch(lenses: capabilities.lenses, startingAt: model.selectedLensID)
+let target = pinch?.update(scale: 1.3)  // the next longer lens
+```
+
+## `LensPinch/firstPinchStep`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+static let firstPinchStep: Double
+```
+
+The scale of the first step toward a wider lens: the fingers a fifth closer together.
+A device-tuning value (docs/design/pinch-lens.md, 3.2).
+
+## `LensPinch/firstSpreadStep`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+static let firstSpreadStep: Double
+```
+
+The scale of the first step toward a longer lens: the fingers a quarter further apart.
+A device-tuning value (docs/design/pinch-lens.md, 3.2).
+
+## `LensPinch/furtherStep`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+static let furtherStep: Double
+```
+
+The further factor for each further step in the same pinch: scale 1.69 is the second
+longer lens, 0.59 the second wider one. A device-tuning value
+(docs/design/pinch-lens.md, 3.2).
+
+## `LensPinch/init(lenses:startingAt:)`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+init?(lenses: [Lens], startingAt lensID: Lens.ID?)
+```
+
+Starts a pinch on a lens, or returns `nil` when a pinch can't switch lenses from it: the
+device has fewer than two rear lenses, the lens is the front camera, or no lens is known.
+
+- Parameters:
+  - lenses: The device's lenses in the lens row's order (``DeviceCapabilities/lenses``);
+    the front camera is left out.
+  - lensID: The lens in use when the fingers land.
+
+## `LensPinch/isOffered(on:)`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+static func isOffered(on lenses: [Lens]) -> Bool
+```
+
+Whether a device offers the pinch at all: it has two or more rear lenses. The Pinch row in
+Settings is shown only then (decision 12).
+
+- Parameter lenses: The device's lenses.
+- Returns: `true` with two or more rear lenses.
+
+## `LensPinch/lenses`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+let lenses: [Lens]
+```
+
+The rear lenses in the lens row's order.
+
+## `LensPinch/rearLenses(_:)`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+static func rearLenses(_ lenses: [Lens]) -> [Lens]
+```
+
+The rear lenses a pinch moves between, in the lens row's order: every lens but the front
+camera, lenses without Bayer RAW included (decision 4). A lens without a magnification
+keeps its place in the catalog's order.
+
+- Parameter lenses: The device's lenses in display order.
+- Returns: The rear lenses.
+
+## `LensPinch/returnMargin`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+static let returnMargin: Double
+```
+
+How far, as a fraction of the threshold, the scale must return inside a threshold just
+crossed to step back over it: 10%. A device-tuning value (docs/design/pinch-lens.md, 3.2).
+
+## `LensPinch/startIndex`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+let startIndex: Int
+```
+
+The index in ``lenses`` of the lens the pinch started on.
+
+## `LensPinch/step`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+var step: Int { get }
+```
+
+The steps reached from the starting lens: positive toward longer lenses, negative toward
+wider ones.
+
+## `LensPinch/target`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+var target: Lens { get }
+```
+
+The lens the pinch has reached.
+
+## `LensPinch/threshold(_:)`
+
+internal, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+static func threshold(_ boundary: Int) -> Double
+```
+
+The scale at the boundary between step `boundary - 1` and step `boundary`: 1.25, 1.69,
+2.28… for the longer lenses (boundaries 1, 2, 3…) and 0.80, 0.59… for the wider ones
+(boundaries 0, −1…).
+
+- Parameter boundary: The boundary.
+- Returns: The scale.
+
+## `LensPinch/tolerance`
+
+internal, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+static let tolerance: Double
+```
+
+A tolerance for comparing scales, so a scale of exactly 0.80 reaches the first wider step
+whatever the rounding of the multiplications.
+
+## `LensPinch/update(scale:)`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+@discardableResult mutating func update(scale: Double) -> Lens
+```
+
+Moves the pinch to the lens a scale reaches, and returns it.
+
+The scale is the distance between the fingers compared with when they landed, as
+`MagnifyGesture` reports it. Moving away from the starting lens crosses a threshold as soon
+as the scale reaches it; moving back toward it needs the scale ``returnMargin`` inside the
+threshold. At the first and the last lens a further scale changes nothing.
+
+- Parameter scale: The pinch's scale, 1 when the fingers haven't moved.
+- Returns: The lens the pinch has reached.
+
+## `LensPinchSwitcher`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+@MainActor final class LensPinchSwitcher
+```
+
+Sends the lens a pinch settles on to the camera, one switch at a time
+(docs/design/pinch-lens.md, 3.3).
+
+Restarting the camera for a lens takes time, so a long pinch doesn't restart it for every lens
+it passes. The interface calls ``settle(on:)`` when the fingers lift, or when the target hasn't
+changed for ``settleSeconds``. Only the latest target is sent; a switch already running
+finishes first, and a target reached meanwhile is sent after it. A target that is already the
+lens in use is not sent, so a pinch that returns to the lens it started on sends nothing.
+
+Every switch goes through the camera's one rule for a lens change: the `switchLens` closure
+sends ``CameraIntent/selectLens(_:)``, which does nothing while ``CameraModel/canChangeLens``
+is false (issue #96).
+
+## `LensPinchSwitcher/init(lensInUse:switchLens:)`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+@MainActor init(lensInUse: @escaping @MainActor () -> Lens.ID?, switchLens: @escaping @MainActor (Lens.ID) async -> Void)
+```
+
+Creates a switcher.
+
+- Parameters:
+  - lensInUse: The camera's lens in use (``CameraModel/selectedLensID``).
+  - switchLens: Sends ``CameraIntent/selectLens(_:)`` and returns when it has finished.
+
+## `LensPinchSwitcher/init(model:)`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+@MainActor convenience init(model: CameraModel)
+```
+
+Creates a switcher for a camera.
+
+- Parameter model: The camera.
+
+## `LensPinchSwitcher/isSwitching`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+@MainActor var isSwitching: Bool { get set }
+```
+
+Whether a switch is running.
+
+## `LensPinchSwitcher/labelSeconds`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+nonisolated static let labelSeconds: Double
+```
+
+How long, in seconds, the lens label stays on the picture after the fingers lift: 0.8 s
+(docs/design/pinch-lens.md, section 4).
+
+## `LensPinchSwitcher/settle(on:)`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+@MainActor func settle(on lensID: Lens.ID) async
+```
+
+Asks the camera to switch to the lens a pinch has settled on. If a switch is running, the
+lens is sent once it has finished, replacing any lens still waiting. Returns once no switch
+is left to send from this call.
+
+- Parameter lensID: The pinch's target.
+
+## `LensPinchSwitcher/settleSeconds`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+nonisolated static let settleSeconds: Double
+```
+
+How long, in seconds, a target must stay the same during a pinch before the camera is
+asked to switch to it: 0.25 s. A device-tuning value (docs/design/pinch-lens.md, 3.3).
 
 ## `LevelModel`
 
@@ -9154,6 +15458,76 @@ var isLevel: Bool { get }
 ```
 
 Whether the device is level.
+
+## `LevelTapRule`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+struct LevelTapRule
+```
+
+Decides when the level gives its tap: the moment it becomes level, as the person moves the
+device (docs/design/level-haptic.md, sections 2 and 4).
+
+The rule is kept here, out of the interface, so it is tested to full coverage; an interface
+only plays the tap (and says "Level" to VoiceOver) when ``update(_:at:isHeldBack:)`` answers
+`true`.
+
+- One tap each time the level goes from not level to level. None while it stays level, and
+  none on leaving it. Changing between the horizon and the top-down level while level
+  throughout is not a new entry.
+- No tap for the first reading after the level appears, even if it is already level: the tap
+  marks a change the person made, not the level being switched on.
+- At least ``minimumInterval`` between taps. An entry sooner than that is dropped, never
+  played late.
+- No tap while taps are held back (``CameraModel/holdsBackLevelTap``, or a sheet over the
+  camera). An entry while held back is dropped too, so when the cause ends with the device
+  still level, nothing plays.
+
+```swift
+if rule.update(level.state, at: .now, isHeldBack: model.holdsBackLevelTap) { taps += 1 }
+```
+
+## `LevelTapRule/init()`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+init()
+```
+
+Creates a rule with no reading yet.
+
+## `LevelTapRule/minimumInterval`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+static let minimumInterval: Duration
+```
+
+The shortest time between two taps: a steady hand near the edge of the tolerance can
+leave and re-enter level several times a second.
+
+## `LevelTapRule/update(_:at:isHeldBack:)`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+mutating func update(_ state: LevelState?, at time: ContinuousClock.Instant, isHeldBack: Bool) -> Bool
+```
+
+Applies the level's state, and says whether to tap now.
+
+- Parameters:
+  - state: What the level shows, or `nil` when there are no readings (the level was
+    switched off or its readings ended). `nil` resets the rule, so the next reading counts
+    as the first.
+  - time: The time of the reading, from a monotonic clock.
+  - isHeldBack: Whether taps are held back now (a capture, a series, the camera not
+    running, a sheet over the camera, or the app not active).
+- Returns: `true` when the level has just become level and a tap is allowed.
 
 ## `LevelTracker`
 
@@ -9270,6 +15644,11 @@ The system may refuse a level while the device is hot; the backend then reports
 ``TorchStatus/unavailable`` and leaves the light off. Stopping the camera or switching
 lenses turns the light off, so ``LightModel`` asks again after each start.
 
+A request to turn the light on while no camera is attached (before the start, or while
+the camera is reconfigured) is answered ``TorchStatus/pending``, never
+``TorchStatus/off``: the light can't be switched yet, and ``LightModel`` applies it after
+the start (issue #75).
+
 - Parameter level: The brightness, from just above 0 to 1, or `nil` to turn the light
   off.
 - Returns: The light's state afterwards.
@@ -9336,6 +15715,9 @@ intents. The rules:
   lens without a torch (AGENTS.md, "Battery"). The brightness level is kept.
 - After a restart of the same lens, such as a recovery from an error, a torch that was on
   comes back on.
+- A request made before the camera is ready is kept as ``TorchStatus/pending`` and applied
+  once the camera has started; the light then comes on or is reported unavailable, never
+  silently turned off (issue #75).
 
 Isolated to the main actor, like ``CameraModel``.
 
@@ -9349,6 +15731,14 @@ internal, declared in `Sources/NopeCore/Light.swift`
 
 Asks the hardware for the torch at ``torchLevel``, and records the answer. Does nothing
 without a backend.
+
+The answer is never recorded as a silent "off" (issue #75):
+- ``TorchStatus/pending`` (the camera is being reconfigured) keeps the request, which the
+  next ``sessionDidStart()`` applies;
+- ``TorchStatus/off`` in answer to "on" is recorded as ``TorchStatus/unavailable``, so an
+  interface says the light didn't come on;
+- if the person turned the light off, or the camera paused, while the hardware answered,
+  a light that came on is turned off again.
 
 ## `LightModel/cameraDidPause()`
 
@@ -9453,7 +15843,8 @@ internal, declared in `Sources/NopeCore/Light.swift`
 ```
 
 Records the lens the camera is about to start with. Called by ``CameraModel`` before
-each start; the light is off until ``sessionDidStart()``.
+each start; the light is off until ``sessionDidStart()``, and shows
+``TorchStatus/pending`` meanwhile when the person wants it.
 
 - Parameter lens: The lens.
 
@@ -9465,7 +15856,8 @@ internal, declared in `Sources/NopeCore/Light.swift`
 @MainActor func sessionDidStart() async
 ```
 
-Turns the torch back on after a start, if the person wants it and the lens has one.
+Records that the camera runs, after a start or after an interruption ended, and turns the
+torch on if the person asked for it meanwhile and the lens has one.
 
 Side effect: may switch the torch on.
 
@@ -9603,6 +15995,16 @@ case burst
 ```
 
 A burst (issue #46).
+
+## `LiveActivityContent/Kind/focusBracket`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case focusBracket
+```
+
+A focus bracket's frames (issue #90). Its start delay shows as the self-timer's.
 
 ## `LiveActivityContent/Kind/interval`
 
@@ -9745,7 +16147,18 @@ public, declared in `Sources/NopeCore/LiveActivity.swift`
 case notAllSigned
 ```
 
-At least one saved photo isn't signed.
+At least one saved photo isn't signed, although signing was on or couldn't be offered.
+
+## `LiveActivityContent/Signing/off`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case off
+```
+
+No saved photo is signed, because the person has signing turned off
+(``SignatureStatus/UnsignedReason/turnedOff``): the person's choice, not a problem.
 
 ## `LiveActivityContent/canStop`
 
@@ -9755,9 +16168,10 @@ public, declared in `Sources/NopeCore/LiveActivity.swift`
 var canStop: Bool { get }
 ```
 
-Whether the activity offers Stop: for an interval series or astro run that runs or is
-paused, because they have photos still to take that Stop would prevent. Every photo
-already taken is saved either way.
+Whether the activity offers Stop: for an interval series, astro run or focus bracket that
+runs or is paused, because they have photos still to take that Stop would prevent, and
+for a focus bracket's start delay (docs/design/device-feedback-1.0.md, section 6). Every
+photo already taken is saved either way.
 
 ## `LiveActivityContent/compactCount`
 
@@ -9782,6 +16196,18 @@ var countdownEnd: Date?
 When the countdown ends, while ``phase`` is ``Phase/countingDown``; otherwise `nil`. The
 system counts down to it on screen, so the content isn't updated every second.
 
+## `LiveActivityContent/hasDates`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var hasDates: Bool { get }
+```
+
+Whether the content holds a date iOS draws from: a countdown's end (``countdownEnd``) or a
+timed series' time (``seriesTime``). Such content is sent again when the device's clock
+changes (``LiveActivityCoordinator/clockChanged(_:)``).
+
 ## `LiveActivityContent/hasEnded`
 
 public, declared in `Sources/NopeCore/LiveActivity.swift`
@@ -9792,12 +16218,12 @@ var hasEnded: Bool { get }
 
 Whether the run has ended, so the activity shows its final state.
 
-## `LiveActivityContent/init(kind:phase:taken:total:saved:countdownEnd:signing:isNightMode:)`
+## `LiveActivityContent/init(kind:phase:taken:total:saved:countdownEnd:signing:isNightMode:seriesTime:)`
 
 public, declared in `Sources/NopeCore/LiveActivity.swift`
 
 ```swift
-init(kind: Kind, phase: Phase, taken: Int = 0, total: Int? = nil, saved: Int = 0, countdownEnd: Date? = nil, signing: Signing? = nil, isNightMode: Bool = false)
+init(kind: Kind, phase: Phase, taken: Int = 0, total: Int? = nil, saved: Int = 0, countdownEnd: Date? = nil, signing: Signing? = nil, isNightMode: Bool = false, seriesTime: ClosedRange<Date>? = nil)
 ```
 
 Creates content.
@@ -9811,6 +16237,8 @@ Creates content.
   - countdownEnd: When the countdown ends, or `nil`.
   - signing: Whether the saved photos are signed, or `nil`.
   - isNightMode: Whether night mode is on.
+  - seriesTime: When an interval series that stops after a time started and ends, or
+    `nil`.
 
 ## `LiveActivityContent/isNightMode`
 
@@ -9862,6 +16290,30 @@ var saved: Int
 ```
 
 The photos saved so far.
+
+## `LiveActivityContent/seriesTime`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var seriesTime: ClosedRange<Date>?
+```
+
+When an interval series that stops after a time started and when it ends, or `nil`. The
+system counts down to the end and fills the progress bar by time on screen, so the content
+isn't updated for it. The time keeps running while the series is paused
+(``IntervalProgress/timeSpan(date:now:)``).
+
+## `LiveActivityContent/showsTimeLeft`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var showsTimeLeft: Bool { get }
+```
+
+Whether the activity shows the time left of an interval series that stops after a time,
+with a progress bar by time (``seriesTime``): while the series runs or is paused.
 
 ## `LiveActivityContent/signing`
 
@@ -9926,7 +16378,8 @@ public, declared in `Sources/NopeCore/LiveActivity.swift`
 var total: Int?
 ```
 
-The photos the run takes, or `nil` when it has no set number (a burst or the self-timer).
+The photos the run takes, or `nil` when it has no set number (a burst, the self-timer, or
+an interval series that stops after a time).
 
 ## `LiveActivityCoordinator`
 
@@ -9940,7 +16393,7 @@ Starts, updates and ends the Live Activity that shows a series and its saving on
 Screen and in the Dynamic Island (issue #64), and asks for time to finish saving when the app
 leaves the foreground.
 
-The app owns one for its lifetime, runs ``observe(_:)`` while the camera screen is shown, and
+The app owns one for its lifetime, runs ``observe(_:notifications:)`` while the camera screen is shown, and
 keeps ``isEnabled`` (the Settings switch, off by default), ``isInForeground``, ``isActive``
 and ``isNightMode`` current. The coordinator follows the camera model; it holds no camera
 rules.
@@ -9951,9 +16404,10 @@ rules.
   Live Activities.
 - **Updates:** local only, no push and no network. While the app is in the foreground the
   activity isn't on screen, so a change of the counts alone is sent at most every
-  ``minimumUpdateInterval``; a change of phase, and the content when the app leaves the
-  foreground, are sent at once. A countdown is drawn by the system from its end time, with no
-  updates (AGENTS.md, "Battery": no timers that keep running).
+  ``minimumUpdateInterval``, measured on the monotonic clock (issue #125); a change of phase,
+  the content when the app leaves the foreground, and the dates after a change of the
+  device's clock (``clockChanged(_:)``) are sent at once. A countdown is drawn by the system
+  from its end time, with no updates (AGENTS.md, "Battery": no timers that keep running).
 - **End:** when the run ends, at once if the app is in the foreground, where the camera screen
   says how it went; otherwise its final content stays on the Lock Screen for
   ``endedActivityDuration``. Stop on the activity ends it at once (``stopSeries(_:)``).
@@ -9974,6 +16428,22 @@ Brings the background time and the activity in line with the model's state.
 
 - Parameter model: The camera model.
 
+## `LiveActivityCoordinator/clockChanged(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
+
+```swift
+@MainActor func clockChanged(_ model: CameraModel)
+```
+
+Sends the shown activity's content again after the device's clock changed, when it holds a
+date: a countdown's end or a timed series' time. iOS draws those from absolute dates, which
+are stale after the change; the content's dates are worked out again from the monotonic
+clock, so the time left the activity shows is right at once (issue #125). Nothing is sent
+for an activity without dates.
+
+- Parameter model: The camera model.
+
 ## `LiveActivityCoordinator/endedActivityDuration`
 
 public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
@@ -9985,12 +16455,12 @@ public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
 How long an activity that ended while the app was out of the foreground stays on the Lock
 Screen, in seconds: two minutes, "a short time after saving finishes" (issue #64).
 
-## `LiveActivityCoordinator/init(presenter:backgroundTime:now:)`
+## `LiveActivityCoordinator/init(presenter:backgroundTime:clock:)`
 
 public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
 
 ```swift
-@MainActor init(presenter: any LiveActivityPresenting, backgroundTime: any BackgroundTimeRequesting, now: @escaping () -> Date = Date.init)
+@MainActor init(presenter: any LiveActivityPresenting, backgroundTime: any BackgroundTimeRequesting, clock: NopeClock = .system)
 ```
 
 Creates a coordinator with no activity shown.
@@ -9998,7 +16468,8 @@ Creates a coordinator with no activity shown.
 - Parameters:
   - presenter: Shows the activity.
   - backgroundTime: Asks for time to finish saving.
-  - now: Reads the current time. Tests pass their own.
+  - clock: The clock, the same as the camera model's. ``NopeClock/system`` by default;
+    tests pass one they move.
 
 ## `LiveActivityCoordinator/isActive`
 
@@ -10058,19 +16529,25 @@ app is in the foreground and the activity isn't on screen. An assumption to be c
 device: rare enough to cost no noticeable battery, often enough to stay roughly current if
 the system shows the activity.
 
-## `LiveActivityCoordinator/observe(_:)`
+## `LiveActivityCoordinator/observe(_:notifications:)`
 
 public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
 
 ```swift
-@MainActor func observe(_ model: CameraModel) async
+@MainActor func observe(_ model: CameraModel, notifications: NotificationCenter = .default) async
 ```
 
 Follows the model until the calling task is cancelled: applies every change of the model
 or of ``isEnabled``, ``isInForeground``, ``isActive`` and ``isNightMode`` as it happens.
 Nothing polls; it waits for Observation's change notifications.
 
-- Parameter model: The camera model.
+While it follows the model it also listens for the system's notice that the device's clock
+changed (`NSSystemClockDidChange`), and then sends the content again (``clockChanged(_:)``).
+
+- Parameters:
+  - model: The camera model.
+  - notifications: Where the clock-change notice is posted: the default center, or a
+    test's own.
 
 ## `LiveActivityCoordinator/shown`
 
@@ -10090,7 +16567,7 @@ public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
 @MainActor func stopSeries(_ model: CameraModel) async
 ```
 
-Stops the interval series or astro run from the activity's Stop button, and ends the
+Stops the interval series, astro run or focus bracket from the activity's Stop button, and ends the
 activity at once, with every photo already taken saved.
 
 - Parameter model: The camera model.
@@ -10231,6 +16708,17 @@ case signed
 
 "Signed.": every saved photo is signed.
 
+## `LiveActivitySigningLine/signingOff`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case signingOff
+```
+
+"Not signed: signing is off in Settings.": signing is off by the person's choice, so the
+line states it without pointing to a problem.
+
 ## `LiveActivityStatusLine`
 
 public, declared in `Sources/NopeCore/LiveActivity.swift`
@@ -10251,6 +16739,17 @@ case astroStartsIn
 ```
 
 "Astro starts in" followed by the system's countdown.
+
+## `LiveActivityStatusLine/bracketStopped(saved:total:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case bracketStopped(saved: Int, total: Int)
+```
+
+"Bracket stopped: 4 of 12 photos saved", as the focus bracket's card says it: a focus
+bracket ended before its last frame.
 
 ## `LiveActivityStatusLine/burstPhotosTaken(_:)`
 
@@ -10312,6 +16811,17 @@ case paused(taken: Int, total: Int)
 
 "Paused: 42 of 120 photos taken. Open nope. to continue."
 
+## `LiveActivityStatusLine/pausedTimeLeft(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case pausedTimeLeft(Int)
+```
+
+"Paused: 12 photos taken · 1:12:00 left. Open nope. to continue.": an interval series that
+stops after a time is paused, and its time keeps running.
+
 ## `LiveActivityStatusLine/photoIn`
 
 public, declared in `Sources/NopeCore/LiveActivity.swift`
@@ -10341,6 +16851,17 @@ case photosTaken(taken: Int, total: Int)
 ```
 
 "12 of 120 photos taken": an interval series runs.
+
+## `LiveActivityStatusLine/photosTakenTimeLeft(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case photosTakenTimeLeft(Int)
+```
+
+"12 photos taken · 1:12:00 left", the time counted down by the system to the end of
+``LiveActivityContent/seriesTime``: an interval series that stops after a time runs.
 
 ## `LiveActivityStatusLine/saving(saved:taken:)`
 
@@ -10382,6 +16903,16 @@ case seriesDone(taken: Int, total: Int)
 
 "Done: 120 of 120 photos taken."
 
+## `LiveActivityStatusLine/seriesDoneAfterTime(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case seriesDoneAfterTime(Int)
+```
+
+"Done: 120 photos taken.": an interval series that stops after a time reached its time.
+
 ## `LiveActivityStatusLine/seriesStopped(taken:total:)`
 
 public, declared in `Sources/NopeCore/LiveActivity.swift`
@@ -10391,6 +16922,16 @@ case seriesStopped(taken: Int, total: Int)
 ```
 
 "Stopped: 42 of 120 photos taken."
+
+## `LiveActivityStatusLine/seriesStoppedBeforeTime(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case seriesStoppedBeforeTime(Int)
+```
+
+"Stopped: 42 photos taken.": an interval series that stops after a time ended before it.
 
 ## `LiveActivityStatusLine/stoppedPhotosSaved(_:)`
 
@@ -10609,7 +17150,9 @@ peaking) and the live camera readout's values.
 
 An interface tells it what is shown with ``setNeeds(_:)`` and ``setShowsStats(_:)``, and runs
 ``observeAnalyses()`` and ``observeStats()`` for as long as the camera screen is visible.
-The model asks the backend for nothing while nothing is shown.
+Each copy of the interface also reports itself with ``interfaceDidAppear()`` and
+``interfaceDidDisappear()``; the aids stop when the last copy goes away. The model asks the
+backend for nothing while nothing is shown.
 
 ## `LiveViewModel/analysis`
 
@@ -10633,6 +17176,35 @@ Creates the model.
 
 - Parameter backend: The backend, or `nil` when it has no live view; the model then
   reports nothing.
+
+## `LiveViewModel/interfaceDidAppear()`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+@MainActor func interfaceDidAppear()
+```
+
+Records that an interface showing the live aids appeared. Call it as the interface
+appears, before it asks for anything.
+
+## `LiveViewModel/interfaceDidDisappear()`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+@MainActor func interfaceDidDisappear() async
+```
+
+Records that an interface showing the live aids went away, and stops the analysis and the
+readout once no interface is left.
+
+SwiftUI can swap the interface for a new copy (when a layout moves the picture to another
+container) and tell the old copy it disappeared after the new one appeared and asked for
+the same needs. Stopping then left the new copy with nothing: its requests had changed
+nothing, so they weren't made again, and the histogram and readout never showed.
+
+Side effect: when no interface is left, stops the backend's video analysis and readings.
 
 ## `LiveViewModel/isSupported`
 
@@ -11536,6 +18108,21 @@ measured while the camera screen isn't in use (AGENTS.md, "Battery").
 
 - Parameter enabled: Whether to send readings.
 
+## `ManualCaptureBackend/setFocus(lensPosition:)`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+func setFocus(lensPosition: Double) async throws(CaptureError) -> Double
+```
+
+A backend whose focus can't be locked at a position: every request fails with
+``CaptureError/configurationFailed``, so no focus bracket frame is taken.
+
+- Parameter lensPosition: The position asked for.
+- Returns: Never returns.
+- Throws: ``CaptureError/configurationFailed``, always.
+
 ## `ManualControl`
 
 public, declared in `Sources/NopeCore/ManualControl.swift`
@@ -11835,6 +18422,23 @@ internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
 The aids to send with the person's settings. The fast shutter limit is full auto's alone:
 with manual controls on, the person decides.
 
+## `ManualControlsModel/autoFocusIsInUse`
+
+public, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor var autoFocusIsInUse: Bool { get }
+```
+
+Whether the selected lens is autofocusing now: it can autofocus, and focus is neither set
+by hand nor locked in Manual Controls. The same rule ``DeviceControls/init(settings:lens:assist:)``
+follows, so it is `false` exactly when the camera gets no Close-Up or Far Focus limit.
+
+Close-Up and Far Focus (``nearFocusLimit``, ``farFocusLimit``) limit only autofocus
+(`AVCaptureDevice.autoFocusRangeRestriction`), so an interface shows them only while this
+is `true` (issue #91, docs/design/SETTING-SCOPE.md, 6). The person's choice is kept and is
+used again when focus returns to Auto. `false` before the camera is ready.
+
 ## `ManualControlsModel/availability(of:)`
 
 public, declared in `Sources/NopeCore/ManualControlsModel.swift`
@@ -11866,7 +18470,20 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 @MainActor var bracket: BracketSettings? { get set }
 ```
 
-The exposure bracket for the next photo, or `nil` when bracketing is off.
+The exposure bracket for the next press of the shutter, or `nil` when bracketing is off.
+It works in full auto and with manual controls on (docs/design/BRACKETING.md, decision
+2). An interface shows it as the drive strip's Bracket word.
+
+## `ManualControlsModel/bracketChangesISOFirst`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var bracketChangesISOFirst: Bool { get }
+```
+
+Whether the person set the shutter but not ISO, so a bracket changes ISO first; an
+interface says which value changes from frame to frame.
 
 ## `ManualControlsModel/bracketFrameCounts`
 
@@ -11877,21 +18494,6 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 ```
 
 The bracket frame counts the selected lens offers; empty when it can't bracket.
-
-## `ManualControlsModel/bracketFrames()`
-
-internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
-
-```swift
-@MainActor func bracketFrames() -> [BracketFrame]?
-```
-
-The frames of the next photo's exposure bracket, or `nil` for a single photo: bracketing
-is off, the lens reports no ISO or shutter range, or there is no exposure to start from
-yet. The bracket always fits the lens: ``lensWillStart(_:)`` drops one that doesn't.
-
-The base exposure is the person's ISO and shutter where set, otherwise the camera's
-reading, which already includes exposure compensation.
 
 ## `ManualControlsModel/bracketFrames(once:)`
 
@@ -11910,6 +18512,37 @@ are on; otherwise the settings are automatic), otherwise the camera's last readi
 - Parameter bracket: The bracket.
 - Returns: The frames, or `nil` when the lens can't take it (``canBracket(_:)``) or the
   camera hasn't reported an exposure yet.
+
+## `ManualControlsModel/bracketPlan`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var bracketPlan: [BracketFramePlan]? { get }
+```
+
+The frames the next press of the shutter takes, as an interface lists them in Bracket
+Settings, or `nil` for a single photo: bracketing is off, the lens reports no ISO or
+shutter range, or there is nothing to plan from yet (see ``bracketFrames(once:)``). The
+bracket always fits the lens: ``lensWillStart(_:)`` drops one that doesn't. It follows the camera's readings, so it changes as the light
+does; the bracket is planned again from the reading when the shutter is pressed.
+
+## `ManualControlsModel/bracketPlan(once:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor func bracketPlan(once bracket: BracketSettings) -> [BracketFramePlan]?
+```
+
+Plans a bracket's frames around the base exposure, within the lens's ranges: the
+person's ISO and shutter where set (only while manual controls are on), otherwise the
+camera's last reading, which already includes exposure compensation. The parameter the
+person didn't set changes first, the shutter when neither is set.
+
+- Parameter bracket: The bracket.
+- Returns: One plan per frame, in the order taken, or `nil` when the lens can't take the
+  bracket or there is no base exposure yet.
 
 ## `ManualControlsModel/canAdjustExposureCompensation`
 
@@ -11931,7 +18564,7 @@ internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 Whether the selected lens can take this bracket: it reports ISO and shutter ranges, the
 frame count is one ``bracketFrameCounts`` offers, and the step is one of
-``BracketSettings/steps``. The same limits as the bracket in Pro Tools.
+``BracketSettings/steps``. The same limits as the bracket the drive strip turns on.
 
 - Parameter bracket: The bracket.
 
@@ -11964,6 +18597,17 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 ```
 
 The selected lens's manual capabilities.
+
+## `ManualControlsModel/clock`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor let clock: NopeClock
+```
+
+The clock of the camera model: interval photos wait on it, and a timed series' end is a
+moment of its monotonic clock.
 
 ## `ManualControlsModel/closeUpDetector`
 
@@ -12102,33 +18746,77 @@ system's behavior; the app sets it from the person's Face Detection setting
 internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 ```swift
-@MainActor func handle(_ intent: ManualControlIntent, capture: @escaping @MainActor () async -> Bool) async
+@MainActor func handle(_ intent: ManualControlIntent, capture: @escaping @MainActor () async -> IntervalPhotoOutcome) async
 ```
 
 Handles one intent. ``CameraModel/send(_:)`` calls it.
 
-Settings intents have no effect while manual controls are off. Interval shooting works
-in full auto too (each photo is then a full-auto photo), so choosing, starting and
-stopping a series always applies.
+Settings intents have no effect while manual controls are off. Interval shooting and
+bracketing work in full auto too (each photo is then a full-auto photo, and a bracket is
+planned around the camera's reading), so they always apply.
 
 - Parameters:
   - intent: The intent.
   - capture: Takes one photo of an interval series the way the shutter does, waiting
-    while the series is paused, and returns whether the photo was taken and saved.
+    while the series is paused, and says what came of it.
 
-## `ManualControlsModel/init(backend:sleep:)`
+## `ManualControlsModel/holdsControls`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var holdsControls: Bool { get set }
+```
+
+Whether the camera's controls are held by a focus bracket, which sets focus, exposure and
+white balance itself while it runs or while an end of its range is set. Changes to the
+settings are kept, and applied when the hold ends.
+
+## `ManualControlsModel/init(backend:clock:)`
 
 public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 ```swift
-@MainActor init(backend: (any ManualCaptureBackend)?, sleep: @escaping @Sendable (Double) async throws -> Void)
+@MainActor convenience init(backend: (any ManualCaptureBackend)?, clock: NopeClock = .system)
 ```
 
 Creates the model.
 
 - Parameters:
   - backend: The hardware, or `nil` when it has no manual controls.
+  - clock: The clock interval photos wait on and a timed series ends by. Its monotonic
+    clock also times the camera's readings.
+
+## `ManualControlsModel/init(backend:clock:measuredBy:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor init(backend: (any ManualCaptureBackend)?, clock: NopeClock, measuredBy measure: @escaping @Sendable () -> ContinuousClock.Instant)
+```
+
+Creates the model.
+
+- Parameters:
+  - backend: The hardware, or `nil` when it has no manual controls.
+  - clock: The clock interval photos wait on and a timed series ends by.
+  - measure: Reads the monotonic clock that times the camera's readings.
+
+## `ManualControlsModel/init(backend:sleep:now:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor convenience init(backend: (any ManualCaptureBackend)?, sleep: @escaping @Sendable (Double) async throws -> Void, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now })
+```
+
+Creates the model with a sleep of a number of seconds, as tests written before
+``NopeClock`` pass (``NopeClock/stepped(by:now:)``).
+
+- Parameters:
+  - backend: The hardware, or `nil` when it has no manual controls.
   - sleep: Waits a number of seconds between interval photos, throwing when cancelled.
+  - now: Reads the monotonic clock, for when each reading arrived.
 
 ## `ManualControlsModel/interval`
 
@@ -12138,7 +18826,7 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 @MainActor var interval: IntervalSettings { get set }
 ```
 
-The interval and photo count of the next interval series.
+The interval, and the number of photos or the time, of the next interval series.
 
 ## `ManualControlsModel/intervalProgress`
 
@@ -12160,6 +18848,29 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 Whether manual controls are on (the "Manual controls" option). Off by default.
 
+## `ManualControlsModel/isIntervalTimeUp`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var isIntervalTimeUp: Bool { get }
+```
+
+Whether the running series stops after a time and that time is up, on the monotonic clock.
+
+## `ManualControlsModel/isShutterLongerThanInterval`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var isShutterLongerThanInterval: Bool { get }
+```
+
+Whether the manual shutter time is longer than the series' interval, so its photos follow
+one another rather than keep to the interval (decision 10 of the 1.0.0 plan): an interface
+says so in Interval Shooting before the series starts. Only a shutter set by hand is known
+in advance; in full auto, or with an automatic shutter, it is `false`.
+
 ## `ManualControlsModel/isSupported`
 
 public, declared in `Sources/NopeCore/ManualControlsModel.swift`
@@ -12170,6 +18881,29 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 Whether the backend offers manual controls at all. When it's `false`, an interface
 shouldn't offer the "Manual controls" option.
+
+## `ManualControlsModel/lastBracket`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var lastBracket: BracketSettings { get set }
+```
+
+The bracket chosen last in this session: the one an interface turns on again when the
+person chooses Bracket. ``BracketSettings/standard`` at first. Not stored between launches,
+as the drive mode isn't (AGENTS.md, "Cognitive": no surprise modes).
+
+## `ManualControlsModel/lastIntervalEnd`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var lastIntervalEnd: IntervalEnd? { get set }
+```
+
+How the last interval series ended, or `nil` before the first one ends. Cleared when the
+next starts.
 
 ## `ManualControlsModel/lastReading`
 
@@ -12225,6 +18959,16 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 Whether autofocus is limited to near subjects (Close-Up). Off by default; reset by All
 Auto.
+
+## `ManualControlsModel/now`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor let now: @Sendable () -> ContinuousClock.Instant
+```
+
+Reads the monotonic clock, for when each camera reading arrived (``CloseUpDetector``).
 
 ## `ManualControlsModel/observeReadings()`
 
@@ -12297,6 +19041,20 @@ internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
 Clears what belonged to the previous lens: the tapped point, the close-up state and the
 hint, and starts the new lens at its fastest fast-shutter limit until it reports a
 reading.
+
+## `ManualControlsModel/resetReadingAids()`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func resetReadingAids()
+```
+
+Starts the fast shutter rule and the steady hint again from the lens's fastest limit,
+forgetting the last reading: after a lens change, and when manual controls turn on or off
+(Astro too), the readings taken before belong to another exposure. Without this, a limit
+lifted before Manual stayed lifted after it, and the hint stayed until enough new
+readings brought the limit back past the half-stop ``AutoShutter/returnMargin``.
 
 ## `ManualControlsModel/scale(for:)`
 
@@ -12428,9 +19186,11 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 @MainActor var showsSteadyHint: Bool { get set }
 ```
 
-Whether the camera should say "Hold it steady or use a tripod": in full auto when the
-light is too low for a handheld-safe shutter, and with manual controls when the shutter
-chosen or in use is slower than that.
+Whether the camera should say "Hold it steady or use a tripod": in full auto only, when
+the light is too low for the fast shutter limit and the camera's shutter is slower than
+the lens's steady limit (``updateSteadyHint()``). Never with manual controls on. It
+follows only readings taken in the current mode and lens. Interfaces show the hint from ``CameraModel/showsSteadyHint``, which leaves it
+to the astro helper's own guidance while that is on.
 
 ## `ManualControlsModel/startReadings()`
 
@@ -12505,11 +19265,16 @@ internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
 @MainActor func updateSteadyHint()
 ```
 
-Decides whether to show "Hold it steady or use a tripod".
+Decides whether to show "Hold it steady or use a tripod."
+(docs/design/device-feedback-1.0.md, section 4):
 
-- Full auto: when the fast shutter limit had to be lifted past the handheld rule.
-- Manual controls: when the person's shutter, or the camera's while it is Auto, is slower
-  than the handheld rule. The app changes nothing; it only says so.
+- Manual controls: never. The Shutter readout shows the speed in use, and the person has
+  chosen to decide.
+- Full auto: while the fast shutter limit is lifted and the camera's shutter is slower
+  than the lens's steady limit (``AutoShutter/steadyLimit(for:)``). It turns off only at a
+  reading half a stop faster than the limit (``AutoShutter/returnMargin``), and between
+  the two it keeps its state. While the limit holds, the shutter is never slower than the
+  handheld rule, so the hint can't show.
 
 ## `ManualControlsModel/value(of:)`
 
@@ -13293,12 +20058,12 @@ let id: String
 
 The identifier both files share.
 
-## `MetadataComparison/Item/init(id:name:kind:value:item:isIdentifying:isSignature:)`
+## `MetadataComparison/Item/init(id:name:kind:value:item:isIdentifying:isSignature:tagNumber:)`
 
 internal, declared in `Sources/NopeCore/MetadataComparison.swift`
 
 ```swift
-init(id: String, name: String, kind: Kind, value: Value, item: MetadataItem?, isIdentifying: Bool, isSignature: Bool)
+init(id: String, name: String, kind: Kind, value: Value, item: MetadataItem?, isIdentifying: Bool, isSignature: Bool, tagNumber: UInt16? = nil)
 ```
 
 Creates an item.
@@ -13311,6 +20076,7 @@ Creates an item.
   - item: The privacy switch, or `nil`.
   - isIdentifying: Whether the value is identifying.
   - isSignature: Whether it is a signature.
+  - tagNumber: The tag number for a tag, or `nil`.
 
 ## `MetadataComparison/Item/isIdentifying`
 
@@ -13361,6 +20127,17 @@ let name: String
 ```
 
 The item's name.
+
+## `MetadataComparison/Item/tagNumber`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let tagNumber: UInt16?
+```
+
+The TIFF tag number for a tag, or `nil` for a block or an XMP property. The
+"What's in this photo" Every Tag page (``PhotoDetails/TagEntry``) shows it.
 
 ## `MetadataComparison/Item/value`
 
@@ -14620,6 +21397,20 @@ The HEIF boxes, items, properties and references every HEIF may have: the image 
 `hvc1` item, or a `grid` of them), the EXIF item, the color profile (`colr`) and the
 image's layout. No thumbnails (`thmb`) or auxiliary images (`auxl`).
 
+## `MetadataPlan/heifDerivedImageIOKeys`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let heifDerivedImageIOKeys: [String]
+```
+
+ImageIO's top-level keys that describe a decoded HEIF and are allowed only in a HEIF.
+`Headroom` is the image's HDR headroom as the reader derives it. The iOS 26.5 Simulator
+reports it on every HEIF the app writes, with no new box in the file (the HEIF block
+check finds none; the content light level box, `heif:property:clli`, is already allowed),
+where iOS 27.2 reports the `ContentLightLevelInfo` dictionary instead.
+
 ## `MetadataPlan/heifXMPBlock`
 
 internal, declared in `Sources/NopeCore/MetadataPlan.swift`
@@ -15051,7 +21842,7 @@ metadata allowlist takes (``MetadataPlan``). It holds the rules of `docs/PRIVACY
 - Turning the master back on turns every item off again.
 - Turning the master off sets every item to its documented default
   (``MetadataItem/isOnWhenCustomizing``).
-- Signing (``signsPhotos``) is outside the master switch and on by default.
+- Signing (``signsPhotos``) is outside the master switch and off by default (issue #80).
 
 ```swift
 var settings = MetadataSettings()          // master on, every item off
@@ -15090,8 +21881,8 @@ public, declared in `Sources/NopeCore/MetadataSettings.swift`
 init()
 ```
 
-The settings on first launch: every optional detail removed, photos signed, and no name
-or copyright entered.
+The settings on first launch: every optional detail removed, photos not signed, and no
+name or copyright entered.
 
 ## `MetadataSettings/isCustom`
 
@@ -15172,8 +21963,10 @@ public, declared in `Sources/NopeCore/MetadataSettings.swift`
 var signsPhotos: Bool
 ```
 
-Whether each photo is signed with Content Credentials. Outside the master switch; on by
-default.
+Whether each photo is signed with Content Credentials. Outside the master switch; off by
+default (owner decision, issue #80): a signed photo names the app and its version as its
+maker (the manifest's claim generator, `docs/PRIVACY.md`, "Content Credentials"), so
+signing is the person's choice. A stored value is kept as saved.
 
 ## `MetadataSettings/writesStandardFileTags`
 
@@ -15398,6 +22191,152 @@ case wholeFrame
 
 The whole frame.
 
+## `NopeClock`
+
+public, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+struct NopeClock
+```
+
+The one source of time for the camera model and everything it owns (issue #107): the wall
+clock for dates people see or that go into files, and the monotonic clock for everything that
+measures elapsed time.
+
+``CameraModel`` takes one and passes it to its manual controls, drive modes and self-timer;
+``LiveActivityCoordinator`` takes the same one. Tests replace this one value, usually with a
+clock they move by hand, instead of a separate sleep and two separate clocks.
+
+The two readings are kept apart on purpose:
+
+- ``date`` is the clock on the wall. The person can change it, and iOS changes it with the
+  time zone and network time, so it is only used for a photo's date, an end time shown on
+  screen and the dates a Live Activity needs.
+- ``now`` is `ContinuousClock`, which a change of the device's time doesn't move and which
+  keeps counting while the device sleeps ([Apple: ContinuousClock]
+  (https://developer.apple.com/documentation/swift/continuousclock)). Every deadline, wait and
+  duration is measured on it: the end of a timed series, the start of the next interval photo,
+  the self-timer and the limit on Live Activity updates.
+
+`scripts/check-architecture.sh` fails on a direct read of the wall clock (`Date()` or
+`Date.now`) anywhere else in `NopeCore`, so the two can't be mixed up again.
+
+```swift
+let model = CameraModel(backend: backend, saver: saver, clock: .system)
+let deadline = model.clock.now() + .seconds(10)
+try await model.clock.sleep(deadline)
+```
+
+## `NopeClock/date`
+
+public, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+var date: @Sendable () -> Date
+```
+
+Reads the wall clock: only for dates people see or that go into files.
+
+## `NopeClock/date(of:)`
+
+public, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+func date(of instant: ContinuousClock.Instant) -> Date
+```
+
+The date on the wall clock of a moment on the monotonic clock: now's date plus the time
+until that moment. Worked out when it is needed, so a change of the device's time since the
+moment was set doesn't move it on the monotonic clock, only the date it is shown as.
+
+- Parameter instant: A moment of ``now``, past or future.
+- Returns: Its date.
+
+## `NopeClock/init(date:now:sleep:)`
+
+public, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+init(date: @escaping @Sendable () -> Date = { Date() }, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now }, sleep: @escaping @Sendable (ContinuousClock.Instant) async throws -> Void = {
+            try await Task.sleep(until: $0, clock: .continuous)
+        })
+```
+
+Creates a clock from its three parts. Each part defaults to the system's, so a test can
+replace just one.
+
+- Parameters:
+  - date: Reads the wall clock.
+  - now: Reads the monotonic clock.
+  - sleep: Waits until a moment of ``now``, throwing when cancelled.
+
+## `NopeClock/now`
+
+public, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+var now: @Sendable () -> ContinuousClock.Instant
+```
+
+Reads the monotonic clock: for everything that measures elapsed time.
+
+## `NopeClock/sleep`
+
+public, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+var sleep: @Sendable (ContinuousClock.Instant) async throws -> Void
+```
+
+Waits until a moment on the monotonic clock (``now``), and throws `CancellationError` when
+the calling task is cancelled. A moment already past returns at once.
+
+## `NopeClock/sleep(seconds:)`
+
+public, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+func sleep(seconds: Double) async throws
+```
+
+Waits a number of seconds, measured on ``now``.
+
+- Parameter seconds: How long to wait, in seconds. Zero or less returns at once.
+- Throws: `CancellationError` when the calling task is cancelled.
+
+## `NopeClock/stepped(by:now:)`
+
+internal, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+static func stepped(by sleep: @escaping @Sendable (Double) async throws -> Void, now: (@Sendable () -> ContinuousClock.Instant)? = nil) -> NopeClock
+```
+
+A clock for code written before this type, which passes a sleep that takes a number of
+seconds, usually one that returns at once or when a test lets it go.
+
+Such a sleep doesn't move a clock, so a deadline would never be reached. The clock this
+makes keeps its own time instead: it starts at the system's `ContinuousClock` and moves on
+only by each completed wait, by exactly the time asked for. A wait then asks the sleep for
+whole seconds when it is on time, as the sleeps of that code expect. With `now`, the clock
+reads that clock instead and leaves moving it to the sleep, as a test clock whose sleep
+moves it does.
+
+- Parameters:
+  - sleep: Waits a number of seconds, throwing when cancelled.
+  - now: Reads a monotonic clock that the sleep moves, or `nil` for the clock's own time.
+- Returns: The clock; its ``date`` is the system's.
+
+## `NopeClock/system`
+
+public, declared in `Sources/NopeCore/NopeClock.swift`
+
+```swift
+static let system: NopeClock
+```
+
+The system's clocks: `Date()`, `ContinuousClock` and `Task.sleep(until:clock:)`.
+
 ## `NopeSettings`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -15437,6 +22376,58 @@ enum Key
 
 The `UserDefaults` keys.
 
+## `NopeSettings/Key/assistantAccess`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let assistantAccess: String
+```
+
+Whether Assistant Access is on, a Boolean. Inside ``SharedSettingsStore/keyPrefix``,
+so the Lock Screen camera's snapshot shows it; presets leave it out
+(``assistantKeys``).
+
+## `NopeSettings/Key/assistantAsk`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let assistantAsk: String
+```
+
+When to ask first, an ``AssistantAskLevel`` raw value.
+
+## `NopeSettings/Key/assistantKeys`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let assistantKeys: Set<String>
+```
+
+The Assistant Access keys, which no preset stores or applies.
+
+## `NopeSettings/Key/burstLimit`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let burstLimit: String
+```
+
+How many photos one press takes in Burst, a ``BurstLimit`` raw value.
+
+## `NopeSettings/Key/dimAfter`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let dimAfter: String
+```
+
+How long Keep Screen On waits before it dims, a ``DimAfter`` raw value.
+
 ## `NopeSettings/Key/fastShutter`
 
 internal, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -15467,6 +22458,17 @@ static let followsFaces: String
 
 Whether detected faces steer autofocus and auto exposure, a Boolean.
 
+## `NopeSettings/Key/isNightModeFromAstro`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let isNightModeFromAstro: String
+```
+
+Whether the astro helper turned night mode on, a Boolean. Not a setting, so outside
+``SharedSettingsStore/keyPrefix``: presets and snapshots don't carry it.
+
 ## `NopeSettings/Key/isNightModeOn`
 
 internal, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -15476,6 +22478,26 @@ static let isNightModeOn: String
 ```
 
 Whether night mode is on, a Boolean.
+
+## `NopeSettings/Key/keepsNightModeAfterAstro`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let keepsNightModeAfterAstro: String
+```
+
+Whether night mode stays on after the astro helper ends, a Boolean.
+
+## `NopeSettings/Key/keepsScreenOn`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let keepsScreenOn: String
+```
+
+Whether the screen stays on while the camera is showing, a Boolean.
 
 ## `NopeSettings/Key/legacyManualControls`
 
@@ -15496,6 +22518,16 @@ static let photoSizes: String
 ```
 
 The photo size chosen for each lens, as JSON-encoded `[Lens.ID: PhotoDimensions]`.
+
+## `NopeSettings/Key/pinch`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let pinch: String
+```
+
+What a pinch on the viewfinder does, a ``PinchAction`` raw value.
 
 ## `NopeSettings/Key/save`
 
@@ -15526,6 +22558,16 @@ static let showsManualControls: String
 ```
 
 Whether the manual controls are shown, a Boolean.
+
+## `NopeSettings/Key/showsProcessedMarker`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let showsProcessedMarker: String
+```
+
+Whether the "Processed" marker is shown, a Boolean.
 
 ## `NopeSettings/Key/startsInCleanView`
 
@@ -15571,8 +22613,62 @@ A setting missing from the snapshot goes back to its default. Every value is rea
 through the same rules as a stored one, so a value this version doesn't know falls back to
 the default (AGENTS.md, "Fail closed"). A snapshot that can't be read changes nothing.
 
+Night mode then is the snapshot's, a choice the person made by applying it (a preset), so
+the astro helper no longer turns it off when it ends (``isNightModeFromAstro``).
+
 - Parameter snapshot: The snapshot, from ``makeSnapshot()``.
 - Returns: `true` when the snapshot could be read.
+
+## `NopeSettings/assistantAccess`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var assistantAccess: Bool { get set }
+```
+
+Whether Siri, Shortcuts and other assistants may use the app's actions (Assistant Access,
+issue #82). Off by default, for fresh installs and updates. It changes only on its
+Settings page (``setAssistantAccess(_:)``) and with Factory Defaults applied in the app:
+never through an assistant, a control or a preset (`docs/design/assistant-access.md`,
+3.5). The check is ``assistantAccess(deviceIsLocked:)``.
+
+## `NopeSettings/assistantAccess(deviceIsLocked:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func assistantAccess(deviceIsLocked: Bool) -> AssistantAccess
+```
+
+The Assistant Access check with the stored choices.
+
+- Parameter deviceIsLocked: Whether the device is locked now.
+- Returns: The check.
+
+## `NopeSettings/assistantAsk`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var assistantAsk: AssistantAskLevel { get set }
+```
+
+When the app asks before an assistant action runs. ``AssistantAskLevel/everyAction`` by
+default; kept while ``assistantAccess`` is off and used when it is turned on. Changed
+only as ``assistantAccess`` is.
+
+## `NopeSettings/burstLimit`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var burstLimit: BurstLimit { get set }
+```
+
+How many photos one press takes in Burst (Burst Limit, issue #121). ``BurstLimit/off`` by
+default. Stored, in presets and in the Lock Screen camera's snapshot; not yet read by the
+burst itself (see ``BurstLimit``).
 
 ## `NopeSettings/canTurnOff(_:deviceSupportsBayerRAW:)`
 
@@ -15613,6 +22709,20 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 
 How the HEIF and JPEG copies are developed from the RAW. ``DevelopedLook/standard`` by
 default. The RAW is never changed by it.
+
+## `NopeSettings/dimAfter`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var dimAfter: DimAfter { get set }
+```
+
+How long Keep Screen On waits without a touch or photo before it dims the screen (Dim
+After, issue #119). ``DimAfter/standard`` (2 minutes) by default, so nothing changes for
+anyone who doesn't choose. ``SeriesScreenKeeper`` applies it through
+``KeepScreenOnConditions/dimAfter``; Low Power Mode and heat still dim sooner, and a
+series still dims at once.
 
 ## `NopeSettings/fastShutter`
 
@@ -15655,8 +22765,8 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 ```
 
 Whether faces the camera detects steer autofocus and auto exposure (Face Detection, issue
-#57). On by default, the system's own behavior; the app passes it to ``CameraModel/manual``
-with ``AutoControlIntent/setFollowsFaces(_:)``.
+#57). Off by default (owner decision, issue #80); on gives the system's own behavior. The
+app passes it to ``CameraModel/manual`` with ``AutoControlIntent/setFollowsFaces(_:)``.
 
 ## `NopeSettings/formats`
 
@@ -15666,7 +22776,7 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 @MainActor var formats: Set<PhotoFormat> { get }
 ```
 
-The formats each photo is saved in. Never empty; RAW and HEIF by default.
+The formats each photo is saved in. Never empty; RAW only by default.
 
 ## `NopeSettings/init(defaults:)`
 
@@ -15679,7 +22789,7 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 Loads the settings, using the default for any value not stored yet or not readable.
 
 Unreadable save settings fall back to ``SaveSettings/init()``, which removes every
-optional detail and signs: the most private choice (AGENTS.md, "Fail closed").
+optional detail and doesn't sign: the most private choice (AGENTS.md, "Fail closed").
 
 - Parameter defaults: The store to read and write, normally `UserDefaults.standard`.
   Tests pass a store of their own.
@@ -15700,6 +22810,24 @@ Whether a format can be chosen on a device.
     (``DeviceCapabilities/supportsBayerRAW``).
 - Returns: `false` only for RAW on a device without Bayer RAW.
 
+## `NopeSettings/isNightModeFromAstro`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var isNightModeFromAstro: Bool { get set }
+```
+
+Whether night mode is on because the astro helper turned it on, and the person hasn't
+changed it since. Leaving the helper turns night mode off again while this is `true`
+(unless ``keepsNightModeAfterAstro``).
+
+It is stored in the shared store, so a change from another process (a Control Center
+control) clears it; a relaunch clears it too, keeping night mode as it was
+(``CameraModel/forgetNightModeFromAstroAtLaunch(settings:)``). It is
+kept under a key outside ``SharedSettingsStore/keyPrefix``: it is the app's state, not a
+setting, so presets and the Lock Screen camera's snapshot don't carry it.
+
 ## `NopeSettings/isNightModeOn`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -15713,7 +22841,48 @@ dark (issue #61). Off by default, remembered between launches, never switched on
 automatically. The app never changes the screen's brightness; people use the device's own
 brightness control.
 
-Other features read it to work in the dark, and may turn it on with ``setNightMode(_:)``.
+Other features read it to work in the dark. The astro helper turns it on, and turns it off
+again when the helper ends if it turned it on (``CameraModel/setAstro(_:settings:)``).
+
+## `NopeSettings/keepsNightModeAfterAstro`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var keepsNightModeAfterAstro: Bool { get set }
+```
+
+Whether night mode stays on after the astro helper ends, when the helper turned it on.
+Off by default: leaving Astro returns night mode to what it was before (owner decision for
+1.0.0). A night mode the person turned on, or changed while the helper was on, is never
+turned off by the helper either way.
+
+## `NopeSettings/keepsScreenOn`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var keepsScreenOn: Bool { get set }
+```
+
+Whether the screen stays on while the camera is showing (Keep Screen On, issue #97). Off
+by default. ``SeriesScreenKeeper`` applies it with ``KeepScreenOnRule``: the screen dims
+after a while without a touch or a photo, and the phone's Auto-Lock applies again after
+``KeepScreenOnRule/limit``. The Lock Screen camera doesn't use it.
+
+## `NopeSettings/makePresetSnapshot()`
+
+internal, declared in `Sources/NopeCore/NopeSettingsSnapshot.swift`
+
+```swift
+@MainActor func makePresetSnapshot() throws -> NopeSettingsSnapshot
+```
+
+Copies every stored setting a preset holds: all of ``makeSnapshot()`` except Assistant
+Access, which no preset stores (`docs/design/assistant-access.md`, 3.5).
+
+- Returns: The snapshot.
+- Throws: As ``makeSnapshot()``.
 
 ## `NopeSettings/makeSnapshot()`
 
@@ -15749,6 +22918,19 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 
 Whether front camera photos are saved mirrored, as the viewfinder shows them. Off by
 default.
+
+## `NopeSettings/nightModeAstroDidEnd()`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func nightModeAstroDidEnd()
+```
+
+Returns night mode to what it was before the astro helper turned it on: off, when the
+helper turned it on, the person hasn't changed it since, and
+``keepsNightModeAfterAstro`` is off. Otherwise night mode stays as it is. Either way, the
+helper no longer owns it.
 
 ## `NopeSettings/offersRAWPairingChoice(deviceSupportsBayerRAW:)`
 
@@ -15813,6 +22995,17 @@ issue #57). Empty by default: every lens at its default size. The app passes it 
 camera with ``CameraIntent/setPhotoSizes(_:)``. Lens identifiers are the app's own and
 stay on the device.
 
+## `NopeSettings/pinch`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var pinch: PinchAction { get set }
+```
+
+What a pinch on the viewfinder does (issue #95): ``PinchAction/switchLenses`` by default.
+The camera screen reads it with ``CameraModel/pinchSwitchesLenses(setting:)``.
+
 ## `NopeSettings/rawPairing`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -15839,6 +23032,24 @@ Only values that differ are assigned, so the interface redraws only for what cha
 setting added to this type needs a line here.
 
 - Returns: `true` when any setting changed.
+
+## `NopeSettings/restore(metadata:assistant:)`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func restore(metadata: MetadataSettings?, assistant: (isOn: Bool, ask: AssistantAskLevel)?)
+```
+
+Puts back the Privacy group's photo settings (Details in Each Photo, Location and Sign
+Each Photo, all held in ``metadata``) and Assistant Access, after a preset replaced the
+other settings. Privacy rule (`docs/design/assistant-access.md`, 7.4): a preset applied
+through an assistant never changes a Privacy setting, and no preset changes Assistant
+Access.
+
+- Parameters:
+  - metadata: The metadata settings to keep, or `nil` to keep the preset's.
+  - assistant: The Assistant Access values to keep, or `nil` to keep the preset's.
 
 ## `NopeSettings/save`
 
@@ -15870,8 +23081,51 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 
 The selected formats the device can save, in display order.
 
+On a device without Bayer RAW, a selection of RAW alone (the default) leaves nothing the
+device can save; HEIF then stands in, the processed fallback a lens gives by default
+(``Lens/processedFallback``), so the list is never empty.
+
 - Parameter deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
-- Returns: ``orderedFormats`` without RAW on a device that has none.
+- Returns: ``orderedFormats`` without RAW on a device that has none, or HEIF when nothing
+  else is left.
+
+## `NopeSettings/setAssistantAccess(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setAssistantAccess(_ isOn: Bool)
+```
+
+Turns Assistant Access on or off, and saves the change. Only the Assistant Access page
+calls it.
+
+- Parameter isOn: Whether assistants may use the app's actions.
+
+## `NopeSettings/setAssistantAsk(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setAssistantAsk(_ level: AssistantAskLevel)
+```
+
+Sets when the app asks before an assistant action runs, and saves the change. Only the
+Assistant Access page calls it.
+
+- Parameter level: The choice.
+
+## `NopeSettings/setBurstLimit(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setBurstLimit(_ limit: BurstLimit)
+```
+
+Sets how many photos one press takes in Burst, and saves the change.
+
+- Parameter limit: Off, or the number of photos.
 
 ## `NopeSettings/setDevelopedLook(_:)`
 
@@ -15884,6 +23138,18 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 Sets how the HEIF and JPEG copies are developed, and saves the change.
 
 - Parameter look: The look.
+
+## `NopeSettings/setDimAfter(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setDimAfter(_ choice: DimAfter)
+```
+
+Sets how long Keep Screen On waits before it dims the screen, and saves the change.
+
+- Parameter choice: The Dim After choice.
 
 ## `NopeSettings/setFastShutter(_:)`
 
@@ -15961,6 +23227,30 @@ Chooses the grid style, and saves the change.
 
 - Parameter style: The style.
 
+## `NopeSettings/setKeepsNightModeAfterAstro(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setKeepsNightModeAfterAstro(_ isOn: Bool)
+```
+
+Sets whether night mode stays on after the astro helper ends, and saves the change.
+
+- Parameter isOn: Whether night mode stays on when the helper that turned it on ends.
+
+## `NopeSettings/setKeepsScreenOn(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setKeepsScreenOn(_ isOn: Bool)
+```
+
+Turns Keep Screen On on or off, and saves the change.
+
+- Parameter isOn: Whether the screen stays on while the camera is showing.
+
 ## `NopeSettings/setMetadataItem(_:isIncluded:)`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -15995,9 +23285,26 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 @MainActor func setNightMode(_ isOn: Bool)
 ```
 
-Turns night mode on or off, and saves the change.
+Turns night mode on or off as the person's choice, and saves the change. Use it for every
+control the person uses: the Night Mode switch, the Control Center and Lock Screen control,
+and Siri and Shortcuts.
+
+The choice is the person's from then on: if the astro helper had turned night mode on,
+leaving the helper no longer turns it off (``isNightModeFromAstro`` becomes `false`).
 
 - Parameter isOn: Whether the app's screens are red on black.
+
+## `NopeSettings/setNightModeFromAstro(_:)`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setNightModeFromAstro(_ isOn: Bool)
+```
+
+Records whether the astro helper turned night mode on, and saves it.
+
+- Parameter isOn: The new ``isNightModeFromAstro``.
 
 ## `NopeSettings/setOverlays(_:)`
 
@@ -16025,6 +23332,18 @@ the stored choice.
 - Parameters:
   - size: One of the lens's ``Lens/photoSizeChoices``; any other size does nothing.
   - lens: The lens.
+
+## `NopeSettings/setPinch(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setPinch(_ action: PinchAction)
+```
+
+Sets what a pinch on the viewfinder does, and saves the change.
+
+- Parameter action: Switch Lenses or Off.
 
 ## `NopeSettings/setPinsLiveReadout(_:)`
 
@@ -16147,6 +23466,19 @@ Shows or hides the manual controls on the camera screen, and saves the change.
 
 - Parameter isOn: Whether the manual controls are shown.
 
+## `NopeSettings/setShowsProcessedMarker(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setShowsProcessedMarker(_ isOn: Bool)
+```
+
+Shows or hides the "Processed" marker, and saves the change.
+
+- Parameter isOn: Whether the camera shows the marker before a photo is taken with a lens
+  without Bayer RAW.
+
 ## `NopeSettings/setSignsPhotos(_:)`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -16229,6 +23561,19 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 Whether the camera screen shows the manual controls. Off by default, so the camera stays
 simple unless the person asks (AGENTS.md, "Cognitive").
 
+## `NopeSettings/showsProcessedMarker`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var showsProcessedMarker: Bool { get set }
+```
+
+Whether the camera shows the "Processed" marker before a photo is taken with a lens
+without Bayer RAW (issue #80). On by default. Off hides the marker only: the photo is
+still the labeled processed fallback, VoiceOver still names its format, and the photo's
+details still say the phone processed it.
+
 ## `NopeSettings/signsPhotos`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -16237,7 +23582,7 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 @MainActor var signsPhotos: Bool { get }
 ```
 
-Whether each photo is signed with Content Credentials. On by default, and separate from
+Whether each photo is signed with Content Credentials. Off by default, and separate from
 the metadata master switch (`docs/PRIVACY.md`, "Metadata plan").
 
 ## `NopeSettings/startsInCleanView`
@@ -16274,15 +23619,17 @@ The torch's brightness, remembered between launches (the torch itself always sta
 ``LightModel/defaultTorchLevel`` by default. The app passes it to ``CameraModel/light``
 with ``LightIntent/setTorchLevel(_:)``.
 
-## `NopeSettings/turnSpiral()`
+## `NopeSettings/turnOnNightModeForAstro()`
 
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
 
 ```swift
-@MainActor func turnSpiral()
+@MainActor func turnOnNightModeForAstro()
 ```
 
-Moves the golden spiral to its next placement, and saves the change.
+Turns night mode on for the astro helper, if it is off, and records that the helper did,
+so ``nightModeAstroDidEnd()`` can turn it off again. A night mode already on is left as
+it is: it is the person's.
 
 ## `NopeSettingsSnapshot`
 
@@ -16500,6 +23847,17 @@ static let pinsLiveReadout: String
 
 Whether the live camera readout stays in clean view, a Boolean.
 
+## `OverlayOptions/Key/removedSpiralPlacement`
+
+internal, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+static let removedSpiralPlacement: String
+```
+
+The golden spiral's placement, stored before issue #76 removed the golden grids; no
+longer read, and removed when the options are stored.
+
 ## `OverlayOptions/Key/showsFocusPeaking`
 
 internal, declared in `Sources/NopeCore/OverlayOptions.swift`
@@ -16550,16 +23908,6 @@ static let showsLiveReadout: String
 
 Whether the live camera readout is shown, a Boolean.
 
-## `OverlayOptions/Key/spiralPlacement`
-
-internal, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-static let spiralPlacement: String
-```
-
-The spiral placement, a ``SpiralPlacement/index``.
-
 ## `OverlayOptions/gridStyle`
 
 public, declared in `Sources/NopeCore/OverlayOptions.swift`
@@ -16578,8 +23926,7 @@ public, declared in `Sources/NopeCore/OverlayOptions.swift`
 init()
 ```
 
-Creates the defaults: every overlay off, the rule-of-thirds grid style and the standard
-spiral placement.
+Creates the defaults: every overlay off and the rule-of-thirds grid style.
 
 ## `OverlayOptions/init(defaults:)`
 
@@ -16683,16 +24030,6 @@ view only when it is pinned (issue #52).
 - Parameter isCleanView: Whether clean view is on.
 - Returns: `true` if the readout is shown.
 
-## `OverlayOptions/spiralPlacement`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-var spiralPlacement: SpiralPlacement
-```
-
-Where the golden spiral sits, when ``gridStyle`` is ``GridStyle/goldenSpiral``.
-
 ## `OverlayOptions/store(in:)`
 
 internal, declared in `Sources/NopeCore/OverlayOptions.swift`
@@ -16704,6 +24041,62 @@ func store(in defaults: UserDefaults)
 Writes the options to a store.
 
 - Parameter defaults: The store to write.
+
+## `PendingFrame`
+
+internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+struct PendingFrame
+```
+
+A burst or series frame whose save is running, with what ``CameraModel/sessionPhotos`` keeps
+about it.
+
+## `PendingFrame/init(save:lens:takenAt:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+init(save: Task<Result<(saved: SavedPhoto, preview: PhotoPreview?), CaptureError>, Never>, lens: Lens, takenAt: Date)
+```
+
+Creates a pending frame.
+
+- Parameters:
+  - save: The running save.
+  - lens: The lens the frame was taken with.
+  - takenAt: When the shutter took the frame.
+
+## `PendingFrame/lens`
+
+internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+let lens: Lens
+```
+
+The lens the frame was taken with.
+
+## `PendingFrame/save`
+
+internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+let save: Task<Result<(saved: SavedPhoto, preview: PhotoPreview?), CaptureError>, Never>
+```
+
+The save, which returns the saved photo and its preview, or the error.
+
+## `PendingFrame/takenAt`
+
+internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+let takenAt: Date
+```
+
+When the shutter took the frame.
 
 ## `PendingShortcut`
 
@@ -16908,12 +24301,12 @@ request when there is one.
 Every reply to a ``WatchCommand`` is one, and the phone also sends one whenever the status
 changes or a photo ends while the watch app is reachable.
 
-## `PhoneUpdate/init(status:result:)`
+## `PhoneUpdate/init(status:result:unsignedReason:)`
 
 public, declared in `Sources/NopeCore/WatchMessages.swift`
 
 ```swift
-init(status: WatchStatus, result: WatchResult? = nil)
+init(status: WatchStatus, result: WatchResult? = nil, unsignedReason: SignatureStatus.UnsignedReason? = nil)
 ```
 
 Creates an update.
@@ -16921,6 +24314,8 @@ Creates an update.
 - Parameters:
   - status: The camera's status.
   - result: A new result, or `nil`.
+  - unsignedReason: Why the result's photos aren't all signed, or `nil` when they are or
+    there is no result.
 
 ## `PhoneUpdate/result`
 
@@ -16941,6 +24336,25 @@ let status: WatchStatus
 ```
 
 The camera's status.
+
+## `PhoneUpdate/unsignedReason`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+let unsignedReason: SignatureStatus.UnsignedReason?
+```
+
+Why the result's photos aren't all signed, when ``result`` is
+``WatchResult/saved(isSigned:)`` with `false` or ``WatchResult/savedSeveral(allSigned:)``
+with `false`; otherwise `nil`. It is also `nil` from a phone app that doesn't send it.
+
+Signing is the person's choice and off by default (issue #80), so an interface shows
+``SignatureStatus/UnsignedReason/turnedOff`` as plain status, and any other reason as a
+photo that couldn't be signed.
+
+Optional, so the message stays readable both ways between apps of this protocol version
+with and without it (``WatchMessageCoding/version`` is unchanged).
 
 ## `PhotoComparison`
 
@@ -17080,6 +24494,75 @@ Privacy: built in memory from the just-saved photo and shown on screen only; not
 logged, stored or copied. The app can't reopen older photos (add-only access), so details
 exist only for photos taken in this session.
 
+## `PhotoDetails/CaptureReport`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+struct CaptureReport
+```
+
+What the camera reported for the photo, kept in memory with the details for the session
+(`docs/PRIVACY.md`, "Last photo and its details"). Shown only where the files don't
+hold the same value, marked "Not in the files".
+
+## `PhotoDetails/CaptureReport/exposureDuration`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let exposureDuration: Double?
+```
+
+The exposure duration the camera reported, in seconds, or `nil`.
+
+## `PhotoDetails/CaptureReport/init(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(_ photo: CapturedPhoto)
+```
+
+The report of a captured photo.
+
+- Parameter photo: The photo.
+
+## `PhotoDetails/CaptureReport/init(exposureDuration:iso:lensID:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(exposureDuration: Double?, iso: Double?, lensID: Lens.ID)
+```
+
+Creates a report.
+
+- Parameters:
+  - exposureDuration: The exposure duration in seconds, or `nil`.
+  - iso: The ISO, or `nil`.
+  - lensID: The lens.
+
+## `PhotoDetails/CaptureReport/iso`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let iso: Double?
+```
+
+The ISO the camera reported, or `nil`.
+
+## `PhotoDetails/CaptureReport/lensID`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let lensID: Lens.ID
+```
+
+The lens the photo was taken with.
+
 ## `PhotoDetails/CheckedFile`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17134,6 +24617,27 @@ struct Exposure
 
 The exposure as the file records it, in its EXIF tags.
 
+## `PhotoDetails/Exposure/brightness`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let brightness: Double?
+```
+
+`BrightnessValue`: the scene's brightness, in EV (APEX).
+
+## `PhotoDetails/Exposure/equivalentFocalLength`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let equivalentFocalLength: Double?
+```
+
+`FocalLengthIn35mmFilm`: the focal length a 35 mm camera would need for the same
+field of view, in millimeters.
+
 ## `PhotoDetails/Exposure/exposureBias`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17143,6 +24647,16 @@ let exposureBias: Double?
 ```
 
 `ExposureBiasValue`, in EV.
+
+## `PhotoDetails/Exposure/exposureMode`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let exposureMode: ExposureModeValue?
+```
+
+`ExposureMode`: automatic, manual or auto bracket.
 
 ## `PhotoDetails/Exposure/exposureTime`
 
@@ -17184,12 +24698,22 @@ let focalLength: Double?
 
 `FocalLength`, in millimeters (the lens's real focal length, not the 35 mm equivalent).
 
-## `PhotoDetails/Exposure/init(exposureTime:iso:fNumber:focalLength:exposureBias:whiteBalance:flashFired:)`
+## `PhotoDetails/Exposure/hasMoreDetails`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-init(exposureTime: Double?, iso: Double?, fNumber: Double?, focalLength: Double?, exposureBias: Double?, whiteBalance: WhiteBalanceSetting?, flashFired: Bool? = nil)
+var hasMoreDetails: Bool { get }
+```
+
+Whether any of the details behind More Exposure Details is recorded.
+
+## `PhotoDetails/Exposure/init(exposureTime:iso:fNumber:focalLength:exposureBias:whiteBalance:flashFired:equivalentFocalLength:exposureMode:program:metering:brightness:largestAperture:subjectArea:)`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+init(exposureTime: Double?, iso: Double?, fNumber: Double?, focalLength: Double?, exposureBias: Double?, whiteBalance: WhiteBalanceSetting?, flashFired: Bool? = nil, equivalentFocalLength: Double? = nil, exposureMode: ExposureModeValue? = nil, program: ExposureProgramValue? = nil, metering: MeteringValue? = nil, brightness: Double? = nil, largestAperture: Double? = nil, subjectArea: [Double] = [])
 ```
 
 Creates the exposure details.
@@ -17202,6 +24726,13 @@ Creates the exposure details.
   - exposureBias: The exposure bias in EV.
   - whiteBalance: The white balance setting.
   - flashFired: Whether the flash fired. Defaults to `nil` (not recorded).
+  - equivalentFocalLength: The 35 mm equivalent focal length in millimeters, or `nil`.
+  - exposureMode: The exposure mode, or `nil`.
+  - program: The exposure program, or `nil`.
+  - metering: The metering mode, or `nil`.
+  - brightness: The brightness in EV, or `nil`.
+  - largestAperture: The lens's largest aperture as an f-number, or `nil`.
+  - subjectArea: The subject area, or none.
 
 ## `PhotoDetails/Exposure/iso`
 
@@ -17213,6 +24744,48 @@ let iso: Double?
 
 `PhotographicSensitivity` (ISO).
 
+## `PhotoDetails/Exposure/largestAperture`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let largestAperture: Double?
+```
+
+The lens's largest aperture as an f-number, from `MaxApertureValue` (an APEX value
+`A`, so the f-number is 2^(A/2); EXIF 3.0, 4.6.5).
+
+## `PhotoDetails/Exposure/metering`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let metering: MeteringValue?
+```
+
+`MeteringMode`: how the camera measured the scene.
+
+## `PhotoDetails/Exposure/program`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let program: ExposureProgramValue?
+```
+
+`ExposureProgram`: the program the camera used.
+
+## `PhotoDetails/Exposure/subjectArea`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let subjectArea: [Double]
+```
+
+`SubjectArea`: the subject's place in the picture, as two to four numbers (a point,
+a circle or a rectangle, in pixels); empty when the file doesn't say.
+
 ## `PhotoDetails/Exposure/whiteBalance`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17222,6 +24795,200 @@ let whiteBalance: WhiteBalanceSetting?
 ```
 
 `WhiteBalance`: automatic or manual.
+
+## `PhotoDetails/ExposureModeValue`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+enum ExposureModeValue
+```
+
+The EXIF `ExposureMode` value (EXIF 3.0, tag `0xA402`).
+
+## `PhotoDetails/ExposureModeValue/auto`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case auto
+```
+
+0: auto exposure.
+
+## `PhotoDetails/ExposureModeValue/autoBracket`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case autoBracket
+```
+
+2: auto bracket.
+
+## `PhotoDetails/ExposureModeValue/init(code:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(code: Int)
+```
+
+The value of a code.
+
+- Parameter code: The tag's value.
+
+## `PhotoDetails/ExposureModeValue/manual`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case manual
+```
+
+1: manual exposure.
+
+## `PhotoDetails/ExposureModeValue/other(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case other(Int)
+```
+
+A code EXIF 3.0 doesn't name, shown as its number.
+
+## `PhotoDetails/ExposureProgramValue`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+enum ExposureProgramValue
+```
+
+The EXIF `ExposureProgram` value (EXIF 3.0, tag `0x8822`).
+
+## `PhotoDetails/ExposureProgramValue/action`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case action
+```
+
+6: action program (biased toward a fast shutter).
+
+## `PhotoDetails/ExposureProgramValue/aperturePriority`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case aperturePriority
+```
+
+3: aperture priority.
+
+## `PhotoDetails/ExposureProgramValue/creative`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case creative
+```
+
+5: creative program (biased toward depth of field).
+
+## `PhotoDetails/ExposureProgramValue/init(code:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(code: Int)
+```
+
+The value of a code.
+
+- Parameter code: The tag's value.
+
+## `PhotoDetails/ExposureProgramValue/landscape`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case landscape
+```
+
+8: landscape mode.
+
+## `PhotoDetails/ExposureProgramValue/manual`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case manual
+```
+
+1: manual.
+
+## `PhotoDetails/ExposureProgramValue/named`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static let named: [ExposureProgramValue]
+```
+
+The named values, by code.
+
+## `PhotoDetails/ExposureProgramValue/normal`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case normal
+```
+
+2: normal program.
+
+## `PhotoDetails/ExposureProgramValue/notDefined`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case notDefined
+```
+
+0: not defined.
+
+## `PhotoDetails/ExposureProgramValue/other(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case other(Int)
+```
+
+A code EXIF 3.0 doesn't name, shown as its number.
+
+## `PhotoDetails/ExposureProgramValue/portrait`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case portrait
+```
+
+7: portrait mode.
+
+## `PhotoDetails/ExposureProgramValue/shutterPriority`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case shutterPriority
+```
+
+4: shutter priority.
 
 ## `PhotoDetails/File`
 
@@ -17275,6 +25042,17 @@ let colorFilterPattern: String?
 A DNG's color filter pattern, such as `RGGB`, from `CFARepeatPatternDim` and
 `CFAPattern` (TIFF/EP; DNG 1.7, "CFAPattern"); `nil` otherwise.
 
+## `PhotoDetails/File/colorSpace`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let colorSpace: OutputColorSpace?
+```
+
+The color space a HEIF or JPEG copy was developed in (``DevelopedFileOptions``);
+`nil` for the DNG and for a processed fallback, whose color the camera chose.
+
 ## `PhotoDetails/File/contentCredentials`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17297,6 +25075,32 @@ Every tag, block and property the read-back found, by its specification name (su
 `ExposureTime` or `jpeg:APP1:Exif`), in file order. A tag without a catalog name is
 shown by its directory and number, such as `primary 0xC7FF`.
 
+## `PhotoDetails/File/entries`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let entries: [TagEntry]
+```
+
+Every tag, block and XMP property the read-back found, once each, with its value, the
+setting that controls it and its place in the file, for the Every Tag page. Built as
+``MetadataComparison`` builds its items, so a repeated tag is listed once and a
+repeated block once with its count.
+
+## `PhotoDetails/File/entries(in:)`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+func entries(in place: TagEntry.Place) -> [TagEntry]
+```
+
+The entries in one place, in file order.
+
+- Parameter place: The place.
+- Returns: The entries.
+
 ## `PhotoDetails/File/format`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17307,12 +25111,12 @@ let format: PhotoFormat
 
 The file's format.
 
-## `PhotoDetails/File/init(format:byteCount:pixelWidth:pixelHeight:bitDepth:colorFilterPattern:blackLevels:whiteLevels:storesLensCorrections:processing:contentCredentials:contents:)`
+## `PhotoDetails/File/init(format:byteCount:pixelWidth:pixelHeight:bitDepth:colorFilterPattern:blackLevels:whiteLevels:storesLensCorrections:processing:contentCredentials:contents:entries:rawStructure:colorSpace:quality:)`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-init(format: PhotoFormat, byteCount: Int, pixelWidth: Int?, pixelHeight: Int?, bitDepth: Int?, colorFilterPattern: String?, blackLevels: [Double], whiteLevels: [Double], storesLensCorrections: Bool, processing: Processing, contentCredentials: ContentCredentialsSummary?, contents: [String])
+init(format: PhotoFormat, byteCount: Int, pixelWidth: Int?, pixelHeight: Int?, bitDepth: Int?, colorFilterPattern: String?, blackLevels: [Double], whiteLevels: [Double], storesLensCorrections: Bool, processing: Processing, contentCredentials: ContentCredentialsSummary?, contents: [String], entries: [TagEntry] = [], rawStructure: RAWStructure? = nil, colorSpace: OutputColorSpace? = nil, quality: CompressionQuality? = nil)
 ```
 
 Creates a file's details.
@@ -17330,6 +25134,22 @@ Creates a file's details.
   - processing: The processing.
   - contentCredentials: The manifest summary.
   - contents: The names of everything found.
+  - entries: Everything found, with values. Defaults to none.
+  - rawStructure: A DNG's structure, or `nil`.
+  - colorSpace: A developed copy's color space, or `nil`.
+  - quality: A developed copy's compression quality, or `nil`.
+
+## `PhotoDetails/File/megapixels`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var megapixels: Double? { get }
+```
+
+The image's size in megapixels, as cameras state it: whole megapixels from 10 up
+(4032 × 3024 is 12 MP), one decimal below (1920 × 1440 is 2.8 MP); `nil` without a
+pixel size.
 
 ## `PhotoDetails/File/pixelHeight`
 
@@ -17352,6 +25172,16 @@ let pixelWidth: Int?
 The image width in pixels: for a DNG, the RAW data's `ImageWidth`; for HEIF and
 JPEG, the width ImageIO reports (or the EXIF `PixelXDimension`).
 
+## `PhotoDetails/File/places`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var places: [TagEntry.Place] { get }
+```
+
+The places that hold entries, in ``TagEntry/Place`` order.
+
 ## `PhotoDetails/File/processing`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17361,6 +25191,28 @@ let processing: Processing
 ```
 
 What processing the file's pixels went through.
+
+## `PhotoDetails/File/quality`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let quality: CompressionQuality?
+```
+
+The compression quality a HEIF or JPEG copy was encoded with
+(``DevelopedFileOptions``); `nil` for the DNG and for a processed fallback.
+
+## `PhotoDetails/File/rawStructure`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let rawStructure: RAWStructure?
+```
+
+A DNG's structure: active area, default crop, compression, DNG version, baseline
+exposure and as-shot neutral; `nil` for HEIF and JPEG.
 
 ## `PhotoDetails/File/storesLensCorrections`
 
@@ -17436,12 +25288,12 @@ case written
 
 The item's switch is on and the files hold it.
 
-## `PhotoDetails/ItemReceipt/init(item:state:)`
+## `PhotoDetails/ItemReceipt/init(item:state:value:)`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-init(item: MetadataItem, state: State)
+init(item: MetadataItem, state: State, value: ItemValue? = nil)
 ```
 
 Creates a receipt line.
@@ -17449,6 +25301,18 @@ Creates a receipt line.
 - Parameters:
   - item: The item.
   - state: What happened to it.
+  - value: Its value as written, or `nil`. Defaults to `nil`.
+
+## `PhotoDetails/ItemReceipt/isIdentifying`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var isIdentifying: Bool { get }
+```
+
+Whether the value identifies the person or the device, so an interface hides it
+until asked: the location and the maker notes, as in ``MetadataComparison``.
 
 ## `PhotoDetails/ItemReceipt/item`
 
@@ -17469,6 +25333,320 @@ let state: State
 ```
 
 What happened to it.
+
+## `PhotoDetails/ItemReceipt/value`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let value: ItemValue?
+```
+
+The item's value as the files hold it, for a written item whose value can be read:
+the date, the location, a name or a version. `nil` for an item that wasn't written,
+and for one with no readable value (maker notes, lens corrections) or whose values
+are shown elsewhere (exposure settings).
+
+## `PhotoDetails/ItemValue`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+enum ItemValue
+```
+
+A written item's value as the files hold it.
+
+## `PhotoDetails/ItemValue/date(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case date(Date)
+```
+
+A date and time, read from `DateTimeOriginal` (or `DateTime`) with the file's time
+offset, or the device's time zone when the file has none, for the interface to format.
+
+## `PhotoDetails/ItemValue/location(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case location(PhotoLocation)
+```
+
+A place, from the GPS tags.
+
+## `PhotoDetails/ItemValue/text(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case text(String)
+```
+
+Text as written, such as a camera name or a version.
+
+## `PhotoDetails/LensAndCamera`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+struct LensAndCamera
+```
+
+The lens and camera names the files hold (EXIF `LensModel` and `LensMake`, TIFF `Make`
+and `Model`), each `nil` when no file holds it with text.
+
+## `PhotoDetails/LensAndCamera/camera`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+var camera: String? { get }
+```
+
+The camera as make and model, such as "Apple iPhone 16 Pro Max"; the model alone
+when it already starts with the make; `nil` with neither.
+
+## `PhotoDetails/LensAndCamera/init(lensModel:lensMake:make:model:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(lensModel: String?, lensMake: String?, make: String?, model: String?)
+```
+
+Creates the names.
+
+- Parameters:
+  - lensModel: The lens model, or `nil`.
+  - lensMake: The lens make, or `nil`.
+  - make: The camera make, or `nil`.
+  - model: The camera model, or `nil`.
+
+## `PhotoDetails/LensAndCamera/lensMake`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let lensMake: String?
+```
+
+`LensMake`, such as "Apple".
+
+## `PhotoDetails/LensAndCamera/lensModel`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let lensModel: String?
+```
+
+`LensModel`, such as "iPhone 16 Pro Max back camera 6.86mm f/1.78".
+
+## `PhotoDetails/LensAndCamera/make`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let make: String?
+```
+
+`Make`, such as "Apple".
+
+## `PhotoDetails/LensAndCamera/model`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let model: String?
+```
+
+`Model`, such as "iPhone 16 Pro Max".
+
+## `PhotoDetails/MeteringValue`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+enum MeteringValue
+```
+
+The EXIF `MeteringMode` value (EXIF 3.0, tag `0x9207`).
+
+## `PhotoDetails/MeteringValue/average`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case average
+```
+
+1: average.
+
+## `PhotoDetails/MeteringValue/centerWeighted`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case centerWeighted
+```
+
+2: center-weighted average, the app's Center metering.
+
+## `PhotoDetails/MeteringValue/init(code:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(code: Int)
+```
+
+The value of a code.
+
+- Parameter code: The tag's value.
+
+## `PhotoDetails/MeteringValue/multiSpot`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case multiSpot
+```
+
+4: multi-spot.
+
+## `PhotoDetails/MeteringValue/named`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static let named: [MeteringValue]
+```
+
+The named values of codes 0 to 6.
+
+## `PhotoDetails/MeteringValue/other(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case other(Int)
+```
+
+A code EXIF 3.0 doesn't name, shown as its number.
+
+## `PhotoDetails/MeteringValue/otherMode`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case otherMode
+```
+
+255: other.
+
+## `PhotoDetails/MeteringValue/partial`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case partial
+```
+
+6: partial.
+
+## `PhotoDetails/MeteringValue/pattern`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case pattern
+```
+
+5: pattern.
+
+## `PhotoDetails/MeteringValue/spot`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case spot
+```
+
+3: spot, the app's Spot metering.
+
+## `PhotoDetails/MeteringValue/unknown`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case unknown
+```
+
+0: unknown.
+
+## `PhotoDetails/PhotosPairing`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+struct PhotosPairing
+```
+
+How a RAW and a copy were added to Photos: as one photo, the RAW with its paired copy,
+and any other copy as a photo of its own (``PhotoLibraryAsset/assets(for:pairing:)``).
+
+## `PhotoDetails/PhotosPairing/init(files:pairing:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init?(files: [PhotoFile], pairing: RAWPairing)
+```
+
+The pairing of the saved files, as the library was asked to add them, or `nil`
+without a RAW and a copy.
+
+- Parameters:
+  - files: The saved files.
+  - pairing: The person's pairing choice.
+
+## `PhotoDetails/PhotosPairing/init(pairedFormat:separateFormat:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(pairedFormat: PhotoFormat, separateFormat: PhotoFormat?)
+```
+
+Creates a pairing.
+
+- Parameters:
+  - pairedFormat: The copy paired with the RAW.
+  - separateFormat: The copy saved on its own, or `nil`.
+
+## `PhotoDetails/PhotosPairing/pairedFormat`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let pairedFormat: PhotoFormat
+```
+
+The copy paired with the RAW.
+
+## `PhotoDetails/PhotosPairing/separateFormat`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let separateFormat: PhotoFormat?
+```
+
+The copy saved as a photo of its own, or `nil`.
 
 ## `PhotoDetails/Processing`
 
@@ -17510,6 +25688,199 @@ case none
 
 None by the app: the sensor data as the camera delivered it (the DNG).
 
+## `PhotoDetails/RAWCompression`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+enum RAWCompression
+```
+
+A DNG's `Compression` value (TIFF 6.0 and DNG 1.7, "Compression").
+
+## `PhotoDetails/RAWCompression/init(code:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(code: Int)
+```
+
+The value of a code.
+
+- Parameter code: The tag's value.
+
+## `PhotoDetails/RAWCompression/isLossless`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+var isLossless: Bool { get }
+```
+
+Whether the RAW data keeps every value of the sensor's samples.
+
+## `PhotoDetails/RAWCompression/jpegXL`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case jpegXL
+```
+
+52546: JPEG XL (DNG 1.7).
+
+## `PhotoDetails/RAWCompression/losslessJPEG`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case losslessJPEG
+```
+
+7: lossless JPEG, as the DNG specification uses code 7 for RAW data.
+
+## `PhotoDetails/RAWCompression/lossyJPEG`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case lossyJPEG
+```
+
+34892: lossy JPEG (DNG 1.4).
+
+## `PhotoDetails/RAWCompression/other(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case other(Int)
+```
+
+A code this list doesn't name, shown as its number.
+
+## `PhotoDetails/RAWCompression/uncompressed`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case uncompressed
+```
+
+1: uncompressed.
+
+## `PhotoDetails/RAWStructure`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+struct RAWStructure
+```
+
+A DNG's structure, from its IFD0 tags (DNG 1.7, chapter 4). Each list is empty when the
+file doesn't have the tag.
+
+## `PhotoDetails/RAWStructure/activeArea`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let activeArea: [Double]
+```
+
+`ActiveArea`: top, left, bottom and right of the area of the sensor with image data.
+
+## `PhotoDetails/RAWStructure/asShotNeutral`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let asShotNeutral: [Double]
+```
+
+`AsShotNeutral`: the white balance at capture, as one value per color plane.
+
+## `PhotoDetails/RAWStructure/baselineExposure`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let baselineExposure: Double?
+```
+
+`BaselineExposure`, in EV, or `nil`.
+
+## `PhotoDetails/RAWStructure/compression`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let compression: RAWCompression?
+```
+
+`Compression`, or `nil` when the file doesn't say.
+
+## `PhotoDetails/RAWStructure/defaultCropOrigin`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let defaultCropOrigin: [Double]
+```
+
+`DefaultCropOrigin`: the crop's origin, horizontal then vertical.
+
+## `PhotoDetails/RAWStructure/defaultCropSize`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let defaultCropSize: [Double]
+```
+
+`DefaultCropSize`: the crop's width and height.
+
+## `PhotoDetails/RAWStructure/dngVersion`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let dngVersion: [Int]
+```
+
+`DNGVersion`: four numbers, such as 1, 4, 0, 0.
+
+## `PhotoDetails/RAWStructure/dngVersionText`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+var dngVersionText: String? { get }
+```
+
+The DNG version as written, such as "1.4" or "1.7.1": its four numbers without the
+trailing zeros, keeping at least two; `nil` without a version.
+
+## `PhotoDetails/RAWStructure/init(activeArea:defaultCropOrigin:defaultCropSize:compression:dngVersion:baselineExposure:asShotNeutral:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(activeArea: [Double], defaultCropOrigin: [Double], defaultCropSize: [Double], compression: RAWCompression?, dngVersion: [Int], baselineExposure: Double?, asShotNeutral: [Double])
+```
+
+Creates a DNG structure.
+
+- Parameters:
+  - activeArea: The active area.
+  - defaultCropOrigin: The default crop's origin.
+  - defaultCropSize: The default crop's size.
+  - compression: The compression, or `nil`.
+  - dngVersion: The DNG version's four numbers.
+  - baselineExposure: The baseline exposure in EV, or `nil`.
+  - asShotNeutral: The as-shot neutral.
+
 ## `PhotoDetails/Tag`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17519,6 +25890,46 @@ enum Tag
 ```
 
 Tag numbers the details read (TIFF 6.0, EXIF 3.0, DNG 1.7).
+
+## `PhotoDetails/Tag/activeArea`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let activeArea: UInt16
+```
+
+`ActiveArea`.
+
+## `PhotoDetails/Tag/artist`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let artist: UInt16
+```
+
+`Artist`.
+
+## `PhotoDetails/Tag/asShotNeutral`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let asShotNeutral: UInt16
+```
+
+`AsShotNeutral`.
+
+## `PhotoDetails/Tag/baselineExposure`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let baselineExposure: UInt16
+```
+
+`BaselineExposure`.
 
 ## `PhotoDetails/Tag/bitsPerSample`
 
@@ -17540,6 +25951,16 @@ static let blackLevel: UInt16
 
 `BlackLevel`.
 
+## `PhotoDetails/Tag/brightness`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let brightness: UInt16
+```
+
+`BrightnessValue`.
+
 ## `PhotoDetails/Tag/cfaPattern`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17560,6 +25981,16 @@ static let cfaRepeatPatternDim: UInt16
 
 `CFARepeatPatternDim`.
 
+## `PhotoDetails/Tag/compression`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let compression: UInt16
+```
+
+`Compression`.
+
 ## `PhotoDetails/Tag/contentCredentials`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17570,6 +26001,76 @@ static let contentCredentials: UInt16
 
 The Content Credentials manifest in a DNG (C2PA 2.1, A.3.3).
 
+## `PhotoDetails/Tag/copyright`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let copyright: UInt16
+```
+
+`Copyright`.
+
+## `PhotoDetails/Tag/dateTime`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let dateTime: UInt16
+```
+
+`DateTime`.
+
+## `PhotoDetails/Tag/dateTimeOriginal`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let dateTimeOriginal: UInt16
+```
+
+`DateTimeOriginal`.
+
+## `PhotoDetails/Tag/defaultCropOrigin`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let defaultCropOrigin: UInt16
+```
+
+`DefaultCropOrigin`.
+
+## `PhotoDetails/Tag/defaultCropSize`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let defaultCropSize: UInt16
+```
+
+`DefaultCropSize`.
+
+## `PhotoDetails/Tag/dngVersion`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let dngVersion: UInt16
+```
+
+`DNGVersion`, the first DNG tag: IFD0 tags from here up are DNG's (DNG 1.7, chapter 4).
+
+## `PhotoDetails/Tag/equivalentFocalLength`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let equivalentFocalLength: UInt16
+```
+
+`FocalLengthIn35mmFilm`.
+
 ## `PhotoDetails/Tag/exposureBias`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17579,6 +26080,26 @@ static let exposureBias: UInt16
 ```
 
 `ExposureBiasValue`.
+
+## `PhotoDetails/Tag/exposureMode`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let exposureMode: UInt16
+```
+
+`ExposureMode`.
+
+## `PhotoDetails/Tag/exposureProgram`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let exposureProgram: UInt16
+```
+
+`ExposureProgram`.
 
 ## `PhotoDetails/Tag/exposureTime`
 
@@ -17620,6 +26141,67 @@ static let focalLength: UInt16
 
 `FocalLength`.
 
+## `PhotoDetails/Tag/gpsAltitude`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let gpsAltitude: UInt16
+```
+
+`GPSAltitude`.
+
+## `PhotoDetails/Tag/gpsAltitudeRef`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let gpsAltitudeRef: UInt16
+```
+
+`GPSAltitudeRef`.
+
+## `PhotoDetails/Tag/gpsLatitude`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let gpsLatitude: UInt16
+```
+
+`GPSLatitude`.
+
+## `PhotoDetails/Tag/gpsLatitudeRef`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let gpsLatitudeRef: UInt16
+```
+
+GPS `GPSLatitudeRef`, `GPSLatitude`, `GPSLongitudeRef`, `GPSLongitude`,
+`GPSAltitudeRef` and `GPSAltitude` (EXIF 3.0, 4.6.6).
+
+## `PhotoDetails/Tag/gpsLongitude`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let gpsLongitude: UInt16
+```
+
+`GPSLongitude`.
+
+## `PhotoDetails/Tag/gpsLongitudeRef`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let gpsLongitudeRef: UInt16
+```
+
+`GPSLongitudeRef`.
+
 ## `PhotoDetails/Tag/imageLength`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17650,6 +26232,36 @@ static let iso: UInt16
 
 `PhotographicSensitivity`.
 
+## `PhotoDetails/Tag/lensMake`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let lensMake: UInt16
+```
+
+`LensMake`.
+
+## `PhotoDetails/Tag/lensModel`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let lensModel: UInt16
+```
+
+`LensModel`.
+
+## `PhotoDetails/Tag/make`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let make: UInt16
+```
+
+`Make`.
+
 ## `PhotoDetails/Tag/makerNote`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17659,6 +26271,46 @@ static let makerNote: UInt16
 ```
 
 `MakerNote`.
+
+## `PhotoDetails/Tag/maxAperture`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let maxAperture: UInt16
+```
+
+`MaxApertureValue`.
+
+## `PhotoDetails/Tag/meteringMode`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let meteringMode: UInt16
+```
+
+`MeteringMode`.
+
+## `PhotoDetails/Tag/model`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let model: UInt16
+```
+
+`Model`.
+
+## `PhotoDetails/Tag/offsetTimes`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let offsetTimes: [UInt16]
+```
+
+`OffsetTimeOriginal`, then `OffsetTime`.
 
 ## `PhotoDetails/Tag/opcodeLists`
 
@@ -17690,6 +26342,46 @@ static let pixelYDimension: UInt16
 
 `PixelYDimension`.
 
+## `PhotoDetails/Tag/software`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let software: UInt16
+```
+
+`Software`.
+
+## `PhotoDetails/Tag/subSecondTimes`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let subSecondTimes: [UInt16]
+```
+
+`SubSecTimeOriginal`, then `SubSecTime`.
+
+## `PhotoDetails/Tag/subjectArea`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let subjectArea: UInt16
+```
+
+`SubjectArea`.
+
+## `PhotoDetails/Tag/uniqueCameraModel`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let uniqueCameraModel: UInt16
+```
+
+`UniqueCameraModel`.
+
 ## `PhotoDetails/Tag/whiteBalance`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17709,6 +26401,248 @@ static let whiteLevel: UInt16
 ```
 
 `WhiteLevel`.
+
+## `PhotoDetails/TagEntry`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+struct TagEntry
+```
+
+One tag, block or XMP property of a file, as the Every Tag page lists it.
+
+## `PhotoDetails/TagEntry/Control`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+enum Control
+```
+
+What decides whether the file holds an entry.
+
+## `PhotoDetails/TagEntry/Control/alwaysSaved`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case alwaysSaved
+```
+
+Nothing: every file of this format holds it.
+
+## `PhotoDetails/TagEntry/Control/setting(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case setting(MetadataItem)
+```
+
+The switch for this optional item.
+
+## `PhotoDetails/TagEntry/Control/signature`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case signature
+```
+
+The app's Content Credentials signature.
+
+## `PhotoDetails/TagEntry/Place`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+enum Place
+```
+
+Where an entry lives in the file.
+
+## `PhotoDetails/TagEntry/Place/contentCredentials`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case contentCredentials
+```
+
+The Content Credentials manifest: the DNG tag or the HEIF or JPEG block.
+
+## `PhotoDetails/TagEntry/Place/dng`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case dng
+```
+
+IFD0 from `DNGVersion` up, without the Content Credentials tag.
+
+## `PhotoDetails/TagEntry/Place/exif`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case exif
+```
+
+The EXIF directory and its interoperability directory.
+
+## `PhotoDetails/TagEntry/Place/fileStructure`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case fileStructure
+```
+
+The container's blocks: JPEG segments, HEIF boxes, items and properties.
+
+## `PhotoDetails/TagEntry/Place/gps`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case gps
+```
+
+The GPS directory.
+
+## `PhotoDetails/TagEntry/Place/tiff`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case tiff
+```
+
+IFD0 below `DNGVersion` (`0xC612`), and the image directories after it: the TIFF
+tags.
+
+## `PhotoDetails/TagEntry/Place/xmp`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case xmp
+```
+
+The XMP properties.
+
+## `PhotoDetails/TagEntry/control`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let control: Control
+```
+
+What decides whether the file holds it.
+
+## `PhotoDetails/TagEntry/hidesValue`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+var hidesValue: Bool { get }
+```
+
+Whether the value is hidden until the person asks: an identifying value the reader
+could read.
+
+## `PhotoDetails/TagEntry/id`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let id: String
+```
+
+A stable identifier: the entry's place and number or name.
+
+## `PhotoDetails/TagEntry/init(id:name:place:value:tagNumber:control:isIdentifying:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(id: String, name: String, place: Place, value: MetadataComparison.Value, tagNumber: UInt16?, control: Control, isIdentifying: Bool)
+```
+
+Creates an entry.
+
+- Parameters:
+  - id: The identifier.
+  - name: The name.
+  - place: Where it lives.
+  - value: Its value.
+  - tagNumber: The tag number, or `nil`.
+  - control: What decides whether the file holds it.
+  - isIdentifying: Whether to hide the value until asked.
+
+## `PhotoDetails/TagEntry/isIdentifying`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let isIdentifying: Bool
+```
+
+Whether the value identifies the person or the device, as in ``MetadataComparison``.
+
+## `PhotoDetails/TagEntry/name`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let name: String
+```
+
+The specification's name, such as `ExposureTime`.
+
+## `PhotoDetails/TagEntry/place`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let place: Place
+```
+
+Where it lives.
+
+## `PhotoDetails/TagEntry/tagNumber`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let tagNumber: UInt16?
+```
+
+The TIFF tag number, or `nil` for a block or an XMP property.
+
+## `PhotoDetails/TagEntry/tagNumberText`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+var tagNumberText: String? { get }
+```
+
+The tag number as four hexadecimal digits, such as `0x829A`; `nil` for a block or an
+XMP property.
+
+## `PhotoDetails/TagEntry/value`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let value: MetadataComparison.Value
+```
+
+Its value.
 
 ## `PhotoDetails/WhiteBalanceSetting`
 
@@ -17740,12 +26674,12 @@ case manual
 
 1: manual white balance.
 
-## `PhotoDetails/build(files:plan:look:signature:timings:rawClipping:)`
+## `PhotoDetails/build(files:plan:look:signature:timings:rawClipping:distortionCorrection:options:pairing:capture:)`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-static func build(files: [CheckedFile], plan: MetadataPlan, look: DevelopedLook, signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil) -> PhotoDetails
+static func build(files: [CheckedFile], plan: MetadataPlan, look: DevelopedLook, signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil, distortionCorrection: DistortionCorrection? = nil, options: DevelopedFileOptions = DevelopedFileOptions(), pairing: RAWPairing = .heif, capture: CaptureReport? = nil) -> PhotoDetails
 ```
 
 Builds the details of one saved photo.
@@ -17757,7 +26691,23 @@ Builds the details of one saved photo.
   - signature: The photo's signature status.
   - timings: The measured timings.
   - rawClipping: The clipping counted at capture time, or `nil`.
+  - distortionCorrection: The lens's distortion correction for a processed fallback, or
+    `nil`.
+  - options: The options the HEIF and JPEG copies were developed with.
+  - pairing: Which copy the person pairs with the RAW in Photos.
+  - capture: What the camera reported, or `nil`.
 - Returns: The details.
+
+## `PhotoDetails/capture`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let capture: CaptureReport?
+```
+
+What the camera reported for this photo (shutter, ISO and lens), kept in memory with the
+details for the session, or `nil` for details made outside ``PhotoSaver``.
 
 ## `PhotoDetails/colorFilterLetters`
 
@@ -17798,6 +26748,46 @@ container block and XMP property.
 - Parameter inventory: The read-back.
 - Returns: The names, in file order.
 
+## `PhotoDetails/date(in:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func date(in inventories: [MetadataInventory]) -> Date?
+```
+
+The photo's date and time: `DateTimeOriginal`, or `DateTime`, as "YYYY:MM:DD HH:MM:SS"
+(EXIF 3.0, 4.6.5), in the time zone of `OffsetTimeOriginal` or `OffsetTime` ("+01:00"),
+or the device's time zone when the file has no offset; `nil` for a blank or malformed date.
+
+- Parameter inventories: The read-backs.
+- Returns: The date.
+
+## `PhotoDetails/distortionCorrection`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let distortionCorrection: DistortionCorrection?
+```
+
+For a lens's processed fallback, whether the app could turn off the camera's geometric
+distortion correction on that lens, as the camera reported it (issue #80); `nil` for a
+photo with RAW, whose files never have the correction (``DistortionCorrection``).
+
+## `PhotoDetails/entries(of:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func entries(of inventory: MetadataInventory) -> [TagEntry]
+```
+
+Every entry of a read-back, from ``MetadataComparison/items(in:)``.
+
+- Parameter inventory: The read-back.
+- Returns: The entries, in file order.
+
 ## `PhotoDetails/exposure`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17822,12 +26812,24 @@ The exposure a file's EXIF records, or `nil` when it records none of it.
 - Parameter inventory: The file's read-back.
 - Returns: The exposure.
 
-## `PhotoDetails/fileDetails(_:look:)`
+## `PhotoDetails/exposureNotInFiles`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var exposureNotInFiles: CaptureReport? { get }
+```
+
+The shutter and ISO the camera reported, shown marked "Not in the files" when the files
+hold no exposure (Exposure Settings off); `nil` when the files hold the exposure or the
+camera reported neither (`docs/design/BUILD-SPEC.md`, 3.15, P2).
+
+## `PhotoDetails/fileDetails(_:look:options:)`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-static func fileDetails(_ checked: CheckedFile, look: DevelopedLook) -> File
+static func fileDetails(_ checked: CheckedFile, look: DevelopedLook, options: DevelopedFileOptions = DevelopedFileOptions()) -> File
 ```
 
 One file's details.
@@ -17835,6 +26837,7 @@ One file's details.
 - Parameters:
   - checked: The file and its read-back.
   - look: The developed look.
+  - options: The options developed copies were made with.
 - Returns: The details.
 
 ## `PhotoDetails/files`
@@ -17862,12 +26865,32 @@ Whether a tag carries an item.
   - tag: A tag with a value.
 - Returns: `true` if the tag is one of the item's.
 
-## `PhotoDetails/init(files:exposure:items:lockedItems:signature:timings:rawClipping:)`
+## `PhotoDetails/holdsLocation`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-init(files: [File], exposure: Exposure?, items: [ItemReceipt], lockedItems: [LockedMetadataItem], signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil)
+var holdsLocation: Bool { get }
+```
+
+Whether the files hold a location (GPS tags).
+
+## `PhotoDetails/inPhotos`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let inPhotos: PhotosPairing?
+```
+
+How a RAW and a copy were added to Photos as one asset, or `nil` when there was no pair.
+
+## `PhotoDetails/init(files:exposure:items:lockedItems:signature:timings:rawClipping:distortionCorrection:lensAndCamera:capture:inPhotos:writesStandardFileTags:)`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+init(files: [File], exposure: Exposure?, items: [ItemReceipt], lockedItems: [LockedMetadataItem], signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil, distortionCorrection: DistortionCorrection? = nil, lensAndCamera: LensAndCamera? = nil, capture: CaptureReport? = nil, inPhotos: PhotosPairing? = nil, writesStandardFileTags: Bool = true)
 ```
 
 Creates details.
@@ -17880,6 +26903,12 @@ Creates details.
   - signature: The signature status.
   - timings: The timings.
   - rawClipping: The RAW clipping, or `nil`.
+  - distortionCorrection: The lens's distortion correction for a processed fallback, or
+    `nil`.
+  - lensAndCamera: The lens and camera names in the files, or `nil`.
+  - capture: What the camera reported, or `nil`.
+  - inPhotos: How a RAW and a copy were paired in Photos, or `nil`.
+  - writesStandardFileTags: Whether the Standard File Tags were written. Defaults to `true`.
 
 ## `PhotoDetails/integer(_:in:directory:)`
 
@@ -17917,6 +26946,65 @@ var leftOutItems: [ItemReceipt] { get }
 
 The optional items that were removed or had nothing to write.
 
+## `PhotoDetails/lensAndCamera`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let lensAndCamera: LensAndCamera?
+```
+
+The lens and camera names the files hold, or `nil` when they hold none.
+
+## `PhotoDetails/lensAndCamera(in:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func lensAndCamera(in inventories: [MetadataInventory]) -> LensAndCamera?
+```
+
+The lens and camera names, or `nil` when the files hold none.
+
+- Parameter inventories: The read-backs.
+- Returns: The names.
+
+## `PhotoDetails/lensNotInFiles`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var lensNotInFiles: Lens.ID? { get }
+```
+
+The lens the photo was taken with, shown marked "Not in the files" when the files hold
+no lens name; `nil` when they hold one or the lens isn't known.
+
+## `PhotoDetails/location`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var location: ItemReceipt? { get }
+```
+
+What happened to the location: written, removed or nothing to write.
+
+## `PhotoDetails/location(in:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func location(in inventories: [MetadataInventory]) -> PhotoLocation?
+```
+
+The location the GPS tags hold: latitude and longitude as degrees, minutes and seconds
+with their references, and the altitude below sea level when `GPSAltitudeRef` is 1
+(EXIF 3.0, 4.6.6); `nil` without a latitude and longitude.
+
+- Parameter inventories: The read-backs.
+- Returns: The location.
+
 ## `PhotoDetails/lockedItems`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17940,6 +27028,20 @@ The locked items the saved formats keep.
 - Parameter formats: The saved formats.
 - Returns: The items, in `LockedMetadataItem.allCases` order.
 
+## `PhotoDetails/mirroredItem(_:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func mirroredItem(_ item: MetadataComparison.Item) -> MetadataItem?
+```
+
+The switch of an XMP property that mirrors a TIFF tag (`CreatorTool`, `creator`,
+`rights`), judged by its value as the tag would be.
+
+- Parameter item: An item.
+- Returns: The switch, or `nil` for anything else.
+
 ## `PhotoDetails/name(of:)`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17954,6 +27056,30 @@ Credentials tag, or its directory and hexadecimal number.
 - Parameter tag: The tag.
 - Returns: The name.
 
+## `PhotoDetails/optionalDetailCount`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var optionalDetailCount: Int { get }
+```
+
+How many optional details the files hold, not counting the location, which has its own
+line in the summary.
+
+## `PhotoDetails/place(of:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func place(of item: MetadataComparison.Item) -> TagEntry.Place
+```
+
+An item's place in the file.
+
+- Parameter item: The item.
+- Returns: The place.
+
 ## `PhotoDetails/rawClipping`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17964,6 +27090,29 @@ let rawClipping: RAWClippingResult?
 
 The clipping counted from the RAW sensor data at capture time, or why it wasn't measured;
 `nil` for a photo without RAW (a lens's processed fallback).
+
+## `PhotoDetails/rawFile`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var rawFile: File? { get }
+```
+
+Whether the photo has a RAW file, so the RAW Sensor Data group applies.
+
+## `PhotoDetails/rawStructure(in:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func rawStructure(in inventory: MetadataInventory) -> RAWStructure
+```
+
+A DNG's structure.
+
+- Parameter inventory: The DNG's read-back.
+- Returns: The structure.
 
 ## `PhotoDetails/signature`
 
@@ -17994,6 +27143,35 @@ An ASCII tag with empty text doesn't count as written: a DNG always carries `Dat
   - inventories: Each file's read-back.
 - Returns: The state.
 
+## `PhotoDetails/text(_:_:in:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func text(_ tag: UInt16, _ directory: TIFFDirectory, in inventories: [MetadataInventory]) -> String?
+```
+
+The first non-empty text of a tag in any of the files.
+
+- Parameters:
+  - tag: The tag number.
+  - directory: The directory.
+  - inventories: The read-backs.
+- Returns: The text, or `nil`.
+
+## `PhotoDetails/timeZone(offset:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func timeZone(offset: String) -> TimeZone?
+```
+
+A time zone from an EXIF offset such as "+01:00" or "-05:30", or `nil` if malformed.
+
+- Parameter offset: The offset text.
+- Returns: The time zone.
+
 ## `PhotoDetails/timings`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -18020,6 +27198,21 @@ The first value of a tag, or `nil`.
   - directory: The directory. Defaults to IFD0.
 - Returns: The value.
 
+## `PhotoDetails/value(of:in:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func value(of item: MetadataItem, in inventories: [MetadataInventory]) -> ItemValue?
+```
+
+A written item's value, or `nil` when it has none to show.
+
+- Parameters:
+  - item: The item.
+  - inventories: The read-backs.
+- Returns: The value.
+
 ## `PhotoDetails/values(_:in:directory:)`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -18036,6 +27229,16 @@ The values of a tag in a directory, or none if the file doesn't have it.
   - directory: The directory. Defaults to IFD0.
 - Returns: The values.
 
+## `PhotoDetails/writesStandardFileTags`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let writesStandardFileTags: Bool
+```
+
+Whether the files were written with the Standard File Tags (``MetadataSettings/writesStandardFileTags``).
+
 ## `PhotoDetails/writtenItems`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -18045,6 +27248,16 @@ var writtenItems: [MetadataItem] { get }
 ```
 
 The optional items that were written.
+
+## `PhotoDetails/writtenReceipts`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var writtenReceipts: [ItemReceipt] { get }
+```
+
+The written optional items with their values.
 
 ## `PhotoDeveloping`
 
@@ -18235,7 +27448,7 @@ A file format the app can save.
 
 The raw values are stable, so settings that store a format can be saved and read back.
 
-The defaults follow issue #1, "Formats": RAW plus HEIF.
+The default is RAW only (owner decision, issue #80): HEIF and JPEG copies are optional.
 
 ## `PhotoFormat/defaultSelection`
 
@@ -18245,7 +27458,8 @@ public, declared in `Sources/NopeCore/PhotoFormat.swift`
 static let defaultSelection: Set<PhotoFormat>
 ```
 
-The formats selected when the app is first installed: RAW and HEIF.
+The formats selected when the app is first installed, and by Factory Defaults: RAW only
+(issue #80). Settings a person has saved keep their own selection.
 
 ## `PhotoFormat/heif`
 
@@ -18539,6 +27753,126 @@ never writes it, but EXIF 3.0 makes it mandatory in a GPS directory, so the writ
 it: ImageIO on the iOS 27.2 Simulator didn't for HEIF or JPEG; whether AVFoundation does
 for a DNG is a device check (docs/PRIVACY.md, "Location").
 
+## `PhotoPreview`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+struct PhotoPreview
+```
+
+A screen-size picture of a saved photo, kept compressed in memory for the Last Photo viewer
+(docs/design/BUILD-SPEC.md, 3.14 and section 6, item 15).
+
+It holds only pixels, encoded as a JPEG with the system encoder: nothing from the photo's
+metadata (no location, date or device) and no Content Credentials; only what the encoder
+writes to describe the picture itself (its size and color space). A viewer decodes it with
+``SessionPhotos/picture(of:maximumPixelSize:)`` only for the page shown and its neighbors.
+
+Privacy: it lives in memory only, never on disk, in a log or in a copy, and ``SessionPhotos``
+releases it in the background and under memory pressure (AGENTS.md, "Photos never linger";
+docs/PRIVACY.md, "Last photo and its details").
+
+## `PhotoPreview/data`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+let data: Data
+```
+
+The compressed picture, upright, in the sRGB color space.
+
+## `PhotoPreview/height`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+let height: Int
+```
+
+The decoded height, in pixels.
+
+## `PhotoPreview/init(width:height:data:)`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+init?(width: Int, height: Int, data: Data)
+```
+
+Creates a preview, or `nil` if a size is not positive or there is no data.
+
+- Parameters:
+  - width: The decoded width, in pixels.
+  - height: The decoded height, in pixels.
+  - data: The compressed picture.
+
+## `PhotoPreview/longestSide`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+var longestSide: Int { get }
+```
+
+The longest side, in pixels.
+
+## `PhotoPreview/width`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+let width: Int
+```
+
+The decoded width, in pixels: the most a viewer can zoom to without enlarging pixels.
+
+## `PhotoPreviewing`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+protocol PhotoPreviewing : Sendable
+```
+
+Makes and decodes ``PhotoPreview`` values, in memory.
+
+`NopeDevelop` implements it with ImageIO (`ImageIOPreviewer`). ``PhotoSaver`` makes one
+preview per saved photo, after it is in Photos, from the file that is quickest to read: the
+HEIF or JPEG when there is one, otherwise the DNG.
+
+## `PhotoPreviewing/decode(_:maximumPixelSize:)`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+func decode(_ preview: PhotoPreview, maximumPixelSize: Int?) -> PhotoThumbnail?
+```
+
+Decodes a preview into pixels.
+
+- Parameters:
+  - preview: The preview.
+  - maximumPixelSize: The longest side to decode to, in pixels, or `nil` for the
+    preview's own size. A smaller size, such as the size the screen shows it at, decodes
+    faster and uses less memory.
+- Returns: The pixels, or `nil` if the data can't be decoded.
+
+## `PhotoPreviewing/preview(of:)`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+func preview(of file: PhotoFile) -> PhotoPreview?
+```
+
+Makes a compressed preview of a saved file.
+
+- Parameter file: A file that was just saved.
+- Returns: The preview, upright, at most ``SessionPhotos/previewMaximumPixelSize`` on its
+  longest side, or `nil` if the file can't be read. A missing preview never fails the save.
+
 ## `PhotoSaver`
 
 public, declared in `Sources/NopeCore/PhotoSaver.swift`
@@ -18564,8 +27898,9 @@ The order is fixed, and each step is a protocol so the whole pipeline is tested 
 4. Add the files to Photos with add-only access (``PhotoLibrary``), a RAW and its processed
    file as one asset (``PhotoLibraryAsset/assets(for:pairing:)``, with the person's
    ``SaveSettings/rawPairing``).
-5. Make the last-photo thumbnail (``PhotoThumbnailing``) and the "What's in this photo"
-   details (``PhotoDetails``) from the saved files, in memory.
+5. Make the last-photo thumbnail (``PhotoThumbnailing``), the compressed screen-size preview
+   for ``SessionPhotos`` (``PhotoPreviewing``), and the "What's in this photo" details (``PhotoDetails``) from the
+   saved files, in memory.
 
 ## `PhotoSaver/appVersion`
 
@@ -18577,12 +27912,12 @@ let appVersion: String
 
 The app's version, written with its name when ``MetadataItem/appNameAndVersion`` is on.
 
-## `PhotoSaver/init(developer:signer:reader:library:appVersion:thumbnailer:now:)`
+## `PhotoSaver/init(developer:signer:reader:library:appVersion:thumbnailer:previewer:now:makesPreviews:)`
 
 public, declared in `Sources/NopeCore/PhotoSaver.swift`
 
 ```swift
-init(developer: any PhotoDeveloping, signer: (any PhotoSigning)?, reader: any MetadataReading, library: any PhotoLibrary, appVersion: String, thumbnailer: (any PhotoThumbnailing)? = nil, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now })
+init(developer: any PhotoDeveloping, signer: (any PhotoSigning)?, reader: any MetadataReading, library: any PhotoLibrary, appVersion: String, thumbnailer: (any PhotoThumbnailing)? = nil, previewer: (any PhotoPreviewing)? = nil, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now }, makesPreviews: Bool = true)
 ```
 
 Creates a pipeline.
@@ -18594,7 +27929,23 @@ Creates a pipeline.
   - library: Adds files to Photos.
   - appVersion: The app's version, such as `0.2.0`.
   - thumbnailer: Makes the last-photo thumbnail, or `nil` for none.
+  - previewer: Makes the compressed screen-size preview the Last Photo viewer shows
+    (``SessionPhotos``), or `nil` for none.
   - now: Reads the clock for the timings. Tests pass a scripted one.
+  - makesPreviews: Whether a save makes the preview; `false` only to measure what
+    previews cost (issue #104).
+
+## `PhotoSaver/makesPreviews`
+
+public, declared in `Sources/NopeCore/PhotoSaver.swift`
+
+```swift
+let makesPreviews: Bool
+```
+
+Whether a save makes the preview for ``SessionPhotos`` at all: `true`, except in a
+Debug build launched to measure what previews cost a burst (issue #104; docs/TESTING.md,
+"Burst rate"). With `false` the viewer shows each photo's thumbnail fallback.
 
 ## `PhotoSaver/plan(for:)`
 
@@ -18609,12 +27960,23 @@ The metadata plan for a set of choices, with this app's version.
 - Parameter settings: The person's metadata choices.
 - Returns: The plan.
 
-## `PhotoSaver/save(_:settings:captureDuration:)`
+## `PhotoSaver/previewer`
+
+internal, declared in `Sources/NopeCore/PhotoSaver.swift`
+
+```swift
+let previewer: (any PhotoPreviewing)?
+```
+
+Makes and decodes the compressed screen-size preview for ``SessionPhotos``, or `nil` for
+none. ``CameraModel`` gives it to its ``SessionPhotos`` to decode with.
+
+## `PhotoSaver/save(_:settings:captureDuration:distortionCorrection:)`
 
 public, declared in `Sources/NopeCore/PhotoSaver.swift`
 
 ```swift
-func save(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration? = nil) async throws(CaptureError) -> SavedPhoto
+func save(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration? = nil, distortionCorrection: DistortionCorrection? = nil) async throws(CaptureError) -> SavedPhoto
 ```
 
 Saves one photo.
@@ -18626,21 +27988,24 @@ Side effects: may show the add-only Photos prompt; adds the photo to Photos.
   - settings: The formats and metadata choices.
   - captureDuration: How long the camera took to return the photo, for the details, or
     `nil` when unknown.
+  - distortionCorrection: For a processed fallback, the lens's distortion correction as
+    the camera reported it (``Lens/distortionCorrection``), for the details; ignored for
+    a RAW photo.
 - Returns: What was saved, with its thumbnail and details.
 - Throws: ``CaptureError/developmentFailed`` if a format can't be developed,
   ``CaptureError/metadataNotAllowed`` if any unsigned file fails the read-back (nothing is
   saved),
   or the library's ``CaptureError/photosAccessDenied`` or ``CaptureError/saveFailed``.
 
-## `PhotoSaver/saveReturningFiles(_:settings:captureDuration:)`
+## `PhotoSaver/saveReturningFiles(_:settings:captureDuration:distortionCorrection:makesPreview:)`
 
 internal, declared in `Sources/NopeCore/PhotoSaver.swift`
 
 ```swift
-func saveReturningFiles(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration?) async throws(CaptureError) -> (saved: SavedPhoto, files: [PhotoFile])
+func saveReturningFiles(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration?, distortionCorrection: DistortionCorrection? = nil, makesPreview: Bool = true) async throws(CaptureError) -> (saved: SavedPhoto, files: [PhotoFile], preview: PhotoPreview?)
 ```
 
-Saves one photo, as ``save(_:settings:captureDuration:)`` does, and also returns the
+Saves one photo, as ``save(_:settings:captureDuration:distortionCorrection:)`` does, and also returns the
 files exactly as they were added to Photos, for the compare view of the comparison shot
 (issue #55). The files stay in memory; the caller drops them.
 
@@ -18650,8 +28015,38 @@ Side effects: may show the add-only Photos prompt; adds the photo to Photos.
   - photo: The captured photo, with its metadata already built for the plan.
   - settings: The formats and metadata choices.
   - captureDuration: How long the camera took to return the photo, or `nil`.
-- Returns: What was saved, and the saved files in the order they were built.
-- Throws: The same errors as ``save(_:settings:captureDuration:)``.
+  - distortionCorrection: For a processed fallback, the lens's distortion correction, or
+    `nil`.
+  - makesPreview: Whether to make the preview; `false` saves the work when the caller
+    keeps none.
+- Returns: What was saved, the saved files in the order they were built, and the
+  compressed preview for ``SessionPhotos`` (`nil` when not asked for, without a
+  previewer, or when the file can't be decoded).
+- Throws: The same errors as ``save(_:settings:captureDuration:distortionCorrection:)``.
+
+## `PhotoSaver/saveWithPreview(_:settings:captureDuration:distortionCorrection:)`
+
+internal, declared in `Sources/NopeCore/PhotoSaver.swift`
+
+```swift
+func saveWithPreview(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration? = nil, distortionCorrection: DistortionCorrection? = nil) async throws(CaptureError) -> (saved: SavedPhoto, preview: PhotoPreview?)
+```
+
+Saves one photo, as ``save(_:settings:captureDuration:distortionCorrection:)`` does, and
+also returns its compressed preview for ``SessionPhotos``. ``CameraModel`` saves
+every photo this way; the files are dropped here.
+
+Side effects: may show the add-only Photos prompt; adds the photo to Photos.
+
+- Parameters:
+  - photo: The captured photo, with its metadata already built for the plan.
+  - settings: The formats and metadata choices.
+  - captureDuration: How long the camera took to return the photo, or `nil`.
+  - distortionCorrection: For a processed fallback, the lens's distortion correction, or
+    `nil`.
+- Returns: What was saved, and its preview (`nil` without a previewer or when the file
+  can't be decoded).
+- Throws: The same errors as ``save(_:settings:captureDuration:distortionCorrection:)``.
 
 ## `PhotoShortcut`
 
@@ -18667,6 +28062,35 @@ photos.
 Every value is checked here, so an intent can pass what the person typed in Shortcuts as it
 is.
 
+## `PhotoShortcut/answersWhenTimerStarts(delaySeconds:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+static func answersWhenTimerStarts(delaySeconds: Int) -> Bool
+```
+
+Whether a request with this delay is answered when its timer starts rather than after
+its photos: a delay over ``longestDelayAnsweredAfterPhoto``.
+
+- Parameter delaySeconds: The delay in seconds.
+- Returns: `true` when the answer comes as the timer starts.
+
+## `PhotoShortcut/appliesBracketInApp`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let appliesBracketInApp: Bool
+```
+
+Whether an exposure bracket that is on in the manual controls applies to a single photo,
+as it does to the shutter: `true` for the Apple Watch's shutter, which takes what the
+phone's drive strip says (docs/design/BRACKETING.md, section 6); `false` for Siri and
+Shortcuts, whose Take Photo always takes one photo, so the question and the answer
+match what was taken (third review of 1.0.0, question 7). Take Bracket is the action
+for a bracket.
+
 ## `PhotoShortcut/count`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -18675,10 +28099,9 @@ public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 let count: Int
 ```
 
-How many photos, from 1 to ``DriveModel/maximumBurstFrames``. One takes a single photo
-(an exposure bracket that is on in the manual controls still applies, as it does to the
-shutter); more takes a burst of exactly that many frames with the burst's own loop, each
-frame its own photo.
+How many photos, from 1 to ``DriveModel/maximumBurstFrames``. One takes a single photo;
+more takes a burst of exactly that many frames with the burst's own loop, each frame its
+own photo.
 
 ## `PhotoShortcut/delaySeconds`
 
@@ -18691,12 +28114,12 @@ let delaySeconds: Int
 The delay before the photo, in seconds, from 0 (none) to ``maximumDelaySeconds``. A delay
 runs the self-timer, with its countdown on screen and announced.
 
-## `PhotoShortcut/init(delaySeconds:lensKind:count:)`
+## `PhotoShortcut/init(delaySeconds:lensKind:count:appliesBracketInApp:)`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 
 ```swift
-init(delaySeconds: Int = 0, lensKind: Lens.Kind? = nil, count: Int = 1)
+init(delaySeconds: Int = 0, lensKind: Lens.Kind? = nil, count: Int = 1, appliesBracketInApp: Bool = false)
 ```
 
 Creates a request.
@@ -18707,6 +28130,8 @@ Creates a request.
   - lensKind: The kind of lens, or `nil` for the lens already selected.
   - count: How many photos. Values below 1 become 1, and values above
     ``DriveModel/maximumBurstFrames`` become ``DriveModel/maximumBurstFrames``.
+  - appliesBracketInApp: Whether an exposure bracket on in the manual controls applies
+    to a single photo (the Apple Watch), or not (Siri and Shortcuts, the default).
 
 ## `PhotoShortcut/init(timer:customDelaySeconds:lensKind:count:)`
 
@@ -18735,6 +28160,25 @@ let lensKind: Lens.Kind?
 
 The kind of lens to use, or `nil` for the lens already selected.
 
+## `PhotoShortcut/longestDelayAnsweredAfterPhoto`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+static let longestDelayAnsweredAfterPhoto: Int
+```
+
+The longest delay, in seconds, after which the answer still waits for the photo; a longer
+one is answered when the timer starts (``ShortcutOutcome/timerStarted(seconds:)``; owner
+decision, 2026-11-21, issue #126).
+
+iOS gives an App Intent that runs in the background about 30 seconds
+([Apple: LongRunningIntent](https://developer.apple.com/documentation/appintents/longrunningintent)).
+Measured on the iOS 27.2 Simulator: Take Photo with a 40-second delay, run by the system's
+App Intents runner, ended with a timeout after 31 seconds (`TakePhotoIntentUITests`).
+Ten seconds, the self-timer's longest, leaves the rest for the question, the camera's
+start, a long exposure in low light and the save.
+
 ## `PhotoShortcut/maximumDelaySeconds`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -18744,8 +28188,9 @@ static let maximumDelaySeconds: Int
 ```
 
 The longest delay a request may ask for, in seconds. A product choice for issue #62, not
-a platform limit: Siri waits for the result, and a minute keeps that wait short. Longer
-requests are shortened to it.
+a platform limit. Longer requests are shortened to it. A delay over
+``longestDelayAnsweredAfterPhoto`` is answered when the timer starts, because Siri and
+Shortcuts don't wait that long (issue #126).
 
 ## `PhotoSigning`
 
@@ -19074,6 +28519,41 @@ Makes a thumbnail.
 - Returns: The thumbnail, upright, or `nil` if the file can't be read. A missing
   thumbnail never fails the save; the interface shows a photo symbol instead.
 
+## `PinchAction`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+enum PinchAction
+```
+
+What a pinch on the viewfinder does (issue #95; docs/design/pinch-lens.md, section 7): the
+Pinch setting in Settings › Camera, stored in ``NopeSettings/pinch`` and in presets.
+
+A pinch never enlarges or crops the picture: the app has no digital zoom (issue #1). It only
+chooses between the device's rear cameras, as the lens buttons do.
+
+## `PinchAction/off`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+case off
+```
+
+A pinch does nothing.
+
+## `PinchAction/switchLenses`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+case switchLenses
+```
+
+Spread two fingers for the next longer rear lens, pinch for the next wider one. The
+default.
+
 ## `PresetApplyResult`
 
 public, declared in `Sources/NopeCore/SettingsPresets.swift`
@@ -19094,12 +28574,12 @@ let choice: PresetChoice
 
 The preset that was applied.
 
-## `PresetApplyResult/init(choice:name:isApplied:notices:)`
+## `PresetApplyResult/init(choice:name:isApplied:notices:keptPrivacySettings:)`
 
 public, declared in `Sources/NopeCore/SettingsPresets.swift`
 
 ```swift
-init(choice: PresetChoice, name: String?, isApplied: Bool, notices: [PresetNotice])
+init(choice: PresetChoice, name: String?, isApplied: Bool, notices: [PresetNotice], keptPrivacySettings: Bool = false)
 ```
 
 Creates a result.
@@ -19109,6 +28589,7 @@ Creates a result.
   - name: Its name, or `nil` for Factory Defaults.
   - isApplied: Whether the settings changed.
   - notices: What the person should be told.
+  - keptPrivacySettings: Whether the Privacy settings were left as they were.
 
 ## `PresetApplyResult/isApplied`
 
@@ -19120,6 +28601,18 @@ let isApplied: Bool
 
 Whether the settings changed. `false` only with ``PresetNotice/cameraBusy`` or
 ``PresetNotice/unreadable``.
+
+## `PresetApplyResult/keptPrivacySettings`
+
+public, declared in `Sources/NopeCore/SettingsPresets.swift`
+
+```swift
+let keptPrivacySettings: Bool
+```
+
+Whether the Privacy settings were left as they were, because an assistant applied the
+preset (``SettingsPresets/apply(_:camera:location:keepsPrivacySettings:)``). The answer
+says so.
 
 ## `PresetApplyResult/name`
 
@@ -19854,7 +29347,7 @@ What the app saves for each photo: the file formats, the developed look and the 
 choices.
 
 ``CameraModel/saveSettings`` holds the current value. The format rule from issue #1,
-"Formats", lives here: RAW plus HEIF by default, any combination of RAW, HEIF and JPEG, and
+"Formats", lives here: RAW only by default (issue #80), any combination of RAW, HEIF and JPEG, and
 never none. A lens without Bayer RAW always saves its labeled processed fallback instead.
 
 ## `SaveSettings/developedLook`
@@ -19897,8 +29390,9 @@ public, declared in `Sources/NopeCore/SaveSettings.swift`
 init()
 ```
 
-The settings on first launch: RAW plus HEIF, ``MetadataSettings/init()``, and the
-standard look.
+The settings on first launch and for Factory Defaults: RAW only, ``MetadataSettings/init()``
+(signing off), and the standard look. Stored settings are decoded as saved, so a person's
+own choices are kept.
 
 ## `SaveSettings/metadata`
 
@@ -20078,6 +29572,18 @@ struct SavedPhoto
 
 A photo that passed the read-back and was added to Photos.
 
+## `SavedPhoto/bracket`
+
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
+
+```swift
+let bracket: BracketPlace?
+```
+
+The photo's place in an exposure bracket, or `nil` for a photo taken on its own. In
+memory only: the session's values, never written to the files
+(docs/design/BRACKETING.md, section 4, "The result").
+
 ## `SavedPhoto/details`
 
 public, declared in `Sources/NopeCore/SavedPhoto.swift`
@@ -20099,12 +29605,12 @@ let formats: [PhotoFormat]
 
 The formats saved, in the order they were built.
 
-## `SavedPhoto/init(formats:isProcessedFallback:signature:metadata:thumbnail:details:)`
+## `SavedPhoto/init(formats:isProcessedFallback:signature:metadata:thumbnail:details:bracket:)`
 
 public, declared in `Sources/NopeCore/SavedPhoto.swift`
 
 ```swift
-init(formats: [PhotoFormat], isProcessedFallback: Bool, signature: SignatureStatus, metadata: [PhotoFormat : MetadataInventory], thumbnail: PhotoThumbnail? = nil, details: PhotoDetails? = nil)
+init(formats: [PhotoFormat], isProcessedFallback: Bool, signature: SignatureStatus, metadata: [PhotoFormat : MetadataInventory], thumbnail: PhotoThumbnail? = nil, details: PhotoDetails? = nil, bracket: BracketPlace? = nil)
 ```
 
 Creates a saved-photo record.
@@ -20116,6 +29622,7 @@ Creates a saved-photo record.
   - metadata: Each file's read-back inventory.
   - thumbnail: The photo's thumbnail, or `nil`.
   - details: The photo's details, or `nil`.
+  - bracket: The photo's place in a bracket, or `nil`.
 
 ## `SavedPhoto/isProcessedFallback`
 
@@ -20137,6 +29644,19 @@ let metadata: [PhotoFormat : MetadataInventory]
 
 Every tag, block and property of each saved file, for the "What's in your last photo"
 screen (issue #1). Kept in memory only, because add-only access can't read Photos.
+
+## `SavedPhoto/placed(in:)`
+
+internal, declared in `Sources/NopeCore/SavedPhoto.swift`
+
+```swift
+func placed(in place: BracketPlace) -> SavedPhoto
+```
+
+The same record with its place in a bracket.
+
+- Parameter place: The photo's place in its bracket.
+- Returns: The record with ``bracket`` set.
 
 ## `SavedPhoto/signature`
 
@@ -20239,17 +29759,28 @@ public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
 @MainActor final class SeriesScreenKeeper
 ```
 
-Keeps the screen awake and dimmed while an interval series runs, and puts both back when it
-ends (issue #48).
+Keeps the screen awake, and dims it, while an interval series runs (issue #48) or while Keep
+Screen On is used (issue #97), and puts both back when that ends.
 
-During a series the screen mustn't lock, or the camera stops and the series with it; dimming
-saves battery over a long series (AGENTS.md, "Battery"). This is the only place the app turns
-the idle timer off, and it is turned on again whenever the series ends or is stopped, the
-camera screen goes away, or the app leaves the foreground.
+This is the only place the app turns the idle timer off or changes the brightness. It has two
+reasons to keep the screen awake, and a running series wins:
 
-An interface calls ``update(isSeriesRunning:isInForeground:)`` whenever either value changes,
-shows a "Brighten Screen" control over the whole screen while ``isDimmed``, and announces the
-change to VoiceOver. ``brighten()`` restores the brightness while the series continues.
+- **A series** (an interval series, an Astro run or a focus bracket in the foreground,
+  ``CameraModel/keepsScreenForSeries``). The screen mustn't lock, or the camera stops and the
+  series with it. The screen dims at once and has no time limit;
+  dimming saves battery over a long series (AGENTS.md, "Battery").
+- **Keep Screen On** (``KeepScreenOnRule``), while the camera screen is showing and running.
+  The screen dims after a while without activity, and the idle timer is turned on again at
+  the rule's limit. When a series ends, this reason starts counting from zero.
+
+Neither reason dims a screen that is already at ``dimmedBrightness`` or darker (issue #99):
+nothing would change, so no Brighten Screen cover is shown either.
+
+An interface calls ``update(isSeriesRunning:isInForeground:keepScreenOn:)`` whenever a value
+changes, ``noteActivity()`` for each touch, control change and photo, shows a "Brighten
+Screen" control over the whole screen while ``isDimmed``, and announces the change to
+VoiceOver. ``brighten()`` restores the brightness. For Keep Screen On the keeper schedules one
+wake-up for the next change of the rule; nothing polls.
 
 ## `SeriesScreenKeeper/brighten()`
 
@@ -20259,7 +29790,8 @@ public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
 @MainActor func brighten()
 ```
 
-Restores the brightness while the series continues; the screen still doesn't lock.
+Restores the brightness; the screen still doesn't lock. During a series the screen stays
+bright until the series ends; for Keep Screen On it counts as activity.
 
 ## `SeriesScreenKeeper/dimmedBrightness`
 
@@ -20269,21 +29801,29 @@ public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
 @MainActor static let dimmedBrightness: Double
 ```
 
-The brightness during a series, from 0 to 1. A screen already darker isn't changed. An
-assumption to be checked on a device: dark enough to save power, bright enough to see the
-progress.
+The brightness while dimmed, from 0 to 1. A screen already this dark or darker isn't
+changed. An assumption to be checked on a device: dark enough to save power, bright
+enough to see the progress.
 
-## `SeriesScreenKeeper/init(screen:)`
+## `SeriesScreenKeeper/init(screen:rule:now:sleep:)`
 
 public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
 
 ```swift
-@MainActor init(screen: any ScreenControlling)
+@MainActor init(screen: any ScreenControlling, rule: KeepScreenOnRule = .standard, now: @escaping @MainActor () -> ContinuousClock.Instant = { ContinuousClock.now }, sleep: @escaping @Sendable (ContinuousClock.Instant) async throws -> Void = {
+            try await Task.sleep(until: $0, clock: .continuous)
+        })
 ```
 
-Creates the keeper. It changes nothing until a series runs.
+Creates the keeper. It changes nothing until a series runs or Keep Screen On is used.
 
-- Parameter screen: The screen.
+- Parameters:
+  - screen: The screen.
+  - rule: Keep Screen On's times; ``KeepScreenOnRule/standard`` by default. The UI tests
+    pass shorter ones.
+  - now: Reads the time, the continuous clock by default. Tests pass their own.
+  - sleep: Waits until a time on the continuous clock and throws when cancelled,
+    `Task.sleep(until:clock:)` by default. Tests pass their own.
 
 ## `SeriesScreenKeeper/isDimmed`
 
@@ -20305,20 +29845,386 @@ public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
 
 Whether the idle timer is off now.
 
-## `SeriesScreenKeeper/update(isSeriesRunning:isInForeground:)`
+## `SeriesScreenKeeper/noteActivity()`
 
 public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
 
 ```swift
-@MainActor func update(isSeriesRunning: Bool, isInForeground: Bool)
+@MainActor func noteActivity()
 ```
 
-Keeps the screen awake and dims it when a series runs in the foreground, and puts both
-back otherwise.
+Records a touch on the camera screen, a changed control or a photo: Keep Screen On
+counts again from now. A dimmed screen stays dimmed; ``brighten()`` brightens it.
+
+## `SeriesScreenKeeper/update(isSeriesRunning:isInForeground:keepScreenOn:)`
+
+public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
+
+```swift
+@MainActor func update(isSeriesRunning: Bool, isInForeground: Bool, keepScreenOn: KeepScreenOnConditions = .off)
+```
+
+Keeps the screen awake, and dims it, while a series runs in the foreground or Keep
+Screen On is used, and puts both back otherwise.
 
 - Parameters:
-  - isSeriesRunning: Whether an interval series runs on the camera screen.
+  - isSeriesRunning: Whether an interval series, an Astro run or a focus bracket is going on
+    the camera screen (``CameraModel/keepsScreenForSeries``).
   - isInForeground: Whether the app is in the foreground.
+  - keepScreenOn: Keep Screen On's conditions; ``KeepScreenOnConditions/off`` by default.
+
+## `SessionPhoto`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+struct SessionPhoto
+```
+
+One photo saved in this session: one page of the Last Photo viewer (docs/design/BUILD-SPEC.md,
+3.14; each frame of a bracket or burst is its own photo, decision V12).
+
+Privacy: everything here lives in memory only. It is never written to disk, logged or
+copied, and the app has add-only Photos access, so nothing comes from the library
+(AGENTS.md, "Photos never linger"; docs/PRIVACY.md, "Last photo and its details").
+
+## `SessionPhoto/id`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+let id: Int
+```
+
+The photo's place in this session's saves: 1 for the first, counting up. Never reused,
+also after older photos are dropped, so a viewer can keep its page.
+
+## `SessionPhoto/init(id:photo:lens:takenAt:preview:previewWasReleased:)`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+init(id: Int, photo: SavedPhoto, lens: Lens?, takenAt: Date, preview: PhotoPreview?, previewWasReleased: Bool = false)
+```
+
+Creates a record.
+
+- Parameters:
+  - id: The photo's place in this session's saves.
+  - photo: What was saved.
+  - lens: The lens, or `nil`.
+  - takenAt: When the shutter took it.
+  - preview: The compressed preview, or `nil`.
+  - previewWasReleased: Whether a preview was made and released, so `preview` is `nil`.
+
+## `SessionPhoto/lens`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+let lens: Lens?
+```
+
+The lens the photo was taken with, for the caption, or `nil` if unknown.
+
+## `SessionPhoto/photo`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+let photo: SavedPhoto
+```
+
+What was saved: the formats, the signature, the thumbnail and the details.
+
+## `SessionPhoto/photoLongestSide`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+var photoLongestSide: Int? { get }
+```
+
+The longest side of the largest saved file, in pixels, as the read-back reported it, or
+`nil` when unknown.
+
+## `SessionPhoto/preview`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+var preview: PhotoPreview? { get }
+```
+
+The compressed screen-size preview, or `nil` when there is none: the app made none (no
+previewer, or the file couldn't be read), or ``SessionPhotos`` released it. A viewer then
+shows its fallback with ``SavedPhoto/thumbnail``.
+
+## `SessionPhoto/previewIsSmallerThanPhoto`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+var previewIsSmallerThanPhoto: Bool { get }
+```
+
+Whether the preview has fewer pixels than the saved photo, so a viewer zoomed in says it
+shows a preview (BUILD-SPEC.md, 3.14, decision V5). `false` without a preview, and when
+the saved size isn't known.
+
+## `SessionPhoto/previewWasReleased`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+var previewWasReleased: Bool { get }
+```
+
+Whether a preview was made and then released (by ``SessionPhotos``, or at once because
+the app had left the foreground), as opposed to never made. A viewer says which, so it
+never says a preview was released when none could be made (third review of 1.0.0, L8).
+
+## `SessionPhoto/takenAt`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+let takenAt: Date
+```
+
+When the shutter took the photo, by the device's clock, for the caption. For a bracket,
+every frame has the time of the press. In memory only; it is not the photo's date tag.
+
+## `SessionPhotos`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor final class SessionPhotos
+```
+
+This session's saved photos, oldest first, with their compressed previews: the pages of the
+Last Photo viewer (``CameraModel/sessionPhotos``; docs/design/BUILD-SPEC.md, 3.14 and
+section 6, item 15).
+
+The model adds every photo it saves: a single photo, each frame of a bracket or burst, each
+astro or interval frame, and the app's photo of a comparison shot.
+
+The rules (AGENTS.md, "Photos never linger" and "Battery"; docs/PRIVACY.md):
+- A preview is made in memory from the saved file before its bytes are released, never read
+  back from Photos, and never written to disk, logged or copied. It is pixels only, at most
+  ``previewMaximumPixelSize`` on its longest side, JPEG-compressed.
+- Only the newest ``maximumPreviews`` photos keep a preview (decision V6); adding a photo
+  releases the preview of the one that falls out. Older photos keep their record, which shows
+  the fallback.
+- At most ``maximumCount`` records are kept; adding one drops the oldest.
+- Every preview is released when the app leaves the foreground (decision V7) and when the
+  system reports low memory (``CameraIntent/releasePhotoPreviews``).
+- Decoded pixels are not kept here: ``picture(of:maximumPixelSize:)`` decodes on request, and
+  a viewer keeps decoded pictures only for the page shown and its two neighbors.
+- The records (``SessionPhoto/photo`` with the 156-pixel thumbnail and the details, the lens
+  and the time) stay in memory until the app quits, as the thumbnail and Photo Details always
+  have.
+
+## `SessionPhotos/add(_:lens:takenAt:preview:previewWasReleased:)`
+
+internal, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor func add(_ photo: SavedPhoto, lens: Lens?, takenAt: Date, preview: PhotoPreview?, previewWasReleased: Bool = false)
+```
+
+Adds a saved photo as the newest, drops the oldest records beyond the count limit, and
+releases the previews of photos older than the newest ``previewLimit``.
+
+- Parameters:
+  - photo: What was saved.
+  - lens: The lens it was taken with.
+  - takenAt: When the shutter took it.
+  - preview: Its compressed preview, or `nil`.
+  - previewWasReleased: Whether a preview was made and released before it was added
+    (the app had left the foreground), so `preview` is `nil`.
+
+## `SessionPhotos/countLimit`
+
+internal, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor let countLimit: Int
+```
+
+The most records kept; ``maximumCount`` unless a test sets another.
+
+## `SessionPhotos/decoder`
+
+internal, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor let decoder: (any PhotoPreviewing)?
+```
+
+Decodes previews, or `nil` when this model makes none.
+
+## `SessionPhotos/init(decoder:)`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor convenience init(decoder: (any PhotoPreviewing)?)
+```
+
+Creates an empty list with the standard limits, ``maximumCount`` and
+``maximumPreviews``.
+
+- Parameter decoder: Decodes previews, or `nil` when this model makes none.
+
+## `SessionPhotos/init(decoder:countLimit:previewLimit:)`
+
+internal, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor init(decoder: (any PhotoPreviewing)?, countLimit: Int, previewLimit: Int)
+```
+
+Creates an empty list.
+
+- Parameters:
+  - decoder: Decodes previews, or `nil`.
+  - countLimit: The most records kept; at least 1.
+  - previewLimit: How many of the newest photos keep a preview.
+
+## `SessionPhotos/makesPreviews`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor var makesPreviews: Bool { get }
+```
+
+Whether this model makes previews: `false` without a decoder, as in the Lock Screen
+camera, whose save pipeline makes none. An interface then says that previews aren't made
+there, rather than that one was released.
+
+## `SessionPhotos/maximumCount`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+nonisolated static let maximumCount: Int
+```
+
+How many records are kept: 100. A long interval or astro series can save hundreds of
+photos; each record holds a 156-pixel thumbnail (about 73 KB) and the photo's details, so
+they are bounded too. The oldest go first.
+
+## `SessionPhotos/maximumPreviews`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+nonisolated static let maximumPreviews: Int
+```
+
+How many of the newest photos keep a preview: 20 (decision V6).
+
+## `SessionPhotos/newest`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor var newest: SessionPhoto? { get }
+```
+
+The newest photo, or `nil` before the first save.
+
+## `SessionPhotos/photo(id:)`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor func photo(id: Int) -> SessionPhoto?
+```
+
+The photo with an identifier, or `nil` if it was dropped.
+
+- Parameter id: A ``SessionPhoto/id``.
+
+## `SessionPhotos/photos`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor var photos: [SessionPhoto] { get set }
+```
+
+The photos, oldest first. The last one is the newest.
+
+## `SessionPhotos/picture(of:maximumPixelSize:)`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor func picture(of id: Int, maximumPixelSize: Int? = nil) async -> PhotoThumbnail?
+```
+
+Decodes a photo's preview, off the main actor. Nothing is kept: the caller holds the
+pixels only while it shows them (the page shown and its neighbors).
+
+- Parameters:
+  - id: The photo's ``SessionPhoto/id``.
+  - maximumPixelSize: The longest side to decode to, in pixels, or `nil` for the
+    preview's own size.
+- Returns: The pixels, or `nil` when the photo or its preview is gone, or it can't be
+  decoded.
+
+## `SessionPhotos/previewBytes`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor var previewBytes: Int { get }
+```
+
+The compressed bytes of the previews held now.
+
+## `SessionPhotos/previewLimit`
+
+internal, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor let previewLimit: Int
+```
+
+How many of the newest photos keep a preview; ``maximumPreviews`` unless a test sets
+another.
+
+## `SessionPhotos/previewMaximumPixelSize`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+nonisolated static let previewMaximumPixelSize: Int
+```
+
+The longest side of a preview, in pixels: 3072.
+
+The viewer zooms from fit to the preview's own pixels, and at least 2 × fit (decision V5).
+A 4:3 photo fitted on an iPhone is about 1600 to 1760 pixels on its long side (iPhone 18
+Pro: 1206 × 2622 pixels; Pro Max: 1320 × 2868), so 3072 reaches 1.75 to 1.9 × fit in the
+preview's own pixels. On a 13-inch iPad (2752 × 2064 pixels) it is a little more than fit.
+The photos the app takes are 4032 pixels wide; the full size would cost about 49 MB per
+decoded page, against 28 MB here. Screen sizes: Apple, "Human Interface Guidelines,
+Layout, Specifications".
+
+## `SessionPhotos/releasePreviews()`
+
+internal, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor func releasePreviews()
+```
+
+Releases every preview, keeping the records.
 
 ## `SessionStatus`
 
@@ -20662,7 +30568,7 @@ The person's saved settings presets, and the built-in Factory Defaults (issue #7
 
 Every interface uses the same object: it lists ``saved``, saves the current settings with
 ``saveCurrent(named:camera:)``, renames and deletes with ``rename(_:to:)`` and
-``delete(_:)``, and applies with ``apply(_:camera:location:)``. The rules live here:
+``delete(_:)``, and applies with ``apply(_:camera:location:keepsPrivacySettings:)``. The rules live here:
 
 - A preset changes settings only when the person applies it; nothing is ever applied on its
   own (owner principle: the app never changes manual settings by itself).
@@ -20811,15 +30717,22 @@ let presets: [LossyPreset]
 
 The presets, `nil` for each one that couldn't be read.
 
-## `SettingsPresets/apply(_:camera:location:)`
+## `SettingsPresets/apply(_:camera:location:keepsPrivacySettings:)`
 
 public, declared in `Sources/NopeCore/SettingsPresets.swift`
 
 ```swift
-@discardableResult @MainActor func apply(_ choice: PresetChoice, camera: CameraModel?, location: LocationTagging?) async -> PresetApplyResult
+@discardableResult @MainActor func apply(_ choice: PresetChoice, camera: CameraModel?, location: LocationTagging?, keepsPrivacySettings: Bool = false) async -> PresetApplyResult
 ```
 
 Applies a preset: every setting, then the camera's state.
+
+Assistant Access is never stored in a preset and never changed by one; Factory Defaults
+applied in the app (`keepsPrivacySettings` false) returns it to its defaults, off and
+Every Action, and removes the tip's counter (``AssistantSession/tipCounter``). Applied through an assistant (`keepsPrivacySettings` true), the Privacy
+settings (``NopeSettings/metadata``: Details in Each Photo, Location, Sign Each Photo) and
+Assistant Access stay as they are, and everything else applies
+(`docs/design/assistant-access.md`, 7.4).
 
 Side effects: changes and saves every setting; may show the system location prompt when
 the preset includes Location; may switch the lens, which restarts the camera.
@@ -20830,6 +30743,8 @@ the preset includes Location; may switch the lens, which restarts the camera.
     skipped, with ``PresetNotice/cameraNotReady``).
   - location: Location tagging, or `nil` when the app has no location service, in which
     case Location stays off.
+  - keepsPrivacySettings: Whether the Privacy settings stay as they are: `true` when an
+    assistant applies the preset.
 - Returns: What happened, also kept in ``lastResult``.
 
 ## `SettingsPresets/beforeLastApply`
@@ -21054,7 +30969,7 @@ public, declared in `Sources/NopeCore/SettingsPresets.swift`
 
 Returns every setting, and the camera, to what they were before the last apply.
 
-Side effects: as ``apply(_:camera:location:)``.
+Side effects: as ``apply(_:camera:location:keepsPrivacySettings:)``.
 
 - Parameters:
   - camera: The camera to set up again, or `nil`.
@@ -21358,6 +31273,10 @@ for the one before it to finish.
   ``ShortcutOutcome/busyWithEarlierRequest`` when a camera screen is open but still
   performing an earlier request.
 
+When the calling task is cancelled (the system ended the intent) while the request still
+waits in the queue, the request is withdrawn and never performed (final review of 1.0.0,
+S9); one a camera screen already took runs to its end.
+
 ## `ShortcutInbox/wait(timeoutSeconds:until:)`
 
 internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
@@ -21443,6 +31362,40 @@ case cancelled
 
 The countdown was cancelled on the device, so no photo was taken. Say so.
 
+## `ShortcutOutcome/focusBracketBlockedByAstro`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case focusBracketBlockedByAstro
+```
+
+The astro helper is on, so no focus bracket was taken. Say so, and that turning Astro off
+allows one. While the helper is on the app treats a focus bracket as off, and the shutter
+belongs to the astro run.
+
+## `ShortcutOutcome/focusBracketStopped(saved:total:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case focusBracketStopped(saved: Int, total: Int)
+```
+
+A focus bracket stopped before its last frame (stopped, storage, battery or the camera).
+Say how many photos were saved, of how many.
+
+## `ShortcutOutcome/focusBracketUnavailable`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case focusBracketUnavailable
+```
+
+The lens in use can't take a focus bracket: its focus can't be set. Say so; nothing was
+taken.
+
 ## `ShortcutOutcome/focusRangeSet(_:)`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -21474,6 +31427,18 @@ case intervalBlockedByAstro
 The astro helper is on, so no interval series was started. Say so, and that turning Astro
 off allows one.
 
+## `ShortcutOutcome/intervalNotShorterThanTime`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case intervalNotShorterThanTime
+```
+
+The series would stop after a time no longer than its interval, so no interval series was
+started (``IntervalBlocker/intervalNotShorterThanTime``). Say so, and that the interval
+must be shorter than the time.
+
 ## `ShortcutOutcome/intervalStarted`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -21493,6 +31458,19 @@ case intervalStopped
 ```
 
 The interval series was stopped. Say so; every photo already taken is saved.
+
+## `ShortcutOutcome/lensBusy`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case lensBusy
+```
+
+A lens change was asked for while the lens can't be changed
+(``CameraModel/canChangeLens``): a photo, countdown, burst, interval series or astro run
+is in progress, or the compare view is open. Say the app is busy and the lens didn't
+change.
 
 ## `ShortcutOutcome/lensSelected(_:)`
 
@@ -21597,6 +31575,18 @@ case photoSizeSet
 
 The lens's photo size is now the one asked for, from the next photo. Say so.
 
+## `ShortcutOutcome/photosSaved`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+var photosSaved: Int { get }
+```
+
+The "Photos Saved" number a photo action returns beside its sentence, so a shortcut can
+branch on it (`docs/design/assistant-access.md`, section 8, decision 9): the photos this
+request saved, or 0. Never a file, a format, a lens or a setting.
+
 ## `ShortcutOutcome/presetApplied(_:)`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -21630,17 +31620,42 @@ case saved(isSigned: Bool)
 One photo was saved. Say "Photo saved and signed." or, when `isSigned` is false, "Photo
 saved. It isn't signed."
 
-## `ShortcutOutcome/savedSeveral(allSigned:)`
+## `ShortcutOutcome/savedSeveral(count:allSigned:)`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 
 ```swift
-case savedSeveral(allSigned: Bool)
+case savedSeveral(count: Int, allSigned: Bool)
 ```
 
-An exposure bracket was saved, each frame its own photo, because bracketing is on in
-the manual controls. Say "Photos saved and signed." or "Photos saved. Not all of them are
-signed."
+Several photos were saved, each its own photo: a burst, or an exposure bracket (asked
+for, or on in the manual controls). `count` is how many were saved. Say "Photos saved
+and signed." or "Photos saved. Not all of them are signed."
+
+## `ShortcutOutcome/savedSome(saved:total:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case savedSome(saved: Int, total: Int)
+```
+
+A bracket, burst or focus bracket saved some of its photos and then failed. `saved` is
+how many were saved, `total` how many were planned. Say how many of how many were saved,
+and that the app shows why the others weren't.
+
+## `ShortcutOutcome/timerStarted(seconds:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case timerStarted(seconds: Int)
+```
+
+The self-timer started, with a delay over ``PhotoShortcut/longestDelayAnsweredAfterPhoto``,
+so the request is answered now and the photos are taken when it ends, as with the
+camera's own self-timer; the app shows their result (issue #126). `seconds` is the delay.
+Say that the timer started and for how long; claim nothing about the photo.
 
 ## `ShortcutRequest`
 
@@ -21767,7 +31782,7 @@ case takeBracket(BracketShortcut)
 ```
 
 Take one exposure bracket, after an optional delay, with an optional lens, without
-changing the bracket chosen in Pro Tools.
+changing the bracket chosen on the drive strip.
 
 ## `ShortcutRequest/takePhoto(_:)`
 
@@ -21778,6 +31793,247 @@ case takePhoto(PhotoShortcut)
 ```
 
 Take one photo or a burst, after an optional delay, with an optional lens.
+
+## `ShutterHolds`
+
+internal, declared in `Sources/NopeCore/ShutterHolds.swift`
+
+```swift
+struct ShutterHolds
+```
+
+Which shutter presses are down now, by source, with each press numbered (issue #100;
+`docs/plans/1.0.0-finish.md`, section 4.2).
+
+A source numbers its presses in order, from 1, and a release carries the number of its press.
+A press or release that arrives late is recognized by its number:
+- a press whose number is not above the latest press of its source is old, and is dropped;
+- a release of an earlier press than the latest is old, and is dropped: it can't end the hold
+  of the press that came after it;
+- a release that arrives before its press is kept, so the press counts as already released
+  when it arrives, and no hold is left behind.
+
+A caller that doesn't number its presses passes `nil`: its press is the next number, and its
+release ends its latest press.
+
+## `ShutterHolds/Press`
+
+internal, declared in `Sources/NopeCore/ShutterHolds.swift`
+
+```swift
+enum Press
+```
+
+What a press is, once its number is checked.
+
+## `ShutterHolds/Press/new(number:isReleased:)`
+
+internal, declared in `Sources/NopeCore/ShutterHolds.swift`
+
+```swift
+case new(number: Int, isReleased: Bool)
+```
+
+A new press. `isReleased` is `true` when its release arrived first.
+
+## `ShutterHolds/Press/stale`
+
+internal, declared in `Sources/NopeCore/ShutterHolds.swift`
+
+```swift
+case stale
+```
+
+An old or repeated press, dropped.
+
+## `ShutterHolds/Release`
+
+internal, declared in `Sources/NopeCore/ShutterHolds.swift`
+
+```swift
+enum Release
+```
+
+What a release is, once its number is checked.
+
+## `ShutterHolds/Release/current`
+
+internal, declared in `Sources/NopeCore/ShutterHolds.swift`
+
+```swift
+case current
+```
+
+It ends the latest press of its source (also when that press already ended).
+
+## `ShutterHolds/Release/early`
+
+internal, declared in `Sources/NopeCore/ShutterHolds.swift`
+
+```swift
+case early
+```
+
+It arrived before its press, which will count as released.
+
+## `ShutterHolds/Release/stale`
+
+internal, declared in `Sources/NopeCore/ShutterHolds.swift`
+
+```swift
+case stale
+```
+
+The release of an earlier press than the latest, dropped.
+
+## `ShutterHolds/init()`
+
+internal, declared in `Sources/NopeCore/ShutterHolds.swift`
+
+```swift
+init()
+```
+
+Creates the holds with no press yet from any source.
+
+## `ShutterHolds/isAnyHeld`
+
+internal, declared in `Sources/NopeCore/ShutterHolds.swift`
+
+```swift
+var isAnyHeld: Bool { get }
+```
+
+Whether any shutter is down.
+
+## `ShutterHolds/isHeld(_:)`
+
+internal, declared in `Sources/NopeCore/ShutterHolds.swift`
+
+```swift
+func isHeld(_ source: ShutterSource) -> Bool
+```
+
+Whether a press of this source is down.
+
+- Parameter source: The shutter.
+
+## `ShutterHolds/press(_:from:)`
+
+internal, declared in `Sources/NopeCore/ShutterHolds.swift`
+
+```swift
+mutating func press(_ number: Int?, from source: ShutterSource) -> Press
+```
+
+Records a press.
+
+- Parameters:
+  - number: The press's number from its source, or `nil` for the next one.
+  - source: The shutter.
+- Returns: Whether it is a new press, and whether it is already released.
+
+## `ShutterHolds/release(_:from:)`
+
+internal, declared in `Sources/NopeCore/ShutterHolds.swift`
+
+```swift
+mutating func release(_ number: Int?, from source: ShutterSource) -> Release
+```
+
+Records a release, or a cancelled press.
+
+- Parameters:
+  - number: The number of the press it ends, or `nil` for the latest press.
+  - source: The shutter.
+- Returns: Whether it ends the latest press, comes before its press, or is old.
+
+## `ShutterHolds/releaseAll()`
+
+internal, declared in `Sources/NopeCore/ShutterHolds.swift`
+
+```swift
+mutating func releaseAll()
+```
+
+Ends every press that is down, as if each came up: the app left the active state
+(issue #101).
+
+## `ShutterPhase`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+enum ShutterPhase
+```
+
+How a shutter moved: a hardware shutter button (the volume buttons or the Camera Control,
+issue #37), or the on-screen shutter in burst mode (docs/design/BURST.md, 3.1).
+
+The app maps the system's capture event phases to these values (AVKit, `AVCaptureEvent`);
+an interface maps the on-screen shutter's touch to them.
+
+## `ShutterPhase/cancelled`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case cancelled
+```
+
+The system cancelled the press, or the finger slid off the on-screen shutter.
+
+## `ShutterPhase/pressed`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case pressed
+```
+
+The shutter went down.
+
+## `ShutterPhase/released`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case released
+```
+
+The shutter came up.
+
+## `ShutterSource`
+
+public, declared in `Sources/NopeCore/ShutterHolds.swift`
+
+```swift
+enum ShutterSource
+```
+
+Which shutter a press came from (issue #100): the on-screen shutter, or a hardware shutter
+button (the volume buttons or the Camera Control, issue #37). Each has its own hold, so a
+press and release of one doesn't end a burst the other holds.
+
+## `ShutterSource/hardware`
+
+public, declared in `Sources/NopeCore/ShutterHolds.swift`
+
+```swift
+case hardware
+```
+
+A volume button or the Camera Control.
+
+## `ShutterSource/onScreen`
+
+public, declared in `Sources/NopeCore/ShutterHolds.swift`
+
+```swift
+case onScreen
+```
+
+The shutter on the screen.
 
 ## `SignatureStatus`
 
@@ -21800,7 +32056,8 @@ public, declared in `Sources/NopeCore/SavedPhoto.swift`
 enum UnsignedReason
 ```
 
-Why a photo isn't signed.
+Why a photo isn't signed. It is also sent to the Apple Watch app (``PhoneUpdate``), so
+its raw values are part of the watch message format.
 
 ## `SignatureStatus/UnsignedReason/failed`
 
@@ -21811,6 +32068,22 @@ case failed
 ```
 
 The signer failed for at least one file.
+
+## `SignatureStatus/UnsignedReason/init(photosOf:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Watch.swift`
+
+```swift
+init?(photosOf status: CaptureStatus)
+```
+
+Why the photos a capture saved aren't all signed, for the watch (``PhoneUpdate``).
+
+When the photos are unsigned for different reasons, a reason other than
+``turnedOff`` wins: a photo that couldn't be signed must not read as the person's choice.
+
+- Parameter status: The camera's capture status after the photos were saved.
+- Returns: `nil` when every photo is signed or the status holds no saved photo.
 
 ## `SignatureStatus/UnsignedReason/signedFileFailedCheck`
 
@@ -21929,8 +32202,9 @@ public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
 func captureBracket(_ request: CaptureRequest, frames: [BracketFrame]) async throws(CaptureError) -> [CapturedPhoto]
 ```
 
-Returns one placeholder photo per frame, with the frame's ISO and duration, or throws
-``captureError``.
+Returns one placeholder photo per frame, in the order asked for, with the frame's ISO and
+duration, or throws ``captureError``. The order is the bracket's order
+(``BracketSettings/order``), so the UI tests can check it.
 
 - Parameters:
   - request: The lens and format of the photos.
@@ -21980,6 +32254,17 @@ Returns a placeholder photo for the request, or throws ``captureError``.
   lens's largest photo size (or ``placeholderDimensions``), 1/60 s and ISO 100; for Bayer
   RAW, ``placeholderPhotoData`` is also the reference RAW image data.
 - Throws: ``captureError``.
+
+## `SimulatedCaptureBackend/captureSeconds`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+let captureSeconds: Double
+```
+
+How long ``capturePhoto(_:)`` takes, in seconds: zero, or a camera slow enough for a tap
+on the shutter in burst mode to end before a second photo (docs/design/BURST.md, 5.2).
 
 ## `SimulatedCaptureBackend/comparisonError`
 
@@ -22066,6 +32351,18 @@ Ends ``events`` and ``exposureReadings``, so ``CameraModel/observeEvents()`` and
 ``ManualControlsModel/observeReadings()`` return once they have applied everything sent
 so far. Also ends ``frameAnalyses`` and ``statsReadings``.
 
+## `SimulatedCaptureBackend/focusShortfall`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+let focusShortfall: Double
+```
+
+How far short of a focus position the simulated lens stops, on the 0 to 1 scale
+(``setFocus(lensPosition:)``): 0 reaches every position, so tests can also cover a lens
+whose reported focus differs from the plan.
+
 ## `SimulatedCaptureBackend/frameAnalyses`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
@@ -22076,12 +32373,12 @@ let frameAnalyses: AsyncStream<FrameAnalysis>
 
 The live analyses: ``placeholderAnalysis(for:)`` each time analysis is asked for.
 
-## `SimulatedCaptureBackend/init(permission:permissionAfterRequest:capabilities:startError:captureError:eventsAfterStart:reading:readingCount:torchAvailable:comparisonError:)`
+## `SimulatedCaptureBackend/init(permission:permissionAfterRequest:capabilities:startError:captureError:eventsAfterStart:reading:readingCount:readingSequence:readingInterval:torchAvailable:comparisonError:captureSeconds:focusShortfall:)`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
 
 ```swift
-init(permission: CameraPermission, permissionAfterRequest: CameraPermission? = nil, capabilities: DeviceCapabilities = .none, startError: CaptureError? = nil, captureError: CaptureError? = nil, eventsAfterStart: [CaptureEvent] = [], reading: ExposureReading = placeholderReading, readingCount: Int = 1, torchAvailable: Bool = true, comparisonError: CaptureError? = nil)
+init(permission: CameraPermission, permissionAfterRequest: CameraPermission? = nil, capabilities: DeviceCapabilities = .none, startError: CaptureError? = nil, captureError: CaptureError? = nil, eventsAfterStart: [CaptureEvent] = [], reading: ExposureReading = placeholderReading, readingCount: Int = 1, readingSequence: [ExposureReading] = [], readingInterval: Double = 0, torchAvailable: Bool = true, comparisonError: CaptureError? = nil, captureSeconds: Double = 0, focusShortfall: Double = 0)
 ```
 
 Creates a simulated backend.
@@ -22098,9 +32395,14 @@ Creates a simulated backend.
     ``placeholderReading``.
   - readingCount: How many times to report it when readings turn on, for example enough
     for the close-up suggestion. Defaults to 1.
+  - readingSequence: Readings to report in order instead, or none. Defaults to none.
+  - readingInterval: Seconds between two readings; 0, the default, sends them at once.
   - torchAvailable: Whether the system allows the torch. Defaults to `true`.
   - comparisonError: The error taking the comparison shot's second photo throws, or
     `nil` to succeed.
+  - captureSeconds: How long taking a photo takes, in seconds. Defaults to 0.
+  - focusShortfall: How far short of each focus position the simulated lens stops, from 0;
+    0 by default.
 
 ## `SimulatedCaptureBackend/permission`
 
@@ -22263,6 +32565,40 @@ let readingCount: Int
 
 How many times ``reading`` is sent when readings are turned on.
 
+## `SimulatedCaptureBackend/readingInterval`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+let readingInterval: Double
+```
+
+The time between two readings sent, in seconds: 0 sends them all at once; more sends
+them as a camera does, one after another (``ExposureReading`` arrive at most four a
+second on a device).
+
+## `SimulatedCaptureBackend/readingSequence`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+let readingSequence: [ExposureReading]
+```
+
+The readings sent in order when readings are turned on, in place of ``reading``; empty to
+send ``reading``. A scene that changes, such as a lens sweeping into its nearest focus.
+
+## `SimulatedCaptureBackend/readingsToSend`
+
+internal, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+var readingsToSend: [ExposureReading] { get }
+```
+
+The readings sent when readings are turned on: ``readingSequence``, or ``reading``
+``readingCount`` times.
+
 ## `SimulatedCaptureBackend/requestPermission()`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
@@ -22281,9 +32617,25 @@ public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
 func setExposureReadingsEnabled(_ enabled: Bool) async
 ```
 
-Sends ``reading``, ``readingCount`` times, when readings are turned on.
+Sends ``readingsToSend`` when readings are turned on: at once, or one every
+``readingInterval`` seconds without holding up the caller.
 
 - Parameter enabled: Whether readings are on.
+
+## `SimulatedCaptureBackend/setFocus(lensPosition:)`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+func setFocus(lensPosition: Double) async throws(CaptureError) -> Double
+```
+
+Reports the position asked for, less ``focusShortfall``, within 0 to 1. There is no lens
+to move.
+
+- Parameter lensPosition: The position asked for.
+- Returns: The simulated lens's position.
+- Throws: ``captureError``.
 
 ## `SimulatedCaptureBackend/setFrameAnalysis(_:)`
 
@@ -22421,119 +32773,48 @@ init()
 
 Creates a simulated preview source.
 
-## `SpiralPlacement`
+## `SteppedTime`
 
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-struct SpiralPlacement
-```
-
-Where the golden spiral sits: one of its eight placements, four quarter turns each drawn
-plain or flipped (issue #40, "The spiral can be flipped and rotated to any of its 8
-placements").
-
-## `SpiralPlacement/count`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
+internal, declared in `Sources/NopeCore/NopeClock.swift`
 
 ```swift
-static let count: Int
+final class SteppedTime
 ```
 
-The number of placements: four turns, each plain or flipped.
+The time of a ``NopeClock/stepped(by:now:)`` clock: the system's `ContinuousClock` when it was
+made, moved on by each completed wait.
 
-## `SpiralPlacement/index`
+## `SteppedTime/advance(to:)`
 
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
+internal, declared in `Sources/NopeCore/NopeClock.swift`
 
 ```swift
-var index: Int { get }
+func advance(to instant: ContinuousClock.Instant)
 ```
 
-The placement's number, 0 to 7, as stored in the settings.
+Moves the time on to a moment, never back.
 
-## `SpiralPlacement/init(index:)`
+- Parameter instant: The moment a wait ended at.
 
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
+## `SteppedTime/init()`
+
+internal, declared in `Sources/NopeCore/NopeClock.swift`
 
 ```swift
-init(index: Int)
+init()
 ```
 
-The placement with a number.
+Creates the time, starting at the system's `ContinuousClock` now.
 
-- Parameter index: Any whole number; it is reduced to 0 through 7.
+## `SteppedTime/now`
 
-## `SpiralPlacement/init(quarterTurns:isFlipped:)`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
+internal, declared in `Sources/NopeCore/NopeClock.swift`
 
 ```swift
-init(quarterTurns: Int, isFlipped: Bool)
+var now: ContinuousClock.Instant { get }
 ```
 
-Creates a placement.
-
-- Parameters:
-  - quarterTurns: Clockwise quarter turns; any whole number, reduced to 0 through 3.
-  - isFlipped: Whether the spiral is mirrored left to right before it is turned.
-
-## `SpiralPlacement/isFlipped`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-let isFlipped: Bool
-```
-
-Whether the spiral is mirrored left to right before it is turned.
-
-## `SpiralPlacement/next`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-var next: SpiralPlacement { get }
-```
-
-The next of the eight placements, wrapping back to the first: the "Turn Spiral" button
-and accessibility action step through them.
-
-## `SpiralPlacement/quarterTurns`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-let quarterTurns: Int
-```
-
-Clockwise quarter turns, 0 to 3.
-
-## `SpiralPlacement/standard`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-static let standard: SpiralPlacement
-```
-
-The placement the app starts with: no turn, not flipped. The spiral then winds in toward the
-right third of a landscape frame.
-
-## `SpiralPlacement/turned(by:)`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-func turned(by turns: Int) -> SpiralPlacement
-```
-
-The placement turned by more quarter turns, so the spiral keeps its place relative to the
-horizon while the device is turned and the camera layout stays put.
-
-- Parameter turns: Clockwise quarter turns to add; negative turns counterclockwise.
-- Returns: The turned placement, flipped the same way.
+The current time.
 
 ## `StorageWarning`
 
@@ -22564,6 +32845,36 @@ case low(photosThatFit: Int)
 ```
 
 About this many more photos fit, fewer than ``DeviceStatus/lowStoragePhotoCount``.
+
+## `SubmittedShortcut`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor final class SubmittedShortcut
+```
+
+The request a ``ShortcutInbox/submit(_:)`` call queued, so the call's cancellation can find it.
+
+## `SubmittedShortcut/init()`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates a holder with no request yet.
+
+## `SubmittedShortcut/pending`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor var pending: PendingShortcut?
+```
+
+The queued request, once the call has queued it.
 
 ## `SystemPressureReading`
 
@@ -22976,6 +33287,20 @@ case on(level: Double)
 
 The light is on at a brightness level from just above 0 to 1 (full).
 
+## `TorchStatus/pending`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+case pending
+```
+
+The person asked for the light while the camera isn't ready for it: it is starting,
+or switching lenses or settings, so no camera is attached to switch (issue #75). The
+light is off for now. It is applied as soon as the camera has started, and then becomes
+``on(level:)``, or ``unavailable`` if the system refuses it. An interface shows the
+person's choice (the switch stays on), not "off".
+
 ## `TorchStatus/unavailable`
 
 public, declared in `Sources/NopeCore/Light.swift`
@@ -23234,6 +33559,16 @@ internal, declared in `Sources/NopeCore/WatchCommandServer.swift`
 
 A result that couldn't be delivered because the watch app wasn't reachable. It goes with
 the next reply, then is cleared.
+
+## `WatchCommandServer/undeliveredUnsignedReason`
+
+internal, declared in `Sources/NopeCore/WatchCommandServer.swift`
+
+```swift
+@MainActor var undeliveredUnsignedReason: SignatureStatus.UnsignedReason? { get }
+```
+
+Why the undelivered result's photos aren't all signed (``PhoneUpdate/unsignedReason``).
 
 ## `WatchDelay`
 
@@ -23495,8 +33830,8 @@ public, declared in `Sources/NopeCore/WatchRemote.swift`
 case phoneNotReachable
 ```
 
-The iPhone app can't be reached: the phone is away, off or locked out of the link.
-Say to keep the phone nearby with the app open.
+The iPhone app can't be reached: the phone is away, off or locked, or the app is
+closed or in the background. Say to unlock the phone and open the app.
 
 ## `WatchRemote/Display/ready`
 
@@ -23613,6 +33948,18 @@ public, declared in `Sources/NopeCore/WatchRemote.swift`
 How the last photo the watch asked for ended, or `nil` before one ends. Cleared when the
 next photo is asked for.
 
+## `WatchRemote/lastUnsignedReason`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor var lastUnsignedReason: SignatureStatus.UnsignedReason? { get set }
+```
+
+Why the photos of ``lastResult`` aren't all signed (``PhoneUpdate/unsignedReason``), or
+`nil` when they are, there is no result, or the phone didn't say. Show
+``SignatureStatus/UnsignedReason/turnedOff`` as plain status: signing is off by choice.
+
 ## `WatchRemote/link`
 
 internal, declared in `Sources/NopeCore/WatchRemote.swift`
@@ -23712,6 +34059,17 @@ case cancelled
 
 The countdown was cancelled, on the watch or on the phone. Say no photo was taken.
 
+## `WatchResult/includesUnsignedPhotos`
+
+internal, declared in `Sources/NopeCore/CameraModel+Watch.swift`
+
+```swift
+var includesUnsignedPhotos: Bool { get }
+```
+
+Whether the result reports saved photos that aren't all signed, so a ``PhoneUpdate``
+carries the reason.
+
 ## `WatchResult/init(_:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Watch.swift`
@@ -23724,7 +34082,8 @@ The watch's result for how a photo request through the ``ShortcutInbox`` ended.
 
 The watch asks only for a photo, so the outcomes of other requests (a lens, the light, an
 interval series, a bracket, the focus range, a photo size, a preset) can't happen; they would be
-reported as not saved.
+reported as not saved. Nor can ``ShortcutOutcome/timerStarted(seconds:)``: the watch's
+delays are the self-timer's, at most ``PhotoShortcut/longestDelayAnsweredAfterPhoto``.
 
 - Parameter outcome: How the request ended.
 

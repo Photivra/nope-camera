@@ -33,6 +33,7 @@ Related documentation in the repository:
 - ``CameraModel``
 - ``CameraState``
 - ``CameraIntent``
+- ``NopeClock``
 
 ### Camera status
 
@@ -41,6 +42,7 @@ Related documentation in the repository:
 - ``HeatLevel``
 - ``CaptureStatus``
 - ``CaptureError``
+- ``LensChangeBlocker``
 
 ### Capabilities
 
@@ -49,6 +51,7 @@ Related documentation in the repository:
 - ``PhotoDimensions``
 - ``ApertureRange``
 - ``ProcessedFallback``
+- ``DistortionCorrection``
 - ``CameraPermission``
 - ``PhotoFormat``
 
@@ -128,13 +131,17 @@ Related documentation in the repository:
 - ``IntervalSettings``
 - ``IntervalProgress``
 - ``IntervalBlocker``
+- ``IntervalEnd``
 
 ### Drive modes, self-timer and burst
 
 - ``DriveModel``
 - ``DriveMode``
 - ``DriveIntent``
+- ``ShutterPhase``
 - ``HardwareButtonPhase``
+- ``BurstSpeed``
+- ``BurstStart``
 - ``SelfTimerDelay``
 - ``Countdown``
 - ``BurstProgress``

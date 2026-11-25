@@ -145,7 +145,7 @@ struct ComparisonHiddenView: View {
                 Image(systemName: "eye.slash")
             }
             .foregroundStyle(.white)
-            .padding()
+            .padding(NopeSpace.m)
         }
     }
 }
@@ -231,7 +231,7 @@ struct ComparisonPicturesView: View {
     /// The pictures above the controls, scrolling at large text sizes.
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: NopeSpace.m) {
                 pictures
                     // The pictures are laid out left to right in every language: nope.'s photo
                     // on the left, as its label says. Text elsewhere follows the language.
@@ -240,12 +240,12 @@ struct ComparisonPicturesView: View {
                     .frame(maxWidth: maximumPictureWidth)
                     .frame(maxWidth: .infinity)
                 controls
-                    .padding(.horizontal)
+                    .padding(.horizontal, NopeSpace.m)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { controlsHeight = $0 }
                 ComparisonSidesDescription(result: result)
-                    .padding(.horizontal)
+                    .padding(.horizontal, NopeSpace.m)
             }
-            .padding(.vertical)
+            .padding(.vertical, NopeSpace.m)
         }
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.height - proxy.safeAreaInsets.top - proxy.safeAreaInsets.bottom
@@ -345,23 +345,27 @@ struct ComparisonPicturesView: View {
         ZStack {
             Rectangle()
                 .fill(.white)
-                .frame(width: 2)
+                .frame(width: Self.dividerWidth)
             Image(systemName: "arrow.left.and.right.circle.fill")
                 .font(.title)
                 .symbolRenderingMode(.palette)
                 .foregroundStyle(.black, .white)
-                .frame(width: CameraStyle.minimumTarget, height: CameraStyle.minimumTarget)
+                .frame(width: NopeSize.minTarget, height: NopeSize.minTarget)
                 .contentShape(.rect)
                 .highPriorityGesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .named(Self.space)).onChanged { value in
                         setSplit(value.location.x / max(width, 1))
                     })
         }
-        .frame(width: CameraStyle.minimumTarget)
+        .frame(width: NopeSize.minTarget)
         .frame(maxHeight: .infinity)
-        .offset(x: width * split - CameraStyle.minimumTarget / 2)
+        .offset(x: width * split - NopeSize.minTarget / 2)
         .opacity(view == .split ? 1 : 0)
     }
+
+    /// The width of the divider line, in points: thin enough not to hide the pictures, as drawn
+    /// in `docs/design/screens/sheet-compare`.
+    private static let dividerWidth: CGFloat = 2
 
     /// The coordinate space of the pictures, for the divider's drag.
     private static let space = "ComparisonPictures"
@@ -371,26 +375,26 @@ struct ComparisonPicturesView: View {
         HStack(alignment: .top) {
             ComparisonSideLabel(text: ComparisonText.nopeSide)
                 .opacity(view == .phone ? 0 : 1)
-            Spacer(minLength: 8)
+            Spacer(minLength: NopeSpace.xs)
             ComparisonSideLabel(text: ComparisonText.phoneSide)
                 .opacity(view == .nope ? 0 : 1)
         }
-        .padding(8)
+        .padding(NopeSpace.xs)
     }
 
     /// The view choice and the zoom buttons.
     private var controls: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: NopeSpace.s) {
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: CameraStyle.targetSpacing) { viewButtons }
-                VStack(alignment: .leading, spacing: CameraStyle.targetSpacing) { viewButtons }
+                HStack(spacing: NopeSize.targetGap) { viewButtons }
+                VStack(alignment: .leading, spacing: NopeSize.targetGap) { viewButtons }
             }
             Slider(value: Binding(get: { split }, set: { setSplit($0) }), in: 0...1) {
                 Text("Divider", bundle: .module, comment: "Name of the slider in the compare view that moves the divider between nope.'s photo and the phone-processed version.")
             }
             .accessibilityValue(splitValue)
             .nightModeTrackTint()
-            HStack(spacing: CameraStyle.targetSpacing) {
+            HStack(spacing: NopeSize.targetGap) {
                 Button {
                     setZoom(zoom - Self.zoomStep)
                 } label: {
@@ -418,7 +422,7 @@ struct ComparisonPicturesView: View {
                 }
                 .accessibilityValue(zoomText)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(NopeIconButtonStyle())
             .font(.title3)
         }
     }
@@ -436,7 +440,7 @@ struct ComparisonPicturesView: View {
                 ComparisonText.name(of: choice)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .buttonStyle(SelectableCapsuleStyle(isSelected: view == choice))
+            .buttonStyle(NopeCapsuleStyle(isSelected: view == choice))
             .accessibilityAddTraits(view == choice ? .isSelected : [])
         }
     }
@@ -514,9 +518,9 @@ struct ComparisonSideLabel: View {
         text
             .font(.footnote.weight(.semibold))
             .foregroundStyle(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .darkBacking()
+            .padding(.horizontal, NopeSpace.xs)
+            .padding(.vertical, NopeSpace.xxs)
+            .nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.small, style: .continuous))
     }
 }
 
@@ -534,8 +538,8 @@ struct ComparisonSidesDescription: View {
 
     /// One paragraph per side.
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: NopeSpace.s) {
+            VStack(alignment: .leading, spacing: NopeSpace.xxs) {
                 ComparisonText.nopeSide.font(.headline)
                 if let file = result.nopeFile {
                     Text(verbatim: FormatsSettingsView.name(of: file.format))
@@ -550,7 +554,7 @@ struct ComparisonSidesDescription: View {
                     .foregroundStyle(CameraStyle.secondaryText)
             }
             .accessibilityElement(children: .combine)
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: NopeSpace.xxs) {
                 ComparisonText.phoneSide.font(.headline)
                 Text(verbatim: FormatsSettingsView.name(of: result.phoneFormat))
                 Text(
@@ -587,7 +591,7 @@ struct ComparisonDetailsList: View {
 
     /// One section per kind of difference that has entries.
     var body: some View {
-        List {
+        NopeList {
             Section {
                 Text("What each file holds, read on this device. Values are shown on this screen only: nothing is stored or copied.", tableName: "Honesty", bundle: .module, comment: "Introduction of the compare view's Details tab. Must not claim more than the English.")
                     .fixedSize(horizontal: false, vertical: true)
@@ -640,8 +644,8 @@ struct ComparisonEntryRow: View {
 
     /// The row.
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: NopeSpace.xxs) {
+            VStack(alignment: .leading, spacing: NopeSpace.xxs) {
                 // Specification names (tags, blocks, properties) aren't translated.
                 Text(verbatim: entry.isSignature ? ComparisonText.signatureName : entry.name)
                     .font(.body.monospaced())
@@ -665,7 +669,7 @@ struct ComparisonEntryRow: View {
                     Text("Show Value", bundle: .module, comment: "Button in the compare view: shows a hidden identifying value, such as a unique photo ID, on screen.")
                 }
                 .buttonStyle(.borderless)
-                .frame(minHeight: CameraStyle.minimumTarget)
+                .frame(minHeight: NopeSize.minTarget)
             }
         }
     }
@@ -677,7 +681,7 @@ struct ComparisonEntryRow: View {
             Text("nope.'s Content Credentials signature.", tableName: "Honesty", bundle: .module, comment: "Compare view: this item of nope.'s file is its Content Credentials signature. Keep \"nope.\" unchanged.")
         } else if let item = entry.item {
             // The privacy setting that controls the item, with its explanation from Settings.
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: NopeSpace.xxs) {
                 Text(PrivacySettingsView.title(of: item)).fontWeight(.semibold)
                 Text(PrivacySettingsView.explanation(of: item))
             }

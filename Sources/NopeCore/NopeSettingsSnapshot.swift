@@ -52,11 +52,27 @@ extension NopeSettings {
             values: try PropertyListSerialization.data(fromPropertyList: values, format: .binary, options: 0))
     }
 
+    /// Copies every stored setting a preset holds: all of ``makeSnapshot()`` except Assistant
+    /// Access, which no preset stores (`docs/design/assistant-access.md`, 3.5).
+    ///
+    /// - Returns: The snapshot.
+    /// - Throws: As ``makeSnapshot()``.
+    func makePresetSnapshot() throws -> NopeSettingsSnapshot {
+        let values = defaults.dictionaryRepresentation().filter {
+            SharedSettingsStore.isSettingsKey($0.key) && !Key.assistantKeys.contains($0.key)
+        }
+        return NopeSettingsSnapshot(
+            values: try PropertyListSerialization.data(fromPropertyList: values, format: .binary, options: 0))
+    }
+
     /// Replaces the stored settings with a snapshot's, and reloads them.
     ///
     /// A setting missing from the snapshot goes back to its default. Every value is read back
     /// through the same rules as a stored one, so a value this version doesn't know falls back to
     /// the default (AGENTS.md, "Fail closed"). A snapshot that can't be read changes nothing.
+    ///
+    /// Night mode then is the snapshot's, a choice the person made by applying it (a preset), so
+    /// the astro helper no longer turns it off when it ends (``isNightModeFromAstro``).
     ///
     /// - Parameter snapshot: The snapshot, from ``makeSnapshot()``.
     /// - Returns: `true` when the snapshot could be read.
@@ -73,6 +89,7 @@ extension NopeSettings {
         for (key, value) in values where SharedSettingsStore.isSettingsKey(key) {
             defaults.set(value, forKey: key)
         }
+        setNightModeFromAstro(false)
         reload()
         return true
     }

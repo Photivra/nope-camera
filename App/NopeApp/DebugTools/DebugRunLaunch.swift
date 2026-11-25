@@ -7,7 +7,7 @@ import Foundation
 
 /// Chooses which debug run, if any, this launch performs.
 ///
-/// A run starts either from its own launch argument (`-NopeTagCheck`, `-NopeCameraProbe`) or,
+/// A run starts either from its own launch argument (`-NopeTagCheckRun`, `-NopeCameraProbe`) or,
 /// once, from a run armed by an earlier launch with `-NopeArmDebugRun <run>`: that launch shows
 /// a message and stores the run; the next launch from the Home Screen performs it and clears it.
 enum DebugRunLaunch {

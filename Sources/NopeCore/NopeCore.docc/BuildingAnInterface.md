@@ -39,7 +39,9 @@ struct TextInterface {
 Send ``CameraIntent/start`` once when the interface appears, and
 ``CameraIntent/requestPermission`` only when the person presses a button. Send
 ``CameraIntent/selectLens(_:)`` when the person picks a lens and ``CameraIntent/capture`` from
-the shutter. The model decides what happens next.
+the shutter. The model decides what happens next. Disable the lens controls while
+``CameraModel/canChangeLens`` is false (``CameraModel/lensChangeBlocker`` says why); the model
+ignores a lens change then anyway.
 
 While the interface is visible, run ``CameraModel/observeEvents()`` (in SwiftUI, a second
 `.task`), so interruptions and heat reach ``CameraModel/sessionStatus``.
@@ -60,9 +62,12 @@ Enable the shutter only when ``CameraModel/canCapture`` is `true`.
 
 ### Offer manual controls
 
-Manual controls are off by default and stay hidden until the person turns on the "Manual
-controls" option (``NopeSettings/showsManualControls``; send
-``ManualControlIntent/setEnabled(_:)`` when it changes). While ``ManualControlsModel/isEnabled``
+Manual controls are off by default and stay hidden until the person turns them on. A control
+that turns them on or off, such as a Manual Controls button, calls
+``CameraModel/setManualControls(_:settings:)``, which stores the "Manual controls" option
+(``NopeSettings/showsManualControls``) and turns them on or off at once, including after the
+astro helper turned them on. An interface that also lets the option change elsewhere sends
+``ManualControlIntent/setEnabled(_:)`` when it changes. While ``ManualControlsModel/isEnabled``
 is `true`, read ``CameraModel/manual``:
 
 - show every ``ManualControl`` in the same order, with ``ManualControlsModel/availability(of:)``
@@ -100,8 +105,9 @@ These work with manual controls off, and never change a manual setting
 - send the person's ``NopeSettings/followsFaces`` with ``AutoControlIntent/setFollowsFaces(_:)``,
   and their ``NopeSettings/photoSizes`` with ``CameraIntent/setPhotoSizes(_:)`` (offer a size
   only from ``Lens/photoSizeChoices``);
-- show "Hold it steady or use a tripod." while ``ManualControlsModel/showsSteadyHint``, and offer
-  a button to switch to ``CameraModel/closeUpLens`` when it isn't `nil`;
+- show "Hold it steady or use a tripod." while ``CameraModel/showsSteadyHint`` (it is only ever
+  `true` with Manual Controls off; keep it at least two seconds once shown, so it can be read),
+  and offer a button to switch to ``CameraModel/closeUpLens`` when it isn't `nil`;
 - send the person's ``NopeSettings/fastShutter`` with ``AutoControlIntent/setFastShutter(_:)``. Clean view is ``CameraModel/isCleanView``, set with
 ``CameraIntent/setCleanView(_:)``; it never hides a warning that changes what the photo is, such
 as the no-RAW badge.

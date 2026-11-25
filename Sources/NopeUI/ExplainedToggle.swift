@@ -37,7 +37,7 @@ struct ExplainedToggle: View {
     /// The switch, with the explanation in its label or below it.
     var body: some View {
         if dynamicTypeSize.isAccessibilitySize {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: NopeSpace.xs) {
                 Toggle(isOn: isOn) { title }
                 explanation
                     .font(.footnote)

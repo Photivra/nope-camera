@@ -14,17 +14,57 @@ import Observation
 @Observable
 public final class CameraModel {
     /// The current camera state. Interfaces render it; only the model changes it.
-    public private(set) var state: CameraState = .starting
+    public private(set) var state: CameraState = .starting {
+        didSet { endFirstStartIfSettled() }
+    }
 
     /// The identifier of the lens in use, once the camera is ready.
     public private(set) var selectedLensID: Lens.ID?
 
     /// Whether the camera is running, and if not, why. Meaningful while ``state`` is
     /// ``CameraState/ready(_:)``.
-    public private(set) var sessionStatus: SessionStatus = .stopped
+    public private(set) var sessionStatus: SessionStatus = .stopped {
+        didSet { endFirstStartIfSettled() }
+    }
+
+    /// Whether the camera is still on its first start since the model was created: `true` from
+    /// creation until the first time the state or the camera's status says how the start went,
+    /// then `false` for good.
+    ///
+    /// It ends when ``state`` becomes ``CameraState/needsPermission``,
+    /// ``CameraState/permissionDenied`` or ``CameraState/unavailable``, or when ``sessionStatus``
+    /// becomes anything other than ``SessionStatus/stopped`` or ``SessionStatus/starting``
+    /// (running, failed, interrupted, paused for heat, no picture). A later start (a return from
+    /// the background, a lens change, a restart of the camera) never makes it `true` again.
+    ///
+    /// An interface shows the launch screen's mark for as long as it is `true`, so the first
+    /// frames match the launch screen (docs/design/LAUNCH-SCREEN.md, 6.3); after it, the usual
+    /// starting indicator. It is in `NopeCore` so the app, the Lock Screen camera and any other
+    /// interface read the first start the same way.
+    public private(set) var isFirstStart = true
 
     /// The state of the most recent capture.
-    public internal(set) var captureStatus: CaptureStatus = .idle
+    public internal(set) var captureStatus: CaptureStatus = .idle {
+        didSet {
+            // A new photo, burst or bracket starts afresh.
+            if captureStatus == .capturing { failedBracket = nil }
+        }
+    }
+
+    /// The exposure bracket being taken and saved, or `nil` when none is (docs/design/BRACKETING.md,
+    /// section 4, "The card and the shutter").
+    public internal(set) var bracketProgress: BracketProgress?
+
+    /// How far the last bracket got when one of its frames couldn't be saved, or `nil`. It goes
+    /// with ``captureStatus`` ``CaptureStatus/failed(_:)``: an interface says how many photos were
+    /// saved before the error ("Bracket stopped: 2 of 3 photos saved."). Cleared when the next
+    /// capture starts.
+    public internal(set) var failedBracket: BracketProgress?
+
+    /// The start delay of the bracket, or `nil` for none: the self-timer's delay chosen while a
+    /// bracket was on (``bracketDriveMode``). Kept for the session, so choosing Bracket again
+    /// keeps it.
+    public internal(set) var bracketStartDelay: SelfTimerDelay?
 
     /// The formats and metadata choices used for the next photo. A Settings screen changes them
     /// through ``SaveSettings`` and ``MetadataSettings``, whose methods hold the rules.
@@ -68,20 +108,79 @@ public final class CameraModel {
     /// The astro helper (issue #60). Its intents arrive as ``CameraIntent/astro(_:)``.
     public let astro = AstroModel()
 
+    /// The bracket type and the focus bracket (``BracketModel``; docs/design/BRACKETING.md,
+    /// section 8). The exposure bracket itself is ``ManualControlsModel/bracket``.
+    public let bracketing = BracketModel()
+
     /// The comparison shot (issue #55). Its intents arrive as ``CameraIntent/comparison(_:)``.
     public let comparison: ComparisonModel
+
+    /// This session's saved photos with their compressed previews: the pages of the Last Photo
+    /// viewer (docs/design/BUILD-SPEC.md, 3.14). Every save adds to it; leaving the foreground
+    /// and ``CameraIntent/releasePhotoPreviews`` release the previews (docs/PRIVACY.md, "Last
+    /// photo and its details").
+    public let sessionPhotos: SessionPhotos
+
+    /// Counts the person's actions (``CameraIntent/isActivity``) and the photos saved, however
+    /// they were taken. An interface watches it to tell ``SeriesScreenKeeper/noteActivity()``,
+    /// so Keep Screen On counts from the latest one (issue #97). Only its changes matter.
+    public private(set) var activityCount = 0
+
+    /// Counts the person's actions only (``CameraIntent/isActivity``), not the photos saved: a
+    /// series' photos are not an action. An interface watches it to close what stays "until the
+    /// next action", such as the hint after an assistant's action (docs/design/assistant-access.md,
+    /// section 10). Only its changes matter.
+    public private(set) var actionCount = 0
+
+    /// The photos the latest press of the shutter saved, in the order saved: one photo, or a
+    /// bracket's, burst's or astro run's frames. It also holds the frames saved before a
+    /// bracket, burst or run stopped on an error, which ``captureStatus`` then reports only as
+    /// ``CaptureStatus/failed(_:)``. Empty from the start of each press until its first save.
+    ///
+    /// An interface shows Last Photo, its badges and a Not Signed warning from these after a
+    /// press ends, so they show the newest saved photo also after a part-way failure.
+    public internal(set) var lastPressPhotos: [SavedPhoto] = []
+
+    /// Whether the Last Photo viewer is open, as the interface last said with
+    /// ``CameraIntent/setViewerOpen(_:)``. While it is open, a hardware shutter press closes it
+    /// and takes no photo (decision V1); the model sets it to `false` then, and when the app
+    /// leaves the foreground (decision V7). An interface presents the viewer while it is `true`.
+    /// Siri, Shortcuts, the Apple Watch app and a running series still take photos.
+    public internal(set) var isViewerOpen = false
+
+    /// Whether the press of a hardware shutter button that is down now closed the viewer, so
+    /// its release takes no photo.
+    @ObservationIgnored var hardwarePressClosedViewer = false
+
+    /// The clock the model and everything it owns read: dates from its wall clock, and every
+    /// deadline, wait and duration from its monotonic clock (``NopeClock``, issue #107). An
+    /// interface reads it to count down to a moment the model publishes, such as
+    /// ``IntervalProgress/nextPhotoStart``.
+    ///
+    /// Replacing it, or a part of it, later changes only what the model itself reads, such as
+    /// ``wallClock``; the manual controls and drive modes keep the clock the model was made with.
+    @ObservationIgnored public internal(set) var clock: NopeClock
+
+    /// Reads the wall clock of ``clock`` for ``SessionPhoto/takenAt``; setting it replaces that
+    /// part of the clock.
+    var wallClock: @Sendable () -> Date {
+        get { clock.date }
+        set { clock.date = newValue }
+    }
 
     /// The person's photo size for each lens (``CameraIntent/setPhotoSizes(_:)``), applied when
     /// the camera starts with a lens. Empty by default: every lens at its default size.
     public private(set) var photoSizes: [Lens.ID: PhotoDimensions] = [:]
 
-    /// The last heat level the backend reported.
-    private var heatLevel: HeatLevel = .nominal
+    /// The last heat level the backend reported. Keep Screen On reads it, to dim sooner when the
+    /// phone is hot (``KeepScreenOnConditions/heatLevel``, issue #119).
+    public private(set) var heatLevel: HeatLevel = .nominal
 
     /// The hardware the model asks for permission, capabilities and photos.
     let backend: any CaptureBackend
 
-    /// Reads the monotonic clock, to time each capture for the photo's details (issue #53).
+    /// Reads the monotonic clock, to time each capture for the photo's details (issue #53):
+    /// ``clock``'s, unless the model was made with the older seconds sleep and its own clock.
     let now: @Sendable () -> ContinuousClock.Instant
 
     /// Waits ``pauseAfterErrorSeconds`` after a photo of a series fails, for the pause that may
@@ -90,34 +189,95 @@ public final class CameraModel {
         try await Task.sleep(for: .seconds(CameraModel.pauseAfterErrorSeconds))
     }
 
+    /// The latest change of the scene phase being applied (``sceneDidChange(isInBackground:)``),
+    /// which the next change waits for, so the changes apply in the order they happened.
+    @ObservationIgnored var sceneChange: Task<Void, Never>?
+
     /// Creates a model in the ``CameraState/starting`` state.
     ///
     /// - Parameters:
     ///   - backend: The hardware, or a ``SimulatedCaptureBackend`` in tests and previews.
     ///   - saver: The save pipeline. Without one, every photo ends in
     ///     ``CaptureError/savingUnavailable`` and nothing is saved.
-    ///   - sleep: Waits a number of seconds between interval photos and self-timer ticks. Tests
-    ///     pass a faster one.
-    ///   - now: Reads the clock that times each capture. Tests pass a scripted one.
+    ///   - clock: The wall and monotonic clocks, and the wait, for everything the model times:
+    ///     interval photos, timed series, self-timer ticks, Slow bursts and each capture.
+    ///     ``NopeClock/system`` by default; tests pass one they move.
     ///   - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
     ///
     /// A ``ManualCaptureBackend`` also gets manual controls (``manual``), and a
     /// ``LightCaptureBackend`` a torch (``light``).
-    public init(
-        backend: any CaptureBackend, saver: PhotoSaver? = nil,
-        sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) },
-        now: @escaping @Sendable () -> ContinuousClock.Instant = { .now },
+    public convenience init(
+        backend: any CaptureBackend, saver: PhotoSaver? = nil, clock: NopeClock = .system,
         deviceStatusReader: (any DeviceStatusReading)? = nil
+    ) {
+        self.init(backend: backend, saver: saver, clock: clock, measuredBy: clock.now, deviceStatusReader: deviceStatusReader)
+    }
+
+    /// Creates a model whose waits are a sleep of a number of seconds, as tests written before
+    /// ``NopeClock`` pass (``NopeClock/stepped(by:now:)``).
+    ///
+    /// The waits move the clock's own monotonic time by what they asked for, so deadlines are
+    /// reached in step with the sleep. Each capture, and the camera's readings, are still timed
+    /// with `now`.
+    ///
+    /// - Parameters:
+    ///   - backend: The hardware.
+    ///   - saver: The save pipeline.
+    ///   - sleep: Waits a number of seconds, throwing when cancelled.
+    ///   - now: Reads a monotonic clock, or `nil` for the system's. When given, the waits read it
+    ///     too, and the sleep must move it.
+    ///   - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
+    convenience init(
+        backend: any CaptureBackend, saver: PhotoSaver? = nil,
+        sleep: @escaping @Sendable (Double) async throws -> Void,
+        now: (@Sendable () -> ContinuousClock.Instant)? = nil,
+        deviceStatusReader: (any DeviceStatusReading)? = nil
+    ) {
+        self.init(
+            backend: backend, saver: saver, clock: .stepped(by: sleep, now: now), measuredBy: now ?? { .now },
+            deviceStatusReader: deviceStatusReader)
+    }
+
+    /// Creates a model whose monotonic clock is `now`, as tests that time captures pass; its
+    /// wall clock and waits are the system's.
+    ///
+    /// - Parameters:
+    ///   - backend: The hardware.
+    ///   - saver: The save pipeline.
+    ///   - now: Reads the monotonic clock.
+    ///   - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
+    convenience init(
+        backend: any CaptureBackend, saver: PhotoSaver? = nil, now: @escaping @Sendable () -> ContinuousClock.Instant,
+        deviceStatusReader: (any DeviceStatusReading)? = nil
+    ) {
+        self.init(backend: backend, saver: saver, clock: NopeClock(now: now), deviceStatusReader: deviceStatusReader)
+    }
+
+    /// Creates a model in the ``CameraState/starting`` state.
+    ///
+    /// - Parameters:
+    ///   - backend: The hardware.
+    ///   - saver: The save pipeline.
+    ///   - clock: The clock for dates, deadlines and waits.
+    ///   - measure: Reads the monotonic clock that times each capture, a burst's rate and the
+    ///     camera's readings.
+    ///   - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
+    init(
+        backend: any CaptureBackend, saver: PhotoSaver?, clock: NopeClock,
+        measuredBy measure: @escaping @Sendable () -> ContinuousClock.Instant,
+        deviceStatusReader: (any DeviceStatusReading)?
     ) {
         self.backend = backend
         self.saver = saver
-        self.now = now
-        manual = ManualControlsModel(backend: backend as? any ManualCaptureBackend, sleep: sleep)
-        drive = DriveModel(sleep: sleep)
+        self.clock = clock
+        now = measure
+        manual = ManualControlsModel(backend: backend as? any ManualCaptureBackend, clock: clock, measuredBy: measure)
+        drive = DriveModel(clock: clock, measuredBy: measure)
         deviceStatus = DeviceStatus(reader: deviceStatusReader)
         live = LiveViewModel(backend: backend as? any LiveViewBackend)
         light = LightModel(backend: backend as? any LightCaptureBackend)
         comparison = ComparisonModel(backend: backend as? any ComparisonCaptureBackend)
+        sessionPhotos = SessionPhotos(decoder: saver?.previewer)
     }
 
     /// The handle the app turns into the live viewfinder, or `nil` when there is no video.
@@ -129,6 +289,15 @@ public final class CameraModel {
     public var capabilities: DeviceCapabilities? {
         guard case .ready(let capabilities) = state else { return nil }
         return capabilities
+    }
+
+    /// The distortion correction of the lens a photo was taken with, for its details (issue #80),
+    /// or `nil` when the lens isn't known.
+    ///
+    /// - Parameter photo: A captured photo.
+    /// - Returns: The lens's ``Lens/distortionCorrection``.
+    func distortionCorrection(of photo: CapturedPhoto) -> DistortionCorrection? {
+        capabilities?.lens(withID: photo.lensID)?.distortionCorrection
     }
 
     /// The lens in use, or `nil` before the camera is ready.
@@ -156,24 +325,29 @@ public final class CameraModel {
     ///
     /// Side effects: ``CameraIntent/requestPermission`` may show the system camera prompt;
     /// ``CameraIntent/start``, ``CameraIntent/requestPermission`` and
-    /// ``CameraIntent/selectLens(_:)`` start or reconfigure the camera;
+    /// ``CameraIntent/selectLens(_:)`` start or reconfigure the camera (a lens change only while
+    /// ``canChangeLens`` is true);
     /// ``CameraIntent/capture`` takes a photo and, once it passes the metadata read-back, adds
     /// it to Photos (which may show the add-only Photos prompt), or applies the drive mode
     /// (``pressShutter()``).
     public func send(_ intent: CameraIntent) async {
+        if intent.isActivity { countAction() }
         switch intent {
         case .start:
             await resolve(await backend.currentPermission())
         case .requestPermission:
             await resolve(await backend.requestPermission())
         case .selectLens(let id):
+            // A range end set on one lens means nothing on another.
+            if bracketing.rangeEditing != nil { await handle(BracketIntent.finishSettingRange(keeps: false)) }
             await selectLens(id)
         case .capture:
             await pressShutter()
         case .manual(let intent):
             if case .startInterval = intent, intervalBlocker != nil { return }
-            await manual.handle(intent) { [weak self] in await self?.takeIntervalPhoto() ?? false }
+            await manual.handle(intent) { [weak self] in await self?.takeIntervalPhoto() ?? .failed }
             await manualControlsDidChange(after: intent)
+            bracketDidChange(after: intent)
         case .setCleanView(let isOn):
             isCleanView = isOn
         case .drive(let intent):
@@ -184,13 +358,35 @@ public final class CameraModel {
             if !astroRefuses(intent) { await light.handle(intent) }
         case .astro(let intent):
             await handle(intent)
+        case .bracket(let intent):
+            await handle(intent)
         case .comparison(let intent):
             comparison.handle(intent)
         case .setPhotoSizes(let sizes):
             await setPhotoSizes(sizes)
         case .setInForeground(let isInForeground):
             setInForeground(isInForeground)
+            // Privacy: the previews don't outlast the visit, and the viewer closes
+            // (docs/PRIVACY.md; BUILD-SPEC.md, decision V7).
+            if !isInForeground {
+                isViewerOpen = false
+                sessionPhotos.releasePreviews()
+                // A shutter held down as the app left may never report coming up (issue #101).
+                cancelShutterHolds()
+            }
+        case .releasePhotoPreviews:
+            sessionPhotos.releasePreviews()
+        case .setViewerOpen(let isOpen):
+            isViewerOpen = isOpen
         }
+        await endStaleRangeEditing()
+    }
+
+    /// Counts one of the person's actions (``CameraIntent/isActivity``): in ``activityCount``
+    /// and ``actionCount``.
+    func countAction() {
+        activityCount += 1
+        actionCount += 1
     }
 
     /// Keeps the person's photo sizes, and reconfigures the camera when the selected lens's size
@@ -226,7 +422,12 @@ public final class CameraModel {
             sessionStatus = .interrupted(reason)
             await light.cameraDidPause()
         case .interruptionEnded:
-            if case .interrupted = sessionStatus { sessionStatus = .running }
+            guard case .interrupted = sessionStatus else { return }
+            sessionStatus = .running
+            // The camera runs again without a new start, so the light must learn it here: left
+            // out, a light asked for after any interruption (a call, or a return from the
+            // background) stayed "pending" and never reached the hardware (issue #75).
+            await light.sessionDidStart()
         case .heat(let level):
             await applyHeat(level)
         case .failed:
@@ -241,14 +442,23 @@ public final class CameraModel {
     }
 
     /// The lens to suggest when the subject seems closer than the selected lens can focus: the
-    /// ultra wide lens, from the wide or a telephoto lens, while
-    /// ``ManualControlsModel/suggestsCloseUpLens`` is true. `nil` otherwise. An interface offers
-    /// a button to switch; the app never switches on its own (issue #51).
+    /// ultra wide lens that can autofocus (``DeviceCapabilities/closeUpFocusLens``), from the
+    /// wide or a telephoto lens, while ``ManualControlsModel/suggestsCloseUpLens`` is true. `nil`
+    /// otherwise. An interface offers a button to switch; the app never switches on its own
+    /// (issue #51).
+    ///
+    /// When both lenses report their closest focus distance (``Lens/minimumFocusDistance``),
+    /// the ultra wide lens is offered only if it focuses closer, so the advice can help. When
+    /// either doesn't report one, it is still offered: whether the reported distances can be
+    /// relied on is device check C2 (docs/TESTING.md).
     public var closeUpLens: Lens? {
-        guard manual.suggestsCloseUpLens, let kind = selectedLens?.kind, kind == .wide || kind == .telephoto else {
+        guard manual.suggestsCloseUpLens, let selected = selectedLens, selected.kind == .wide || selected.kind == .telephoto,
+            let ultraWide = capabilities?.closeUpFocusLens
+        else { return nil }
+        if let closest = ultraWide.minimumFocusDistance, let current = selected.minimumFocusDistance, closest >= current {
             return nil
         }
-        return capabilities?.lenses.first { $0.kind == .ultraWide }
+        return ultraWide
     }
 
     /// Handles an aid that works in full auto too.
@@ -258,6 +468,9 @@ public final class CameraModel {
     /// Side effects: may refocus or re-expose the camera.
     private func handleAuto(_ intent: AutoControlIntent) async {
         switch intent {
+        case .focusAndExpose(let point) where bracketing.rangeEditing != nil:
+            // While an end of a focus bracket's range is set, a tap focuses there once.
+            await handle(BracketIntent.focusRange(at: point))
         case .focusAndExpose(let point):
             await focus(at: point, locks: false)
         case .lockFocusAndExposure(let point):
@@ -310,6 +523,19 @@ public final class CameraModel {
         }
     }
 
+    /// Ends the first start (``isFirstStart``) once the state or the camera's status says how
+    /// it went. Called after every change of ``state`` and ``sessionStatus``.
+    private func endFirstStartIfSettled() {
+        guard isFirstStart else { return }
+        let stateSettled =
+            switch state {
+            case .needsPermission, .permissionDenied, .unavailable: true
+            case .starting, .ready: false
+            }
+        let sessionSettled = sessionStatus != .stopped && sessionStatus != .starting
+        if stateSettled || sessionSettled { isFirstStart = false }
+    }
+
     /// Moves to the state that matches a permission, discovering capabilities and starting the
     /// camera when allowed.
     ///
@@ -333,13 +559,16 @@ public final class CameraModel {
         }
     }
 
-    /// Switches to another lens, ignoring unknown identifiers and the lens already in use.
+    /// Switches to another lens, ignoring unknown identifiers, the lens already in use, and any
+    /// request while the lens can't be changed (``canChangeLens``, issue #96).
     ///
     /// - Parameter id: The lens to switch to.
     private func selectLens(_ id: Lens.ID) async {
-        guard id != selectedLensID, capabilities?.lens(withID: id) != nil else { return }
+        guard canChangeLens, id != selectedLensID, capabilities?.lens(withID: id) != nil else { return }
+        let hadBracket = manual.bracket != nil
         selectedLensID = id
         await startSession()
+        lensDidChange(hadBracket: hadBracket)
         await astroLensDidChange()
     }
 
@@ -362,46 +591,95 @@ public final class CameraModel {
             await light.sessionDidStart()
         } catch {
             sessionStatus = .failed(error)
+            // The camera didn't start, so a light waiting for it is turned off rather than left
+            // waiting (issue #75).
+            await light.cameraDidPause()
         }
     }
 
-    /// Takes one photo with the selected lens, if the camera can capture now.
+    /// Takes one photo with the selected lens, if the camera can capture now, or the exposure
+    /// bracket (``ManualControlsModel/bracket``) when one is on. A photo of an interval series is
+    /// always a single photo (docs/design/BRACKETING.md, decision 3).
     ///
     /// A blank photo (``CaptureError/blankPicture``) is never kept: the model restarts the
     /// camera once and takes the photo again (`recoverFromBlankPicture(_:settings:)`).
     ///
-    /// - Parameter onceBracket: A bracket to take this time only, through the same bracket path
-    ///   as the one in Pro Tools, without changing ``ManualControlsModel/bracket`` (a Siri or
-    ///   Shortcuts request, issue #62); `nil` for the shutter's usual photo. The caller checks
-    ///   first that ``ManualControlsModel/bracketFrames(once:)`` can plan it.
-    func capture(onceBracket: BracketSettings? = nil) async {
+    /// A bracket's frames are planned around the camera's exposure. When the camera has not
+    /// reported one yet (just after a lens change, or after manual controls or the astro helper
+    /// turned on or off), the shutter waits up to ``bracketReadingWaitSeconds`` for it, then
+    /// takes the bracket; if none arrives, it takes nothing and reports
+    /// ``CaptureError/bracketNotReady``. A bracket never becomes a single photo, and with a
+    /// bracket on no photo fires the flash (``shutterUsesFlash``).
+    ///
+    /// - Parameters:
+    ///   - onceBracket: A bracket to take this time only, through the same bracket path as the
+    ///     shutter's, without changing ``ManualControlsModel/bracket`` (a Siri or Shortcuts
+    ///     request, issue #62); `nil` for the shutter's usual photo. The caller checks first that
+    ///     ``ManualControlsModel/bracketFrames(once:)`` can plan it.
+    ///   - appliesBracketInApp: Whether the exposure bracket on in the manual controls applies
+    ///     when `onceBracket` is `nil`: `true` for the shutter and the Apple Watch, `false` for
+    ///     Siri and Shortcuts' Take Photo, which always takes one photo
+    ///     (``PhotoShortcut/appliesBracketInApp``). The flash stays off while a bracket is on
+    ///     either way, as the flash control is hidden then.
+    func capture(onceBracket: BracketSettings? = nil, appliesBracketInApp: Bool = true) async {
         guard canCapture, let lens = selectedLens else { return }
         deviceStatus.refresh()
+        lastPressPhotos = []
         captureStatus = .capturing
         let settings = saveSettings
         var plan = saver?.plan(for: settings.metadata) ?? MetadataPlan(settings: settings.metadata)
         plan.location = location?.location(isOn: settings.metadata.isOn(.location))
         plan.mirrorsHorizontally = lens.kind == .front && settings.mirrorsFrontCamera
-        let request = CaptureRequest(lens: lens, metadata: plan, flashMode: light.flashModeForCapture)
-        let frames = onceBracket.map(manual.bracketFrames(once:)) ?? manual.bracketFrames()
-        if let frames, let bracketBackend = backend as? any ManualCaptureBackend {
-            await captureBracket(request, frames: frames, backend: bracketBackend, settings: settings)
+        let bracket = onceBracket ?? (manual.intervalProgress == nil && appliesBracketInApp ? manual.bracket : nil)
+        // The flash is hidden while a bracket is on (issue #92), so no photo fires it then.
+        let usesFlash = bracket == nil && manual.bracket == nil
+        let request = CaptureRequest(lens: lens, metadata: plan, flashMode: usesFlash ? light.flashModeForCapture : .off)
+        if let bracket {
+            guard let bracketBackend = backend as? any ManualCaptureBackend, let frames = await bracketPlanWhenReady(bracket)
+            else {
+                captureStatus = .failed(.bracketNotReady)
+                return
+            }
+            await captureBracket(request, bracket: bracket, frames: frames, backend: bracketBackend, settings: settings)
             return
         }
         let comparisonBackend = comparisonBackendForNextPhoto
         do {
             let start = now()
+            let takenAt = wallClock()
             let photo = try await backend.capturePhoto(request)
             if let comparisonBackend {
-                await saveComparing(photo, started: start, request: request, settings: settings, backend: comparisonBackend)
+                await saveComparing(
+                    photo, started: start, takenAt: takenAt, request: request, settings: settings,
+                    backend: comparisonBackend)
                 return
             }
-            await save(photo, settings: settings, captureDuration: now() - start)
+            await save(photo, lens: lens, takenAt: takenAt, settings: settings, captureDuration: now() - start)
         } catch .blankPicture {
             await recoverFromBlankPicture(request, settings: settings)
         } catch {
             captureStatus = .failed(error)
         }
+    }
+
+    /// How long the shutter waits for the camera's first exposure reading before a bracket, in
+    /// seconds (docs/design/BRACKETING.md, section 4). An assumption, to be confirmed on a
+    /// device: the camera reports readings several times a second once it runs, so a reading
+    /// normally arrives well within it.
+    public static let bracketReadingWaitSeconds: Double = 1
+
+    /// The bracket's frames, planned around the camera's exposure, waiting up to
+    /// ``bracketReadingWaitSeconds`` for the first reading when there is none yet.
+    ///
+    /// - Parameter bracket: The bracket.
+    /// - Returns: The frames, or `nil` when the lens can't take the bracket or no reading
+    ///   arrived in time.
+    private func bracketPlanWhenReady(_ bracket: BracketSettings) async -> [BracketFramePlan]? {
+        guard manual.canBracket(bracket) else { return nil }
+        _ = await ChangeWaiter.wait(timeoutSeconds: Self.bracketReadingWaitSeconds, sleep: drive.sleep) { [manual] in
+            manual.bracketPlan(once: bracket) != nil
+        }
+        return manual.bracketPlan(once: bracket)
     }
 
     /// Saves a captured photo through the ``PhotoSaver``, and records the result.
@@ -410,16 +688,24 @@ public final class CameraModel {
     ///
     /// - Parameters:
     ///   - photo: The captured photo.
+    ///   - lens: The lens it was taken with, for ``sessionPhotos``.
+    ///   - takenAt: When the shutter took it, for ``sessionPhotos``.
     ///   - settings: The settings the photo was taken with.
     ///   - captureDuration: How long the camera took to return the photo.
-    private func save(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration) async {
+    private func save(
+        _ photo: CapturedPhoto, lens: Lens, takenAt: Date, settings: SaveSettings, captureDuration: Duration
+    ) async {
         guard let saver else {
             captureStatus = .failed(.savingUnavailable)
             return
         }
         captureStatus = .saving
         do {
-            captureStatus = .saved(try await saver.save(photo, settings: settings, captureDuration: captureDuration))
+            let result = try await saver.saveWithPreview(
+                photo, settings: settings, captureDuration: captureDuration,
+                distortionCorrection: distortionCorrection(of: photo))
+            keepInSession(result, lens: lens, takenAt: takenAt)
+            captureStatus = .saved(result.saved)
         } catch {
             captureStatus = .failed(error)
         }
@@ -448,8 +734,9 @@ public final class CameraModel {
         }
         do {
             let start = now()
+            let takenAt = wallClock()
             let photo = try await backend.capturePhoto(request)
-            await save(photo, settings: settings, captureDuration: now() - start)
+            await save(photo, lens: request.lens, takenAt: takenAt, settings: settings, captureDuration: now() - start)
         } catch .blankPicture {
             sessionStatus = .noPicture
             captureStatus = .failed(.blankPicture)
@@ -459,33 +746,74 @@ public final class CameraModel {
     }
 
     /// Takes an exposure bracket and saves each frame as its own photo: separate single-frame
-    /// photos, nothing merged. Saving stops at the first frame that fails, and a failed or
-    /// blank bracket isn't retried; the person can press the shutter again.
+    /// photos, nothing merged, in the bracket's order. Saving stops at the first frame that
+    /// fails, and ``failedBracket`` then says how many were saved; a failed or blank bracket
+    /// isn't retried, and the person can press the shutter again. ``bracketProgress`` follows the
+    /// request and each save. Each saved photo carries its ``BracketPlace``, kept in memory only.
     ///
     /// Side effects: may show the add-only Photos prompt; adds each photo to Photos.
     ///
     /// - Parameters:
     ///   - request: The lens, format and metadata plan.
-    ///   - frames: Each frame's ISO and exposure duration.
+    ///   - bracket: The bracket.
+    ///   - frames: Each frame's plan, in the order taken.
     ///   - backend: The backend, which supports brackets.
     ///   - settings: The settings the photos are taken with.
     private func captureBracket(
-        _ request: CaptureRequest, frames: [BracketFrame], backend: any ManualCaptureBackend, settings: SaveSettings
+        _ request: CaptureRequest, bracket: BracketSettings, frames: [BracketFramePlan],
+        backend: any ManualCaptureBackend, settings: SaveSettings
     ) async {
+        let total = frames.count
+        bracketProgress = BracketProgress(taken: 0, saved: 0, total: total)
+        defer { bracketProgress = nil }
+        let photos: [CapturedPhoto]
+        let takenAt = wallClock()
         do {
-            let photos = try await backend.captureBracket(request, frames: frames)
-            guard let saver else {
-                captureStatus = .failed(.savingUnavailable)
-                return
-            }
-            captureStatus = .saving
-            var saved: [SavedPhoto] = []
-            for photo in photos {
-                saved.append(try await saver.save(photo, settings: settings))
-            }
-            captureStatus = .savedBracket(saved)
+            photos = try await backend.captureBracket(request, frames: frames.map(\.frame))
         } catch {
             captureStatus = .failed(error)
+            return
         }
+        guard let saver else {
+            captureStatus = .failed(.savingUnavailable)
+            return
+        }
+        captureStatus = .saving
+        bracketProgress = BracketProgress(taken: photos.count, saved: 0, total: total)
+        var saved: [SavedPhoto] = []
+        for (photo, frame) in zip(photos, frames) {
+            do {
+                let result = try await saver.saveWithPreview(
+                    photo, settings: settings, distortionCorrection: distortionCorrection(of: photo))
+                // Privacy: the place is a session value; it is never written to the files.
+                let placed = result.saved.placed(
+                    in: BracketPlace(
+                        type: .exposure, frame: frame, count: total, offsets: bracket.offsets, order: bracket.order))
+                keepInSession((saved: placed, preview: result.preview), lens: request.lens, takenAt: takenAt)
+                saved.append(placed)
+                bracketProgress = BracketProgress(taken: photos.count, saved: saved.count, total: total)
+            } catch {
+                failedBracket = BracketProgress(taken: photos.count, saved: saved.count, total: total)
+                captureStatus = .failed(error)
+                return
+            }
+        }
+        captureStatus = .savedBracket(saved)
+    }
+
+    /// Adds a saved photo and its preview to ``sessionPhotos``, and the photo to
+    /// ``lastPressPhotos``. A preview made after the app left the foreground is released at
+    /// once, so none outlasts the visit.
+    ///
+    /// - Parameters:
+    ///   - result: The saved photo and its preview.
+    ///   - lens: The lens it was taken with.
+    ///   - takenAt: When the shutter took it.
+    func keepInSession(_ result: (saved: SavedPhoto, preview: PhotoPreview?), lens: Lens, takenAt: Date) {
+        lastPressPhotos.append(result.saved)
+        activityCount += 1
+        sessionPhotos.add(
+            result.saved, lens: lens, takenAt: takenAt, preview: isInForeground ? result.preview : nil,
+            previewWasReleased: !isInForeground && result.preview != nil)
     }
 }

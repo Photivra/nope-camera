@@ -33,6 +33,7 @@ actor FakeLiveHardware: CaptureHardware, LiveViewHardware {
         throw .captureFailed
     }
     func apply(_ controls: DeviceControls) async throws(CaptureError) {}
+    func setFocus(lensPosition: Double) async throws(CaptureError) -> Double { lensPosition }
     func setReadingsEnabled(_ enabled: Bool) async {}
     func setTorch(level: Double?) async -> TorchStatus { .off }
     func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame], metadata: MetadataPlan)

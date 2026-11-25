@@ -4,8 +4,8 @@ import Foundation
 /// affected.
 ///
 /// Both looks demosaic the sensor data and apply the file's own white balance and color
-/// matrices, with no noise reduction, sharpening, local contrast, local tone mapping or lens
-/// correction (`docs/PRIVACY.md`, "How each file's metadata is built and checked"; owner
+/// matrices, with noise reduction, sharpening, local contrast, local tone mapping and lens
+/// correction turned off (`docs/PRIVACY.md`, "How each file's metadata is built and checked"; owner
 /// decision, 2026-11-12). They differ only in the tone curve.
 ///
 /// ``SaveSettings/developedLook`` holds the choice; a Settings screen shows it as a picker.

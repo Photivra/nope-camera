@@ -19,8 +19,6 @@ extension CameraModel {
         case .ready: break
         }
         if let seconds = drive.countdown.remainingSeconds { return .countingDown(secondsLeft: seconds) }
-        let isTakingPhoto = captureStatus == .capturing || captureStatus == .saving
-        let isRunningSeries = drive.isBusy || manual.intervalProgress != nil || astro.isRunning
         if isTakingPhoto || isRunningSeries { return .busy }
         return canCapture ? .ready : .unavailable(.notRunning)
     }
@@ -40,25 +38,57 @@ extension WatchCameraProblem {
     }
 }
 
+extension SignatureStatus.UnsignedReason {
+    /// Why the photos a capture saved aren't all signed, for the watch (``PhoneUpdate``).
+    ///
+    /// When the photos are unsigned for different reasons, a reason other than
+    /// ``turnedOff`` wins: a photo that couldn't be signed must not read as the person's choice.
+    ///
+    /// - Parameter status: The camera's capture status after the photos were saved.
+    /// - Returns: `nil` when every photo is signed or the status holds no saved photo.
+    init?(photosOf status: CaptureStatus) {
+        let photos: [SavedPhoto]
+        switch status {
+        case .saved(let photo): photos = [photo]
+        case .savedBracket(let saved), .savedBurst(let saved): photos = saved
+        case .idle, .capturing, .saving, .failed: return nil
+        }
+        let reasons = photos.compactMap { photo -> Self? in
+            guard case .unsigned(let reason) = photo.signature else { return nil }
+            return reason
+        }
+        guard let reason = reasons.first(where: { $0 != .turnedOff }) ?? reasons.first else { return nil }
+        self = reason
+    }
+}
+
 extension WatchResult {
+    /// Whether the result reports saved photos that aren't all signed, so a ``PhoneUpdate``
+    /// carries the reason.
+    var includesUnsignedPhotos: Bool {
+        self == .saved(isSigned: false) || self == .savedSeveral(allSigned: false)
+    }
+
     /// The watch's result for how a photo request through the ``ShortcutInbox`` ended.
     ///
     /// The watch asks only for a photo, so the outcomes of other requests (a lens, the light, an
     /// interval series, a bracket, the focus range, a photo size, a preset) can't happen; they would be
-    /// reported as not saved.
+    /// reported as not saved. Nor can ``ShortcutOutcome/timerStarted(seconds:)``: the watch's
+    /// delays are the self-timer's, at most ``PhotoShortcut/longestDelayAnsweredAfterPhoto``.
     ///
     /// - Parameter outcome: How the request ended.
     init(_ outcome: ShortcutOutcome) {
         switch outcome {
         case .saved(let isSigned): self = .saved(isSigned: isSigned)
-        case .savedSeveral(let allSigned): self = .savedSeveral(allSigned: allSigned)
+        case .savedSeveral(_, let allSigned): self = .savedSeveral(allSigned: allSigned)
         case .notSaved, .lensUnavailable, .lensSelected, .lightOn, .lightOff, .noLight, .lightUnavailable,
-            .intervalStarted, .intervalBlockedByAstro, .intervalStopped, .noIntervalRunning, .bracketUnavailable,
+            .intervalStarted, .intervalBlockedByAstro, .intervalNotShorterThanTime, .intervalStopped, .noIntervalRunning,
+            .bracketUnavailable, .focusBracketUnavailable, .focusBracketStopped, .focusBracketBlockedByAstro, .savedSome,
             .focusRangeSet,
-            .focusRangeUnavailable, .photoSizeSet, .noPhotoSizeChoice, .presetApplied, .presetUnavailable:
+            .focusRangeUnavailable, .photoSizeSet, .noPhotoSizeChoice, .presetApplied, .presetUnavailable, .timerStarted:
             self = .notSaved
         case .cancelled: self = .cancelled
-        case .busy, .busyWithEarlierRequest: self = .busy
+        case .busy, .busyWithEarlierRequest, .lensBusy: self = .busy
         case .cameraUnavailable(let reason): self = .notTaken(WatchCameraProblem(reason))
         }
     }

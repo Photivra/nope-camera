@@ -77,6 +77,26 @@ public struct Lens: Identifiable, Equatable, Sendable {
     /// Whether the lens has a torch: a light that can stay on while framing and taking photos.
     public let hasTorch: Bool
 
+    /// Whether the app can turn off the camera's geometric distortion correction on this lens,
+    /// as the camera reports it (issue #80). It affects only the processed fallback: RAW never
+    /// has the correction applied (``DistortionCorrection``).
+    public let distortionCorrection: DistortionCorrection
+
+    /// The closest distance the lens can focus at, in millimeters, as the camera reports it
+    /// (`AVCaptureDevice.minimumFocusDistance`), or `nil` when the camera reports it as unknown
+    /// (−1). Used only to compare lenses for the close-up hint (``CameraModel/closeUpLens``); it
+    /// is never shown: no device check has confirmed a value yet (docs/design/BRACKETING.md,
+    /// check D5).
+    public let minimumFocusDistance: Double?
+
+    /// Whether the camera reports lens stabilization for this lens: the photo output's
+    /// `isLensStabilizationDuringBracketedCaptureSupported` with this lens selected, the only
+    /// public signal found (docs/design/device-feedback-1.0.md, section 4). `false` when it
+    /// isn't reported. Whether it is true for each lens, and whether a single RAW photo is in
+    /// fact taken stabilized, are device checks (docs/TESTING.md, checks S1 and S2); it only
+    /// moves the steady hint's limit (``AutoShutter/steadyLimit(for:)``).
+    public let reportsStabilization: Bool
+
     /// Creates a lens description.
     ///
     /// - Parameters:
@@ -95,6 +115,12 @@ public struct Lens: Identifiable, Equatable, Sendable {
     ///   - equivalentFocalLength: The 35 mm-equivalent focal length in millimeters, or `nil`.
     ///   - flashModes: The flash modes the lens supports. Defaults to none.
     ///   - hasTorch: Whether the lens has a torch. Defaults to `false`.
+    ///   - distortionCorrection: Whether the app can turn off the camera's geometric distortion
+    ///     correction. Defaults to ``DistortionCorrection/notSwitchable``, which claims least.
+    ///   - minimumFocusDistance: The closest focus distance in millimeters, or `nil` when
+    ///     unknown. Defaults to `nil`.
+    ///   - reportsStabilization: Whether the camera reports lens stabilization for the lens.
+    ///     Defaults to `false`, which claims least.
     public init(
         id: String,
         kind: Kind,
@@ -109,7 +135,10 @@ public struct Lens: Identifiable, Equatable, Sendable {
         manualControls: ManualCapabilities = .none,
         equivalentFocalLength: Double? = nil,
         flashModes: [FlashMode] = [],
-        hasTorch: Bool = false
+        hasTorch: Bool = false,
+        distortionCorrection: DistortionCorrection = .notSwitchable,
+        minimumFocusDistance: Double? = nil,
+        reportsStabilization: Bool = false
     ) {
         self.id = id
         self.kind = kind
@@ -125,6 +154,9 @@ public struct Lens: Identifiable, Equatable, Sendable {
         self.equivalentFocalLength = equivalentFocalLength
         self.flashModes = flashModes
         self.hasTorch = hasTorch
+        self.distortionCorrection = distortionCorrection
+        self.minimumFocusDistance = minimumFocusDistance
+        self.reportsStabilization = reportsStabilization
     }
 
     /// Whether this lens delivers single-frame Bayer RAW.

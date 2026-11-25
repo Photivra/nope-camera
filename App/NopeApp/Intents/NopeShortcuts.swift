@@ -3,7 +3,9 @@ import AppIntents
 /// The app's App Shortcuts: the Siri phrases that work without setting anything up (issue #62).
 ///
 /// Each phrase names the app through `.applicationName`, as App Intents requires. The phrases
-/// are localized in all launch languages in `AppShortcuts.xcstrings`.
+/// are localized in all launch languages in `AppShortcuts.xcstrings`. Siri also knows the app as
+/// "nope" (without the period) and "Nope Camera", from `INAlternativeAppNames` in the app's
+/// Info.plist ([Apple: Specifying synonyms for your app name](https://developer.apple.com/documentation/sirikit/specifying-synonyms-for-your-app-name)).
 struct NopeShortcuts: AppShortcutsProvider {
     /// Take a photo (optionally in 3 or 10 seconds), open the camera, switch lenses, the light
     /// and night mode on or off, interval shooting, and a bracket. Apple allows at most ten App
@@ -15,6 +17,12 @@ struct NopeShortcuts: AppShortcutsProvider {
                 "Take a photo with \(.applicationName)",
                 "Take a picture with \(.applicationName)",
                 "Take a photo in \(\.$delay) with \(.applicationName)",
+                // What people say (issue #126): "Tell nope to take a photo" matched none of the
+                // phrases above. Added, never renamed: a shipped phrase is a contract.
+                "Tell \(.applicationName) to take a photo",
+                "Tell \(.applicationName) to take a picture",
+                "Take a photo in \(.applicationName)",
+                "Take a picture in \(.applicationName)",
             ],
             shortTitle: LocalizedStringResource(
                 "Take Photo", comment: "The name of nope.'s action that takes a photo, in the Shortcuts app and Siri."),

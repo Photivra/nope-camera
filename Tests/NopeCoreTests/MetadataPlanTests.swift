@@ -196,6 +196,19 @@ struct MetadataPlanTests {
         #expect(plan.allowlist(for: .raw, signed: false).requiredTags.count == 5)
     }
 
+    /// The iOS 26.5 reader reports a top-level `Headroom` key on every HEIF; it is allowed in a
+    /// HEIF only, on every OS version.
+    @Test func headroomIsAllowedOnlyInHEIF() {
+        let plan = MetadataPlan()
+        let headroom = ImageIOKey(nil, "Headroom")
+        for signed in [false, true] {
+            #expect(plan.allowlist(for: .heif, signed: signed).allows(headroom))
+            #expect(!plan.allowlist(for: .jpeg, signed: signed).allows(headroom))
+            #expect(!plan.allowlist(for: .raw, signed: signed).allows(headroom))
+        }
+        #expect(!plan.allowlist(for: .heif, signed: false).allows(ImageIOKey("{Exif}", "Headroom")))
+    }
+
     @Test func heifXMPIsAllowedOnlyForDatesAndSoftware() {
         var settings = MetadataSettings()
         settings.set(.dateAndTime, isOn: true)

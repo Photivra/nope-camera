@@ -25,8 +25,13 @@ enum SimulatedCameraLaunch {
     /// - Parameters:
     ///   - isInBackground: Whether the app is in the background now.
     ///   - backend: The launch's backend; anything but the simulated one is left alone.
+    ///
+    /// The `slowStart` scenario's held start (``HeldStartBackend``) is released the first time
+    /// the app goes to the background.
     @MainActor static func followScenePhase(_ isInBackground: Bool, backend: any CaptureBackend) {
-        guard let simulated = backend as? SimulatedCaptureBackend,
+        let held = backend as? HeldStartBackend
+        if isInBackground, let held { Task { await held.release() } }
+        guard let simulated = (backend as? SimulatedCaptureBackend) ?? held?.simulated,
             let event = backgroundEvent(isInBackground: isInBackground, interruptedForBackground: &interruptedForBackground)
         else { return }
         simulated.emit(event)
@@ -75,6 +80,12 @@ enum SimulatedCameraLaunch {
         case metadataRejected
         /// Access already allowed; adding to the photo library is not allowed.
         case photosDenied
+        /// Access already allowed; the first photo is saved and every later save fails, for a
+        /// failure while the Last Photo viewer is open.
+        case firstSaveOnly
+        /// As `manual`, and the first photo is saved and every later save fails, for a bracket
+        /// that stops part-way as the first capture.
+        case manualFirstSaveOnly
         /// Access already allowed; signing fails, so photos are saved unsigned and the status
         /// says so.
         case signingFails
@@ -89,22 +100,41 @@ enum SimulatedCameraLaunch {
         /// Access already allowed; each save takes half a second, so a burst runs long enough
         /// for the UI tests to see and stop it.
         case slowSaving
+        /// As `slowSaving`, and each photo takes 0.4 seconds to take, so a tap on the shutter in
+        /// burst mode ends before a second photo, and holding it takes a burst at a measurable
+        /// rate (docs/design/BURST.md).
+        case burst
         /// As `manual`, and each save takes half a second, so the astro helper's frames run long
         /// enough for the UI tests to see and stop them.
         case astro
+        /// As `astro`, and the simulated lens stops 0.05 short of each focus position, so a
+        /// focus bracket's end card counts the frames not at their planned focus.
+        case focusShort
+        /// As `manual`, in light so low (ISO 3200 at 1/4 s) that the brightest frames of a wide
+        /// bracket are beyond the wide lens's limits, so Bracket Settings marks them.
+        case dimManual
         /// Access already allowed; lenses with the full-auto aids (tap to focus, exposure
         /// compensation, Close-Up) and focal lengths, in bright light.
         case aids
         /// As `aids`, in light too low for a handheld shutter: "Hold it steady or use a tripod".
         case dimLight
-        /// As `aids`, with the wide lens stuck at its nearest focus: the ultra wide suggestion.
+        /// As `aids`, with the wide lens stuck at its nearest focus while autofocus searches, a
+        /// reading every quarter second for three seconds: the ultra wide suggestion.
         case tooClose
+        /// As `aids`, the realistic close-up: autofocus searches while the wide lens sweeps in to
+        /// its nearest position, then the lens rests there and the search has ended
+        /// (docs/design/device-feedback-1.0.md, section 6). The ultra wide suggestion.
+        case closeUpSweep
         /// Access already allowed; the four lenses, but the system refuses the light, as on a
         /// device too hot for it.
         case lightUnavailable
         /// Access already allowed; the comparison shot's second photo, with the phone's
         /// processing, always fails (issue #55).
         case comparisonFails
+        /// Access already allowed; the camera stays starting until the app first goes to the
+        /// background (``HeldStartBackend``), so the UI tests see the first start's indicator
+        /// for as long as they need (docs/design/LAUNCH-SCREEN.md, 6.3). No picture.
+        case slowStart
         /// Access declined.
         case denied
         /// Access allowed, but no camera.
@@ -124,8 +154,10 @@ enum SimulatedCameraLaunch {
     ]
 
     /// Two lenses like an iPad's without RAW: a wide and a front camera, neither with Bayer RAW.
+    /// The wide lens lets the app turn off distortion correction and the front camera doesn't,
+    /// so the UI tests see both processing notes (issue #80).
     static let lensesWithoutRAW: [Lens] = [
-        Lens(id: "simulated-wide-no-raw", kind: .wide, bayerRAWFormat: nil, magnification: 1),
+        Lens(id: "simulated-wide-no-raw", kind: .wide, bayerRAWFormat: nil, magnification: 1, distortionCorrection: .turnedOff),
         // Two photo sizes, so Settings offers the Photo Size choice (issue #57).
         Lens(
             id: "simulated-front-no-raw", kind: .front, bayerRAWFormat: nil,
@@ -134,13 +166,33 @@ enum SimulatedCameraLaunch {
     /// The `UserDefaults` suite that holds settings during UI tests.
     static let settingsSuiteName = "NopeUITestSettings"
 
+    /// The launch argument that turns signing on in the emptied settings store:
+    /// `-NopeSimulatedSigning`. Signing is off by default (issue #80); the UI tests of the
+    /// signing messages pass it.
+    static let signingArgument = "-NopeSimulatedSigning"
+
+    /// The launch argument that leaves the how-to-use guide's invitation card unanswered in the
+    /// emptied settings store, so the camera shows it: `-NopeSimulatedGuideCard`. Without it the
+    /// invitation starts answered, so the card doesn't change the camera of the other UI tests
+    /// (issue #117).
+    static let guideCardArgument = "-NopeSimulatedGuideCard"
+
     /// An emptied settings store for a UI test launch, or `nil` without a scenario, so UI tests
-    /// always start from the default settings and never change the real ones.
-    static func settingsStore() -> UserDefaults? {
-        guard ProcessInfo.processInfo.arguments.contains(argument),
-            let store = UserDefaults(suiteName: settingsSuiteName)
-        else { return nil }
+    /// always start from the default settings and never change the real ones. With
+    /// ``signingArgument``, signing is turned on in it; with `-NopeSimulatedSaveSettings <base64 json>`
+    /// (``SimulatedFileTags/saveSettingsArgument``), the save settings are that JSON. The guide's
+    /// invitation is answered unless ``guideCardArgument`` is given.
+    @MainActor static func settingsStore() -> UserDefaults? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard arguments.contains(argument), let store = UserDefaults(suiteName: settingsSuiteName) else { return nil }
         store.removePersistentDomain(forName: settingsSuiteName)
+        if let index = arguments.firstIndex(of: SimulatedFileTags.saveSettingsArgument), index + 1 < arguments.count {
+            // Base64, so the arguments domain reads it as a plain string: JSON text there made it
+            // ignore the other arguments of the launch, such as the text size.
+            store.set(Data(base64Encoded: arguments[index + 1]), forKey: SimulatedFileTags.saveSettingsKey)
+        }
+        if arguments.contains(signingArgument) { NopeSettings(defaults: store).setSignsPhotos(true) }
+        if !arguments.contains(guideCardArgument) { GuideInvitation(defaults: store).dismiss() }
         return store
     }
 
@@ -193,9 +245,15 @@ enum SimulatedCameraLaunch {
         return PhotoSaver(
             developer: SimulatedDeveloper(),
             signer: SimulatedSigner(fails: scenario == .signingFails, breaksFiles: scenario == .signedFileRejected),
-            reader: SimulatedReadBack(addsUnexpectedTag: scenario == .metadataRejected),
-            library: SimulatedPhotoLibrary(allowsAdding: scenario != .photosDenied, addSeconds: scenario == .slowSaving || scenario == .astro ? 0.5 : 0),
-            appVersion: appVersion, thumbnailer: SimulatedThumbnailer())
+            reader: SimulatedReadBack(
+                addsUnexpectedTag: scenario == .metadataRejected,
+                fullTags: SimulatedFileTags.fromLaunchArguments(appVersion: appVersion)),
+            library: SimulatedPhotoLibrary(
+                allowsAdding: scenario != .photosDenied, addSeconds: [.slowSaving, .astro, .focusShort, .burst].contains(scenario) ? 0.5 : 0,
+                successfulAdds: [.firstSaveOnly, .manualFirstSaveOnly].contains(scenario) ? 1 : nil),
+            appVersion: appVersion, thumbnailer: SimulatedThumbnailer(),
+            // The Lock Screen camera's pipeline makes no previews (`NopeCaptureExtension`).
+            previewer: ProcessInfo.processInfo.arguments.contains("-NopeSimulatedLockScreenCamera") ? nil : SimulatedPreviewer())
     }
     /// Every manual control, as on a recent rear wide camera with iOS 27.
     static let fullManual = ManualCapabilities(
@@ -240,7 +298,9 @@ enum SimulatedCameraLaunch {
         meteringModes: [.center], supportsFocusPoint: true, supportsExposurePoint: true, supportsNearFocusLimit: true)
 
     /// The lenses of the aid scenarios: ultra wide and wide with every aid, and a fixed-focus
-    /// front camera that can only meter a tapped point.
+    /// front camera that can only meter a tapped point. The wide lens reports stabilization and
+    /// the ultra wide doesn't, so the steady hint's two limits are both used
+    /// (docs/design/device-feedback-1.0.md, section 4).
     static let aidLenses: [Lens] = [
         Lens(
             id: "simulated-ultra-wide", kind: .ultraWide, bayerRAWFormat: "rgg4", magnification: 0.5,
@@ -249,7 +309,7 @@ enum SimulatedCameraLaunch {
         Lens(
             id: "simulated-wide", kind: .wide, bayerRAWFormat: "bgg4", magnification: 1, isoRange: 50...6400,
             exposureDurationRange: 0.000_014...1, aperture: .fixed(1.8), manualControls: aidCapabilities,
-            equivalentFocalLength: 24),
+            equivalentFocalLength: 24, reportsStabilization: true),
         Lens(
             id: "simulated-front", kind: .front, bayerRAWFormat: "bgg4", isoRange: 20...2000,
             exposureDurationRange: 0.000_014...0.5, aperture: .fixed(1.9),
@@ -266,13 +326,41 @@ enum SimulatedCameraLaunch {
         iso: 6400, exposureDuration: 1.0 / 48.0, exposureOffset: -2, lensPosition: 0.5, aperture: 1.8,
         whiteBalance: WhiteBalance(temperature: 3200))
 
+    /// The same scene once the limit is lifted: auto exposure slows to 1/8 s, slower than the
+    /// stabilized wide lens's steady limit of 1/12 s.
+    static let dimSlowReading = ExposureReading(
+        iso: 6400, exposureDuration: 1.0 / 8.0, exposureOffset: 0, lensPosition: 0.5, aperture: 1.8,
+        whiteBalance: WhiteBalance(temperature: 3200))
+
+    /// A dim scene for the manual lenses: ISO 3200 at 1/4 s.
+    static let dimManualReading = ExposureReading(
+        iso: 3200, exposureDuration: 0.25, exposureOffset: 0, lensPosition: 0.5, aperture: 1.48,
+        whiteBalance: WhiteBalance(temperature: 3200))
+
     /// Autofocus searching at the lens's nearest position.
     static let tooCloseReading = ExposureReading(
         iso: 100, exposureDuration: 1.0 / 120.0, exposureOffset: 0, lensPosition: 0, aperture: 1.8,
         whiteBalance: WhiteBalance(temperature: 5200), isAdjustingFocus: true)
 
+    /// The close-up sweep: searching from the middle of the range in to its nearest position in
+    /// five readings, then resting there, not searching, for three seconds.
+    static let closeUpSweepReadings: [ExposureReading] =
+        [0.6, 0.45, 0.3, 0.15, 0.08].map { position in
+            ExposureReading(
+                iso: 100, exposureDuration: 1.0 / 120.0, exposureOffset: 0, lensPosition: position, aperture: 1.8,
+                whiteBalance: WhiteBalance(temperature: 5200), isAdjustingFocus: true)
+        }
+        + Array(
+            repeating: ExposureReading(
+                iso: 100, exposureDuration: 1.0 / 120.0, exposureOffset: 0, lensPosition: 0, aperture: 1.8,
+                whiteBalance: WhiteBalance(temperature: 5200), isAdjustingFocus: false),
+            count: 12)
+
+    /// The time between two simulated readings: a quarter second, the most a device sends.
+    static let readingInterval = 0.25
+
     /// The simulated backend for the scenario in the launch arguments, or `nil` without one.
-    static func backend() -> SimulatedCaptureBackend? {
+    static func backend() -> (any CaptureBackend)? {
         guard let scenario else { return nil }
         let capabilities = DeviceCapabilities(lenses: lenses)
         switch scenario {
@@ -299,26 +387,108 @@ enum SimulatedCameraLaunch {
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, torchAvailable: false)
         case .comparisonFails:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, comparisonError: .captureFailed)
-        case .metadataRejected, .photosDenied, .signingFails, .signedFileRejected, .slowSaving:
+        case .metadataRejected, .photosDenied, .firstSaveOnly, .signingFails, .signedFileRejected, .slowSaving:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities)
-        case .manual, .astro:
+        case .burst:
+            return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, captureSeconds: 0.4)
+        case .manual, .astro, .manualFirstSaveOnly:
             return SimulatedCaptureBackend(
                 permission: .authorized, capabilities: DeviceCapabilities(lenses: manualLenses))
+        case .focusShort:
+            return SimulatedCaptureBackend(
+                permission: .authorized, capabilities: DeviceCapabilities(lenses: manualLenses), focusShortfall: 0.05)
+        case .dimManual:
+            return SimulatedCaptureBackend(
+                permission: .authorized, capabilities: DeviceCapabilities(lenses: manualLenses), reading: dimManualReading)
         case .aids:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: DeviceCapabilities(lenses: aidLenses))
         case .dimLight:
             return SimulatedCaptureBackend(
-                permission: .authorized, capabilities: DeviceCapabilities(lenses: aidLenses), reading: dimReading)
+                permission: .authorized, capabilities: DeviceCapabilities(lenses: aidLenses),
+                readingSequence: [dimReading, dimSlowReading])
         case .tooClose:
             return SimulatedCaptureBackend(
                 permission: .authorized, capabilities: DeviceCapabilities(lenses: aidLenses), reading: tooCloseReading,
-                // More than the readings in a row the close-up detector needs (eight, two seconds).
-                readingCount: 12)
+                // Three seconds, more than the two the close-up detector needs.
+                readingCount: 12, readingInterval: readingInterval)
+        case .closeUpSweep:
+            return SimulatedCaptureBackend(
+                permission: .authorized, capabilities: DeviceCapabilities(lenses: aidLenses),
+                readingSequence: closeUpSweepReadings, readingInterval: readingInterval)
+        case .slowStart:
+            return HeldStartBackend(simulated: SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities))
         case .denied:
             return SimulatedCaptureBackend(permission: .denied)
         case .noCamera:
             return SimulatedCaptureBackend(permission: .authorized)
         }
+    }
+}
+
+/// The `slowStart` scenario's backend: a ``SimulatedCaptureBackend`` whose camera stays starting
+/// until ``release()``, as a slow camera would, for the UI tests of the first start's indicator.
+/// It has no preview, so the picture stays black, as a camera's preview is before its first
+/// frame, and no manual controls, light or live aids.
+actor HeldStartBackend: CaptureBackend {
+    /// The simulated backend that answers everything else.
+    nonisolated let simulated: SimulatedCaptureBackend
+
+    /// Whether ``release()`` has been called.
+    private var isReleased = false
+
+    /// The starts waiting for ``release()``.
+    private var waiting: [CheckedContinuation<Void, Never>] = []
+
+    /// Creates the backend.
+    ///
+    /// - Parameter simulated: The simulated backend that answers everything else.
+    init(simulated: SimulatedCaptureBackend) {
+        self.simulated = simulated
+    }
+
+    /// The simulated backend's events.
+    nonisolated var events: AsyncStream<CaptureEvent> { simulated.events }
+
+    /// No preview: the picture stays black.
+    nonisolated var previewSource: (any CameraPreviewSource)? { nil }
+
+    /// Lets every start waiting, and every later one, go on.
+    func release() {
+        isReleased = true
+        for start in waiting { start.resume() }
+        waiting = []
+    }
+
+    /// The simulated backend's permission.
+    func currentPermission() async -> CameraPermission { await simulated.currentPermission() }
+
+    /// The simulated backend's answer, without a prompt.
+    func requestPermission() async -> CameraPermission { await simulated.requestPermission() }
+
+    /// The simulated backend's capabilities.
+    func deviceCapabilities() async -> DeviceCapabilities { await simulated.deviceCapabilities() }
+
+    /// Waits for ``release()``, then starts the simulated camera.
+    ///
+    /// - Parameter request: The lens and format.
+    /// - Throws: What the simulated backend throws.
+    func startSession(_ request: CaptureRequest) async throws(CaptureError) {
+        if !isReleased {
+            await withCheckedContinuation { waiting.append($0) }
+        }
+        try await simulated.startSession(request)
+    }
+
+    /// Stops the simulated camera.
+    func stopSession() async { await simulated.stopSession() }
+
+    /// Takes a simulated photo.
+    ///
+    /// - Parameter request: The lens and format.
+    /// - Returns: The simulated photo.
+    /// - Throws: What the simulated backend throws.
+    func capturePhoto(_ request: CaptureRequest) async throws(CaptureError) -> CapturedPhoto {
+        try await simulated.capturePhoto(request)
     }
 }
 #endif

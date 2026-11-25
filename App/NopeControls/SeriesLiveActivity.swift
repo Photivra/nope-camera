@@ -35,11 +35,11 @@ struct SeriesLiveActivity: Widget {
                         .foregroundStyle(color)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    HStack(alignment: .center, spacing: 12) {
+                    HStack(alignment: .center, spacing: NopeSpace.s) {
                         SeriesActivityDetails(content: content)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         if content.canStop {
-                            SeriesStopButton()
+                            SeriesStopButton(isNightMode: content.isNightMode, kind: content.kind)
                         }
                     }
                     .foregroundStyle(color)

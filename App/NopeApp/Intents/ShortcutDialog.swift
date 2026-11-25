@@ -17,11 +17,11 @@ enum ShortcutDialog {
             LocalizedStringResource(
                 "Photo saved. It isn't signed.",
                 comment: "Siri's answer after nope. saved a photo without a Content Credentials signature.")
-        case .savedSeveral(allSigned: true):
+        case .savedSeveral(_, allSigned: true):
             LocalizedStringResource(
                 "Photos saved and signed.",
                 comment: "Siri's answer after nope. saved an exposure bracket, each frame its own signed photo.")
-        case .savedSeveral(allSigned: false):
+        case .savedSeveral(_, allSigned: false):
             LocalizedStringResource(
                 "Photos saved. Not all of them are signed.",
                 comment: "Siri's answer after nope. saved an exposure bracket in which some photos aren't signed.")
@@ -31,12 +31,20 @@ enum ShortcutDialog {
                 comment: "Siri's answer when the photo couldn't be taken or saved. Keep \"nope.\" unchanged.")
         case .cancelled:
             LocalizedStringResource(
-                "The timer was cancelled. No photo was taken.",
+                "The timer was canceled. No photo was taken.",
                 comment: "Siri's answer when the self-timer was cancelled on the phone before the photo.")
+        case .timerStarted(let seconds):
+            LocalizedStringResource(
+                "Timer started, \(seconds) seconds. nope. shows the result.", table: "Honesty",
+                comment: "Siri's answer when a photo was asked for with a delay longer than Siri waits: the self-timer started, and nope. takes the photo when it ends and shows the result on its camera screen. The number is the delay in seconds, more than 10. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English: it doesn't say a photo was taken.")
         case .busy:
             LocalizedStringResource(
                 "nope. is already taking a photo.",
                 comment: "Siri's answer when a photo, countdown or burst is already running. Keep \"nope.\" unchanged.")
+        case .lensBusy:
+            LocalizedStringResource(
+                "nope. is busy. The lens didn't change.",
+                comment: "Siri's answer when Switch Lens is asked for while nope. is taking a photo, a countdown, burst, interval series or astro run is running, or the compare view is open; the lens stays as it was. Keep \"nope.\" unchanged.")
         case .busyWithEarlierRequest:
             LocalizedStringResource(
                 "nope. is still doing an earlier request. Nothing changed.",
@@ -77,6 +85,10 @@ enum ShortcutDialog {
             LocalizedStringResource(
                 "Astro is on. Turn it off to start interval shooting.",
                 comment: "Siri's answer when interval shooting was asked for while nope.'s night sky helper is on. Astro is the helper's name on the camera.")
+        case .intervalNotShorterThanTime:
+            LocalizedStringResource(
+                "Interval shooting didn't start. The time between photos must be shorter than the duration.",
+                comment: "Siri's answer when interval shooting was asked for with a duration that is no longer than the time between photos, so the series would take only one photo.")
         case .intervalStopped:
             LocalizedStringResource(
                 "Interval shooting stopped. The photos taken are saved.",
@@ -106,6 +118,22 @@ enum ShortcutDialog {
             LocalizedStringResource(
                 "This lens can't take that bracket.",
                 comment: "Siri's answer when the lens in use can't take the exposure bracket asked for: it has no manual exposure, or takes fewer photos in one bracket.")
+        case .focusBracketUnavailable:
+            LocalizedStringResource(
+                "This lens's focus can't be set, so it can't take a focus bracket.",
+                comment: "Siri's answer when the lens in use can't take a focus bracket: the app can't set its focus.")
+        case .focusBracketStopped(let saved, let total):
+            LocalizedStringResource(
+                "The focus bracket stopped: \(saved) of \(total) photos saved.",
+                comment: "Siri's answer when a focus bracket ended before its last frame. The first number is the photos saved, the second the frames asked for.")
+        case .focusBracketBlockedByAstro:
+            LocalizedStringResource(
+                "Astro is on. Turn it off to take a focus bracket.",
+                comment: "Siri's answer when a focus bracket was asked for while nope.'s night sky helper is on; nothing was taken. Astro is the helper's name on the camera.")
+        case .savedSome(let saved, let total):
+            LocalizedStringResource(
+                "\(saved) of \(total) photos saved. nope. shows why the others weren't.",
+                comment: "Siri's answer when a bracket, burst or focus bracket saved some of its photos and then failed. The first number is the photos saved, the second the photos planned. Keep \"nope.\" unchanged.")
         case .presetApplied(let result):
             presetMessage(for: result)
         case .presetUnavailable:

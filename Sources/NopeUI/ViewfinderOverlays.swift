@@ -5,6 +5,11 @@ extension EnvironmentValues {
     /// Where the level's gravity readings come from, or `nil` to hide the level. The app target
     /// sets it to a Core Motion source; `NopeUI` doesn't import Core Motion.
     @Entry public var cameraGravitySource: (any GravitySource)?
+
+    /// Whether a sheet, popover or full-screen cover is over the camera (Settings, Formats,
+    /// What's in This Photo, Compare, Presets and the others), so the level's tap is held back.
+    /// The camera screen sets it; `false` by default.
+    @Entry var cameraIsCovered = false
 }
 
 /// The guides and live aids drawn over the viewfinder: the grid and the level, and, at standard
@@ -15,8 +20,8 @@ extension EnvironmentValues {
 /// clean view; the histogram doesn't, and the readout only when it is pinned.
 ///
 /// It tells the model what the live analysis must measure and whether the readout is on, as
-/// the options and the screen change, and turns both off when it goes away (AGENTS.md,
-/// "Battery").
+/// the options and the screen change; both are turned off when the last copy of the overlays
+/// goes away (a layout change can replace them with a new copy; AGENTS.md, "Battery").
 struct ViewfinderOverlays: View {
     /// The camera model.
     let model: CameraModel
@@ -30,11 +35,17 @@ struct ViewfinderOverlays: View {
     /// The current text size; at accessibility sizes the panel moves below the picture.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    /// Which way up the person holds the iPhone, for the spiral and the panel's corner.
+    /// Which way up the person holds the iPhone, for the panel's corner.
     @Environment(\.cameraUprightRotation) private var rotation
 
     /// The layout direction, to put the panel on a physical corner.
     @Environment(\.layoutDirection) private var layoutDirection
+
+    /// Whether a sheet is over the camera, which holds the level's tap back.
+    @Environment(\.cameraIsCovered) private var isCovered
+
+    /// Whether the app is active, which the level's tap needs.
+    @Environment(\.scenePhase) private var scenePhase
 
     /// The level.
     @State private var level = LevelModel()
@@ -55,13 +66,24 @@ struct ViewfinderOverlays: View {
     /// What the live analysis must measure now.
     private var needs: LiveAnalysisNeeds {
         guard model.live.isSupported, model.sessionStatus == .running else { return [] }
-        return LiveAnalysisNeeds.needed(
+        var needs = LiveAnalysisNeeds.needed(
             for: options, manualControlsShown: model.manual.isEnabled, isCleanView: model.isCleanView)
+        // Focus peaking shows while an end of a focus bracket's range is set, whatever its
+        // switch says (docs/design/BRACKETING.md, section 5).
+        if model.bracketing.rangeEditing != nil { needs.insert(.focusPeaking) }
+        return needs
     }
 
     /// Whether the live readout is shown: on, supported, and not in clean view unless pinned.
     private var showsStats: Bool {
         options.showsLiveReadout(inCleanView: model.isCleanView) && model.live.isSupported && model.sessionStatus == .running
+    }
+
+    /// Whether the level's tap is held back: by the camera (`CameraModel.holdsBackLevelTap`),
+    /// a sheet over the camera, or the app not being active (docs/design/level-haptic.md,
+    /// section 4).
+    private var holdsBackLevelTap: Bool {
+        model.holdsBackLevelTap || isCovered || scenePhase != .active
     }
 
     /// The overlays.
@@ -70,11 +92,11 @@ struct ViewfinderOverlays: View {
             // Drawn shapes only, so nothing here is an accessibility element. (Marking them
             // hidden made SwiftUI expose an unlabeled element instead.)
             if options.showsGrid {
-                GridOverlay(style: options.gridStyle, placement: spiralPlacement)
+                GridOverlay(style: options.gridStyle)
                     .allowsHitTesting(false)
             }
             if options.showsLevel, let gravitySource {
-                LevelOverlay(state: level.state)
+                LevelOverlay(state: level.state, holdsBackTap: holdsBackLevelTap)
                     .allowsHitTesting(false)
                     .task { await level.run(gravitySource) }
             }
@@ -82,28 +104,16 @@ struct ViewfinderOverlays: View {
                 LiveAidsPanel(model: model, settings: settings)
                     .allowsHitTesting(false)
                     .uprightUnit()
-                    .padding(CameraStyle.targetSpacing)
+                    .padding(NopeSpace.xs)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: panelAlignment)
             }
         }
+        .onAppear { model.live.interfaceDidAppear() }
         .task(id: needs) { await model.live.setNeeds(needs) }
         .task(id: showsStats) { await model.live.setShowsStats(showsStats) }
-        .onDisappear {
-            Task {
-                await model.live.setNeeds([])
-                await model.live.setShowsStats(false)
-            }
-        }
-    }
-
-    /// The spiral's placement, turned with the device so it keeps its place relative to the
-    /// horizon while the camera layout stays put.
-    private var spiralPlacement: SpiralPlacement {
-        switch rotation {
-        case .portrait: options.spiralPlacement
-        case .landscapeLeft: options.spiralPlacement.turned(by: 1)
-        case .landscapeRight: options.spiralPlacement.turned(by: -1)
-        }
+        // Stops the aids only when no copy of the overlays is left: a layout change replaces
+        // them with a new copy, which has already asked for what it shows.
+        .onDisappear { Task { await model.live.interfaceDidDisappear() } }
     }
 
     /// The corner that is the person's top trailing corner: the screen's in portrait, and the
@@ -146,9 +156,6 @@ struct GridOverlay: View {
     /// The style.
     let style: GridStyle
 
-    /// Where the spiral sits, for `GridStyle/goldenSpiral`.
-    let placement: SpiralPlacement
-
     /// The width of the white line, in points.
     static let lineWidth: CGFloat = 1
 
@@ -157,35 +164,27 @@ struct GridOverlay: View {
 
     /// Creates the grid.
     ///
-    /// - Parameters:
-    ///   - style: The style.
-    ///   - placement: Where the spiral sits.
-    init(style: GridStyle, placement: SpiralPlacement) {
+    /// - Parameter style: The style.
+    init(style: GridStyle) {
         self.style = style
-        self.placement = placement
     }
 
     /// The lines: a dark outline under a white line, drawn as shapes (not a canvas), so they
     /// add nothing to the accessibility tree.
     var body: some View {
-        let shape = GridShape(style: style, placement: placement)
+        let shape = GridShape(style: style)
         shape.stroke(.white.opacity(0.9), lineWidth: Self.lineWidth)
             .background(shape.stroke(.black.opacity(0.6), lineWidth: Self.outlineWidth))
     }
 
-    /// The grid's lines, or the spiral, at a size.
+    /// The grid's lines at a size.
     ///
     /// - Parameters:
     ///   - style: The style.
-    ///   - placement: The spiral's placement.
     ///   - size: The picture's size.
-    nonisolated static func path(style: GridStyle, placement: SpiralPlacement, in size: CGSize) -> Path {
+    nonisolated static func path(style: GridStyle, in size: CGSize) -> Path {
         let point = { (guide: GuidePoint) in CGPoint(x: guide.x * size.width, y: guide.y * size.height) }
         var path = Path()
-        if style == .goldenSpiral {
-            path.addLines(GoldenSpiral.points(placement: placement).map(point))
-            return path
-        }
         let aspectRatio = size.height > 0 ? size.width / size.height : 1
         for line in GridGeometry.lines(for: style, aspectRatio: aspectRatio) {
             path.move(to: point(line.start))
@@ -200,24 +199,18 @@ struct GridShape: Shape {
     /// The style.
     let style: GridStyle
 
-    /// Where the spiral sits.
-    let placement: SpiralPlacement
-
     /// Creates the shape.
     ///
-    /// - Parameters:
-    ///   - style: The style.
-    ///   - placement: Where the spiral sits.
-    init(style: GridStyle, placement: SpiralPlacement) {
+    /// - Parameter style: The style.
+    init(style: GridStyle) {
         self.style = style
-        self.placement = placement
     }
 
     /// The lines in a rectangle.
     ///
     /// - Parameter rect: The picture's rectangle.
     func path(in rect: CGRect) -> Path {
-        GridOverlay.path(style: style, placement: placement, in: rect.size)
+        GridOverlay.path(style: style, in: rect.size)
             .offsetBy(dx: rect.minX, dy: rect.minY)
     }
 }
@@ -228,8 +221,9 @@ struct FocusPeakingOverlay: View {
     /// The map of in-focus cells.
     let map: FocusPeakingMap
 
-    /// The highlight color.
-    static let color = Color(red: 1, green: 0.2, blue: 0.85)
+    /// The highlight color: magenta, a color the interface uses for nothing else
+    /// (``NopeColor/peaking``).
+    static var color: Color { NopeColor.peaking }
 
     /// Creates the overlay.
     ///
@@ -274,13 +268,25 @@ struct PeakingShape: Shape {
 
 /// The level (issue #40): a horizon bar that stays on the real horizon and turns solid and
 /// thicker when the device is level, or, when the device points straight down, a top-down level
-/// whose inner circle fills when level. A haptic marks the moment it becomes level.
+/// whose inner circle fills when level.
 ///
-/// VoiceOver reads the state on request, as the element's value; it isn't announced as it
-/// changes.
+/// A tap (``NopeHaptic/levelReached``) marks the moment it becomes level, and VoiceOver says
+/// "Level" (or "Pointing straight down, level") at the same moment, at low priority. When they
+/// play is decided by `LevelTapRule` in `NopeCore`; this view only plays them. VoiceOver also
+/// reads the state on request, as the element's value; the tilt isn't announced as it changes,
+/// and nothing is announced on leaving level.
 struct LevelOverlay: View {
     /// What the level shows, or `nil` before the first reading.
     let state: LevelState?
+
+    /// Whether the tap and its announcement are held back now.
+    let holdsBackTap: Bool
+
+    /// Decides when to tap. It starts again whenever the level appears.
+    @State private var tapRule = LevelTapRule()
+
+    /// The number of taps played, the haptic's trigger.
+    @State private var taps = 0
 
     /// The horizon bar's length, as a share of the picture's shorter side.
     static let barShare = 0.45
@@ -293,9 +299,12 @@ struct LevelOverlay: View {
 
     /// Creates the level.
     ///
-    /// - Parameter state: What the level shows, or `nil` before the first reading.
-    init(state: LevelState?) {
+    /// - Parameters:
+    ///   - state: What the level shows, or `nil` before the first reading.
+    ///   - holdsBackTap: Whether the tap and its announcement are held back now.
+    init(state: LevelState?, holdsBackTap: Bool) {
         self.state = state
+        self.holdsBackTap = holdsBackTap
     }
 
     /// The level.
@@ -318,7 +327,12 @@ struct LevelOverlay: View {
         .accessibilityValue(LevelText.description(of: state))
         // VoiceOver reads it; touches go to the viewfinder under it.
         .accessibilityRespondsToUserInteraction(false)
-        .sensoryFeedback(.alignment, trigger: state?.isLevel ?? false) { _, isLevel in isLevel }
+        .onChange(of: state) { _, state in
+            guard tapRule.update(state, at: .now, isHeldBack: holdsBackTap), let state else { return }
+            taps += 1
+            LevelText.announceReached(state)
+        }
+        .sensoryFeedback(NopeHaptic.levelReached, trigger: taps)
     }
 
     /// The horizon bar, with short fixed marks on either side to show the tilt against.
@@ -401,6 +415,22 @@ enum LevelText {
             }
             return Text("Pointing down, not level", bundle: .module, comment: "VoiceOver value of the top-down level when the device points down but is tilted.")
         }
+    }
+
+    /// Says "Level", or "Pointing straight down, level" for the top-down level, to VoiceOver as
+    /// the level becomes level. Queued at low priority, so it never interrupts a capture result,
+    /// a countdown second or a warning.
+    ///
+    /// - Parameter state: The level state that was just reached.
+    static func announceReached(_ state: LevelState) {
+        var announcement: AttributedString
+        if case .flat = state {
+            announcement = AttributedString(localized: "Pointing straight down, level", bundle: .module, comment: "VoiceOver value of the top-down level when the device points straight down and is level.")
+        } else {
+            announcement = AttributedString(localized: "Level", bundle: .module, comment: "Name of the horizon level shown over the viewfinder, and of its switch.")
+        }
+        announcement.accessibilitySpeechAnnouncementPriority = .low
+        AccessibilityNotification.Announcement(announcement).post()
     }
 
     /// An angle in whole degrees, such as "3°".

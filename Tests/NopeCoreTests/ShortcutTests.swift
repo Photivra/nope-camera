@@ -57,13 +57,18 @@ struct ShortcutTests {
         #expect(model.outcome(of: .saved(Self.photo(.signed))) == .saved(isSigned: true))
         #expect(model.outcome(of: .saved(Self.photo(.unsigned(.turnedOff)))) == .saved(isSigned: false))
         #expect(
-            model.outcome(of: .savedBracket([Self.photo(.signed), Self.photo(.signed)])) == .savedSeveral(allSigned: true))
+            model.outcome(of: .savedBracket([Self.photo(.signed), Self.photo(.signed)])) == .savedSeveral(count: 2, allSigned: true))
         #expect(
             model.outcome(of: .savedBurst([Self.photo(.signed), Self.photo(.unsigned(.failed))]))
-                == .savedSeveral(allSigned: false))
+                == .savedSeveral(count: 2, allSigned: false))
         #expect(model.outcome(of: .failed(.saveFailed)) == .notSaved(.saveFailed))
         #expect(model.outcome(of: .idle) == .notSaved(.notRunning))
         #expect(model.outcome(of: .capturing) == .notSaved(.notRunning))
+        // Nothing saved before the failure: not saved, whatever was planned.
+        #expect(model.outcome(of: .failed(.saveFailed), planned: 3) == .notSaved(.saveFailed))
+        #expect(model.outcome(of: .saved(Self.photo(.signed)), planned: 1) == .saved(isSigned: true))
+        #expect(ShortcutOutcome.savedSome(saved: 2, total: 5).photosSaved == 2)
+        #expect(ShortcutOutcome.focusBracketBlockedByAstro.photosSaved == 0)
     }
 
     // MARK: - Taking photos
@@ -348,6 +353,36 @@ struct ShortcutTests {
         #expect(await inbox.submit(.selectLens(.telephoto)) == .lensSelected(.telephoto))
     }
 
+    /// Final review of 1.0.0, S9: the system ended the intent while its request waited.
+    @Test func aCancelledRequestStillQueuedIsNeverPerformed() async {
+        let inbox = ShortcutInbox(sleep: Self.neverTimesOut)
+        let withdrawn = Task { await inbox.submit(.takePhoto(PhotoShortcut(lensKind: .telephoto))) }
+        await settle()
+        withdrawn.cancel()
+        #expect(await withdrawn.value == .cameraUnavailable(.notRunning))
+        // The camera screen that opens later gets only the next request.
+        let server = Task { await inbox.next() }
+        let next = Task { await inbox.submit(.takePhoto(PhotoShortcut())) }
+        let pending = await server.value
+        #expect(pending?.request == .takePhoto(PhotoShortcut()))
+        guard let pending else { return next.cancel() }
+        pending.finish(.busy)
+        #expect(await next.value == .busy)
+    }
+
+    @Test func aCancelledRequestAlreadyTakenRunsToItsEnd() async {
+        let inbox = ShortcutInbox(sleep: Self.neverTimesOut)
+        let server = Task { await inbox.next() }
+        await waitUntil { inbox.isServed }
+        let request = Task { await inbox.submit(.takePhoto(PhotoShortcut())) }
+        let pending = await server.value
+        request.cancel()
+        await settle()
+        guard let pending else { return }
+        pending.finish(.saved(isSigned: false))
+        #expect(await request.value == .saved(isSigned: false))
+    }
+
     @Test func aRequestTakenAtOnceDoesNotTimeOut() async {
         let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
         let model = await makeModel(backend)
@@ -387,9 +422,9 @@ struct ShortcutTests {
         let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
         let model = await makeModel(backend)
         let outcome = await run(.takePhoto(PhotoShortcut(count: 3)), on: model)
-        #expect(outcome == .savedSeveral(allSigned: false))
+        #expect(outcome == .savedSeveral(count: 3, allSigned: false))
         #expect(await backend.captureRequests.count == 3)
-        #expect(model.drive.lastBurst == BurstResult(end: .countReached, saved: 3))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .countReached, saved: 3))
         #expect(model.drive.mode == .single)
     }
 
@@ -397,8 +432,8 @@ struct ShortcutTests {
         let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
         let model = await makeModel(backend)
         let outcome = await run(.takePhoto(PhotoShortcut(count: DriveModel.maximumBurstFrames)), on: model)
-        #expect(outcome == .savedSeveral(allSigned: false))
-        #expect(model.drive.lastBurst == BurstResult(end: .limitReached, saved: DriveModel.maximumBurstFrames))
+        #expect(outcome == .savedSeveral(count: DriveModel.maximumBurstFrames, allSigned: false))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .limitReached, saved: DriveModel.maximumBurstFrames))
     }
 
     @Test func aDelayWithACountTakesTheBurstAfterTheCountdown() async {
@@ -412,7 +447,7 @@ struct ShortcutTests {
         await waitUntil { model.drive.countdown.isRunning }
         #expect(await backend.captureRequests.isEmpty)
         await tick(ticker)
-        #expect(await request.value == .savedSeveral(allSigned: false))
+        #expect(await request.value == .savedSeveral(count: 2, allSigned: false))
         #expect(await backend.captureRequests.count == 2)
     }
 
@@ -435,7 +470,7 @@ struct ShortcutTests {
         let backend = ScriptedBackend(capabilities: CameraModelTests.twoLenses)
         let model = await makeModel(backend, sleep: { _ in await ticker.sleep() })
         await model.send(.drive(.startTimer(seconds: 5)))
-        #expect(await run(.selectLens(.telephoto), on: model) == .busy)
+        #expect(await run(.selectLens(.telephoto), on: model) == .lensBusy)
         #expect(model.selectedLens?.kind == .wide)
         model.drive.countdown.cancel()
     }
@@ -562,7 +597,7 @@ struct ShortcutTests {
     @Test func takesABracketOnceInFullAutoWithoutChangingSettings() async {
         let (model, backend) = await makeBracketModel()
         let outcome = await run(.takeBracket(BracketShortcut(frameCount: 3, step: 1)), on: model)
-        #expect(outcome == .savedSeveral(allSigned: false))
+        #expect(outcome == .savedSeveral(count: 3, allSigned: false))
         let frames = await backend.brackets
         #expect(frames.count == 1)
         #expect(frames.first?.count == 3)
@@ -578,7 +613,7 @@ struct ShortcutTests {
         let (model, backend) = await makeBracketModel(enabled: true)
         let chosen = BracketSettings(frameCount: 5, step: 2.0 / 3.0)
         await model.send(.manual(.setBracket(chosen)))
-        #expect(await run(.takeBracket(BracketShortcut(frameCount: 3, step: 1)), on: model) == .savedSeveral(allSigned: false))
+        #expect(await run(.takeBracket(BracketShortcut(frameCount: 3, step: 1)), on: model) == .savedSeveral(count: 3, allSigned: false))
         #expect(await backend.brackets.last?.count == 3)
         #expect(model.manual.bracket == chosen)
     }
@@ -624,8 +659,72 @@ struct ShortcutTests {
         await waitUntil { model.drive.countdown.isRunning }
         #expect(model.selectedLens?.kind == .ultraWide)
         await tick(ticker)
-        #expect(await request.value == .savedSeveral(allSigned: false))
+        #expect(await request.value == .savedSeveral(count: 3, allSigned: false))
         #expect(await backend.brackets.count == 1)
+    }
+
+    // MARK: - Third review of 1.0.0
+
+    @Test func takePhotoTakesOnePhotoWithABracketOnInTheApp() async {
+        // Question 7: Siri and Shortcuts' Take Photo always takes one photo; Take Bracket takes
+        // brackets. The person's bracket stays on.
+        let (model, backend) = await makeBracketModel(enabled: true)
+        await model.send(.manual(.setBracket(.standard)))
+        let outcome = await run(.takePhoto(PhotoShortcut()), on: model)
+        #expect(outcome == .saved(isSigned: false))
+        #expect(outcome.photosSaved == 1)
+        #expect(await backend.brackets.isEmpty)
+        #expect(await backend.captureCount == 1)
+        #expect(model.manual.bracket == .standard)
+        #expect(!PhotoShortcut().appliesBracketInApp)
+        // The shutter still takes the bracket.
+        await model.send(.capture)
+        #expect(await backend.brackets.count == 1)
+    }
+
+    @Test func theWatchsPhotoTakesTheBracketOnInTheApp() async {
+        // The watch's shutter takes what the phone's drive strip says (BRACKETING.md, 6).
+        let (model, backend) = await makeBracketModel(enabled: true)
+        await model.send(.manual(.setBracket(.standard)))
+        let outcome = await run(.takePhoto(PhotoShortcut(appliesBracketInApp: true)), on: model)
+        #expect(outcome == .savedSeveral(count: 3, allSigned: false))
+        #expect(await backend.brackets.count == 1)
+    }
+
+    /// A started manual-capable camera with a reading, whose library fails after two photos.
+    func makeFailingModel(enabled: Bool = false) async -> (CameraModel, ScriptedManualBackend) {
+        let backend = ScriptedManualBackend(lenses: [ManualFixtures.wide])
+        let library = FakeLibrary(error: .saveFailed, failsAfter: 2)
+        let model = CameraModel(backend: backend, saver: CameraModelTests.saver(library: library), sleep: { _ in })
+        await model.send(.start)
+        if enabled { await model.send(.manual(.setEnabled(true))) }
+        await model.manual.record(ManualFixtures.reading)
+        return (model, backend)
+    }
+
+    @Test func aBurstThatFailsPartWayGivesTheSavedCount() async {
+        // Question 6: "2 of 5 photos saved", and Photos Saved is 2.
+        let (model, _) = await makeFailingModel()
+        let outcome = await run(.takePhoto(PhotoShortcut(count: 5)), on: model)
+        #expect(outcome == .savedSome(saved: 2, total: 5))
+        #expect(outcome.photosSaved == 2)
+        #expect(model.lastPressPhotos.count == 2)
+    }
+
+    @Test func aBracketThatFailsPartWayGivesTheSavedCount() async {
+        let (model, _) = await makeFailingModel()
+        let outcome = await run(.takeBracket(BracketShortcut(frameCount: 5, step: 1)), on: model)
+        #expect(outcome == .savedSome(saved: 2, total: 5))
+        #expect(outcome.photosSaved == 2)
+        // After a countdown, too.
+        let (delayed, _) = await makeFailingModel()
+        let afterDelay = await run(.takeBracket(BracketShortcut(frameCount: 3, step: 1, delaySeconds: 1)), on: delayed)
+        #expect(afterDelay == .savedSome(saved: 2, total: 3))
+        // The watch's photo with the app's bracket on.
+        let (watch, _) = await makeFailingModel(enabled: true)
+        await watch.send(.manual(.setBracket(BracketSettings(frameCount: 5, step: 1))))
+        let fromTheWatch = await run(.takePhoto(PhotoShortcut(appliesBracketInApp: true)), on: watch)
+        #expect(fromTheWatch == .savedSome(saved: 2, total: 5))
     }
 
     @Test func aBracketRequestIsBusyDuringACountdownAndChecksTheLens() async {
@@ -754,4 +853,56 @@ struct ShortcutTests {
         let denied = await makeModel(ScriptedBackend(permission: .denied, capabilities: CameraModelTests.oneLens))
         #expect(await run(.setPhotoSize(front), on: denied, settings: settings) == .cameraUnavailable(.permissionDenied))
     }
+
+    // MARK: - Delays longer than Siri waits (issue #126)
+
+    @Test func onlyADelayOverTenSecondsIsAnsweredWhenTheTimerStarts() {
+        #expect(PhotoShortcut.longestDelayAnsweredAfterPhoto == 10)
+        #expect(!PhotoShortcut.answersWhenTimerStarts(delaySeconds: 0))
+        #expect(!PhotoShortcut.answersWhenTimerStarts(delaySeconds: 10))
+        #expect(PhotoShortcut.answersWhenTimerStarts(delaySeconds: 11))
+        #expect(PhotoShortcut.answersWhenTimerStarts(delaySeconds: PhotoShortcut.maximumDelaySeconds))
+        #expect(ShortcutOutcome.timerStarted(seconds: 20).photosSaved == 0)
+    }
+
+    @Test func aLongDelayIsAnsweredWhenTheTimerStartsAndThePhotoIsTakenAfterIt() async {
+        let ticker = Ticker()
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await makeModel(backend, sleep: { _ in await ticker.sleep() })
+        let inbox = ShortcutInbox(sleep: Self.neverTimesOut)
+        let server = Task { await model.serveShortcuts(from: inbox) }
+        defer { server.cancel() }
+        await waitUntil { inbox.isServed }
+        let before = model.captureStatus
+        // The answer comes before any second of the countdown has passed.
+        #expect(await inbox.submit(.takePhoto(PhotoShortcut(delaySeconds: 12))) == .timerStarted(seconds: 12))
+        #expect(model.drive.countdown.remainingSeconds == 12)
+        #expect(await backend.captureRequests.isEmpty)
+        // Another request while the countdown runs is told the camera is busy.
+        #expect(await inbox.submit(.takePhoto(PhotoShortcut())) == .busy)
+        for remaining in stride(from: 12, to: 0, by: -1) {
+            await waitUntil { model.drive.countdown.remainingSeconds == remaining }
+            await tick(ticker)
+        }
+        // The photo is taken when the timer ends, as with the camera's own self-timer.
+        await waitUntil { model.captureStatus != before && !model.isTakingPhoto }
+        #expect(await backend.captureRequests.count == 1)
+    }
+
+    @Test func aTenSecondDelayStillWaitsForThePhoto() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await makeModel(backend)
+        #expect(await run(.takePhoto(PhotoShortcut(delaySeconds: 10)), on: model) == .saved(isSigned: false))
+        #expect(await backend.captureRequests.count == 1)
+    }
+
+    @Test func aLongDelayBeforeABracketIsAnsweredWhenTheTimerStarts() async {
+        let (model, backend) = await makeBracketModel(sleep: { _ in try await Task.sleep(for: .seconds(3600)) })
+        let outcome = await run(.takeBracket(BracketShortcut(frameCount: 3, step: 1, delaySeconds: 30)), on: model)
+        #expect(outcome == .timerStarted(seconds: 30))
+        #expect(model.drive.countdown.isRunning)
+        #expect(await backend.brackets.isEmpty)
+        model.drive.countdown.cancel()
+    }
 }
+

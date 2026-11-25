@@ -1,0 +1,11 @@
+{
+  "about": "Site-only sentences of the privacy page. The policy itself is the file named by \"policy\" in site/site.json, converted by the build.",
+  "title": {"md": "Privacy policy · Photivra Nope Camera", "claims": ["none"]},
+  "description": {"md": "The app doesn’t collect any data. It has no accounts, no analytics, no ads and no crash reporting, and it makes no network connections.", "claims": ["C4"]},
+  "text": {
+    "effective": {"md": "Effective date", "claims": ["none"]},
+    "updated": {"md": "Last updated", "claims": ["none"]},
+    "version": {"md": "App version", "claims": ["none"]},
+    "toc": {"md": "On this page", "claims": ["none"]}
+  }
+}

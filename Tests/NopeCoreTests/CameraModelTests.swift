@@ -105,6 +105,28 @@ struct CameraModelTests {
         #expect(await backend.startRequests.last == CaptureRequest(lens: Self.teleHEIF))
     }
 
+    @Test func aFallbackPhotosDetailsSayWhetherItsLensCorrectsDistortion() async throws {
+        // Issue #80: the lens's distortion correction, as the camera reported it, reaches the
+        // details of its processed fallback; a RAW photo never has the correction.
+        let tele = Lens(id: "tele", kind: .telephoto, bayerRAWFormat: nil, magnification: 5, distortionCorrection: .turnedOff)
+        let backend = ScriptedBackend(capabilities: DeviceCapabilities(lenses: [Self.wideRAW, tele]))
+        let model = await Self.runningModel(backend)
+        await model.send(.capture)
+        guard case .saved(let raw) = model.captureStatus else {
+            Issue.record("expected a saved photo, got \(model.captureStatus)")
+            return
+        }
+        #expect(raw.details?.distortionCorrection == nil)
+        await model.send(.selectLens("tele"))
+        await model.send(.capture)
+        guard case .saved(let fallback) = model.captureStatus else {
+            Issue.record("expected a saved photo, got \(model.captureStatus)")
+            return
+        }
+        #expect(fallback.isProcessedFallback)
+        #expect(fallback.details?.distortionCorrection == .turnedOff)
+    }
+
     @Test func selectingALensBeforeReadyIsIgnored() async {
         let backend = ScriptedBackend(capabilities: Self.twoLenses)
         let model = CameraModel(backend: backend)
@@ -121,8 +143,9 @@ struct CameraModelTests {
             Issue.record("expected a saved photo, got \(model.captureStatus)")
             return
         }
-        #expect(photo.formats == [.raw, .heif])
-        #expect(photo.signature == .unsigned(.unavailable))
+        // The defaults (issue #80): RAW only, and signing off.
+        #expect(photo.formats == [.raw])
+        #expect(photo.signature == .unsigned(.turnedOff))
         #expect(model.canCapture)
         #expect(await library.added.count == 1)
     }
@@ -158,13 +181,29 @@ struct CameraModelTests {
 
     @Test func theShutterIsDisabledWhileSaving() async {
         let backend = ScriptedBackend(capabilities: Self.oneLens)
-        let model = await Self.runningModel(backend, saver: Self.saver(library: FakeLibrary(), developer: FakeDeveloper(delay: true)))
+        // The save is held at the add to Photos, which every format reaches. A gate on the
+        // developer held nothing: the default formats are RAW only, which isn't developed, so
+        // the photo could finish saving before the test looked, as it did once under load.
+        let library = GatedLibrary(gatedAdd: 1)
+        let saver = PhotoSaver(developer: FakeDeveloper(), signer: nil, reader: BytesReader(), library: library, appVersion: "0.2.0")
+        let model = await Self.runningModel(backend, saver: saver)
+        #expect(model.saveSettings.formats == [.raw])
         let capture = Task { await model.send(.capture) }
-        while model.captureStatus != .saving { await Task.yield() }
+        // A bounded wait: at most five seconds, then the test fails instead of hanging.
+        var waits = 0
+        while !(await library.isHolding), waits < 500 {
+            waits += 1
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(await library.isHolding, "the save didn't reach the add to Photos")
+        #expect(model.captureStatus == .saving)
         #expect(!model.canCapture)
         await model.send(.capture)
         #expect(await backend.captureRequests.count == 1)
+        await library.release()
         await capture.value
+        #expect(model.captureStatus != .saving)
+        #expect(model.canCapture)
     }
 
     @Test func captureFailureIsReported() async {
@@ -181,7 +220,7 @@ struct CameraModelTests {
             Issue.record("expected a saved photo, got \(model.captureStatus)")
             return
         }
-        #expect(photo.formats == [.raw, .heif])
+        #expect(photo.formats == [.raw])
         #expect(model.sessionStatus == .running)
         #expect(await backend.stopCount == 1)
         #expect(await backend.startRequests.count == 2)

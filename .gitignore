@@ -79,3 +79,7 @@ tags-report.json
 
 # Local build of the network-free C2PA library (scripts/build-c2pa-lib.sh; c2pa-lib/README.md).
 build/
+
+# The public site's build output and its build tools (scripts/build-site.py; site/package.json).
+_site/
+site/node_modules/

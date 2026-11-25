@@ -86,11 +86,22 @@ public struct CameraSetup: Codable, Equatable, Sendable {
     /// The exposure bracket, or `nil` when bracketing is off.
     public var bracket: BracketValue?
 
+    /// The focus bracket, or `nil` when it is off. Absent in presets of earlier versions.
+    public var focusBracket: FocusBracketSettings?
+
     /// The time between interval photos, in seconds.
     public var intervalSeconds: Double
 
-    /// How many photos an interval series takes.
+    /// How many photos an interval series takes when it stops after a number of photos.
     public var intervalCount: Int
+
+    /// What ends an interval series, as an ``IntervalSettings/StopAfter`` raw value:
+    /// `numberOfPhotos` or `time`. A preset saved before the choice existed reads as
+    /// `numberOfPhotos`, the series it ran then.
+    public var intervalStopAfter: String
+
+    /// How long an interval series runs when it stops after a time, in seconds.
+    public var intervalDuration: Double
 
     /// Whether the astro helper is on.
     public var astroIsOn: Bool
@@ -126,12 +137,44 @@ public struct CameraSetup: Codable, Equatable, Sendable {
         /// The step between frames, in EV.
         public var step: Double
 
+        /// The order of the frames. A preset saved before the order existed has none, and reads
+        /// as ``BracketOrder/darkestFirst``, the order it was taken in then.
+        public var order: BracketOrder
+
         /// Copies a bracket.
         ///
         /// - Parameter bracket: The bracket.
         public init(_ bracket: BracketSettings) {
             frameCount = bracket.frameCount
             step = bracket.step
+            order = bracket.order
+        }
+
+        /// Reads a bracket, with ``BracketOrder/darkestFirst`` when the order is missing or
+        /// unknown.
+        ///
+        /// - Parameter decoder: The decoder.
+        /// - Throws: A `DecodingError` when the frame count or the step is missing.
+        public init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            frameCount = try container.decode(Int.self, forKey: .frameCount)
+            step = try container.decode(Double.self, forKey: .step)
+            order = (try? container.decodeIfPresent(BracketOrder.self, forKey: .order)) ?? .darkestFirst
+        }
+
+        /// The bracket these values describe.
+        public var settings: BracketSettings {
+            BracketSettings(frameCount: frameCount, step: step, order: order)
+        }
+
+        /// The stored names of the values.
+        enum CodingKeys: String, CodingKey {
+            /// ``frameCount``.
+            case frameCount
+            /// ``step``.
+            case step
+            /// ``order``.
+            case order
         }
     }
 
@@ -152,8 +195,11 @@ public struct CameraSetup: Codable, Equatable, Sendable {
         nearFocusLimit = false
         drive = Self.driveName(.single)
         bracket = nil
+        focusBracket = nil
         intervalSeconds = IntervalSettings.standard.interval
         intervalCount = IntervalSettings.standard.count
+        intervalStopAfter = IntervalSettings.standard.stopAfter.rawValue
+        intervalDuration = IntervalSettings.standard.duration
         astroIsOn = false
         astroFrameCount = AstroModel.defaultFrameCount
         astroStartDelay = SelfTimerDelay.tenSeconds.seconds
@@ -179,8 +225,12 @@ public struct CameraSetup: Codable, Equatable, Sendable {
         nearFocusLimit = (try? container.decodeIfPresent(Bool.self, forKey: .nearFocusLimit)) ?? factory.nearFocusLimit
         drive = (try? container.decodeIfPresent(String.self, forKey: .drive)) ?? factory.drive
         bracket = try? container.decodeIfPresent(BracketValue.self, forKey: .bracket)
+        focusBracket = try? container.decodeIfPresent(FocusBracketSettings.self, forKey: .focusBracket)
         intervalSeconds = (try? container.decodeIfPresent(Double.self, forKey: .intervalSeconds)) ?? factory.intervalSeconds
         intervalCount = (try? container.decodeIfPresent(Int.self, forKey: .intervalCount)) ?? factory.intervalCount
+        intervalStopAfter =
+            (try? container.decodeIfPresent(String.self, forKey: .intervalStopAfter)) ?? factory.intervalStopAfter
+        intervalDuration = (try? container.decodeIfPresent(Double.self, forKey: .intervalDuration)) ?? factory.intervalDuration
         astroIsOn = (try? container.decodeIfPresent(Bool.self, forKey: .astroIsOn)) ?? factory.astroIsOn
         astroFrameCount = (try? container.decodeIfPresent(Int.self, forKey: .astroFrameCount)) ?? factory.astroFrameCount
         astroStartDelay = (try? container.decodeIfPresent(Int.self, forKey: .astroStartDelay)) ?? factory.astroStartDelay
@@ -210,10 +260,16 @@ public struct CameraSetup: Codable, Equatable, Sendable {
         case drive
         /// ``CameraSetup/bracket``.
         case bracket
+        /// ``CameraSetup/focusBracket``.
+        case focusBracket
         /// ``CameraSetup/intervalSeconds``.
         case intervalSeconds
         /// ``CameraSetup/intervalCount``.
         case intervalCount
+        /// ``CameraSetup/intervalStopAfter``.
+        case intervalStopAfter
+        /// ``CameraSetup/intervalDuration``.
+        case intervalDuration
         /// ``CameraSetup/astroIsOn``.
         case astroIsOn
         /// ``CameraSetup/astroFrameCount``.
@@ -256,6 +312,15 @@ public struct CameraSetup: Codable, Equatable, Sendable {
         DriveMode.allCases.first { driveName($0) == name } ?? .single
     }
 
+    /// The interval series this setup holds. A stored end this version doesn't know reads as
+    /// ``IntervalSettings/StopAfter/numberOfPhotos``.
+    public var intervalSettings: IntervalSettings {
+        IntervalSettings(
+            interval: intervalSeconds, count: intervalCount,
+            stopAfter: IntervalSettings.StopAfter(rawValue: intervalStopAfter) ?? .numberOfPhotos,
+            duration: intervalDuration)
+    }
+
     /// The manual settings this setup holds: every value except the locks, which belong to one
     /// scene.
     public var manualSettings: ManualSettings {
@@ -283,8 +348,11 @@ extension CameraModel {
         setup.nearFocusLimit = manual.nearFocusLimit
         setup.drive = CameraSetup.driveName(drive.mode)
         setup.bracket = manual.bracket.map(CameraSetup.BracketValue.init)
+        setup.focusBracket = isFocusBracketOn ? bracketing.focus : nil
         setup.intervalSeconds = manual.interval.interval
         setup.intervalCount = manual.interval.count
+        setup.intervalStopAfter = manual.interval.stopAfter.rawValue
+        setup.intervalDuration = manual.interval.duration
         setup.astroIsOn = astro.isOn
         setup.astroFrameCount = astro.frameCount
         setup.astroStartDelay = astro.startDelay.seconds
@@ -293,10 +361,10 @@ extension CameraModel {
 
     /// Whether the camera is in the middle of something a preset must not change: a photo being
     /// taken or saved, a countdown, a burst, an interval series, an astro run or the comparison
-    /// shot.
+    /// shot. The same rule as for a lens change (``canChangeLens``), because a preset may switch
+    /// the lens.
     public var isBusyForPresets: Bool {
-        drive.isBusy || manual.intervalProgress != nil || astro.isRunning || comparison.isPresented
-            || captureStatus == .capturing || captureStatus == .saving
+        !canChangeLens
     }
 
     /// Sets the camera up as a preset describes, through the same intents an interface sends.
@@ -327,7 +395,7 @@ extension CameraModel {
         }
         await send(.manual(.setEnabled(manualControlsOn)))
         await send(.manual(.allAuto))
-        await send(.manual(.setInterval(IntervalSettings(interval: setup.intervalSeconds, count: setup.intervalCount))))
+        await send(.manual(.setInterval(setup.intervalSettings)))
         await send(.drive(.setMode(CameraSetup.driveMode(named: setup.drive))))
         await send(.astro(.setFrameCount(setup.astroFrameCount)))
         await send(.astro(.setStartDelay(SelfTimerDelay(rawValue: setup.astroStartDelay) ?? .tenSeconds)))
@@ -359,6 +427,11 @@ extension CameraModel {
         }
         await send(.auto(.setExposureCompensation(values.exposureCompensation)))
         await send(.auto(.setNearFocusLimit(setup.nearFocusLimit)))
-        await send(.manual(.setBracket(setup.bracket.map { BracketSettings(frameCount: $0.frameCount, step: $0.step) })))
+        await send(.manual(.setBracket(setup.bracket?.settings)))
+        if let focusBracket = setup.focusBracket {
+            await send(.bracket(.setFocus(focusBracket)))
+            await send(.bracket(.setType(.focus)))
+            await send(.bracket(.setOn(true)))
+        }
     }
 }

@@ -40,7 +40,7 @@ internal, declared in `Sources/NopeDevelop/CoreImageRAWRenderer.swift`
 static func configure(_ filter: CIRAWFilter, look: DevelopedLook)
 ```
 
-Sets the filter's neutral options and the look's tone.
+Sets the filter's neutral options and the look's tone (``NeutralDevelopment``).
 
 - Parameters:
   - filter: The RAW filter for the DNG.
@@ -229,6 +229,100 @@ let typeIdentifier: String
 
 The uniform type identifier passed to `CGImageDestinationCreateWithData`.
 
+## `ImageIOPreviewer`
+
+public, declared in `Sources/NopeDevelop/ImageIOPreviewer.swift`
+
+```swift
+struct ImageIOPreviewer
+```
+
+Makes and decodes the Last Photo viewer's compressed previews with ImageIO, in memory
+(`PhotoPreview`; docs/design/BUILD-SPEC.md, 3.14).
+
+A preview is the saved file decoded at a reduced size, upright, and drawn into a new 8-bit
+sRGB image (`ImageIOThumbnailer.drawnImage(of:maximumPixelSize:)`), then encoded as a JPEG
+with the system encoder. The JPEG carries nothing from the photo (no GPS, TIFF, dates,
+device or Content Credentials) and no embedded thumbnail; the encoder writes only what
+describes the image itself: its size, the sRGB profile, and EXIF `ColorSpace` and pixel
+dimensions (checked in `ThumbnailTests`). Decoding draws it into an sRGB RGBA bitmap, at a smaller size when asked.
+
+Privacy: nothing is cached or written to disk (`kCGImageSourceShouldCache` is off, and the
+destination writes to memory); the bytes stay in memory (AGENTS.md, "Photos never linger").
+
+## `ImageIOPreviewer/decode(_:maximumPixelSize:)`
+
+public, declared in `Sources/NopeDevelop/ImageIOPreviewer.swift`
+
+```swift
+func decode(_ preview: PhotoPreview, maximumPixelSize: Int?) -> PhotoThumbnail?
+```
+
+Decodes a preview into sRGB RGBA pixels.
+
+- Parameters:
+  - preview: The preview.
+  - maximumPixelSize: The longest side to decode to, in pixels, or `nil` for the
+    preview's own size.
+- Returns: The pixels, or `nil` if the data can't be decoded.
+
+## `ImageIOPreviewer/init(maximumPixelSize:)`
+
+public, declared in `Sources/NopeDevelop/ImageIOPreviewer.swift`
+
+```swift
+init(maximumPixelSize: Int = SessionPhotos.previewMaximumPixelSize)
+```
+
+Creates a previewer.
+
+- Parameter maximumPixelSize: The longest side of a preview, in pixels.
+
+## `ImageIOPreviewer/jpegType`
+
+internal, declared in `Sources/NopeDevelop/ImageIOPreviewer.swift`
+
+```swift
+static let jpegType: String
+```
+
+The JPEG type identifier, `public.jpeg` (Uniform Type Identifiers, `UTType.jpeg`).
+
+## `ImageIOPreviewer/maximumPixelSize`
+
+public, declared in `Sources/NopeDevelop/ImageIOPreviewer.swift`
+
+```swift
+let maximumPixelSize: Int
+```
+
+The longest side of a preview, in pixels.
+
+## `ImageIOPreviewer/preview(of:)`
+
+public, declared in `Sources/NopeDevelop/ImageIOPreviewer.swift`
+
+```swift
+func preview(of file: PhotoFile) -> PhotoPreview?
+```
+
+Makes a compressed preview of a saved file.
+
+- Parameter file: A saved DNG, HEIF or JPEG.
+- Returns: The preview, or `nil` if ImageIO can't decode the file or encode the JPEG.
+
+## `ImageIOPreviewer/quality`
+
+public, declared in `Sources/NopeDevelop/ImageIOPreviewer.swift`
+
+```swift
+static let quality: Double
+```
+
+The JPEG quality, from 0 to 1: 0.9 (`kCGImageDestinationLossyCompressionQuality`). An
+assumption that it shows no visible artifacts at the viewer's zoom; to be checked on a
+device with the size it gives (docs/TESTING.md).
+
 ## `ImageIOReadBack`
 
 public, declared in `Sources/NopeDevelop/ImageIOReadBack.swift`
@@ -341,6 +435,24 @@ static let defaultMaximumPixelSize: Int
 
 The longest side of the thumbnail, in pixels: the 52-point slot at 3× scale.
 
+## `ImageIOThumbnailer/drawnImage(of:maximumPixelSize:)`
+
+internal, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
+
+```swift
+static func drawnImage(of data: Data, maximumPixelSize: Int) -> CGImage?
+```
+
+Decodes an image at a reduced size, upright, and draws it into an 8-bit sRGB RGBA bitmap,
+without caching. The drawn image is a new image with none of the file's properties, in a
+form ImageIO's JPEG encoder takes: encoding the decoded image of a 10-bit HEIF directly
+failed (`ThumbnailTests`, iOS 27.2 Simulator), and the drawn one encodes.
+
+- Parameters:
+  - data: A DNG, HEIF or JPEG file's bytes.
+  - maximumPixelSize: The longest side, in pixels.
+- Returns: The image, or `nil` if ImageIO can't decode the data.
+
 ## `ImageIOThumbnailer/init(maximumPixelSize:)`
 
 public, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
@@ -363,6 +475,23 @@ let maximumPixelSize: Int
 
 The longest side of the thumbnail, in pixels.
 
+## `ImageIOThumbnailer/pixels(of:maximumPixelSize:)`
+
+internal, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
+
+```swift
+static func pixels(of data: Data, maximumPixelSize: Int) -> PhotoThumbnail?
+```
+
+Decodes an image at a reduced size into the layout `PhotoThumbnail` describes. The
+bitmap context owns its memory, and the pixels are copied out through the image it makes,
+so no pointer is handled here.
+
+- Parameters:
+  - data: A DNG, HEIF or JPEG file's bytes.
+  - maximumPixelSize: The longest side, in pixels.
+- Returns: The pixels, or `nil` if ImageIO can't decode the data.
+
 ## `ImageIOThumbnailer/thumbnail(of:)`
 
 public, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
@@ -373,11 +502,40 @@ func thumbnail(of file: PhotoFile) -> PhotoThumbnail?
 
 Makes a thumbnail.
 
-The thumbnail is drawn into a bitmap context that owns its memory, and the pixels are
-copied out through the image it makes, so no pointer is handled here.
-
 - Parameter file: A saved DNG, HEIF or JPEG.
 - Returns: The thumbnail, upright, or `nil` if ImageIO can't decode the file.
+
+## `NeutralDevelopment`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+enum NeutralDevelopment
+```
+
+The neutral development settings for the HEIF and JPEG copies.
+
+## `NeutralDevelopment/apply(to:look:)`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+static func apply(to options: some RAWDecoderOptions, look: DevelopedLook)
+```
+
+Sets the decoder's neutral options and the look's tone.
+
+Noise reduction (luminance and color), sharpening, detail, moiré reduction, local contrast
+and local tone mapping are set to 0 wherever the decoder supports changing them, and lens
+correction is turned off, so the pixels are never corrected (`docs/PRIVACY.md`). The tone
+follows the look: `boostAmount` is 1 for `DevelopedLook.standard` and 0 for
+`DevelopedLook.flat`. A setting the decoder doesn't offer for a file can't be changed,
+so it is left as the decoder has it; the opt-in test with a camera DNG reads every value
+back (`docs/TESTING.md`, "Developed looks").
+
+- Parameters:
+  - options: The decoder's settings for one DNG.
+  - look: The tone: one global tone curve, or none.
 
 ## `PhotoEncoder`
 
@@ -507,6 +665,191 @@ size, so the file never states the RAW's size for fewer pixels.
   - image: The image that is encoded.
 - Returns: The properties for the encoder.
 
+## `RAWDecoderOptions`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+protocol RAWDecoderOptions : AnyObject
+```
+
+The RAW decoder settings that the development of HEIF and JPEG copies depends on.
+
+`CIRAWFilter` has them all. The protocol exists so a unit test can check, without a camera
+DNG, every value ``NeutralDevelopment`` sets: the Honesty wording that the app "turns
+off noise reduction, sharpening and local tone mapping" (issue #1, "Formats") rests on these values. Each name and
+its meaning are from `CIRAWFilter.h`.
+
+## `RAWDecoderOptions/boostAmount`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+var boostAmount: Float { get set }
+```
+
+The global tone curve: 1 is the full curve, 0 is none (a linear response).
+
+## `RAWDecoderOptions/colorNoiseReductionAmount`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+var colorNoiseReductionAmount: Float { get set }
+```
+
+The color noise reduction to apply, from 0 (none) to 1.
+
+## `RAWDecoderOptions/contrastAmount`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+var contrastAmount: Float { get set }
+```
+
+The local contrast to apply to the edges, from 0 (none) to 1.
+
+## `RAWDecoderOptions/detailAmount`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+var detailAmount: Float { get set }
+```
+
+The detail enhancement to apply, from 0 (none).
+
+## `RAWDecoderOptions/isColorNoiseReductionSupported`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+var isColorNoiseReductionSupported: Bool { get }
+```
+
+Whether the decoder can change color noise reduction for this file.
+
+## `RAWDecoderOptions/isContrastSupported`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+var isContrastSupported: Bool { get }
+```
+
+Whether the decoder can change local contrast for this file.
+
+## `RAWDecoderOptions/isDetailSupported`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+var isDetailSupported: Bool { get }
+```
+
+Whether the decoder can change detail enhancement for this file.
+
+## `RAWDecoderOptions/isLensCorrectionEnabled`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+var isLensCorrectionEnabled: Bool { get set }
+```
+
+Whether the decoder applies the file's lens correction to the pixels.
+
+## `RAWDecoderOptions/isLensCorrectionSupported`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+var isLensCorrectionSupported: Bool { get }
+```
+
+Whether the decoder can apply the file's lens correction.
+
+## `RAWDecoderOptions/isLocalToneMapSupported`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+var isLocalToneMapSupported: Bool { get }
+```
+
+Whether the decoder can change local tone mapping for this file.
+
+## `RAWDecoderOptions/isLuminanceNoiseReductionSupported`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+var isLuminanceNoiseReductionSupported: Bool { get }
+```
+
+Whether the decoder can change luminance noise reduction for this file.
+
+## `RAWDecoderOptions/isMoireReductionSupported`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+var isMoireReductionSupported: Bool { get }
+```
+
+Whether the decoder can change moiré reduction for this file.
+
+## `RAWDecoderOptions/isSharpnessSupported`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+var isSharpnessSupported: Bool { get }
+```
+
+Whether the decoder can change sharpening for this file.
+
+## `RAWDecoderOptions/localToneMapAmount`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+var localToneMapAmount: Float { get set }
+```
+
+The local tone mapping to apply, from 0 (none) to 1.
+
+## `RAWDecoderOptions/luminanceNoiseReductionAmount`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+var luminanceNoiseReductionAmount: Float { get set }
+```
+
+The luminance noise reduction to apply, from 0 (none) to 1.
+
+## `RAWDecoderOptions/moireReductionAmount`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+var moireReductionAmount: Float { get set }
+```
+
+The moiré reduction to apply, from 0 (none) to 1.
+
+## `RAWDecoderOptions/sharpnessAmount`
+
+internal, declared in `Sources/NopeDevelop/RAWDecoderOptions.swift`
+
+```swift
+var sharpnessAmount: Float { get set }
+```
+
+The sharpening to apply, from 0 (none) to 1.
+
 ## `RAWDeveloper`
 
 public, declared in `Sources/NopeDevelop/RAWDeveloper.swift`
@@ -517,8 +860,8 @@ struct RAWDeveloper
 
 Develops HEIF and JPEG files from a RAW photo, with metadata built from the allowlist.
 
-The RAW is rendered neutrally (``CoreImageRAWRenderer``: no noise reduction, sharpening or
-local tone mapping; issue #1, "Formats") and encoded with the system encoders
+The RAW is rendered neutrally (``CoreImageRAWRenderer``: noise reduction, sharpening and
+local tone mapping turned off; issue #1, "Formats") and encoded with the system encoders
 (``PhotoEncoder``, ``EncodingSettings``). The new file's metadata is built by
 `MetadataPlan` from the DNG's own properties, which already passed through the allowlist
 at capture, and its orientation is 1 (up) because the rendered image is upright.

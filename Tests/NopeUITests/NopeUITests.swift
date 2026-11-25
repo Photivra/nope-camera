@@ -6,7 +6,8 @@ import Testing
 @testable import NopeUI
 
 struct LocalizationTests {
-    static let launchLocales = ["en", "ja", "es", "fr", "de", "ko", "zh-Hant", "zh-Hans", "pt-BR", "it", "nl"]
+    /// The languages the app ships in: English only.
+    static let launchLocales = ["en"]
 
     @Test func bundleShipsEveryLaunchLocale() {
         let available = Set(Bundle.module.localizations.map { $0.lowercased() })
@@ -19,12 +20,13 @@ struct LocalizationTests {
     func stringsAreTranslated(locale: String) throws {
         let path = try #require(Bundle.module.path(forResource: locale, ofType: "lproj"))
         let bundle = try #require(Bundle(path: path))
-        let value = bundle.localizedString(forKey: "Allow Camera Access", value: "MISSING", table: nil)
+        // Keys the 1.0.0 interface uses: the shutter's name and the format status's name.
+        let value = bundle.localizedString(forKey: "Take Photo", value: "MISSING", table: nil)
         #expect(value != "MISSING")
-        #expect(value != "Allow Camera Access")
-        let honesty = bundle.localizedString(forKey: "No RAW on This Lens", value: "MISSING", table: "Honesty")
+        #expect(value != "Take Photo")
+        let honesty = bundle.localizedString(forKey: "Photo Format", value: "MISSING", table: "Honesty")
         #expect(honesty != "MISSING")
-        #expect(honesty != "No RAW on This Lens")
+        #expect(honesty != "Photo Format")
     }
 }
 
@@ -53,6 +55,43 @@ struct AboutScreenTests {
     @Test func sourceLinkIsHTTPS() {
         #expect(AboutScreen.sourceURL.scheme == "https")
         #expect(AboutScreen.sourceURL.absoluteString == "https://github.com/Photivra/nope-camera")
+    }
+
+    @Test func privacyPolicyLinkIsHTTPS() {
+        #expect(AboutScreen.privacyPolicyURL.scheme == "https")
+        #expect(AboutScreen.privacyPolicyURL.absoluteString == "https://nope.photivra.com/privacy/")
+    }
+
+    /// The Rate or Review address (`docs/store/STORE-PAGE-PLAN.md`, 12.3): `https`, host
+    /// `apps.apple.com`, path `/app/id` and the digits, query `action=write-review`.
+    @Test func rateAddressIsTheWriteReviewPage() throws {
+        let url = try #require(AboutScreen.rateURL(appStoreID: "1234567890"))
+        #expect(url.scheme == "https")
+        #expect(url.host() == "apps.apple.com")
+        #expect(url.path() == "/app/id1234567890")
+        #expect(url.query() == "action=write-review")
+        #expect(AboutScreen.rateAddress(appStoreID: "1234567890") == "https://apps.apple.com/app/id1234567890?action=write-review")
+    }
+
+    /// No id, an empty one or one that isn't all ASCII digits gives no address, so the row and
+    /// its search entry are hidden.
+    @Test(arguments: [nil, "", "12a4", "id123", "１２３", " 123", "123/../x"])
+    func noRateAddressWithoutAValidID(_ appStoreID: String?) {
+        #expect(AboutScreen.rateAddress(appStoreID: appStoreID) == nil)
+        #expect(AboutScreen.rateURL(appStoreID: appStoreID) == nil)
+    }
+
+    /// Until the App Store record exists the repository has no id, and the row is hidden; the
+    /// release check (`scripts/check-app-store-id.sh`) fails until it is set. When the id is set,
+    /// this test checks it gives the address.
+    @Test func theAppsOwnIDGivesAnAddressOrNone() {
+        if let appStoreID = AboutScreen.appStoreID {
+            #expect(AboutScreen.rateAddress == "https://apps.apple.com/app/id\(appStoreID)?action=write-review")
+            #expect(AboutScreen.rateURL != nil)
+        } else {
+            #expect(AboutScreen.rateAddress == nil)
+            #expect(AboutScreen.rateURL == nil)
+        }
     }
 
     @Test func noticeCarriesTheDNGNotice() {
@@ -132,6 +171,23 @@ struct CameraLayoutTests {
         // 4.7-inch iPhone: 667 pt tall, a 20-point status bar, no home indicator.
         let small = CGSize(width: 375, height: 667 - 20 - CameraLayout.topBarHeight - CameraLayout.shutterRowHeight)
         #expect(CameraLayout.bandsOverlayPicture(in: small, bandsHeight: 44))
+    }
+
+    @Test func rowsOverThePictureOnlyWhereTheyOverlayIt() {
+        // iPhone 16 Pro Max: 440 × 860 pt inside the safe area; the rows fit below the picture.
+        let large = CGSize(width: 440, height: 860 - CameraLayout.topBarHeight - CameraLayout.shutterRowHeight)
+        #expect(CameraLayout.rowsOverPicture(in: large, bandsHeight: 100) == 0)
+        // 4.7-inch iPhone: 375 × 647 pt; the 500-point picture and 100 points of rows share 515.
+        let small = CGSize(width: 375, height: 647 - CameraLayout.topBarHeight - CameraLayout.shutterRowHeight)
+        #expect(CameraLayout.rowsOverPicture(in: small, bandsHeight: 100) == 85)
+        // A space shorter than the picture: the picture fills it, and the rows cover their height.
+        #expect(CameraLayout.rowsOverPicture(in: CGSize(width: 375, height: 300), bandsHeight: 100) == 100)
+    }
+
+    @Test func lensRowKeepsTheDesignGapAroundItsControls() {
+        // docs/design/screens/camera-auto: a 56-point row around 44-point controls.
+        #expect(CameraLayout.lensRowInset == 6)
+        #expect(CameraLayout.lensRowInset * 2 + NopeSize.minTarget == NopeSize.lensRow)
     }
 
     @Test func pictureFollowsTheWindowShape() {
@@ -218,7 +274,7 @@ struct CaptureFeedbackTests {
 
     @Test func everyFailureHasOneActionOrNone() {
         #expect(FailureAction(for: .photosAccessDenied) == .openSettings)
-        for error in [CaptureError.configurationFailed, .captureFailed, .developmentFailed, .metadataNotAllowed, .saveFailed] {
+        for error in [CaptureError.configurationFailed, .captureFailed, .bracketNotReady, .developmentFailed, .metadataNotAllowed, .saveFailed] {
             #expect(FailureAction(for: error) == .tryAgain)
         }
         for error in [CaptureError.notRunning, .blankPicture, .savingUnavailable] {
@@ -265,18 +321,28 @@ struct RegistryTests {
         #expect(CameraWarnings.current(context, lastSignature: .unsigned(.turnedOff)).isEmpty)
     }
 
-    @Test func signingOffOrFailedIsAWarning() {
+    @Test func onlyAFailedSignatureIsAWarning() {
+        // Signing is off by default (issue #80): off is not a warning, even after a photo.
         let context = Self.context(suite: "RegistryTests.signing")
+        #expect(!context.settings.signsPhotos)
+        #expect(CameraWarnings.current(context, lastSignature: nil).isEmpty)
+        #expect(CameraWarnings.current(context, lastSignature: .unsigned(.turnedOff)).isEmpty)
+        // With signing on, a photo that couldn't be signed is a warning until the next one is.
+        context.settings.setSignsPhotos(true)
         #expect(CameraWarnings.current(context, lastSignature: .unsigned(.failed)).map(\.id) == ["signing"])
-        context.settings.setSignsPhotos(false)
-        #expect(CameraWarnings.current(context, lastSignature: nil).map(\.id) == ["signing"])
+        #expect(CameraWarnings.current(context, lastSignature: .unsigned(.signedFileFailedCheck)).map(\.id) == ["signing"])
+        #expect(CameraWarnings.current(context, lastSignature: .unsigned(.turnedOff)).isEmpty)
+        #expect(CameraWarnings.current(context, lastSignature: .signed).isEmpty)
+        #expect(CameraWarnings.current(context, lastSignature: nil).isEmpty)
     }
 
-    @Test func trayEndsWithHideControls() {
+    @Test func quickMenuHasNoHideControlsTileAndStartsOff() {
+        // Hide Controls is in Q's foot, and Drive and Astro on the drive strip (BUILD-SPEC 3.6).
         let context = Self.context(suite: "RegistryTests.tray")
-        let items = QuickControls.current(context)
-        #expect(items.last?.id == "hideControls")
-        #expect(items.allSatisfy { !$0.isOn })
+        let ids = QuickControls.current(context).map(\.id)
+        #expect(!ids.contains("hideControls") && !ids.contains("drive") && !ids.contains("astro"))
+        #expect(ids.contains("focusPeaking"))
+        #expect(QuickControls.current(context).allSatisfy { !$0.isOn })
     }
 
     @Test func trayItemsReportWhetherTheyAreOn() {
@@ -301,10 +367,68 @@ struct DriveTextTests {
         #expect(DriveText.endMessage(BurstResult(end: .cameraStopped, saved: 2)) == "Burst stopped: the camera stopped.")
     }
 
+    @Test func burstCardWords() {
+        #expect(ModeCardText.burstRate(2.64) == "2.6 a second")
+        #expect(ModeCardText.burstRate(2) == "2.0 a second")
+        #expect(ModeCardText.burstDuration(.seconds(4.2)) == "4.2 seconds")
+        #expect(ModeCardText.joined("4.2 seconds", "2.6 a second") == "4.2 seconds · 2.6 a second")
+        #expect(ModeCardText.releaseToStop == "Release to stop")
+        #expect(ModeCardText.photosSaved(12) == "12 photos saved")
+        // Running: the rate from the third photo, and "Release to stop" while held.
+        #expect(ModeCardText.burstRunningDetail(BurstProgress(taken: 2, saved: 1, start: .held)) == "Release to stop")
+        #expect(
+            ModeCardText.burstRunningDetail(BurstProgress(taken: 12, saved: 11, start: .held, rate: 1.4))
+                == "1.4 a second · Release to stop")
+        #expect(ModeCardText.burstRunningDetail(BurstProgress(taken: 12, saved: 11, start: .started, rate: 2.6)) == "2.6 a second")
+        #expect(ModeCardText.burstRunningDetail(BurstProgress(taken: 2, saved: 1, start: .started)) == nil)
+        // Ended: the time and the rate, or the photos saved.
+        let summary = BurstResult(end: .stopped, saved: 12, start: .held, duration: .seconds(4.2), rate: 2.6)
+        #expect(ModeCardText.burstEndedDetail(summary) == "4.2 seconds · 2.6 a second")
+        let two = BurstResult(end: .stopped, saved: 2, start: .held, duration: .seconds(0.4))
+        #expect(ModeCardText.burstEndedDetail(two) == "0.4 seconds")
+        let limit = BurstResult(end: .limitReached, saved: 50, start: .started, duration: .seconds(19.6), rate: 2.5)
+        #expect(ModeCardText.burstEndedDetail(limit) == "19.6 seconds · 2.5 a second")
+        #expect(ModeCardText.burstEndedDetail(BurstResult(end: .stopped, saved: 1, start: .held)) == nil)
+        #expect(ModeCardText.burstEndedDetail(BurstResult(end: .storageFull, saved: 7, start: .held)) == "7 photos saved")
+        #expect(ModeCardText.burstEndedDetail(BurstResult(end: .cameraStopped, saved: 0, start: .held)) == nil)
+        #expect(ModeCardText.burstEndedDetail(BurstResult(end: .countReached, saved: 3, start: .counted)) == nil)
+    }
+
+    @Test func burstLimitCardWords() {
+        #expect(ModeCardText.pressToStop == "Press to stop")
+        #expect(ModeCardText.photosSaved(4, of: 10) == "4 of 10 photos saved")
+        // Running: "3 of 10", the rate and "Press to stop".
+        let running = BurstProgress(taken: 3, saved: 2, start: .limited, rate: 2.6, limit: 10)
+        #expect(ModeCardText.burstRunningDetail(running) == "2.6 a second · Press to stop")
+        #expect(ModeCardText.burstRunningDetail(BurstProgress(taken: 1, saved: 0, start: .limited, limit: 10)) == "Press to stop")
+        #expect(ModeCardText.burstRunningDetail(BurstProgress(taken: 3, saved: 2, start: .counted, rate: 2)) == "2.0 a second")
+        // Ended: "10 of 10 photos saved" with the time and rate, or the reason with "4 of 10".
+        let full = BurstResult(end: .countReached, saved: 10, start: .limited, duration: .seconds(3.6), rate: 2.5, limit: 10)
+        #expect(ModeCardText.burstEndedTitle(full) == "10 of 10 photos saved")
+        #expect(ModeCardText.burstEndedDetail(full) == "3.6 seconds · 2.5 a second")
+        let early = BurstResult(end: .stopped, saved: 4, start: .limited, duration: .seconds(1.2), rate: 2.5, limit: 10)
+        #expect(ModeCardText.burstEndedTitle(early) == "4 of 10 photos saved")
+        let storage = BurstResult(end: .storageFull, saved: 4, start: .limited, limit: 10)
+        #expect(ModeCardText.burstEndedTitle(storage) == "Burst stopped: storage is full.")
+        #expect(ModeCardText.burstEndedDetail(storage) == "4 of 10 photos saved")
+        let none = BurstResult(end: .cameraStopped, saved: 0, start: .limited, limit: 10)
+        #expect(ModeCardText.burstEndedDetail(none) == "0 of 10 photos saved")
+        #expect(ModeCardText.burstEndedTitle(BurstResult(end: .stopped, saved: 12, start: .held)) == "12 photos saved")
+    }
+
+    @MainActor
+    @Test func burstLimitAnnouncements() {
+        let full = BurstResult(end: .countReached, saved: 10, start: .limited, limit: 10)
+        #expect(DriveText.endAnnouncement(full) == "10 of 10 photos saved")
+        #expect(DriveText.endAnnouncement(BurstResult(end: .storageFull, saved: 4, start: .limited, limit: 10)) == "Burst stopped: storage is full.")
+        #expect(DriveText.endAnnouncement(BurstResult(end: .stopped, saved: 12, start: .held)) == nil, "the shutter's taps say it")
+        #expect(DriveText.endAnnouncement(BurstResult(end: .countReached, saved: 3, start: .counted)) == nil, "Siri says it")
+        #expect(DriveText.endAnnouncement(BurstResult(end: .stopped, saved: 0, start: .limited, limit: 10)) == nil)
+    }
+
     @Test func secondsUseSystemFormatting() {
         #expect(DriveText.shortSeconds(3).contains("3"))
         #expect(DriveText.spokenSeconds(10).contains("10"))
-        #expect(DriveText.systemImage(for: .burst) != DriveText.systemImage(for: .single))
     }
 }
 

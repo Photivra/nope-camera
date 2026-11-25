@@ -1,8 +1,8 @@
 # Testing
 
 Every change ships with tests (AGENTS.md, "Full test coverage"). This page says how to run them.
-Local toolchain: Xcode 27.2 with the iOS 27.2 Simulator. The app supports iOS and iPadOS 18.0
-and later.
+Local toolchain: Xcode 27.2 with the iOS 27.2 Simulator. The app supports iOS and iPadOS 26.0
+and later, and its Apple Watch app watchOS 26.0 and later (issue #78).
 
 ## Quick checks (seconds, no build)
 
@@ -14,10 +14,54 @@ scripts/test-check-localization.sh && scripts/check-localization.sh
 scripts/test-check-coverage.sh
 scripts/test-dump-tags.sh   # macOS only: the tag dumper's TIFF walker
 scripts/test-check-file-compat.sh
+scripts/test-check-launch-screen.sh && scripts/check-launch-screen.sh   # add a built .app to check its Info.plist
+scripts/test-check-app-store-id.sh
+scripts/test-count-design-screens.sh   # the design screen counts (docs/design/README.md)
+scripts/test-owner-mac-proof.sh   # the content key, the proof check and the proof dry run
 ```
+
+Before the release build, `scripts/check-app-store-id.sh` must pass: it fails while
+`AboutScreen.appStoreID` is `nil`, and 1.0.0 ships with its Rate or Review row. It isn't run on
+pull requests, because the id exists only once the app's App Store Connect record does
+(`docs/SECURITY_AUDIT.md`, check 7).
 
 `check-security.sh` reads tracked files only (`git ls-files`), so stage new files before running
 it.
+
+## The website
+
+The public site (`docs/design/nope-site.md`) has its own build and checks, separate from the app's
+CI: the `site` workflow (`.github/workflows/pages.yml`) runs them on pull requests that touch the
+site or its sources, and before every publication.
+
+```sh
+(cd site && npm ci --ignore-scripts)   # once: the pinned Tailwind CLI and check tools
+scripts/test-check-site.sh             # each build rule and check, with a passing and a failing case
+scripts/check-site.sh --preview        # build, then every check; --static-only skips Chrome and Java
+```
+
+`check-site.sh` builds `_site/`, then runs `scripts/site_checks.py` (the site's promises, links,
+search tags, truth rules and size budgets), the Nu HTML Checker (needs Java 11 or later; set `JAVA`
+to use another one), a page load with axe-core in headless Chrome for every page in both themes at
+1280 and 320 pixels (`site/checks/browser-checks.mjs`), and Lighthouse on the mobile profile with
+the floors of the design, section 14.3 (`site/checks/lighthouse.mjs`). Everything runs against
+`127.0.0.1`. Without `--preview` the build also refuses an unfinished policy; `--preview` skips only
+that rule, and the policy's version and dates while it is unfinished (`docs/RELEASING.md`).
+
+The `site build and checks` job is path-filtered, so it isn't a required status check: a pull
+request that touches none of its paths never runs it and would wait for it forever. A change to a
+string of `Sources/NopeUI/AccessibilitySettingsView.swift` runs it too, and fails it when a
+sentence of the accessibility page is no longer one of that screen's strings, until
+`site/content/accessibility.json` is updated to match.
+
+Lighthouse's `robots-txt` audit is skipped: Lighthouse fetches `robots.txt` from inside the page,
+and the site's Content-Security-Policy (`default-src 'none'`) blocks that fetch, so the audit
+reports a CSP violation rather than anything about the file. `site_checks.py` checks the file's
+lines instead.
+
+**Manual pass of the site** (design, section 9: VoiceOver in Safari on iPhone and on a Mac,
+keyboard only, 200% and 400% zoom, 320 px wide, both themes, print preview at Letter and A4):
+not yet done. Record the date, devices and result here.
 
 ## Unit tests and coverage
 
@@ -161,6 +205,23 @@ TEST_RUNNER_NOPE_TEST_DNG=/path/to/photo.dng xcodebuild test -scheme NopeKit-Pac
 Display P3: with the Flat look every mid-tone value doubles (no tone curve); with the Standard
 look it doesn't. Run on 2026-11-12 in the iOS 27.2 Simulator with a DNG from the device tag
 check: passed (on macOS 27 the median ratio was 2.01 for Flat and 2.51 for Standard).
+
+The wording that the app turns off noise reduction, sharpening and local tone mapping for the
+HEIF and JPEG copies rests on the RAW decoder settings the renderer sets (`NeutralDevelopment`).
+Two tests cover them:
+
+- `NeutralDevelopmentTests` (always runs) checks, with a fake decoder, that noise reduction
+  (luminance and color), sharpening, detail, moiré reduction, local contrast and local tone
+  mapping are set to 0 and lens correction is turned off wherever the decoder offers them, that
+  settings it doesn't offer are left alone, and the tone curve of each look.
+- `DevelopedLookTests.theDecoderKeepsTheNeutralSettings` (opt-in, with the DNG above) reads the
+  same values back from Core Image's own `CIRAWFilter` after the renderer has set them. Run it on
+  the iOS 26 and iOS 27 Simulators, since the decoder can differ between versions. Not yet run
+  (no DNG on this branch's runs).
+
+What a setting of 0 means is Apple's (`CIRAWFilter.h`); demosaicing itself smooths, and noise
+reduction turned off means none is added. A device check compares one HEIF of a flat gray card with a
+plain development of the same DNG (still to be done).
 
 ## File compatibility (issue #58)
 
@@ -346,6 +407,11 @@ xcodebuild test -project App/NopeCamera.xcodeproj -scheme NopeApp \
   -destination 'platform=iOS Simulator,name=iPad Air 11-inch (M4),OS=27.2' CODE_SIGNING_ALLOWED=NO
 ```
 
+The `NopeApp` scheme also holds the `NopeAppIntentsUITests` bundle ("Siri and Shortcuts in the
+UI tests"), which needs iOS 27 and a signed build. On an iOS 26 Simulator add
+`-only-testing:NopeAppUITests` (or `-skip-testing:NopeAppIntentsUITests`): `xcodebuild test -scheme
+NopeApp` loads that bundle too and fails there. The CI shards already pass `-only-testing`.
+
 The same tests run on an iPhone and an iPad Simulator, one at a time (running both at once
 stalled the test runner on the CI runner), in portrait and landscape (`XCUIDevice.orientation`).
 The iPhone camera layout stays in portrait when the device turns, and its icons and text turn
@@ -353,6 +419,25 @@ upright; the tests check that the window stays portrait, the shutter stays below
 and Settings rotates. On iPad the window rotates and the shutter is in the column beside the
 picture. Running the iPhone tests on an iPhone SE (3rd generation) Simulator covers the
 4.7-inch layout, where the lens row overlays the bottom of the picture.
+
+The iPhone sideways tests turn the device with `turnSideways(_:to:mode:)`, which polls (every
+0.2 seconds, for up to 10) until the camera shows the turned layout: the drive mode named on the
+picture, turned to the new side. A turn the app never shows fails the test; it is not skipped,
+so a sideways layout can't go untested while the run stays green. The one exception is the
+iPhone Duo Simulator, whose outer display doesn't pass the turn to the app: the test is skipped
+there, CI doesn't use it, and the turned layout is checked on a device ("iPhone Duo").
+
+A UI test that waits for something to change uses `waitUntil(timeout:poll:_:)`
+(`UITestSupport.swift`, issue #124), which checks a condition every 0.2 seconds against a
+deadline on the monotonic clock (`ContinuousClock`), never a `Date()` deadline: a change of the
+Simulator's or device's time can't cut the wait short or stretch it. The camera probe of the
+Debug tools (`CameraProbeHelpers.swift`) waits the same way.
+
+The night mode checks (`nonRedPixels`) count every sampled pixel that isn't red or black. On
+iPad they leave out the window's bottom trailing corner (`windowCorner(_:)`, 40 points), where
+iPadOS draws its window resize control: it is the system's, drawn outside the app's views where
+night mode's red can't reach, and `persistentSystemOverlays(.hidden)` hides it only after a
+delay. Everything else on the screen must be red or black.
 
 Every test runs in the system's light setting, the Simulator's default, unless it sets dark
 with `useAppearance(_:)`; `tearDown` waits (up to 30 seconds) until no photo is being saved,
@@ -411,12 +496,90 @@ other finding fails the test:
   place it scrolled it to);
 - a Dynamic Type finding on text in the bottom fifth of the window: the audit enlarges the text
   past the edge and can't measure it (the same text styles are measured higher up elsewhere);
+- the rules added with the 1.0.0 interface, each reviewed in the release code review (issue #79):
+  - a "Text clipped" finding on an element in the bottom fifth of the list or popover that
+    scrolls it. The finding's full text is "Text of this element may be clipped at larger
+    Dynamic Type sizes": as for the Dynamic Type check above, the audit enlarges the text where
+    it is and pushes a row at the lower edge past it. On HEIF and JPEG Copies scrolled to its
+    end, the audit reported Restore Defaults and the footer under it in three audits in a row,
+    on iPhone and in the iPad popover and night-mode sheet, while screenshots taken with each
+    finding show both rows whole. A finding higher up fails;
+  - a "Text clipped" finding with no element: it can't be placed or measured. The audit
+    reported it on the Accessibility page, whose last row is at the lower edge (the recording
+    shows every text whole), and on Details in Each Photo with the location notice at the
+    largest text size;
+  - on iPad, "Potentially inaccessible text" with no element while a popover is open. The
+    audit reads the screen's text and reports text it can't match to an element; beside a
+    popover it read the camera screen's text that the popover's edge cuts ("ff" and "e. in
+    the Settings app." of "Camera Access Is Off" beside the Formats page, "Tint" of the live
+    readout beside Viewfinder Overlays, in the failing runs' recordings). The Settings list
+    with its search field passed the same check where no text was cut;
+  - for 1.0.0 only (owner, 2026-11-22; to be removed with issue #140), "Potentially inaccessible
+    text" with no element on an iPad with iOS 27.2 or later held sideways while Photo Details is
+    open over the Last Photo viewer (`testDetailsSideways`; `isViewerTextBesideIPadDetails`). The
+    viewer's status lines and buttons show beside the form sheet. Hiding the viewer from
+    accessibility while the sheet is up was tried twice (`.accessibilityHidden` on the viewer,
+    and hiding it before the sheet presents) and left every viewer element in the tree: iOS
+    ignores accessibility hiding on the presenting view while a sheet is up. The same test passes
+    on the iPad with iOS 26.5;
+  - for 1.0.0 only (owner, 2026-11-22; to be removed with issue #141), "Text clipped" on the
+    Dim After row's title or notes and on the Live Activity row's title or explanation in
+    Settings (`isDimAfterOrLiveActivityClippedText`, only while the Settings page that shows the
+    Dim After row, `settings.dimAfter`, or the Live Activity row, `settings.liveActivity`, is
+    open: the same words on any other screen fail): every time on the iPhone 17 Pro with
+    iOS 26.5 and the iPad with iOS 27.2, now and then on the iPhone 18 Pro with iOS 27.2, while
+    the recordings show the texts whole. Without the Dim After menu row the Live Activity finding
+    didn't appear; giving that row a plain identifier instead of a container, or taking its
+    label's fixed size away, didn't remove it, and moving its notes out of the menu's label would
+    move the menu's value, a visual change. Any other finding on these rows still fails. Since
+    this hides the one automated check of the Dim After row's text, the manual accessibility pass
+    before a release reads the Dim After and Live Activity rows at the largest text size;
+  - a contrast finding on a disabled control (the RAW row while it is the only format, the
+    button gallery's disabled states, a lens button's "No RAW" caption while the self-timer
+    counts down, at the tokens' 40% opacity): WCAG 2.2, 1.4.3, exempts inactive user interface
+    components from the contrast minimum. Every audit helper applies it, the scrolling layout's
+    `auditScrollingScreen` too (owner, 2026-11-22: it lacked the rule, and
+    `testSelfTimerAtTheLargestTextSizeAndRightToLeft` failed on the iPad at 2.96:1 measured);
+    an enabled control is never exempt (`MeasuredContrastTests`). Whether to keep this exemption
+    is issue #142 (1.1.0);
+  - in the scrolling camera layout, a contrast finding on a row partly under the pinned Q and
+    shutter row (it runs from above the pinned row into it): the audit measures the part the
+    pinned row covers. The pinned row's own buttons, and every row wholly above it, are checked;
+  - in the button gallery's and the Photo Format sheet's contrast passes, a finding on a
+    control cut by the window's edge, and in the sheet's pass one with no element: the same
+    two rules as the first item of this list, in helpers that run the contrast check alone;
+  - while the how-to-use guide is open, "Potentially inaccessible text" with no element
+    (`GuideUITests.isGuidePictureText`): each page's picture is the camera's own control, shown
+    as decoration and hidden from VoiceOver by design, so the audit finds text with no element.
+    It is matched by the finding's description, where the other rules match the audit type,
+    and only while the guide's Close button exists; every text of the page itself is an element
+    and is audited (see "The how-to-use guide on a device").
+  - on the Photo Format sheet after it was scrolled, every "Text clipped" finding: the audit
+    reported the Show Processed Marker explanation on iPhone and the switch's title in the iPad
+    popover (184.5 points wide beside the switch at the default size) as text that may be
+    clipped at larger sizes, while screenshots show both whole, the title also at the largest
+    text size, where it wraps onto three lines;
+  - on iPad, the Dynamic Type check of the Photo Format popover after it was scrolled, an open
+    finding: at the largest text size the audit reported the Show Processed Marker switch's
+    title, scrolled to the popover's top edge, as "Dynamic Type font sizes are unsupported",
+    while the failing run's screenshot shows the title at the largest size. The same rows pass
+    the check on iPhone (`testProcessedMarkerOnALensWithoutRAW`). At that size the popover (420
+    points wide) shows about three words a line; whether the sheet should replace it at
+    accessibility text sizes on iPad, as it does in night mode, is an open design question.
+  Two rules of the integration were removed: clipped text of any element in the iPad popover
+  after a scroll, and HEIF and JPEG Copies audited at its top only. The Restore Defaults row
+  they covered was reported while it was below the fold: a row of a lazy list that isn't laid
+  out yet reports a placeholder frame inside the list and reads as hittable, so the tests now
+  scroll a Settings page to its end by what the screen shows
+  (`scrollToTheEndOfTheSettingsPage`), and `auditSettingsScreens` audits the Copies page at its
+  end too;
 - the Settings screens at the default text size and right-to-left skip the Dynamic Type check:
   the iOS 27.2 Simulator reported system form section headers and footers as "partially
   unsupported" there, cause unknown; every Settings screen passes the full audit, Dynamic Type
   included, at the largest accessibility text size;
-- a Dynamic Type finding on the Choose Details footer "On: each photo keeps only what it needs
-  to open. Off: choose each item below." and the header "In Each Photo": the iPad runner's
+- a Dynamic Type finding on the Details in Each Photo footer "On: each photo keeps only what it
+  needs to open. Off: choose each item below." and the header after it, "Location" (in 0.3.0,
+  Choose Details and "In Each Photo"): the iPad runner's
   audit reports them although they grow at every text size, which
   `testChooseDetailsTextGrowsAtEveryTextSize` measures (see "Dynamic Type findings on the iPad
   runner");
@@ -438,13 +601,56 @@ other finding fails the test:
   layout at the largest text size) are skipped on iPad in `testControlsOverWhiteAndYellowFrames`,
   `testLargestTextSize` and `testBlankPictureAtTheLargestTextSize`, which run every check on
   iPhone;
-- `testSpaceTakesAPhoto` is skipped on iPad, an open finding: on the iPad Simulator the Space
-  bar reached the focused button instead of the Camera menu's command, and no photo was taken; it
-  passes on iPhone. The device check below covers a hardware keyboard on iPad;
+- `testSpaceTakesAPhoto` is skipped on iPad, an open finding (issue #145, 1.0.0): on the iPad
+  Simulator the Space bar reached the focused button instead of the Camera menu's command, and no
+  photo was taken; it passes on iPhone. The device check below covers a hardware keyboard on iPad;
+- `testBurstSpeedMenu` fails on the iPhone 17 Pro Simulator with iOS 26.5, an open finding (issue
+  #151): the speed menu opens, but no element holds the Fast choice's explanation. It passes on
+  iOS 27.2; the CI iOS 26 job runs iPhone shard 1, which doesn't hold it;
 - the press-and-hold step of `testTapToFocusLocksWithTheButtonAndUnlocksWithThePill` is skipped
-  on iPad, an open finding: on the iPad Simulator the test's 1.2-second press arrived as a tap
+  on iPad, an open finding (issue #146): on the iPad Simulator the test's 1.2-second press arrived as a tap
   (the focus square moved to the pressed point, unlocked), at the center and off it; it passes
   on iPhone. The device check below covers press and hold on iPad;
+- two findings from the 1.0.0 integration, each set aside on one text in one test (an owner
+  decision; 2026-11-18, iOS 27.2 Simulator; `isApprovedAuditException` in
+  `NopeAppUITests.swift`). The recordings show both texts whole, so both are taken to be false
+  findings of the audit; before each release they are checked by hand on an iPad at the
+  largest text size (see "On-device checks"). Every other finding on these screens, and every
+  finding on these texts in other tests, still fails:
+  - `testAssistantAccessPageAtTheLargestTextSize`, on the iPad Air 11-inch (M4) only: "Dynamic
+    Type font sizes are partially unsupported" and "Text clipped" on the Assistant Access
+    switch's explanation ("Lets Siri, Shortcuts…", in the row `settings.assistantAccess.switch`). In the 720-point popover the
+    explanation runs past the list's lower edge and is reached by scrolling. Scrolled fully into
+    view, shown whole in the recording, a taller popover (1000 points) and Settings as a sheet
+    were each tried: the audit reported the same two findings every time, as it does for the
+    switch's title on the iPhone and the iPad Pro, which the test already sets aside. No layout
+    change was kept;
+  - the Settings audits that walk every page, in night mode
+    (`testNightModeSettingsScreensPassAccessibilityAudits`, and the same audit at the largest
+    text size and right to left) and in the system appearance
+    (`testSettingsScreensPassAccessibilityAudits` and `…InTheLightSetting`): "Text clipped" on
+    the Accessibility page's "Pinching to switch lenses is optional. The lens buttons do the
+    same.", matched by its text. Reported on the iPad Air 11-inch (M4) in the night mode audit,
+    and on the iPhone 18 Pro in all four but the largest text size; the iPhone recording shows
+    it whole on two lines too.
+    The recording shows the sentence whole on two lines, inside the frame the audit reports;
+- a fourth finding from the 1.0.0 integration, set aside after it was measured (an owner
+  decision on the third code review, 2026-11-19; `isMeasuredGridStyleFinding` in
+  `OverlayUITests.swift`): in `testOverlaySettingsAtTheLargestTextSize`, on the iPhone 18 Pro
+  Simulator with iOS 27.2, "Dynamic Type font sizes are partially unsupported" on the "Grid
+  Style" text (`settings.overlays.gridStyle`, the inline picker's label, drawn as its section's
+  title). `testGridStyleTextGrowsAtEveryTextSize` measures it at each size from Large to the
+  largest: 52, 54, 56, 59, 63.7, 69.7, 78, 86.3 and 93.3 points high, 370 wide, taller at every
+  step (on the iPad Air 11-inch (M4) Simulator, in the popover: 52 to 93.5 points, 440 wide),
+  so the finding is taken to be a false one. Only that finding, on that text, in that test
+  is skipped; the measuring test keeps checking that it grows, and a screenshot at the largest
+  size is attached to its result;
+- a third finding from the 1.0.0 integration is fixed, not set aside:
+  `testFirstStartAtTheLargestTextSizeAndRightToLeft` reported a contrast finding on the
+  "Ultra Wide" lens row, which the first start's plate covered at the largest text size on iPad.
+  The scrolling layout now waits to draw everything that scrolls until the first start ends
+  (docs/design/LAUNCH-SCREEN.md, 13), so nothing is under the plate and the test's audit runs
+  with no finding set aside;
 - on an iPhone held sideways, clipped-text and contrast findings on SwiftUI nodes the audit
   can't tie to an element: it measures turned text in its unturned frame. The same views pass
   every check in portrait; the turned layout is on the manual accessibility pass below;
@@ -462,11 +668,14 @@ each test checks, with `performAccessibilityAudit()` in every state:
 
 | Scenario | Test |
 |---|---|
-| `allow` | First-run screen (three statements, Continue); camera ready with the format chip ("single-frame RAW, RAW + HEIF") and the wide lens selected; no thumbnail before the first photo; the shutter gives the last-photo slot "Saved and signed." (a simulated signer stands in for the real one, which `NopeSigningTests` cover); the telephoto (no RAW) turns the chip into its warning; full auto shows only the default controls; the camera flip; the format chip's sheet; the quick-controls tray (closes on the shutter and on ⋯); signing off in Settings shows the "Not Signed" chip, also in clean view; landscape on iPhone (layout fixed, Settings rotates) and iPad (column); the first run at the largest text size and right-to-left |
-| `allow`, `signingFails`, `noRAW` | The last photo (issues #36, #53): after a save the thumbnail is a button named "Last Photo" with a simulated picture; its long-press menu offers Open in Photos and Photo Details; "What's in This Photo" lists the files, signature (signed, or "Not signed" with the reason), processing (the fallback's "processed by the phone's camera"), the details left out with "Off in Settings", and the timings, at the default and largest text sizes and right-to-left; tapping the thumbnail brings the Photos app to the front; with `manual` and a bracket, the details' Photo picker shows each frame |
-| `noRAW` | A device without RAW (wide and front, no Bayer RAW): the fallback chip and the HEIF fallback in the viewfinder description, portrait and landscape, default and largest text sizes; Space takes a photo |
+| `allow` | First-run screen (three statements, Continue); camera ready with the format chip ("single-frame RAW, RAW + HEIF") and the wide lens selected; no thumbnail before the first photo; the shutter gives the last-photo slot "Saved and signed." (a simulated signer stands in for the real one, which `NopeSigningTests` cover); the telephoto (no RAW) turns the format status into the "Processed" marker; full auto shows only the default controls (no Settings button on the stacked camera); the camera flip; the format status's sheet, read-only on a lens without RAW; Q, the quick menu (closes on the shutter and on Q; Settings opens from its foot); signing off is stated after each photo without a warning chip; landscape on iPhone (layout fixed, Settings rotates) and iPad (column); the first run at the largest text size and right-to-left |
+| `allow`, `signingFails`, `noRAW` | The last photo (issues #36, #53): after a save the thumbnail is a button named "Last Photo" with a simulated picture; a tap opens the Last Photo viewer, whose Photo Details opens "What's in This Photo", which lists the files, signature (signed, or "Not signed" with the reason), processing (the fallback's "processed by the phone's camera"), the details left out with "Off in Settings", and the timings, at the default and largest text sizes and right-to-left; tapping the thumbnail opens the viewer and not another app, and its Open in Photos brings the Photos app to the front; with `manual` and a bracket, each frame is its own page of the viewer |
+| `manual`, `noRAW`, `signingFails` with `-NopeSimulatedSaveSettings` and `-NopeSimulatedFileTags` | What's in This Photo in the 1.0.0 design (`PhotoDetailsUITests.swift`, `docs/design/BUILD-SPEC.md` 3.15; the summary card of issue #118): the summary's head and its four rows, each one element with exact words, in order, a warning row beginning with "Warning"; with the default settings the simulated camera's 1/60 s and ISO 100 and the lens marked "Not in the files"; the group headings in order; Files with "lossless", Display P3 and "One photo: the RAW with its HEIF"; each disclosure row opens and closes (In the Files open at first); the processed fallback's warning, distortion and "didn't change this file's picture" lines and no RAW Sensor Data; the three signature states; the location "Hidden" until Show Value, hidden again after reopening, "nothing to write" and "Off in Settings"; the Every Tag page (groups, a tag's value and setting, search, Show Hidden Values); the value hidden again after the app leaves the screen and returns; audits at the default and largest text sizes, right to left, in night mode (no non-red pixel), sideways and on iPad. `-NopeSimulatedSaveSettings <base64>` (debug builds) writes the save settings JSON, Base64-encoded so the arguments domain still reads the launch's other arguments, into the emptied UI test settings store; `-NopeSimulatedFileTags full` (or `fullNoLocation`) makes the simulated read-back return realistic tags, each only where the current settings' allowlist allows it |
+| `noRAW` | A device without RAW (wide and front, no Bayer RAW): the "Processed" marker ("Processed: no RAW on this lens, HEIF" for VoiceOver) and the HEIF fallback in the viewfinder description, portrait and landscape, default and largest text sizes; Space takes a photo |
 | `multitasking` | iPad Split View, Slide Over or Stage Manager: "The camera works only when nope. fills the screen.", shutter disabled |
 | `-NopeSimulatedViewfinder white` or `yellow` | The camera with a photo, the manual readout and an open dial over a pure white and a pure yellow picture |
+| `-NopeSimulatedViewfinderImage <path>` | The simulated picture is the still at that path on the Mac (HEIF, JPEG or PNG), shown whole on black, for store screenshots taken on the Simulator (`SimulatedViewfinderImage.swift`; `ViewfinderStillUITests.swift` checks a white still replaces the gray). Only the picture changes: the histogram, focus peaking and zebras still measure the simulated frame, so screenshots with those overlays on don't describe the still. Use only a photo taken with the app and saved unedited |
+| `-NopeSimulatedAppStoreID <digits>` or `none` | `none` simulates an app with no App Store ID (the row and its search entry are absent; the real id is set from 1.0.0). Otherwise an App Store ID, so About shows its Rate or Review row (`RateOrReviewUITests.swift`): a link with its App Store header and footer, last on the page; found by search ("rating", "feedback"); audited at the default and largest text sizes, right to left and in night mode (no non-red pixel). Without the argument the app uses its own id (`AboutScreen.appStoreID`), so the row shows. The link is never tapped: the Simulator has no App Store |
 | `metadataRejected` | Every file carries a simulated future system tag: "Not saved: nope. couldn't confirm that the photo holds only the details you chose."; also at the largest accessibility text size |
 | `photosDenied` | Adding to Photos isn't allowed: the "isn't allowed to add photos" banner with Open Settings |
 | `signingFails` | The signer fails: the photo is saved unsigned, the last-photo slot and the "Not Signed" chip say "Saved. Not signed: the signature couldn't be created.", shutter still enabled; also right-to-left, with the bottom row mirrored |
@@ -474,18 +683,22 @@ each test checks, with `performAccessibilityAudit()` in every state:
 | `interrupted` | The "in use by another app or a call" message, shutter disabled; also at the largest accessibility text size |
 | `hot` | The "cool down" message, shutter disabled |
 | `captureFails` | The capture failure banner: Try Again, Dismiss |
+| `noRAW`, `signingFails`, `allow`, `firstSaveOnly` | The Last Photo viewer (`PhotoViewerUITests.swift`; docs/design/BUILD-SPEC.md, 3.14): a tap on Last Photo opens it on the newest photo with the status and caption facts in the photo's VoiceOver value; Close, Escape and a swipe down close it; swipes and the arrow keys page, oldest first; the three status variants; double tap and pinch zoom with the preview hint (the simulated read-back reports HEIF and JPEG at 4032 × 3024, larger than the 30 × 40 simulated preview); tap hides and shows the controls; Photo Details and Open in Photos; a photo from a running interval series gives New Photo; with `firstSaveOnly` (the first photo is saved, every later save fails) the Photo Not Saved chip, which closes the viewer to the banner; after the background the viewer is closed and shows "Preview Not Kept"; Space closes it and takes no photo; the largest text size, right to left, night mode (no pixel other than red or black), iPhone sideways, iPad in both orientations, and `-NopeSimulatedLockScreenCamera` (no Open in Photos and no previews, as in the Lock Screen camera, so each photo shows "No Preview" and never "has released this one") |
 | `blankPicture` | Every photo is blank: after the shutter, one automatic restart and retry, then "The camera isn't sending a picture.", the blank-picture capture message, shutter disabled |
 | `denied`, `noCamera` | The access-off screen with Open Settings, and the no-camera screen |
-| `allow`, `denied` | Settings from the camera's Settings button: Settings, Formats, Look, Choose Details (top and bottom), Accessibility, Honesty (top and bottom), About and the license text, each audited at the default size, at the largest accessibility text size and in right-to-left layout; the format rule (the last format can't be turned off), the Look row (shown only with HEIF or JPEG selected) and the privacy rules (master switch and signing on by default, one item on makes it "Custom", locked items read "Locked") |
+| `allow`, `denied` | Settings, opened from Q on the stacked camera and from the Settings button elsewhere: Settings, Formats, HEIF and JPEG Copies (top and bottom), Details in Each Photo (top and bottom), Accessibility, Honesty (top and bottom), About and the license text, each audited at the default size, at the largest accessibility text size and in right-to-left layout; the format rule (the last format can't be turned off), the HEIF and JPEG Copies row ("Not Saved" with RAW only, otherwise the look) and the privacy rules (the master switch on and signing off by default, one item on makes it "Custom", locked items read "Locked"); `SettingsUITests.swift` covers the root rows, search, Show Processed Marker and the presets' More menu |
 
 UI test launches store settings in their own `UserDefaults` suite, emptied at each launch
 (`SimulatedCameraLaunch.settingsStore()`), so every test starts from the defaults and the real
 settings are never touched.
-| `manual` (with `-NopeSettings.showsManualControls YES`) | Manual controls: hidden without the option; the M pill; the readout row; a dial with the lens's range, Auto, − and +; "All Auto" from the row's last button; exposure compensation blocked in M; the ultra wide's fixed aperture; Pro Tools and a 3-frame bracket; the lock pill after AE-L, which unlocks; the M pill turns manual controls off; interval progress and Stop; clean view from the tray; the list at the largest text size; right-to-left |
+| `manual` (with `-NopeSettings.showsManualControls YES`) | Manual controls: hidden without the option; the Manual Controls button ("On" or "Off"); the readout row; a dial with the lens's range, Auto, − and +; "All Auto" from the row's last button; exposure compensation blocked in M; the ultra wide's fixed aperture; Pro Tools (no Interval or Bracketing section) and a 3-frame bracket from the drive strip; the lock pill after AE-L, which unlocks; the Manual Controls button turns manual controls off; interval progress and Stop from the drive strip; clean view from Q; the list at the largest text size; right-to-left |
+| `manual`, `dimManual`, `astro`, `manualFirstSaveOnly` | Bracket on the drive strip (`BracketUITests.swift`): the word in full auto and its card (no more than an eighth of the picture), Bracket Settings (Frames, Step, Order, Start Delay, The Frames, the Honesty sentence), the order and frame count on the card and in The Frames, the limited frames in dim light (`dimManual`: ISO 3200 at 1/4 s), the start delay counting down and cancelled by Cancel and the shutter, the saving and saved cards (`astro`: half a second per save), the Bracket group of What's in This Photo, no Bracket on the front camera, a bracket that stops part-way as the first capture (`manualFirstSaveOnly`: the first save works, later ones fail) shows the frame saved on Last Photo and opens the viewer on it; audited at the default and largest text sizes, right to left, in night mode (all red; on iPad the window corner control the system draws is skipped, and Bracket Settings' audit skips the element-less "Potentially inaccessible text" finding for camera text cut by the page sheet's edge, as beside a popover), sideways and on iPad |
 | `allow` (clean view) | The no-RAW chip stays visible in clean view |
 | `allow` (light and flash) | The Light switch turns the light on with its pill ("25%"), which stays through a photo and in clean view, changes the brightness and turns the light off; the Flash menu and its pill; the light hides the flash pill; no Light or Flash on the ultra wide |
 | `lightUnavailable` | The system refuses the light: the "Light Unavailable" warning, cleared by turning Light off |
-| `allow`, `signingFails`, `photosDenied` with `-NopeSettings.isNightModeOn YES` | Night mode from the tray and at launch: the camera with a photo, a warning and the light, at the largest text size, and every Settings screen (default, largest, right-to-left); a screenshot check finds no white, green or blue pixel outside the viewfinder and the status bar; the viewfinder stays white (natural) by default and turns red with Red Viewfinder |
+| `manual` (Astro and night mode, `AstroNightModeUITests`) | Astro turns night mode on; leaving it for Single turns night mode off again; night mode the person turned off and on again in Q while Astro was on, night mode on before Astro (`-NopeSettings.isNightModeOn YES`), and Keep Night Mode After Astro (`-NopeSettings.keepsNightModeAfterAstro YES`) each stay on; the Keep Night Mode After Astro row right after Night Mode, off by default, found by a keyword; audited at the default and largest text sizes, right to left and in night mode. A relaunch, which keeps night mode as it was, can't be tested here (each launch empties the settings): `AstroNightModeTests` covers it |
+| `burst` | Burst (docs/design/BURST.md, `BurstUITests`): each photo takes 0.4 s and each save 0.5 s, so a tap ends before a second photo. The idle card ("Fast burst", Start Burst) covers no more than a quarter of the picture; a tap saves one photo and shows no summary; holding the shutter (`press(forDuration:)`) saves three or more and leaves the summary with the measured rate; sliding off the shutter stops the burst; Start Burst, Stop Burst and the shutter; the speed menu (Fast, Slow) and the shutter's value "Burst, fast." or "Burst, slow."; the summary until a lens change; at the largest text size, right to left, in night mode (no pixel that isn't red), sideways and on iPad. XCUITest can't read the screen while a press lasts, so "Release to stop" is covered by the unit tests of the card |
+| `allow`, `signingFails`, `photosDenied` with `-NopeSettings.isNightModeOn YES` | Night mode from Q and at launch: the camera with a photo, a warning and the light, at the largest text size, and every Settings screen (default, largest, right-to-left); a screenshot check finds no white, green or blue pixel outside the viewfinder and the status bar; the viewfinder stays white (natural) by default and turns red with Red Viewfinder |
 
 In right-to-left layout the viewfinder, which `CameraScreen` draws behind the interface, was
 placed from the wrong edge: beside the control column (iPad) it sat a column's width to the left
@@ -525,8 +738,56 @@ CPU core busy); after it, it passed 3 times in a row with the whole UI suite.
 timeout only has to be longer than any CI runner can take (with 5 seconds, `waitsUntilReady`
 failed intermittently while the other tests kept every thread busy).
 
-Right-to-left layout is tested with `-AppleTextDirection YES -NSForceRightToLeftWritingDirection YES`.
+Right-to-left layout is tested with `-AppleTextDirection YES -NSForceRightToLeftWritingDirection YES`
+(Apple's right-to-left pseudo-language: English text in a mirrored layout). Long text is tested
+with `-NSDoubleLocalizedStrings YES` (Apple's double-length pseudo-language: every string is
+shown twice), in `testQuickMenuLongLanguage` on the phone and `testDoubleLengthText` on the
+watch, each also right to left. These stand in for long and right-to-left languages while the
+app ships in English only (issue #86).
+In Night Mode, Settings and the Every Tag page show the app's own red search field instead of
+the system's (issues #88 and #98): iOS draws the system field as gray glass outside the app's
+views, where the red filter can't reach it, and `testNightModeSettingsScreensPassAccessibilityAudits`
+found 879 sampled pixels that weren't red or black with it. `NightSearchUITests.swift` checks
+that the red field has no non-red pixel at rest, with results and with no result (keyboard
+closed), and outside the keyboard's frame while the keyboard is open; that it finds rows by name
+and keyword, clears and cancels; that a search is kept when Night Mode changes from outside
+Settings (`-NopeSimulatedNightModeSwitch <seconds>[,<seconds>…]`, debug builds, switches Night
+Mode as Siri or Control Center do); and the audits at the largest text size and right to left.
+`testSettingsRedesignInNightMode` checks that the system field returns, with the Night Mode row
+still in view, when Night Mode is turned off.
+
+Keep Screen On (issue #97) is tested with shorter times and a known brightness:
+`-NopeKeepScreenOnSeconds <dim>,<lowPowerDim>,<limit>` and `-NopeSimulatedBrightness <0…1>`
+(debug builds, `SimulatedScreen`). `KeepScreenOnUITests.swift` checks the row, the dimming and
+the Brighten Screen cover, that nothing dims under a sheet or while Battery Low shows, search,
+a preset round trip, and that a series doesn't dim a screen already at 10% or darker (issue
+#99). XCTest can't read the idle timer; `KeepScreenOnTests` covers it with a fake screen and
+clock.
 Every new screen and state adds an audit.
+
+### Space between the camera's rows (issue #116)
+
+`CameraSpacingUITests.swift` measures the camera's layout from the frames the accessibility tree
+reports (rounded to about half a point, so each check allows 1 point):
+
+- `testCameraRowsShareTheSpareHeight` (iPhone): in full auto, with manual controls on, sideways
+  both ways, right to left and in night mode, the picture is the window's width and 4:3 and
+  doesn't move; every target in the lens row, the drive strip and the shutter row is at least
+  44 points and at least 8 points from the next row's targets; the gap between the lens row and
+  the drive strip is the one the spare height gives (`CameraLayout.rowGap(spareHeight:)`); and
+  on the screen sizes in `docs/design/finish-1.0.md`, section 1.3, the picture's top edge and the
+  gap match the table. Each case is recorded in the result bundle with its measurements and a
+  screenshot ("spacing …" attachments).
+- `testCameraColumnGivesTheShutterRoom` (iPad): Q and Last Photo are 16 points from the shutter
+  in a window at least 600 points tall, in portrait and landscape, right to left and in night
+  mode; the picture is 4:3 and beside the column.
+- `CameraShellTests` checks the rule itself for each screen size of the design, with the
+  safe-area insets measured on the iOS 27.2 Simulators.
+
+Run them on the smallest iPhone (iPhone SE, 3rd generation: the rows overlay the picture), a
+6.1 to 6.3-inch iPhone (iPhone 16 or 17), the largest (iPhone 17 Pro Max) and an iPad. Within
+the drive strip the targets touch, and within the lens group they are 4 points apart
+(`NopeSpace.xxs`), as the design specifies; the 8-point rule is between rows.
 
 ## Documentation
 
@@ -548,36 +809,168 @@ the local toolchain). Jobs:
 |---|---|
 | `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator (they also write and upload the file compatibility fixtures), the coverage gate |
 | `ui-build` | Builds the app and the UI tests once (`build-for-testing`) and uploads the test run and the apps |
-| `ui-tests 1/3` … `3/3` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
-| `ui-tests-ipad 1/2`, `2/2` | The same tests in two shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
-| `ui-tests`, `ui-tests-ipad` | Pass only when every iPhone (iPad) shard passed; these are the required status checks |
+| `ui-tests 1/6` … `6/6` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
+| `ui-tests-ipad 1/5` … `5/5` | The same tests in five shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding (issue #147) |
+| `ui-tests`, `ui-tests-ipad` | Pass when every iPhone (iPad) shard passed, or else with a valid proof from the owner's Mac (below); both are required status checks |
 | `file-compat` | The pinned c2patool and exiftool (`scripts/install-file-validators.sh`) on the fixtures from `unit-tests`; both are required (see "File compatibility") |
-| `ui-tests-watch` | The Apple Watch app's UI tests with accessibility audits on the Apple Watch Series 12 (46mm) Simulator (`NopeWatch` scheme) |
+| `ui-tests-watch 1/1` | The Apple Watch app's UI tests with accessibility audits on the Apple Watch Series 12 (46mm) Simulator (`NopeWatch` scheme) |
+| `ui-tests-watch 1/1 (second runner)` | The same, only when the first job's runner was lost before the job ended |
+| `ui-tests-watch` | Passes when the watch tests passed on the first runner or on the second, or else with a valid proof from the owner's Mac (below); a required status check |
+| `unit-tests (iOS 26)` | The NopeKit unit tests on an iPhone 17 Pro Simulator with iOS 26.5 (no coverage gate: `unit-tests` has it) |
+| `ui-tests 1/6 (iOS 26)` | The first iPhone UI test shard on the same iOS 26.5 Simulator, from the `ui-build` build, with `scripts/run-ui-test-shard.sh` and `SIMULATOR_OS=26.5` |
+| `ui-tests-watch (watchOS 26)` | The watch UI tests on an Apple Watch Series 11 (46mm) Simulator with watchOS 26.5 |
+| `oldest-os` | Passes when the three iOS and watchOS 26 jobs passed; advisory, not a required check (read by eye before a release merge: its runtime download depends on Apple's servers) |
 | `docs` | `scripts/check-docs.sh` |
 
 `.github/workflows/repo-checks.yml` (`repo-checks`) runs the quick checks above.
 
+The ruleset on `main` requires `repo-checks`, `unit-tests`, `ui-tests`, `ui-tests-ipad`,
+`ui-tests-watch` and `docs` (since 2026-11-22; before, only `repo-checks`, `unit-tests`,
+`ui-tests` and `docs`). `file-compat` and `oldest-os` are not required. Read them before merging a
+release.
+
+Four steps added after the last `build` run on GitHub were run locally first, on 2026-11-22 on
+`int-1.0.0` with the final review's fixes: the Release build's `strings` check for Debug-only
+tools (all four binaries clean) and its networking check; `scripts/check-launch-screen.sh` on the
+built Debug and Release apps; `scripts/check-docs.sh` with its DocC build (100% documented,
+`docs/api/` matching); and the `site` workflow's steps, `npm ci --ignore-scripts`,
+`scripts/test-check-site.sh` (90 passed) and `scripts/check-site.sh --preview`, whose site checks,
+browser and axe checks and Lighthouse floors passed in a copy with
+`site/content/accessibility.json`'s "Last updated" set to the day its text changed (the branch
+keeps the earlier date until the release pull request's last push, `docs/RELEASING.md`, so the
+build stops at that date rule until then). The Nu HTML Checker step wasn't run locally
+(it needs Java, which that Mac doesn't have); it runs in the workflow.
+
+The jobs above the `oldest-os` rows use the iOS 27.2 and watchOS 27.2 Simulators. The app
+supports iOS, iPadOS and watchOS 26 and 27 (issue #78). The `xcode-27` image has no iOS 26 or
+watchOS 26 Simulator runtime, and the `macos-26` image, which has them, has no Xcode 27, which
+the app needs (it uses iOS 27 APIs behind `#available(iOS 27, *)` checks). So the three iOS
+and watchOS 26 jobs run on the `xcode-27` image and first add the runtime they need with
+`scripts/add-simulator-runtime.sh <iOS|watchOS> 26.5 <device type> <name>`: when the runtime
+isn't installed it downloads Apple's with `xcodebuild -downloadPlatform <platform>
+-buildVersion 26.5 -architectureVariant arm64` (once more if that fails), then creates the
+Simulator when it isn't there, and prints its identifier. Its simctl calls each have a
+two-minute limit and are tried once more; when both tries fail it says so and fails the step. 26.5 (iOS 23F77, watchOS 23T570) is
+the newest 26.x runtime in Apple's Simulator runtime index as of 2026-11-18; the version is
+`OLDEST_OS` in `build.yml`. The runtimes (8.5 GB for iOS, 4 GB for watchOS) aren't cached:
+they don't fit the repository's cache, so each of those jobs downloads one (about 10 minutes,
+counted in their time limits). The iPhone 17 Pro and Apple Watch Series 11 are used because
+the iPhone 18 Pro and Apple Watch Series 12 Simulators need the 27 runtimes; the watch app runs
+with a simulated phone, so the watch needs no paired iPhone. Checked locally on 2026-11-19
+with the 26.5 runtimes: the watch UI tests passed on an Apple Watch Series 11 (46mm) with
+watchOS 26.5, and on an iPhone 17 Pro with iOS 26.5 the first start, Honesty and focus fade
+tests passed. On iOS 26.5 the Simulator reports a SwiftUI `Link` in the About form as a button,
+not a link (on iOS 27.2 the same build reports a link), so `app.links[…]` didn't find the
+privacy policy or source code link and `testSourceCodeIsAnHTTPSLink` and
+`testPrivacyPolicyIsAnHTTPSLink` failed there. Each of the three About links now adds the link
+trait and removes the button trait (`.accessibilityAddTraits(.isLink)` and
+`.accessibilityRemoveTraits(.isButton)`; adding the link trait alone leaves a button on 26.5),
+and both tests, with the Rate or Review link tests, pass on iOS 26.5 and 27.2 (checked locally
+on 2026-11-19). Whether VoiceOver on an iOS 26 device says "link" is a device check below. With
+the deployment target at
+26.0, the compiler also rejects any API newer than iOS or watchOS 26 that isn't behind an
+`#available` check. Running on a version 26 device is part of the on-device checks below.
+
+### When the GitHub UI runners are failing: a proof from the owner's Mac
+
+A fallback for when GitHub's macOS runners fail the UI shards for reasons outside the tests
+(Simulator setup failures, lost runners) run after run. The GitHub shards remain the default and
+run on every pull request and push; the ruleset and its required checks don't change, and
+`repo-checks`, `unit-tests` and `docs` run only on GitHub.
+
+`ui-tests`, `ui-tests-ipad` and `ui-tests-watch` pass when their shards pass. When they don't,
+each passes only with a valid proof (`scripts/check-owner-mac-proof.sh`): the newest commit
+status with the context `ui-tests (owner Mac)` on the pull request's head commit (on a push, the
+pushed commit) is a success, was created by a login listed in
+`.github/owner-mac-proof-allowed.txt`, and its description ends with the content key of the
+commit the job checked out. A cancelled, skipped or failed shard never passes without one. The
+job summary says which path passed, or why the check failed.
+
+The content key (`scripts/ui-content-key.sh`; `--inputs` prints what it hashes) is the SHA-256 of
+the git tree ids of `App`, `Sources`, `Tests`, `Config`, `Vendor`, `Tools` and `c2pa-lib`, of
+`Package.swift` and `Package.resolved`, and of every file under `scripts/` except the four proof
+scripts (`owner-mac-ui-proof.sh`, `check-owner-mac-proof.sh`, `test-owner-mac-proof.sh` and
+`ui-content-key.sh`). The workflow files, the documentation and the proof scripts are not
+inputs, so a later commit that changes only them keeps the key, but the status must still be on
+that commit. For a pull request the job checks out the merge with the base branch, so a proof
+stops matching when the base branch changes a UI test input: update the branch and make a new
+proof.
+
+To make a proof, on the owner's Mac with Xcode 27.2 and the iOS and watchOS 27.2 Simulators
+named in `build.yml`, in a clean checkout of the pull request's head commit, pushed:
+
+```sh
+gh auth status                            # signed in as a login in .github/owner-mac-proof-allowed.txt
+scripts/owner-mac-ui-proof.sh --dry-run   # the checks, the steps and the status it would post
+scripts/owner-mac-ui-proof.sh             # several hours; posts the status only when all passed
+```
+
+In a new worktree of the commit (so ignored local files such as `Config/Local.xcconfig` take no
+part) it builds the app and its UI tests and runs, one after another, every iPhone shard on the
+iPhone 18 Pro Simulator and every iPad shard on the iPad Air 11-inch (M4) Simulator
+(`scripts/run-ui-test-shard.sh`, with the test the iPad jobs skip skipped), then builds the watch
+app and runs its UI tests (`scripts/run-watch-ui-tests.sh`). It refuses a tree with changes or
+untracked files, a gh login that isn't listed and a commit GitHub doesn't have. It stops at the
+first failure and then posts nothing, leaving the worktree and its result bundles.
+
+Two differences from the GitHub shards:
+
+- The proof builds against the published C2PA library that `Package.swift` pins by checksum,
+  not one built from source; the `c2pa-lib` job, which `unit-tests` needs, still checks that the
+  two are the same.
+- The check can't tell why the GitHub shards didn't pass: a valid proof stands in whether they
+  failed on the runner or on a test. Before making a proof, read the failed shards' summaries
+  (each says whether it was a test failure or an infrastructure failure); when a shard reports a
+  test failure, run that test on the Mac first, and fix it or open an issue.
+
+When the status is posted after the run's UI checks failed, re-run each failed check's job
+(`ui-tests`, `ui-tests-ipad` or `ui-tests-watch`) with "Re-run job" on the run's page; "Re-run
+failed jobs" would run the shards again too. "Re-run job" checks the merge with the base branch
+as it was when the run started. While the shards are still running, the checks read the status
+when the shards end. To withdraw a proof, post a newer status with the same context
+and another state:
+
+```sh
+gh api repos/Photivra/nope-camera/statuses/<commit> -f state=failure \
+  -f context="ui-tests (owner Mac)" -f description="withdrawn"
+```
+
 ### UI test shards
 
-The UI suite takes about 131 minutes of test time on the iPhone Simulator and 138 on the iPad
-Simulator on the GitHub macOS runner (about twice as long as on a recent Mac, so CI limits are
-sized from runner times, never from local ones). CI runs it in three iPhone shards and two iPad
-shards, each its own job:
+By the listed times the UI suite takes about 573 minutes of test time on the iPhone Simulator
+and 595 on the iPad Simulator on the GitHub macOS runner (about twice as long as on a recent
+Mac, so CI limits are sized from runner times, never from local ones). About seven tenths of
+those times are estimates (`e`, twice a local time), so the runner is expected to measure
+less. CI runs it in six iPhone shards and five iPad shards, each its own job:
 
 | Job | Tests (listed times) | With about 7 minutes of setup | Limit |
 |---|---|---|---|
-| `ui-tests 1/3`, `2/3`, `3/3` | 44 minutes each | 51 minutes | 100 minutes |
-| `ui-tests-ipad 1/2`, `2/2` | 69 minutes each | 76 minutes | 130 minutes |
+| `ui-tests 1/6` … `6/6` | 93 to 102 minutes each | 100 to 109 minutes | 150 minutes |
+| `ui-tests-ipad 1/5` … `5/5` | 117 to 124 minutes each | 124 to 131 minutes | 180 minutes |
+| `ui-tests 1/6 (iOS 26)` | 94 minutes | 111 minutes, with the runtime download | 160 minutes |
 | `ui-tests-watch` | 2 minutes | 13 minutes, with its build | 45 minutes |
+| `ui-tests-watch (watchOS 26)` | 2 minutes | 23 minutes, with the runtime download | 70 minutes, with room for the runtime wait |
 
-The limits leave room for the wait for a runtime remount (up to 12.5 minutes, see "Simulator
+The 1.0.0 merges (device feedback, Honesty, the first start's plate) brought the listed times
+to 122 minutes for each of four iPhone shards and 171 for each of three iPad shards, past the
+limits, so 1.0.0 runs six iPhone and five iPad shards, rebalanced from the listed times, with
+the limits raised to fit them. Later 1.0.0 tests brought the listed times to 93 to 102 minutes
+(iPhone) and 117 to 124 (iPad) per shard (`scripts/ui-test-shards.sh times`, 2026-11-22), so the
+limits went from 130 to 150 and from 160 to 180 minutes: the worst case, with setup and the
+remount wait, is about 122 of 150 and 144 of 180, which leaves room for a second run of
+unfinished tests.
+
+Before that, the 1.0.0 interface had added about 75 UI tests, listed with estimates, and with
+three iPhone and two iPad shards an iPad shard came to 124 of its 130 minutes with setup, so a
+fourth iPhone shard and a third iPad shard were added. The limits leave room for the wait for a runtime remount (up to 12.5 minutes, see "Simulator
 runtime disk images on the runner") and for one second run of unfinished tests after an
 infrastructure failure. Until build 44149517211 there were eight shards per device; with fewer,
-larger jobs, 6 jobs per build boot a Simulator instead of 17, and the runner's Simulator
+larger jobs, fewer jobs per build boot a Simulator (12 with the iOS 26 shard, against 17), and the runner's Simulator
 failures start in the minutes after a job's first use of the Simulator.
 
-`scripts/ui-test-shards.txt` lists every UI test with its iPhone shard, its iPad shard and its
-time in seconds on the runner on each device, or, with an `e`, an earlier or estimated time
+`scripts/ui-test-shards.txt` lists every UI test as `<iPhone shard 1-6> <iPad shard 1-5>
+Class/test <seconds>e <seconds>e`: its iPhone shard, its iPad shard and its time in seconds on
+the runner on each device, or, with an `e`, an earlier or estimated time
 (twice the local time for a new test) until the runner has measured it. Each device's shards
 are balanced by its own times (longest test first, into the shard with the least time so
 far). To rebalance, take the times from the per-test result files (see "Flaky tests") or from
@@ -608,8 +1001,10 @@ launch the app ("Timed out while launching application via Xcode", 170 s) and th
 passed: the watch's system app answered the test runner at once, but `xcodebuild` started the
 launch two minutes later, while it was booting the iPhone Simulator paired with the watch (it
 boots that iPhone for a watch test run). `scripts/prepare-simulator.sh` now boots the paired
-iPhone too, beside the watch and before the build, and waits for both, and it fails the step if
-the app can't be launched once (it ignored a failed launch before).
+iPhone too, beside the watch, and waits for both, and it fails if the app can't be launched
+once (it ignored a failed launch before). The boots are started before the build
+(`--start`, which waits for nothing) and waited for in the test step (see "Preparing the
+Simulator has a time limit" below).
 In the first sharded CI run, two shards failed before any test started ("The test runner crashed
 while preparing to run tests", after 7 to 9 minutes of "Testing started"), and the first test of
 two others failed to launch the app within its time limit; both happened on a Simulator the test
@@ -720,8 +1115,12 @@ background task scheduler took 9.6 minutes and the install ended with "server di
 +707 s; its retry ran into a second loss of the Simulator in the first test and the job's
 35-minute limit. Their cause is assumed, not shown.
 
-`scripts/wait-for-simulator-runtimes.sh`, the first use of simctl in the shard and watch jobs,
-reads `xcrun simctl runtime list -j`. When a runtime other than the two usual ones
+`scripts/wait-for-simulator-runtimes.sh` runs before a Simulator is booted in the shard and
+watch jobs and, before its tests, in `unit-tests (iOS 26)`. It counts from the job's first use
+of simctl, which it notes in a file (`SIMULATOR_FIRST_USE_FILE`) when it is the first; in the
+three iOS and watchOS 26 jobs that first use is `scripts/add-simulator-runtime.sh`, which notes
+the time before its own first simctl call, ten minutes of download earlier, so the later wait
+counts from when the disk image service started. It reads `xcrun simctl runtime list -j`. When a runtime other than the two usual ones
 (`SIMULATOR_RUNTIMES_ON_DISK_IMAGES` in `build.yml`) is mounted under
 `/Library/Developer/CoreSimulator/Volumes`, it waits until 750 seconds have passed, with nothing
 booted, so the remounting is over before a Simulator runs: in the bundles the last unmount came
@@ -729,7 +1128,11 @@ booted, so the remounting is over before a Simulator runs: in the bundles the la
 On other runners it returns at once. The job limits leave room for the wait; no test's time
 limit changed. That the wait is enough rests on
 those logs: a runner whose runtime under test never mounts the usual way hasn't been seen
-through a whole job.
+through a whole job. Open: a runtime the 26 jobs download is itself mounted from a disk image;
+if the runner mounts it under `/Library/Developer/CoreSimulator/Volumes` by design, the wait
+would take its full 12.5 minutes in each of those jobs (not seen yet; the job limits allow for
+it). After the first run on the runner, add the 26.5 runtime identifiers to
+`SIMULATOR_RUNTIMES_ON_DISK_IMAGES` if they are mounted that way in every job.
 
 #### A Simulator that dies on the runner
 
@@ -756,6 +1159,40 @@ test cut short ran again and passed, and the job passed although 17 of its 18 te
 run. The second run now takes every test without a result, and
 `scripts/test-ui-test-shards.sh` has that case.
 
+#### Preparing the Simulator has a time limit
+
+In build 44222358365 the watch job stopped in its step "Find and boot the watch Simulator and
+its paired iPhone", which ran `scripts/prepare-simulator.sh`: the step started at 02:35:01 and
+never ended, the job was cancelled 55 minutes after it started (its limit was 45), the later
+steps stayed pending, and no log exists for the job. That is how a job looks whose runner
+stopped answering; which command was running isn't known. That step booted two Simulators
+with nothing limiting how long a `simctl` call may take, and it was outside the
+infrastructure classification. (In build 44149517211 one `simctl` step of an iPad shard had
+taken 9.6 minutes.)
+
+Now every `simctl` call that prepares a Simulator runs under `scripts/with-timeout.sh`, in the
+shard jobs and the watch job: 180 seconds to start a boot, 600 to finish it, 180 and 300 to
+stop the scheduler and the push service, 300 to install the app, 120 to launch it. A call that
+runs out of time fails the preparation, which is an infrastructure failure and is done once
+more (next section). The watch job starts both boots before its build without waiting for them
+(`prepare-simulator.sh --start`) and waits for them, with those limits, in its test step
+(`scripts/run-watch-ui-tests.sh`), so a boot that fails or never finishes is classified and
+tried again like any other. Installing the watch app is tried up to three times: on a Mac,
+right after the watch and its iPhone had booted, the pairing service removed the app while it
+was being installed ("Client appconduitd … requested uninstall") and the next install went
+through.
+
+#### A runner that is lost
+
+A time limit inside the job doesn't help when the runner itself is lost, as it may have been
+in build 44222358365: nothing in the job runs any more. For the watch tests there is
+therefore a second job, `ui-tests-watch 1/1 (second runner)`. The first job's last step notes
+that the job ended on its runner (it runs whatever the job's result); the second job runs
+only when the first didn't pass and that note is missing. A job that ended on its runner with
+a test failure or an infrastructure failure is not run again this way. The required check
+`ui-tests-watch` passes when either job passed. The iPhone and iPad shard jobs have no such
+second job yet; a lost runner there fails the build.
+
 #### Infrastructure and test failures
 
 `scripts/ui-test-run-lib.sh`, used by the shard jobs and the watch job, classifies a failed
@@ -775,7 +1212,7 @@ job, the tests that have no result yet (the finished ones are passed to `xcodebu
 run per job at most, and no workflow-level rerun, so no passed job or test is repeated. The
 first run's result bundle is kept and uploaded as `…-interrupted.xcresult`.
 
-The job summary on GitHub names the classification ("ui-tests 2/3: Passed", "Test failure" or
+The job summary on GitHub names the classification ("ui-tests 2/4: Passed", "Test failure" or
 "Infrastructure failure"), says whether a second run happened, and lists the tests that failed
 or were cut short.
 
@@ -842,6 +1279,47 @@ two texts (by label, `measuredDynamicTypeLabels`), and `testChooseDetailsTextGro
 checks what the audit was asked instead, on iPhone and iPad: both texts and the master switch's
 title are larger at every text size than at the size before.
 
+#### Findings on an element that is gone
+
+An audit finding's element is bound to the accessibility element the audit found, and the
+screen can change before the finding is judged: on iPad the Settings popover lays its rows out
+again after a scroll (issue #177), and the row the audit named is replaced by a new one with the
+same text. Reading the `label`, `frame`, `identifier` or `elementType` of such an element records
+a test failure, "Failed to get matching snapshot: No matches found for Descendant with identity
+binding to AX element", even when `exists` answered true a moment before. That was
+`testGuideOpensFromSettingsAndAbout` failing on the iPad Air 11-inch (M4) with iOS 27.2 (3 of 4
+runs on 2026-11-22, and again in the iPad shard 3 run of 2026-11-24): a finding on the "How to Use nope."
+row's text, read by a rule that set aside other findings.
+
+So the rules never read the element itself:
+
+- Every rule that judges a finding, and every failure message, reads the element through
+  `XCUIAccessibilityAuditIssue.currentElement` (`UITestSupport.swift`): `exists`, then one
+  `snapshot()`, which throws instead of failing the test. It is `nil` when the audit named no
+  element or the element is gone; a failure on such an element says "an element no longer on
+  screen".
+- When an audit reports a finding whose element is already gone,
+  `performCompleteAccessibilityAudit` waits three seconds for the screen to settle and audits it
+  once more, and that audit's findings are judged instead.
+- A finding whose element is gone again is not one the audit named no element for: the rules for
+  element-less findings don't apply to it, and a rule that places or names an element (by frame,
+  label or identifier) can't set it aside, so it fails. Only the rules that already skipped an
+  element that doesn't exist still do: after a scroll (`audit(_:afterScrolling: true)`) a finding
+  whose element is gone is skipped as one whose text isn't on screen now, and a contrast finding
+  on a scrolling camera screen is skipped as one not wholly on screen.
+- Between the three audits of `audit(_:)`, each finding's label is read before the next audit,
+  and the next audit's finding is the one kept, so a row laid out again between audits still
+  counts as reported again. A finding whose element was gone before its label could be read
+  counts as reported again by a later finding of the same type and description, and so does a later finding whose element is gone.
+
+The lazy Settings list on iPad also removes rows scrolled out of the popover. In
+`testOverlaySettingsAndProTools` full-window swipes looked for the Viewfinder Overlays row: one
+swipe brought it in below the popover's lower edge, where it reads as not hittable, and the next
+flung it past the top, after which it no longer existed and the tap failed ("No matches found",
+about one run in three on the iPad Air 11-inch (M4) with iOS 27.2). The test now opens the page
+with `openOverlaySettings`, as the other overlay tests do: drags of a third of the popover's height,
+until the row is wholly inside it; the Grid Style choices on the page are found the same way.
+
 #### Audits that don't finish
 
 In build 44185929631 two tests failed with "Audit failed to complete in time" (XCTest's error
@@ -865,6 +1343,38 @@ of three runs on iPhone, two of two on iPad). When an audit does time out,
 `performCompleteAccessibilityAudit` writes to the test log how long it ran and how long each
 check then took alone, which XCTest's error doesn't say. Why the contrast check doesn't finish
 on that part of the compare details isn't known.
+
+#### Contrast findings set aside by measurement
+
+An owner decision of 2026-11-19, from a code review of 1.0.0. The contrast audit of the
+iOS 26.5 Simulator reported text that screenshots show far above the minimum: the "Guides"
+header of Viewfinder Overlays (`testOverlaySettingsAndProTools`), black on `#EFEFF3`, about
+18:1, reported in every run on iOS 26.5 and in none on iOS 27.2.
+
+The rule: every audit goes through `performCompleteAccessibilityAudit`
+(`UITestSupport.swift`), which, for each contrast finding on an element that exists and lies
+wholly in the window, takes a screenshot of the element's frame and measures its contrast
+(`MeasuredContrast` in `MeasuredContrast.swift`): the frame's most common color is the
+background, and the foreground is the color that at least 0.5% of the frame's pixels reach
+(nine pixels at least); the ratio is the WCAG 2.2 contrast of the two. The finding is set aside
+only when the measured ratio is **7:1 or more**, WCAG 2.2's enhanced level for text (1.4.6). A
+finding measured below 7:1, one on an element that isn't wholly in the window, one with no
+element, and every finding of another type go on to the test's own rules as before, so text that
+is really low in contrast still fails.
+
+Each finding set aside is written to the test log as "Contrast finding set aside", with the
+finding, the element's label, identifier and frame, the measured ratio and the iOS version, and
+the element's screenshot is attached to the test result under the same ratio and version. A
+finding measured and kept is logged as "Contrast finding kept" with its ratio.
+`MeasuredContrastTests` checks the measurement on drawn images: the WCAG formula's fixed points
+(21:1 for white on black, 5.25:1 for the night red on black), the background found by count, and
+that a few stray pixels can't raise the result.
+
+Night mode's form rows are not set aside this way: the night red is 5.0:1 on their
+`#1C0000` (`NopeColor.nightRowUnderMultiply`), below 7:1, so they pass the audit on their own
+or fail. Until 2026-11-19 they were `#2C0000` in sheets (4.74:1), which the iOS 26.5 audit reported
+as "Contrast nearly passed" (`testProcessedMarkerAtTheLargestTextSizeRightToLeftAndNightMode`,
+`testProcessedMarkerOnALensWithoutRAW`).
 
 #### Continue on the first-run screen (open)
 
@@ -891,22 +1401,191 @@ scripts/run-ui-test-shard.sh 1 "iPhone 18 Pro" DerivedData/Build/Products ui-tes
 
 XCTest can't speak to Siri or run a shortcut, so Debug builds take
 `-NopeSimulatedShortcut <request>`: a number for Take Photo with that delay in seconds,
-`burst<count>` for Take Photo with a count, `bracket<count>` for Take Bracket, or
-`lens-ultraWide` for Switch Lens. The app sends
-the request through the same `ShortcutInbox` the intents use and shows what Siri would say
+`burst<count>` for Take Photo with a count, `bracket<count>` for Take Bracket (darkest first;
+`bracket<count>-metered` or `bracket<count>-brightest` for another order),
+`lens-ultraWide` for Switch Lens, `preset-factory` for Apply Preset or `interval` for Start
+Interval Shooting; several requests separated by commas are sent one after another, and the last
+one's answer is shown (`interval,lens-ultraWide` asks for a lens while a series runs). The app sends
+the request through the Assistant Access check and the same `ShortcutInbox` the intents use
+(`AssistantGate`, issue #82) and shows what Siri would say. Access is off by default, so
+`ShortcutUITests` launch with `-NopeSettings.assistantAccess YES -NopeSettings.assistantAsk never`;
+`-NopeSimulatedAssistantAnswer cancel` cancels the question that Every Action and Only Before a
+Photo ask (it is confirmed otherwise); a cancelled question gets no answer from the app, so the
+result reads "No answer: the question was canceled." `TakePhotoIntentUITests.swift` (iOS 27 only)
+runs the real Take Photo intent through the system's App Intents runner (`AppIntentsTesting`)
+instead, in its own UI test target, `NopeAppIntentsUITests`, which isn't in the CI shards:
+`AppIntentsTesting` links `AppIntentsTypeSupport`, which iOS 26 doesn't have, and while these
+tests were in `NopeAppUITests` the test bundle couldn't be loaded on the iOS 26.5 Simulator, so
+no UI test ran there ("Failed to load the test bundle"). Run them with
+`-only-testing:NopeAppIntentsUITests` on an iOS 27 Simulator; no CI job runs them, so they are a
+release gate, run by hand on a signed build before the release CI run. Last run: 2026-11-22, on
+`int-1.0.0` with the final review's fixes, iPhone 18 Pro Simulator with iOS 27.2, Simulator
+signing: all 5 passed. They cover: access off, on with Never, on with Every Action (the runner confirms the question), a
+40-second delay answered when the timer starts, and the app closed. The runner refuses an app
+built with `CODE_SIGNING_ALLOWED=NO` ("Unable to run internal tests on a Customer build"), so
+these tests are skipped in such a build and run with the Simulator's own signing (leave the
+setting out). `AssistantAccessUITests.swift` covers the Settings page
+(off and on, Ask First while off, the largest text size, right to left, night mode all red with
+the iPad window corner excluded, search, the Lock Screen camera's read-only row) and the requests
+through the check: every action refused while access is off with the refusal card and its count,
+a cancelled question, the camera's hint and the This Session list, and the tip after five
+confirmations. At the largest text size the audit's Dynamic Type check reports the page's switch
+title, "Assistant Access", as "partially unsupported" or "Text clipped" on the iPhone and iPad Simulators (iOS 27.2)
+wherever it is drawn; that one finding is set aside there, and
+`testAssistantAccessTitleGrowsAtEveryTextSize` measures the switch's row growing at all nine
+text sizes instead. The check, the session record, the stored settings and presets that keep the
+Privacy settings are unit tested in `AssistantAccessTests`. Before Assistant Access, the request
+went straight to the inbox, as described here:
 (`ShortcutUITests`: a delay with the countdown, a cancelled countdown, no camera access, a burst
-of three, a bracket in full auto and a lens switch). The Interval drive mode is covered by
+of three, a bracket in full auto, a bracket taken brightest first, a lens switch, and a lens switch refused during a series). The Interval drive mode is covered by
 `testIntervalShootingFromTheDriveMenuInFullAuto` and the sheet's audits at the largest text size
-and right-to-left. The request logic (counts, lenses, the light, interval shooting,
-requests without a camera screen) is unit tested in `ShortcutTests`.
+and right-to-left; a series that stops after a time by `IntervalTimeUITests.swift` (the Stop
+After picker, the hours and minutes, "At most", the check that the interval is shorter than the
+time, the idle and running cards, audited at the default and largest text sizes, right to left
+and in night mode). The request logic (counts, lenses, the light, interval shooting,
+requests without a camera screen) is unit tested in `ShortcutTests`; a timed series (its end on
+the monotonic clock, a change of the device's time, pausing, ending early, presets and the
+duration of Start Interval Shooting) in `IntervalTimeTests`, with a `FakeClock` passed as the
+model's `NopeClock`.
+
+## Launch screen
+
+The design and the reasons are in `docs/design/LAUNCH-SCREEN.md`; the build is described in
+`docs/ARCHITECTURE.md`, "Launch screen".
+
+Automated:
+- `scripts/check-launch-screen.sh [<built .app>]` checks that the `LaunchBackground` color set has
+  one color, opaque sRGB black, with no appearance variant; that `LaunchMark.svg` is byte for
+  byte `docs/design/launch-mark.svg`, rendered as the original, and that its three paths are the
+  icon's (`AppIcon.icon/Assets`) in the icon's colors; and, given a built app, that its Info.plist
+  has exactly `UIColorName`, `UIImageName` and `UIImageRespectsSafeAreaInsets` (false) in
+  `UILaunchScreen`, `UIStatusBarStyleLightContent`, and no launch storyboard, and (on macOS) that
+  the compiled asset catalog holds both assets. `scripts/test-check-launch-screen.sh` has a
+  passing and a failing case for each. The repository checks run both on every pull request; the
+  `ui-build` job checks the app it builds.
+- `LaunchHandOffUITests.swift` launches the `slowStart` scenario, whose camera stays starting
+  until the app first goes to the background, and checks the first start: one element
+  "Starting the camera…", no spinner, the mark's frame 78 × 54 points, centered across the window
+  and 3 points above its center (within a point, from the screenshot's pixels), the picture
+  black outside it, the screen black and the status bar's content white in the light
+  appearance, red only in night mode, the audit, the largest text size and right to left (in the
+  dark appearance); then that the indicator ends when the camera runs and stays gone after the
+  background and a lens change, and that first run ends it; and that the shutter and Q are
+  there under the indicator, whole, inside the window and usable (`testFirstStartKeepsTheControlsWhole`,
+  on the iPhone and the iPad, at the default and the largest text size). At the largest text
+  size (the scrolling layout, LAUNCH-SCREEN.md, 13) `testFirstStartAtTheLargestTextSizeAndRightToLeft`
+  also checks that the lens rows don't exist during the first start, that Take Photo and Quick
+  Menu exist, are whole and can be pressed, that no button intersects the indicator, that the
+  audit passes with no finding set aside, and that the rows exist and the indicator is gone once
+  the camera runs.
+- `FirstStartTests` (NopeCore) covers `CameraModel.isFirstStart`; `StartIndicatorTests` (NopeUI)
+  the mark's geometry and colors, and the arithmetic of the rule that leaves out the words and
+  the plate where they would come within `NopeSpace.s` (12 points) of the pinned row
+  (`StartIndicator.wordsFit(plateExtent:roomBelowCenter:)`). The UI tests can't make a window
+  that short, so that case is check 11 below.
+
+A UI test can't capture the launch screen: iOS draws it before the app runs. On the Simulator
+it can be held for a screenshot:
+
+```sh
+xcrun simctl erase <device>          # or a new device: see "Kept launch screens" below
+xcrun simctl boot <device>
+xcrun simctl ui <device> appearance light
+xcrun simctl install <device> <path>/nope.app
+xcrun simctl launch --wait-for-debugger <device> com.photivra.nope.dev
+xcrun simctl io <device> screenshot launch.png
+xcrun simctl terminate <device> com.photivra.nope.dev
+```
+
+`--wait-for-debugger` holds the launch screen: the app's process is stopped (state `T` in `ps`)
+before its first line of code, and the launch screen stayed up for as long as it was held (23
+seconds, the longest tried, on an iPhone 17 Pro Simulator with iOS 27.2, 2026-11-18). Measured
+that day with this method, in the light and the dark appearance, on an iPhone 17 Pro, an iPhone
+SE (3rd generation) and an iPad Pro 13-inch (M5) in portrait, all iOS 27.2: every pixel outside
+the mark, the status bar and the home indicator band was `#000000`; the status bar's content was
+white; the mark's lit pixels were 78 × 54 points, centered across and 3 points above the
+screen's center, unscaled, in `#EDEDEE` and `#40C8E0`; and the app's first start
+(`-NopeSimulatedCamera slowStart`) drew the mark in the same pixels and colors. So the
+`UILaunchScreen` image is placed as the design asks and the launch storyboard of the design's
+section 6.2 isn't needed.
+
+Kept launch screens: on the Simulator `simctl uninstall` and a new install did not replace the
+launch screen iOS had kept from the previous build (the old period color still showed); erasing
+the device did. Erase the device, or use a new one, before checking a changed launch screen.
+
+Colors: Xcode's asset compiler reads an SVG's colors as Display P3 and stores the launch image in
+sRGB. With the icon's `#40C8E0` written in the SVG the launch screen's period was `#00CBE4`; the
+SVG therefore writes the period as `#6AC5DD`, the Display P3 value of sRGB `#40C8E0`, and the
+launch screen shows `#40C8E0` (measured as above). `#EDEDEE` is the same in both spaces.
+
+By hand, once for each release and again when a file of the design's section 6 changes (record
+the results here):
+1. Each Simulator check above also on the iPad in landscape and in Split View, and on the iPhone
+   Duo closed and open.
+2. A recording of a launch in the light appearance, stepped through frame by frame: no frame
+   between the launch screen and the camera is lighter than the launch screen, and the mark is in
+   the same pixels until it fades.
+3. On an iPhone, an iPad and an iPhone Duo: a cold start (restart, wait a minute, open) and a
+   start from the app switcher, in the light and the dark appearance, recorded, and filmed at
+   240 frames a second for a single bright frame. Note how long the launch screen and the first
+   start last.
+4. On an iPhone, starting the app held sideways, both ways round: the mark stays upright and in
+   place, with no turn that can be seen. If a turn shows, option A ships.
+5. Night Mode on, the app opened in a dark room: nothing white but the status bar and the mark
+   before the red camera; the mark turns red in one frame and doesn't move.
+6. The Lock Screen camera, with Night Mode off and on: what iOS shows before the extension's first
+   frame; nothing brighter than black, then red from the first frame in Night Mode, and the
+   indicator for its first start.
+7. Smart Invert and Classic Invert: the launch screen and the first frame agree. If iOS inverts
+   one and not the other, option A ships.
+8. First run on a fresh install, in each appearance: the mark, then the statements, nothing in
+   between (black to white once in the light appearance, as decided).
+9. After an update: install release 0.3.0, open it, install the new build over it, open it, and
+   record whether the old launch screen is shown once.
+10. The Home Screen icon is still the Icon Composer icon now that the app has an asset catalog.
+11. At the largest text size, in a window too short for the words (an iPad in Stage Manager or
+    Split View at its smallest height, or the 4.7-inch iPhone with `-NopeSimulatedCamera
+    slowStart`): the first start shows the mark alone, with no words and no plate, at the
+    window's center; VoiceOver still reads "Starting the camera…"; the pinned row is drawn and
+    nothing else is until the camera runs. In a taller window the words and the plate show.
+
+## What was tested on real hardware
+
+The real hardware for the 1.0.0 checks is an iPhone 16 Pro Max (iOS 27.2.1), an iPad Air
+(5th generation) and an Apple Watch Series 10 (watchOS 27.2.1) paired with that iPhone: the watch
+app connected, showed the camera's status and took photos on the iPhone, and showed the
+unreachable warning with the iPhone locked or the iPhone app in the background (2026-11-23 and 2026-11-24, builds 3 to 6).
+Everything else, including other iPhone, iPad and Apple Watch models and iOS, iPadOS and watchOS
+26, was tested only in Apple's Simulator, which has no real camera. The only
+recorded device result so far is the debug tag check on the iPhone 16 Pro Max (2026-11-11 and
+2026-11-12, "Tag check" below); the release save path is still to be checked on a device.
+
+Known limits that no available device can close before release:
+
+- Whether any value of the locked details (the color matrices, the as-shot white balance, the
+  black and white levels) differs between two devices of the same model. Only one unit of each
+  model has been available, so the app doesn't say these values can't identify a device.
+- What a real iPhone camera writes on iOS 26, and whether photos save there.
+- An Apple Watch on watchOS 26, other Apple Watch models, the watch's reply time (not measured) and the Live Activity on the watch.
+- Lenses on other iPhone models: which have RAW, fixed-focus ultra wide lenses, RAW buffer layouts.
+
+The app and the store listing make no "tested" or "verified" claims; this section, the README's
+requirements and the App Review notes (`docs/store/README.md`) say what was tested. Update this
+section with each release.
 
 ## On-device checks
 
 Some behavior can only be checked on hardware. Before a release, on at least one iPhone and one
-iPad:
+iPad, with at least one device (or, where hardware isn't needed, a Simulator) on iOS or iPadOS 26
+and one on 27, the oldest and newest supported versions (issue #78):
 
 - the camera permission prompt shows the localized `NSCameraUsageDescription`, and each answer
   leads to the right screen (`SystemCameraAuthorization`);
+- at the largest text size, the texts whose audit findings are set aside (see "UI tests and
+  accessibility audits") show whole, with nothing cut off: on an iPad the Assistant Access
+  switch's explanation ("Lets Siri, Shortcuts…", Settings › Privacy › Assistant Access) and, in
+  night mode, the Accessibility page's "Pinching to switch lenses is optional. The lens buttons
+  do the same."; on an iPhone, the "Grid Style" title in Settings › Viewfinder Overlays;
 - a Secure Enclave key signs and verifies (`SecureEnclaveSigningKey`), and a DNG, HEIF and JPEG
   saved on the device validate with c2patool (below) as `Valid` with only
   `signingCredential.untrusted` failing;
@@ -928,10 +1607,10 @@ iPad:
 - last photo and its details (`ImageIOThumbnailer`, `PhotoDetails`, `openPhotosApp`): after a
   RAW + HEIF, a RAW-only, a RAW + JPEG and a no-RAW photo, the thumbnail shows the photo upright
   in portrait and landscape (time how long a RAW-only thumbnail takes: it decodes the DNG);
-  tapping it opens Photos, where the new photo is the newest item (the `photos-redirect://` URL
-  opens Photos, not a chosen asset; Apple documents no way to open one asset, and the URL itself
-  isn't documented by Apple); the long-press menu and the VoiceOver actions offer Open in Photos
-  and Photo Details; for each photo, the details match `exiftool -a -G1 -s` of the files exported
+  tapping it opens the Last Photo viewer; the viewer's Open in Photos opens Photos, where the new
+  photo is the newest item (the `photos-redirect://` URL opens Photos, not a chosen asset; Apple
+  documents no way to open one asset, and the URL itself isn't documented by Apple); the
+  VoiceOver actions on the thumbnail offer Open in Photos and Photo Details; for each photo, the details match `exiftool -a -G1 -s` of the files exported
   from Photos as originals: pixel size (`ImageWidth`/`ImageHeight` for the DNG, the image size
   for HEIF and JPEG), `BitsPerSample`, `CFAPattern`, `BlackLevel`, `WhiteLevel`, opcode lists,
   `ExposureTime`, `ISO`, `FNumber`, `FocalLength`, `ExposureCompensation`, `WhiteBalance`, the
@@ -968,17 +1647,156 @@ iPad:
 - self-timer (issue #39): 3 s and 10 s count down with a light haptic each second and, with
   VoiceOver, each number spoken; pressing the shutter, a volume button or Cancel Timer stops it
   without a photo; Instruments shows no CPU work during the countdown beyond the running camera;
-- burst (issue #46), on each lens for RAW, RAW + HEIF and HEIF: holding a volume button or the
-  Camera Control takes a burst until it is released, and tapping the shutter starts and stops
-  one; record the frames per second (below, "Burst rate"); every saved frame passes the
-  read-back and is its own photo in Photos; memory stays flat over 50 frames (Instruments,
-  Allocations); VoiceOver announces the start and the saved count;
-- storage and battery warnings (issue #44): see "Low storage" below; at 20% battery, unplugged,
-  "Battery Low" shows and is announced, and it goes away when the device is plugged in; Low Power
-  Mode changes the explanation;
+- burst (issue #46; docs/design/BURST.md, 5.7), on each lens for RAW, RAW + HEIF and HEIF:
+  holding the on-screen shutter, a volume button or the Camera Control takes the first photo on
+  the press and photos until it is released, stopping within one photo of the release; a tap
+  takes one photo; sliding the finger off the shutter stops the burst; Start Burst runs one until
+  the shutter or Stop Burst; record the frames per second (below, "Burst rate"); every saved
+  frame passes the read-back and is its own photo in Photos; memory stays flat over three bursts
+  of 50 frames at 12 MP and at 48 MP (Instruments, Allocations); the picture between photos stays
+  live (record any stutter); focus and exposure follow a moving subject in full auto and hold with
+  AE/AF lock; the light tap for each photo is felt and the shutter sound follows the system;
+  leaving the app during a burst saves every photo and the Live Activity counts them; with
+  VoiceOver, a double tap takes one photo, a double tap and hold a burst, and the action Start
+  Burst one with no hold; with Voice Control ("Tap Start Burst", "Tap Stop Burst") and Switch
+  Control a burst starts and stops with no hold; record the heat level after three bursts of 50; memory stays flat
+  once 20 frames hold Last Photo previews (`SessionPhotos`);
+- Last Photo viewer (`PhotoViewer.swift`; BUILD-SPEC.md, 3.14): with real photos, the opening
+  and closing motion (a fade with a short zoom; the system zoom transition isn't used, because
+  its swipe down also closed a zoomed photo), the swipe down to close (and that it doesn't close
+  a zoomed photo), double tap and pinch up to the preview's pixels with the hint, and a pinch
+  back to fit (a synthesized pinch in left the photo zoomed in the iOS 27.2 Simulator, so the UI
+  test returns to fit with a double tap), paging through 20 or more photos (the 21st shows the
+  fallback at its 156-pixel thumbnail, at most 160 points), and a portrait and a landscape
+  photo; Escape (a synthesized Escape didn't reach the viewer's command in the iOS 27.2
+  Simulator, so no UI test covers it) and the VoiceOver scrub close it; the volume buttons and
+  the Camera Control close the viewer and take no photo, and the next press takes one (decision
+  V1), also with Photo Details open over the viewer, where both close (issue #109; in the
+  Simulator `testHardwareShutterClosesPhotoDetailsAndTheViewer` covers it with a simulated press,
+  `-NopeSimulatedHardwareButton`); a photo from Apple Watch while the viewer is open gives New Photo; the app switcher's
+  snapshot shows no photo, for the viewer, for Photo Details opened from the camera and for
+  Photo Details opened over the viewer (they rely on `scenePhase` inside a full-screen cover and
+  inside a sheet, which no UI test can see; a privacy claim in `docs/PRIVACY.md`, so record the
+  device, iOS version and date here before each release); Reduce Motion fades the viewer and crossfades pages; night mode draws
+  the photo red; VoiceOver (the photo's value, the adjustable paging, the actions, Escape, focus
+  back on Last Photo), Voice Control ("Close", "Photo Details", "Open in Photos", "New Photo"),
+  Switch Control and Full Keyboard Access; the Lock Screen camera's viewer has no Open in
+  Photos and shows "No Preview" for each photo (it makes no previews); Photo Details' Files row
+  shows 10-bit for a 10-bit HEIF copy (unit-tested in `PhotoDetailsTests`; the simulated files
+  have no 10-bit HEIF); the iPhone Duo fold pair (`duo-fold-viewer`): the viewer stays open on the same photo;
+- Last Photo previews (`SessionPhotos`, `ImageIOPreviewer`): on the oldest and newest supported
+  iPhone and an iPad, for RAW, RAW + HEIF and HEIF, record the time the preview adds to each
+  save (Instruments, Time Profiler), the size of a 3072-pixel preview at JPEG quality 0.9 and
+  whether it shows artifacts when zoomed in, and the app's memory with 20 previews held and
+  with the viewer open (three decoded pages); after going to the background and back, and with
+  Xcode's Simulate Memory Warning, every preview is released;
+- storage and battery warnings (issue #44): see "Low storage" below; at 3% battery or less,
+  unplugged, "Battery Low" shows (not at 4%) and is announced, and it goes away when the device
+  is plugged in; Low Power Mode changes the explanation;
 - interval shooting screen (issue #48): during a series the screen doesn't lock and is dimmed;
   a tap brightens it while the series continues; the brightness and auto-lock come back when the
   series ends, is stopped, or the app goes to the background, and after the camera screen closes.
+- interval shooting that stops after a time: Stop After Time, 0 hours 5 minutes, 30 s apart:
+  the card shows "n photos taken · 5 min left" counting down by minutes and the series ends by
+  itself after about 5 minutes; start again and leave the app for 2 minutes: back in the app,
+  the series continues with about 2 minutes less left (the time keeps running while paused);
+  start again, leave for longer than the time: back in the app the series ends at once without
+  another photo, and the Live Activity said "Paused: n photos taken · m:ss left" and counted down
+  while away.
+
+### Open device checks named by the third code review of 1.0.0
+
+Each item below is a statement the app or its documents make that rests on iOS behavior no one
+has recorded yet. None has been run. Record each result with the date, the device and the iOS
+version in the section named, or list it in the changelog as not yet checked:
+
+- **Assistant Access** ("Assistant Access on a device" below): that
+  `authenticationPolicy = .requiresAuthentication` makes iOS ask for an unlock before
+  `perform()` (check 5, and check 11 for Siri on a locked phone), and which of the two checks
+  refuses on a locked phone: iOS's unlock, or the app's own fallback
+  (`isProtectedDataAvailable`, which lags a lock by some seconds and is always true on a device
+  without a passcode); that `requestConfirmation` shows and speaks its question from an intent
+  started in the background mode (check 2); that a refused or cancelled request never opens the
+  app, and that `continueInForeground` opens it after Confirm (check 1); and that the preset
+  picker in the Shortcuts app lists no saved names while access is off (`PresetQuery`, check 13).
+- **Focus bracketing** ("Bracketing on a device"): D5 to D7 (`focusSettleSeconds` of 0.1 s, the
+  0.02 tolerance, whether a frame taken right after the handler is sharp where planned), and D11
+  (exposure and white balance hold across the frames on each lens).
+- **Keep Screen On** ("Keep Screen On and the Night Mode search field on a device"): checks 1 to
+  3 and 7 of `docs/design/keep-screen-on.md`, section 11 (the idle timer after the limit,
+  Auto-Brightness while dimmed, the brightness put back after each way out, VoiceOver with the
+  cover); also whether a brightness set in Control Center while dimmed is kept.
+- **Pinch** ("Pinch to switch lenses on a device"): the thresholds, a pinch that continues while
+  the camera restarts for its first step, and that two fingers are never taken for a tap, a lock
+  or a clean-view swipe.
+- **Device feedback** ("Device feedback for 1.0.0"): C1 and C2 (the close-up detector and the
+  Ultra Wide advice; for C1 also a tripod and a still close subject, where readings may stop),
+  S1 to S5 (the stabilization signal and the 2-stop allowance, both provisional), and F1 to F7
+  (the fade, Voice Control's "Tap Lock" in time, Full Keyboard Access focus through
+  `@FocusState`).
+- **Rate or Review** (once `AboutScreen.appStoreID` is set): tapping the row on About opens the
+  App Store at the app's write-review page on an iPhone and an iPad, and the app stays as it
+  was. The `?action=write-review` form is unverified until it can be opened for a live app, so
+  check it after the first release; on a TestFlight build, note only that the App Store opens
+  (it doesn't take reviews for a TestFlight build). With App Privacy Report on, the tap adds no
+  domain under the app (`docs/SECURITY_AUDIT.md`, check 8). From the Lock Screen camera, if About
+  is offered there, the link needs the device unlocked first, as the other two do.
+- **About links on iOS 26**: on an iPhone with iOS 26, VoiceOver reads each of the three About
+  links (Privacy Policy, the source code address, Rate or Review) as "link", not "button". The
+  iOS 26.5 Simulator reported them as buttons until the button trait was removed; this checks
+  the fix where VoiceOver speaks.
+- **Opening Photos**: the `photos-redirect://` address, which Apple doesn't document, now has two
+  entry points, the viewer's Open in Photos and the camera's Open Photos (P1 under "Device
+  feedback for 1.0.0"). Record that each opens the Photos app; the app ignores the result of the
+  call, so if a future iOS stops opening the address, both buttons would do nothing without a
+  message (issue #148, 1.1.0).
+
+### Open device check named by the fourth code review of 1.0.0
+
+- **A HEIF copy saves on iOS 26.** The iOS 26.5 Simulator's ImageIO reader reports a top-level
+  `Headroom` key on every HEIF the app writes, which the read-back now allows in a HEIF only
+  (`MetadataPlan.heifDerivedImageIOKeys`, `docs/PRIVACY.md`, "ImageIO's own keys"). On an iPhone
+  with iOS 26, take a photo with RAW + HEIF and with the processed fallback (HEIF), and record
+  that each HEIF saves to Photos and that the read-back reports no other key. Not run.
+
+### The viewer and What's in This Photo on a device (1.0.0)
+
+Device checks added by the last viewer and details changes for 1.0.0. Not run.
+
+- **The shown page zooms after a long series** (issue #102). Start an interval series of more
+  than 100 photos, open the viewer on the oldest photo while it runs, and leave it until that
+  photo is dropped from the session (the session keeps 100). The viewer moves to the newest
+  photo; double tap and pinch zoom it. `PhotoViewerTests.theShownPageFollowsTheFallbackWhenItsPhotoIsDropped`
+  covers the rule; no UI test runs a series that long.
+- **Memory in the viewer** (issue #103). The viewer now decodes each of its three pages at the
+  size it fills on the screen, and the page shown at the preview's full 3072 pixels only while
+  it is zoomed in. By arithmetic (not measured), a 4:3 photo upright on a 402-point page at 3
+  pixels per point decodes at 1206 × 1608 pixels (about 7.8 MB) instead of 2304 × 3072 (about
+  28 MB), so three pages hold about 23 MB instead of 85 MB. With 20 photos taken, record the
+  app's memory (Xcode's memory gauge, or Instruments, Allocations) on the camera, with the
+  viewer open on a middle photo, zoomed in, and after a swipe to the next photo, on this build
+  and on the build before the change, on the smallest and largest supported iPhone and an iPad.
+  Check by eye that a fitted page is as sharp as before and that a zoomed page turns sharp
+  within a moment. The simulated previews of the UI tests are 30 × 40 pixels, so the Simulator
+  can't show it; `PhotoViewerTests.pagesDecodeAtTheirFittedSizeAndTheZoomedPageAtFull` covers
+  the sizes asked for.
+- **The viewer's status lines wrap** (issue #110). At the largest text size, with a processed
+  photo of a lens without RAW and signing on but failed ("Processed · HEIF" and "Not signed"),
+  open the viewer on the smallest supported iPhone and on an iPad in the narrowest window it
+  allows (a resized window or Slide Over): each line wraps inside the window and nothing runs
+  past its edge. `PhotoViewerTests.stackedStatusLinesWrapInANarrowWindow` measures the lines at
+  160 points; the status is hidden from VoiceOver (its words are in the photo's value), so a UI
+  test can't read its frame. `testViewerLargestText` runs on the iPhone SE (3rd generation)
+  Simulator for the 4.7-inch width.
+- **The summary card of What's in This Photo** (issue #118). With VoiceOver, swipe through the
+  card for a RAW photo with signing off, a processed photo of a lens without RAW, a photo that
+  could not be signed and a photo with the location kept: the head is read once ("RAW (DNG)",
+  the lens and time, the pixel size and file size), then each row once and in order, its second
+  line with it, and a warning row begins with "Warning". At the largest text size the symbol
+  column grows and each row wraps under its own first word; right to left (the pseudo-language)
+  the symbols are on the right; in Night Mode everything is red and a warning is told by its
+  triangle and words; on an iPad the card fills the sheet's width and says "Processed by this
+  iPad". Compare with the figures `summary-*` in `docs/design/screens`.
 
 ### Lock Screen, Control Center, Siri and Shortcuts on a device
 
@@ -1004,14 +1822,16 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
   the app closed, turning it off says the light is off without opening the app), "Start interval
   shooting in nope." with Manual Controls off (the series runs in full auto; Manual Controls stay
   off) and on (the photos use the manual settings; the screen dims), "Stop interval shooting in
-  nope.", and "Take a bracket with nope." in full auto and with a bracket chosen in Pro Tools
-  (three photos at different exposures; the Pro Tools bracket and Manual Controls are unchanged
-  afterwards; on the front camera Siri says the lens can't take it).
+  nope.", and "Take a bracket with nope." in full auto and with a bracket chosen on the drive
+  strip (three photos at different exposures; the strip's bracket and Manual Controls are
+  unchanged afterwards; on the front camera Siri says the lens can't take it).
 - Shortcuts: Take Photo with a custom delay, each lens (a missing lens says so) and Number of
   Photos 5 (five separate photos, no "Burst stopped" announcement), Switch Lens, Turn On and Turn
-  Off the Light, Start Interval Shooting with Seconds Between Photos and Number of Photos, Stop
-  Interval Shooting, Take Bracket with 5 and 7 Photos and each Step (7 on a lens that takes fewer
-  says so), and Set Night Mode on and off, with the app closed and with it open (the
+  Off the Light, Start Interval Shooting with Seconds Between Photos and Number of Photos, and
+  with Duration in Minutes (the series stops after that time; with an interval as long as the
+  duration or longer, the action says the time between photos must be shorter), Stop
+  Interval Shooting, Take Bracket with 5 and 7 Photos, each Step and each Order (7 on a lens that
+  takes fewer says so), and Set Night Mode on and off, with the app closed and with it open (the
   screen turns red at once).
 - Siri does not mistake "Turn on the light in nope." for a HomeKit request.
 - Shortcuts settings actions: Set Focus Range to Close-Up, Far Focus and No Limit (the Close-Up
@@ -1024,7 +1844,76 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
   and settings), says it can be undone in Presets, and Presets shows Undo; with a preset that has
   Location on and access declined, it says some settings couldn't be applied; the light stays
   off.
-- Check in each of the 11 languages that Siri accepts the localized phrases.
+- Check in each language that ships (English only in 1.0.0) that Siri accepts the phrases.
+
+### Assistant Access on a device (issue #82)
+
+The design's assumptions (`docs/design/assistant-access.md`, section 14). Each is an assumption
+until it is confirmed in Apple's documentation for iOS 26 and 27 and on a device; record the
+result, the device and the iOS version here. A check that fails changes the design (the column
+"If it doesn't hold"), not the wording. None has been run yet.
+
+| # | Check on a device | If it doesn't hold | Result |
+| --- | --- | --- | --- |
+| 1 | A gated intent starts in the background and moves to the foreground only after the check and the question (`supportedModes` `[.background, .foreground(.dynamic)]`, `continueInForeground`): with access off, "Take a photo with nope." answers without opening the app; a cancelled question doesn't open it either; after Confirm, `continueInForeground` opens it | Go back to `openAppWhenRun`: the app opens, then refuses or asks | Not run |
+| 2 | `requestConfirmation`, from an intent started in the background mode, shows and speaks the question, the line under it ("You can change this in nope. › Settings › Privacy.") and the custom buttons (Take Photo, Switch Lens, Apply Preset, Cancel) in Siri and in Shortcuts, before the app opens, and throws on Cancel | The app's own card on the camera (design, 5.5); drop the line if only it fails | Not run |
+| 3 | An unattended Shortcuts automation stops at the question and doesn't run the action | Every Action and Only Before a Photo must refuse when no person can answer | Not run |
+| 4 | After Cancel, Siri and Shortcuts show "Cancelled. Nothing changed." | No answer; nothing is claimed. Adopted for 1.0.0 (owner decision, 2026-11-21, issue #126): the question's error passes to the system, which answers | Not run |
+| 5 | `authenticationPolicy = .requiresAuthentication` makes Siri ask for an unlock for every gated action, on the Lock Screen, through headphones and in a car; the app's own check (protected data unavailable) answers "Unlock this device to use nope.'s actions. Nothing changed." if a request still arrives locked. Record which of the two refuses on a locked phone: the app's fallback (`isProtectedDataAvailable`) lags a lock by some seconds and is always true without a passcode | The check refuses while the device is locked, by the app's own test (built) | Not run |
+| 6 | A result can carry one button that runs Open Assistant Access (Open Settings in the off answer). Not built: the off answer is the sentence alone, which names the path; the Open Assistant Access action exists in Shortcuts | Keep the sentence alone | Not run |
+| 7 | Camera-domain assistant schemas: what exists on iOS 26 and 27, and whether a conforming intent still runs `perform()` and can ask for confirmation. None is adopted | No schema is adopted | Not run |
+| 8 | The system doesn't record or suggest the app's actions unless the app donates them (the app donates nothing) | State what the system does on the Honesty screen; point to the system's Siri settings for the app | Not run |
+| 9 | Siri on Apple Watch, headphones, a car or a speaker can't run the phone's actions around the check; the headphone remote's volume press stays a shutter button | Any path found gets the same check before release | Not run |
+| 10 | iPhone Mirroring: whether the camera runs, and whether any control can be operated from the Mac | State it as a limit | Not run |
+| 11 | Siri on a locked phone: the photo action requires unlocking | Release blocker | Not run |
+| 12 | The camera stops when the app leaves the screen, and the system's camera indicator shows whenever it runs. Only after this is recorded may the page and the Honesty screen say "No photo is taken while nope. is not on screen" (decision 19) | Release blocker | Not run |
+| 13 | With access off, the system lists the app's actions and phrases and nothing else about the app; the Apply Preset picker lists only Factory Defaults | State what is listed | Not run |
+
+Also on a device: the manual accessibility pass with VoiceOver, Voice Control and Switch Control
+over the Assistant Access page, a refused request, a question answered by voice and by touch,
+and the camera's hint; each gated action from Siri and Shortcuts with access off (the off answer,
+nothing changes, the refusal card the next time the camera is shown), with Every Action (the
+question names the values the action runs with), with Only Before a Photo and with Never; Apply
+Preset through Shortcuts with a preset that has Location and signing on while both are off (they
+stay off; the answer says privacy settings weren't applied); a saved shortcut that names a
+saved preset while access is off; and a shortcut saved before 1.0.0 (it answers that access is
+off until it is turned on).
+
+### Siri on a device (issue #126)
+
+The report: iPhone 16 Pro Max, iOS 27, a Release build, the app open on the camera (Single, 1×,
+Auto, low light, "Hold it steady or use a tripod." showing). "Hey Siri, tell nope to take a photo"
+answered "Sorry, something's wrong. Please try again." and saved nothing. What the Simulator
+showed (`TakePhotoIntentUITests`, iOS 27.2, the system's App Intents runner, which confirms the
+question itself): before the fix, Take Photo with the app open saved one photo with access on and
+Never or Every Action, and answered with access off; a 40-second delay ended with the system's
+timeout after 31 seconds (`LNConnectionErrorDomain` 1014). The runner can't speak, so the spoken
+phrase, Siri's own question and the voice-only move to the foreground are checked here. Settings
+for each row are given; Assistant Access is in Settings › Privacy. Record Siri's exact words,
+whether a photo was saved, the device and the iOS version.
+
+| # | Say, with these settings | Expected | Result |
+| --- | --- | --- | --- |
+| S1 | "Take a photo with nope", app open on the camera, access on, Ask First Never | One photo saved; "Photo saved and signed." or "Photo saved. It isn't signed." | Not run |
+| S2 | "Tell nope to take a photo", the same | The same as S1 | Not run |
+| S3 | "Take a picture in nope" and "Tell nope to take a picture", the same | The same as S1 | Not run |
+| S4 | S2 with Ask First Every Action: answer Take Photo, then repeat and answer Cancel | Confirm: as S1. Cancel: nothing taken, the app gives no answer of its own; record what Siri says | Not run |
+| S5 | S2 with access off | "Assistant Access is off. You can turn it on in nope. › Settings › Privacy." | Not run |
+| S6 | S2 with the app closed (swiped away), access on, Never | The app opens on the camera and takes one photo; or "Open nope. to do this. Nothing changed." where Siri can't open it | Not run |
+| S7 | S2 with the phone locked, access on, Never | Siri asks to unlock (Assistant Access check 11); nothing is taken while locked | Not run |
+| S8 | "Take a photo in 10 seconds with nope", app open, access on, Never | The countdown runs on the camera; Siri answers after the photo, as S1 | Not run |
+| S9 | Shortcuts app: Take Photo with Custom Delay 40, app open, access on, Never | At once: "Timer started, 40 seconds. nope. shows the result."; Photos Saved 0; the photo is taken when the countdown ends | Not run |
+| S10 | S1 in low light with the steady hint showing | As S1, within Siri's time | Not run |
+| S11 | Shortcuts app: Take Photo with Number of Photos 50, no delay, app open on the camera, access on, Never; time it from Run to the answer | Record the time, the answer and the photos saved. Expected: "Photos saved …" with 50 saved. If the system's generic error appears instead (its time limit is about 30 seconds, `LNConnectionErrorDomain` 1014 in the Simulator), record when, and whether the photos kept saving | Not run |
+| S12 | Shortcuts app: Take Bracket with Type Focus and Focus Frames 50, the same settings; time it the same way | As S11, for the bracket's 50 frames | Not run |
+
+S11 and S12 check the final review's S8 (owner decision, 2026-11-22: a device check, no code
+change for 1.0.0): `perform()` waits for the whole run, and only a delay over 10 seconds is
+answered at the start. If either ends with the system's error, file an issue with the timings.
+
+If S1 works and S2 fails the same way as the report, the phrase or the name was the cause; if
+both fail, watch the device log while repeating S1 (Console on a Mac, the app's process and the
+App Intents subsystem) for the intent starting, an error or a timeout.
 
 ### Live Activity on a device
 
@@ -1054,6 +1943,40 @@ and the time iOS gives to finish saving is enough for a burst's frames.
 - With Live Activities turned off for nope. in the Settings app, the switch isn't offered.
 - Network capture during these checks shows no traffic (`docs/SECURITY_AUDIT.md`, check 8).
 
+### Clock and interval series on a device (issues #105, #106, #107, #122, #123, #125)
+
+Pending verification. On the release build, on an iPhone, with Settings › Camera › Live Activity
+on. The rules are unit tested with a fake clock (`IntervalTimeTests`, `IntervalScheduleTests`,
+`DriveTests`, `LiveActivityTests`, `NopeClockTests`); these checks confirm them against the
+system's clocks.
+
+- Timed series and the device's clock (#106): start a 10-minute series (Interval, Stop After:
+  Time, 10 s apart) and time it with a stopwatch on another device. After 3 minutes turn off
+  Settings › General › Date & Time › Set Automatically and set the time an hour forward; after
+  5 minutes set it two hours back. Expected: the series still ends 10 minutes after it began, the
+  card's time left follows the stopwatch, and a photo is still taken every 10 seconds. Turn Set
+  Automatically back on afterwards.
+- A failed last photo (#105): start a series of 3 photos, 30 s apart, and before the third
+  photo make saving fail (turn off the app's Photos access in the Settings app, or fill the
+  storage). Expected: the camera says why the photo wasn't saved, and the card and the Live
+  Activity end as Stopped, never Finished.
+- Start to start (#123): with Manual Controls on, set the shutter to 2 s and an interval series
+  of 10 photos every 10 s. Expected: "Takes 10 photos, starting one every 10 seconds." under the
+  rows; the photos' times (Photos › Info, or the camera's own photo details) are 10 s apart, the
+  card reads "Next photo in 8s" just after each save, and the series ends about 92 s after it
+  started. Then set the shutter to 15 s: before Start, "The shutter time is longer than the
+  interval, so photos follow one another."; while it runs, the card says "Each photo takes longer
+  than the interval" instead of the countdown, VoiceOver announces it once, and no photo is taken
+  twice (ten photos, each starting as the one before is saved). Check the line in Night Mode (red
+  only), at the largest text size and right to left.
+- Self-timer (#122): start a 10 s timer and a stopwatch together, five times, once with Low
+  Power Mode on. Record each time to the shutter sound (or the haptic) and the numbers shown.
+  Expected: about 10 s each time, with no drift from one run to the next; a number may be
+  skipped only if the phone was held up for more than a second.
+- Live Activity and the device's clock (#125): start the 10-minute timed series above, go to the
+  Lock Screen, and set the time an hour forward and then back as above. Expected: after each change
+  the activity's time left is right again at once, and its counts still update.
+
 ### Shared settings, the Night Mode control and the Lock Screen camera on a device
 
 Issue #42. Assumptions to confirm: cross-process delivery of the settings change signal (a
@@ -1070,7 +1993,7 @@ view.
 - Control: add Night Mode in Control Center and on the Lock Screen. It shows the app's state;
   turning it on with the app open turns the app red at once (also while Control Center covers the
   app); with the app in the background or closed, the app is red when opened. Turning night mode
-  on or off in the app (Settings, the tray or the Set Night Mode shortcut) updates the control.
+  on or off in the app (Settings, Q or the Set Night Mode shortcut) updates the control.
 - Lock Screen camera: with night mode on, RAW plus HEIF plus JPEG, a detail on and signing off
   in the app, lock the device and open "Open nope.": the camera opens red, without a white flash,
   and its photo has those formats, that detail and no signature. Change night mode from the
@@ -1094,7 +2017,7 @@ UI-tested on the Simulator; on a device, confirm the parts the simulated camera 
   prompt appears once.
 - A preset with the astro helper on, applied in daylight: the helper is on with the preset's
   frame count and delay, and night mode follows the preset.
-- From the tray in night mode: the presets sheet is red on black and VoiceOver reads each preset
+- From Q in night mode: the presets sheet is red on black and VoiceOver reads each preset
   and the result after applying. Undo returns the lens and values.
 - After applying a preset, open the Lock Screen camera: it uses the applied formats and night
   mode (the copy is handed over after every change).
@@ -1105,6 +2028,8 @@ Needs an iPhone with the app installed from Xcode (the watch app is embedded and
 paired Apple Watch through the Watch app, or automatically if that setting is on). Unverified
 assumptions to confirm: a watch command reaches the iPhone app while it is open and unlocked,
 `WCSession.isReachable` follows the watch app being open, and replies arrive within a second.
+Run these checks with the watch on watchOS 26 and on watchOS 27 (issue #78), on a device or, for
+what needs no hardware, the watchOS Simulator.
 
 - Pairing: the watch app appears on the paired watch, named "nope."; it opens to "Camera ready"
   while the camera is open on the iPhone.
@@ -1113,11 +2038,13 @@ assumptions to confirm: a watch command reaches the iPhone app while it is open 
 - Delays: 3 and 10 seconds start the iPhone's own self-timer (its countdown shows and speaks on
   the iPhone); the watch shows "Photo in 3 seconds" and counts down with a light haptic each
   second; Cancel Timer on the watch stops it and nothing is taken; cancelling on the iPhone shows
-  "Timer cancelled. No photo taken." on the watch.
-- Nothing taken when the camera isn't available: with the iPhone app in the background, closed,
-  or with Settings open over the camera, the watch says "Camera not available. Open nope. on your
-  phone." and Take Photo is disabled; opening the app later takes no photo. With camera access
-  declined, the watch says so. With the iPhone out of range or off, "Can't reach your phone".
+  "Timer canceled. No photo taken." on the watch.
+- Nothing taken when the camera isn't available: with Settings open over the camera on the
+  iPhone, the watch says "Camera not available. Open nope. on your phone." and Take Photo is
+  disabled; opening the camera later takes no photo. With camera access declined, the watch says
+  so. With the iPhone locked, the iPhone app in the background or closed, or the iPhone out of
+  range or off, the watch says "Can't reach your phone. Unlock it and open nope." and Take Photo
+  is disabled.
 - A photo whose result the watch missed (lower the wrist during the countdown): raising it shows
   the result.
 - VoiceOver on the watch reads the status, the shutter and the delay, and announces each
@@ -1137,9 +2064,109 @@ burst stops with "Burst stopped: storage is full." before it fails.
 
 ### Burst rate
 
-Not measured yet. On an iPhone 16 Pro Max, for each lens and RAW, RAW + HEIF and HEIF, hold the
-shutter for a 20-frame burst and record frames per second here (time from the first to the last
-frame, from the photos' capture times).
+Not measured yet. The app shows only the rate it measures from the burst that is running, and
+Slow is worded "up to 2 a second"; no rate is stated as a property of a device until it is
+recorded here. On each test device, for each lens, at each Photo Size, for RAW, RAW + HEIF,
+RAW + HEIF + JPEG and HEIF, with signing on and off:
+
+- hold the shutter at Fast for a 20-photo burst and record the photos a second (the summary
+  card's rate, checked against the photos' capture times);
+- record the time to take one photo and the time to save it (Photo Details, "Taking the Photo",
+  and a signpost around the save), which decide whether a deeper saving buffer is worth building
+  (docs/design/BURST.md, decision 4: only if taking is at least one and a half times as fast as
+  saving on the main lens at 12 MP);
+- at Slow, check that no two photos start less than 0.5 s apart and that Slow is slower than
+  Fast. Where Fast measures under about 3 a second, the app stops offering Slow on that lens for
+  the session (`DriveModel.slowBurstMinimumFastRate`); check the Burst menu then has only Fast.
+
+**What previews cost a burst (issue #104).** Each saved photo gets a compressed preview for the
+Last Photo viewer: the saved file decoded at up to 3072 pixels and encoded as a JPEG, after the
+photo is added to Photos and inside the same save task (`PhotoSaver`), so with RAW only it is a
+full RAW decode per burst frame. Each frame is saved while the next is taken, so the preview
+slows a burst only when saving is the slower half. Nobody has measured this yet; the fix depends
+on the numbers (`docs/plans/1.0.0-finish.md`, section 4.3; owner decision 12: decide after the
+numbers). Two Debug-only tools measure it (`App/NopeApp/DebugTools/PreviewCost.swift`):
+
+- every preview made in a Debug build is a "Save preview" interval in Instruments' Points of
+  Interest (subsystem `com.photivra.nope`), with no photo data or value recorded;
+- the launch argument `-NopeNoSavePreviews` makes the saves of that launch make no preview
+  (`PhotoSaver.makesPreviews`): the viewer shows each photo's "only the thumbnail is left"
+  fallback. A normal launch makes them again.
+
+On each test device, Debug build, signing off, RAW only (Settings › Formats), Burst Limit 20,
+Burst at Fast, nothing else running:
+
+1. Launch normally (`xcrun devicectl device process launch --device <device-id>
+   --terminate-existing com.photivra.nope.dev`). On each rear lens, take three 20-photo bursts
+   (one tap each) and record each summary card's rate ("2.6 a second"). Record the photos a
+   second from the photos' capture times for one of them, as a check of the card.
+2. Record one burst on the main lens with Instruments' Points of Interest instrument, attached
+   to the app on the phone, and note the median and the longest "Save preview" interval and the
+   time between two photos' starts.
+3. Launch again with `-- -NopeNoSavePreviews` and repeat step 1 on the same lenses.
+4. Compare the median rates. If previews cost less than about 10% of the rate, the plan changes
+   only two cheap things (no preview while the app is not active; none for a frame beyond the
+   newest 20 of a counted burst, which `SessionPhotos.maximumPreviews` would drop at once). If
+   they cost more, the options are, in order: smaller previews for burst frames, previews made
+   after the burst from data still in memory, or no preview for burst frames but the last; the
+   last changes what the viewer shows and is the owner's call (decision 12).
+
+Results (fill in; none yet):
+
+| Device, iOS | Lens | Rate with previews (3 runs) | Rate without (3 runs) | "Save preview", median / longest |
+| --- | --- | --- | --- | --- |
+| | Main | | | |
+| | Ultra Wide | | | |
+| | Telephoto | | | |
+
+### Holding the shutter on a device (issues #100, #101)
+
+The order of a press and its release, the numbered presses, the hold of each source and the
+three ways a hold ends without a release are covered by `BurstTests` (with the scripted camera)
+and `ShutterTouchesTests`. A real touch and the real capture events need a phone:
+
+- In Burst, hold and release with the on-screen shutter, a volume button and the Camera Control:
+  each burst ends when its own button comes up. Ten fast taps take ten single photos, never a run.
+- Hold the on-screen shutter, then press and release a volume button: the burst continues until
+  the on-screen shutter comes up.
+- Hold the shutter and swipe down Control Center, and hold it while the app is sent to the
+  background: the burst ends after the photo being taken, and the next hold works as usual.
+- On an iPhone Duo, if one is at hand: fold or unfold while the shutter is held. Record whether
+  the system ends the touch first (then `onChange(of: isPressed)` already ends the burst) or the
+  shutter view goes away with the finger down (then `onDisappear` does). On the iPhone Duo
+  Simulator a fold can't be made with a finger held down, so this is not checked there.
+
+### Headphones as a remote shutter on a device (issue #81)
+
+Pending verification; nothing here is claimed in the store listing until it is checked. The app
+handles hardware buttons only through `onCameraCaptureEvent` (AVKit), so anything the system
+delivers as a capture event works without app code. From Apple's sources:
+- AirPods with the H2 chip send stem clicks as primary capture events from iOS 26; apps that
+  already use the capture event interaction get it with no change, and the system plays a default
+  tone for an AirPods click (WWDC25 session 253, "Enhancing your camera experience with capture
+  controls"). The person picks the click type in the AirPods settings ("Remote Camera Capture").
+  The SDK header says AirPods Camera Control is not available in the European Union
+  (`AVCaptureEventInteraction.h`, `defaultCaptureSoundDisabled`).
+- Wired EarPods: Apple's documentation doesn't say whether their volume buttons send capture
+  events to third-party apps. Record what happens.
+- Siri through AirPods uses the same App Shortcuts as Siri on the iPhone.
+
+Steps, on an iPhone with iOS 26 or later, with the app open on the camera screen (unlocked):
+- AirPods Pro 2, AirPods Pro 3 or AirPods 4: in the AirPods settings, choose a click type under
+  remote camera capture (record the section's exact name); press the stem once: one photo is saved (signed only if signing is on in Settings), and the tone plays; press and
+  hold: record whether it takes one photo or, in Burst, a burst until released.
+- Repeat with Drive set to 3 s and 10 s (the self-timer starts; a second press cancels it), Burst,
+  an interval series (a press starts and stops it, as the volume buttons do) and the astro helper
+  (a press starts the countdown); each behaves as the volume buttons do.
+- With the camera paused (another app using the camera) and with Settings open: record what a
+  stem press does; it must not take a photo while the camera isn't running.
+- Wired EarPods (Lightning or USB-C): press volume up and volume down on the cord in the same
+  modes; record whether each takes a photo or changes the volume.
+- Siri through AirPods ("Hey Siri" or press and hold the stem, as set): "Take a photo with
+  nope." and "Take a photo in 10 seconds with nope." with the app open and with it closed, the
+  iPhone unlocked; Siri says the photo was saved, and whether it was signed (signing is off by default) Record what happens while the iPhone is
+  locked (Siri asks to unlock, as on the iPhone).
+- Record the device, AirPods model and firmware, iOS version and region with the results.
 
 ### Flash, light and night mode on a device
 
@@ -1153,12 +2180,18 @@ frame, from the photos' capture times).
 - the light turns off when the app goes to the background, on a phone call or another camera
   app, on a lens without a light, and at a critical heat level; warm the device and check the
   "Light Unavailable" warning and that a lower level can be chosen;
+- a Light request before the camera is ready (issue #75): force-quit the app, open it, and turn
+  the Light on as soon as the switch shows, before the picture appears; the switch stays on and
+  the light comes on once the camera has started (or "Light Unavailable" shows), and it is never
+  silently off. Repeat 10 times from a cold start, and also right after switching lenses and
+  right after changing the Photo Size; record any try where the switch went back to off with no
+  light and no warning;
 - night mode at night: no white or blue element in the app's own screens (camera, tray, pills,
   manual controls, Pro Tools, the format sheet, Settings and every detail screen, warning
   popovers); list what the system still draws (status bar, menus, alerts); the app never changes
   the screen's brightness; the real viewfinder keeps its colors by default and is red with Red
   Viewfinder; energy with the red viewfinder on (Instruments);
-- night mode and Red Viewfinder switch at once from the tray and from Settings › Camera, with the
+- night mode and Red Viewfinder switch at once from Q and from Settings › Screen, with the
   live picture never freezing, going black or restarting (Instruments Hangs: no hang on the
   switch; the 0.2.0 build rebuilt the preview layer each time).
 
@@ -1203,10 +2236,12 @@ Simulator (`FileOptionsEncodingTests`). On a device:
 - **Copy Size** (issue #57): with Half Size and Quarter Size, the HEIF and JPEG open in Photos at
   half (2016 × 1512 from a 12 MP RAW) and a quarter of the RAW's width and height, the RAW is
   unchanged, and exiftool's `ExifImageWidth` and `ExifImageHeight` match the copy;
-- **Face Detection** (issue #57): with it on (the default), autofocus and exposure follow a face
-  in the frame in full auto, as before; with it off, they stay on the center (or the tapped
-  point) with a face in the frame, on the wide and the front camera; nothing in the files changes;
-- **Far Focus** (issue #57): with manual controls on, Far Focus in the tray, on each rear lens:
+- **Focus on Faces** (issues #57 and #80; Face Detection before 1.0.0): on a fresh install it is off; with it off, autofocus
+  and exposure stay on the center (or the tapped point) with a face in the frame, on the wide
+  and the front camera; turned on, they follow a face in the frame in full auto, as before;
+  nothing in the files changes either way. Installing over a build that stored Focus on Faces
+  on keeps it on;
+- **Far Focus** (issue #57): with manual controls on, Far Focus in Q, on each rear lens:
   autofocus ignores a near subject (a hand or a branch close to the lens) and keeps the far scene
   sharp; Close-Up then replaces it and back; the live readout's focus range shows the limit;
 - **Photo Size** (issue #57): on a device with a lens without Bayer RAW that reports more than
@@ -1226,6 +2261,50 @@ Simulator (`FileOptionsEncodingTests`). On a device:
   Precise Location off, the approximate location is written; Instruments shows no location
   activity with Location off.
 
+### Processing disclosure and new defaults on a device (issue #80)
+
+The defaults, Factory Defaults and preset decoding are unit-tested (`NopeSettingsTests`,
+`SettingsPresetsTests`); the marker, its note and the switch are UI-tested with the simulated
+cameras (`ProcessedMarkerUITests.swift`). What the camera reports about distortion correction
+can only be checked on hardware. On each device available (record the model and iOS version):
+
+- **Fresh install:** Settings shows Formats "RAW (DNG)", Sign Each Photo off and Focus on Faces
+  off; the first photo says "Saved. Not signed: signing is off in Settings." and Photos gets one
+  DNG; Factory Defaults returns to the same values. Installing over an earlier build keeps the
+  formats, signing and Focus on Faces the person had stored.
+- **Which lenses have no Bayer RAW:** run the Debug tag check (`-NopeTagCheckRun`, "Tag check"
+  below) and record, for each physical camera, whether it gives Bayer RAW.
+- **Marker and note:** on each lens without Bayer RAW (for example an iPad's cameras, or a
+  front camera without RAW), "Processed: No RAW on This Lens" shows before the first photo and
+  in clean view; tapping it shows the note. Record its distortion line for each such lens: "lets
+  apps turn it off" is `isGeometricDistortionCorrectionSupported` true, "doesn't let apps turn
+  it off" false. Settings › Screen › Show Processed Marker appears only on such a device; turning it
+  off hides the marker and nothing else.
+- **Distortion correction actually applied:** for each lens without Bayer RAW, take the same
+  scene with straight lines near the frame's edges (a door frame or a grid) with the app and
+  with the system Camera app. With the Live Camera Readout on (Settings › Camera › Viewfinder
+  Overlays), check whether its "Processing Off" line includes "Lens distortion fix" while that
+  lens is in use (it reads `isGeometricDistortionCorrectionEnabled` after the app turned it
+  off: "All" includes it). A lens that reports the switch but whose line leaves the fix out, or
+  whose photos are visibly corrected (curved lines
+  straightened, a narrower field of view than its RAW on the same device, where it has one),
+  keeps correction on even when the app turns it off: record it, so the note's wording for that
+  lens can be changed by a reviewed pull request.
+- **What's in This Photo:** for a processed fallback photo, the Processing section shows the
+  same distortion line as the note; a RAW photo shows none. For a RAW + HEIF photo with every
+  detail on and with every detail off, compare each value of the 1.0.0 groups with
+  `exiftool -a -G1 -s` of the files exported from Photos as originals: the exposure values
+  (`FocalLengthIn35mmFormat`, `ExposureMode`, `ExposureProgram`, `MeteringMode`,
+  `BrightnessValue`, `MaxApertureValue`, `SubjectArea`), the lens and camera names, the DNG's
+  `ActiveArea`, `DefaultCropOrigin`, `DefaultCropSize`, `Compression`, `DNGVersion`,
+  `BaselineExposure` and `AsShotNeutral`, the date and location values, and that each Every Tag
+  page lists exactly the file's tags; with Exposure Settings off, the shutter and ISO marked
+  "Not in the files" match the camera's readout for that photo; with a RAW, a HEIF and a JPEG,
+  Photos shows the pairing the Files group states. With a location shown after Show Value, open
+  the app switcher: the sheet's snapshot is covered and shows no value (a UI test can't query the
+  app while its scene is inactive; it checks that the value is hidden again on return). Check VoiceOver, Voice Control and Switch
+  Control on the flows in `docs/design/ACCESSIBILITY.md` ("What's in This Photo").
+
 ### Viewfinder overlays on a device
 
 The geometry, level, analysis and rate rules are unit-tested; these checks cover the hardware
@@ -1235,8 +2314,30 @@ The geometry, level, analysis and rate rules are unit-tested; these checks cover
   relative to the horizon when the phone turns; lines stay visible over white, yellow and dark
   scenes;
 - level: the bar matches a real horizon (or a spirit level) within about 1 degree in portrait
-  and both landscape orientations; the haptic fires once on becoming level; pointing straight
-  down shows the top-down level; Instruments shows no motion updates while the level is off;
+  and both landscape orientations; pointing straight down shows the top-down level;
+  Instruments shows no motion updates while the level is off, and none added by the tap;
+- level tap (`docs/design/level-haptic.md`, section 10; the rule is unit-tested in
+  `LevelTapTests`, the path and wording by the `testLevel…` UI tests with
+  `-NopeSimulatedGravity becomesLevel`):
+  1. iPhone: the tap can be felt in the hand, in portrait and on its side, with and without a
+     case, and can't be mistaken for the saved-photo tap. If it can't be felt, switch
+     `NopeHaptic.levelTap` to `.rigidFallback` (one line in `DesignTokens.swift`; the
+     fallback, `.impact(flexibility: .rigid, intensity: 0.6)` from the design's section 3, is
+     built and unit-tested) and repeat. Open until done: until this check is recorded, the tap
+     may not be felt;
+  2. one tap per entry; none while held; none within 1 second of the last; none when Level is
+     switched on while level;
+  3. with System Haptics off in iOS Settings: no tap; with Low Power Mode on: record what the
+     system does;
+  4. no tap during a 1 second or longer exposure, a bracket, a burst, a countdown, an interval
+     series or Astro; a photo taken as the device comes level is as sharp as one taken with
+     Level off;
+  5. Lock Screen camera: record whether the tap plays;
+  6. iPhone Duo: outer display, inner display and half-open; record what the level reads
+     half-open;
+  7. iPad: no tap and no error; with VoiceOver on, "Level" is spoken;
+  8. VoiceOver on iPhone: "Level" is spoken once per entry and doesn't cut off "Saved." or a
+     countdown second;
 - focus peaking: on the rear and front cameras, in portrait and landscape (and every iPad
   orientation), the highlight sits on the in-focus edges, not mirrored or turned; a small
   subject 5 to 15 cm away in front of a busy background shows sharp when focused (issue #51),
@@ -1291,28 +2392,104 @@ calls and the assumptions. Do them on every lens of the test iPhone (16 Pro Max)
 - press and hold (and the Lock button) lock focus and exposure: they stay when the phone points
   elsewhere; the AE/AF pill and the button unlock; VoiceOver's Focus on Center and Lock Focus
   and Exposure actions do the same, and the lock change is announced;
-- exposure compensation in full auto: the tray's Exposure dial brightens and darkens the
+- exposure compensation in full auto: Q's Exposure dial brightens and darkens the
   viewfinder over the lens's range, the pill resets it, and the DNG's `ExposureBiasValue` follows
   (with exposure settings kept);
 - fast shutter: on each lens in bright light the DNG's `ExposureTime` is no slower than
   1/(2 × focal length) (wide about 1/50, ultra wide about 1/26, 5× about 1/240), and no slower
   than 1/500 or 1/1000 with Freeze Motion; in dim light the shutter gets slower than that only
-  when ISO is at the lens's highest, the hint "Hold it steady or use a tripod." appears once, is
-  spoken by VoiceOver, and goes when the light comes back without flickering (the half-stop
-  margin is an assumption to check); the focal lengths computed from the field of view match
+  when ISO is at the lens's highest; the focal lengths computed from the field of view match
   Apple's published ones within a few millimeters;
-- manual controls: a manual shutter slower than the handheld rule shows the hint and is never
-  changed; P mode isn't limited;
+- the steady hint, "Hold it steady or use a tripod.": checks S1 to S5 under "Device feedback
+  for 1.0.0" below;
+- manual controls: a manual shutter is never changed, and shows no steady hint; P mode isn't
+  limited;
+- the hint after a mode change: in dim light with the hint showing, turn Manual Controls on (the
+  hint goes and stays away), set a slow shutter, then turn them off; turn Astro on and off; switch lenses; in a bright scene
+  the hint must be gone within about a second of each change (the first readings after a slow
+  exposure are ignored while their shutter is more than a quarter stop longer than full auto's
+  limit, an assumption to check: record the first reported shutters after leaving Astro). While
+  Astro is on the hint doesn't show. In a dark scene it comes back from the new readings;
 - Close-Up: a small subject 5 to 15 cm away in front of a busy background focuses with Close-Up
   on and a tap, and the pill turns it off;
-- close-up hint: below the wide lens's minimum focus distance the suggestion to switch to Ultra
-  Wide appears within about two seconds (the thresholds, `lensPosition` ≤ 0.05 for eight readings
-  while autofocus searches, are assumptions to tune), never switches by itself, and Dismiss hides
-  it until the lens changes;
+- close-up hint: check C1 under "Device feedback for 1.0.0" below; it never switches by itself,
+  and Dismiss hides it until the lens changes;
 - the magnifier enlarges the viewfinder around the focus point and the saved photo isn't
   zoomed (its dimensions and field of view are the same);
 - energy: with the camera screen open in full auto, readings arrive at most four a second
   (Instruments), and nothing is observed after leaving the camera screen.
+
+### Device feedback for 1.0.0
+
+The changes of `docs/design/device-feedback-1.0.md` are unit-tested (`CloseUpDetectorTests`,
+`SteadyHintTests`, `AutoValueTests`, `ManualControlSupportTests`, `DeviceFeedbackTests`) and
+UI-tested (`DeviceFeedbackUITests`, `FocusBracketUITests`) against the simulated camera; these
+checks cover the hardware and the provisional values. Checks S1, S2 and F1 gate release 1.0.0:
+the values they set are provisional in the code until then. Record results here, with the
+device and iOS version; record no distance.
+
+The Last Photo spot (section 1):
+
+- **P1** On iPhone 16 Pro Max and an iPad, on the iOS version released with 1.0.0: Open Photos
+  opens the Photos app from the camera, from a cold start and after a relaunch.
+- **P2** What Photos shows when opened this way, so no wording promises more.
+- **P3** Take a photo, quit the app, open it: Open Photos is there; take a photo: the thumbnail
+  replaces it.
+- **P4** The Lock Screen camera before its first photo: the spot is empty and nothing there can
+  be pressed.
+- **P5** iPhone Duo: fold and unfold with Open Photos showing.
+
+Use the Whole Range (section 2):
+
+- **W1** Night mode on an iPad, Bracket Settings as a sheet at its regular width: the check mark
+  and the words are easy to read in a dark room.
+- **W2** VoiceOver reads "Use the Whole Range, button" with another range set, and "Selected,
+  Use the Whole Range, In use, button" with the whole range.
+
+Close-up focus (section 3 and the detector):
+
+- **C1** On 1× and 5×, a subject nearer than the lens can focus brings up the hint, and About
+  Close-Up Focus opens the entry. The detector's thresholds are provisional
+  (`CloseUpDetector`): lens position 0.05 or less, for 2 of the last 2.5 seconds, with a search
+  seen within 4 seconds. Record when the hint comes (or doesn't) for a subject the lens can't
+  focus on and one at its closest focus, and whether readings keep arriving while the lens rests
+  at its nearest position (the reading throttle now sends the last reading once things settle,
+  and `isAdjustingFocus` is observed).
+- **C2** On iPhone 16 Pro Max, 0.6× focuses nearer than 1× and 5×, so "try the Ultra Wide lens"
+  is good advice there. Also record whether each lens reports `minimumFocusDistance` (not −1):
+  where both report it, the hint offers the Ultra Wide lens only if it focuses closer; where one
+  doesn't, it is still offered. No distance is recorded in the app.
+
+"Hold it steady or use a tripod." (section 4):
+
+- **S1** On iPhone 16 Pro Max, an iPad and one iPhone with an unstabilized lens: the value of
+  `AVCapturePhotoOutput.isLensStabilizationDuringBracketedCaptureSupported` with each lens
+  attached (`Lens.reportsStabilization`). If no usable signal is found, the allowance stays at 0
+  for every lens (decision 16).
+- **S2** For each lens of iPhone 16 Pro Max, handheld, a flat target with fine text: ten photos at
+  each shutter from the handheld rule to 3 stops slower, one stop apart, by two people. The
+  allowance for that lens is the slowest step at which at least eight of ten are sharp at 100%.
+  Set `AutoShutter.stabilizationAllowance` (now 2 stops, provisional) from the result.
+- **S3** Walking between a bright and a dim room on each lens: the hint does not flicker (the
+  half-stop `AutoShutter.returnMargin` and the 2-second minimum).
+- **S4** An evening indoors on each lens, Manual Controls off: note when the hint shows, beside
+  the system camera in the same light.
+- **S5** Manual Controls on, Shutter on Auto and set to 1 s: no hint.
+
+The focus square and Lock (section 5):
+
+- **F1** Beside the system camera on iPhone 16 Pro Max: three seconds
+  (`NopeMotion.focusAidLinger`, provisional) is long enough to press Lock with one hand and short
+  enough to be out of the way. Adjust within 2 to 5 seconds.
+- **F2** VoiceOver on: the square and Lock stay; focus on Lock is never lost; the viewfinder's
+  actions work after a tap.
+- **F3** Switch Control with automatic scanning at its slowest: Lock can be reached.
+- **F4** Voice Control: "Tap Lock" in time; "Long press Viewfinder" locks.
+- **F5** iPad with a keyboard: Tab to Lock holds it (read through SwiftUI's focus state, an
+  assumption).
+- **F6** Touch and hold after the fade locks at the held point.
+- **F7** On a tripod with a still subject: after the fade, focus and exposure stay at the tapped
+  point.
 
 ### Astro helper on a device
 
@@ -1334,6 +2511,240 @@ tripod (issue #60):
   (natural and red viewfinder) with the magnifier on enlarges the real viewfinder;
 - the run stops when storage is nearly full and at 10% battery unplugged (`AstroModel.stopBatteryLevel`,
   an assumption), and every frame taken before is saved.
+- night mode: off before Astro, on with it, and off again after choosing another drive mode, after
+  switching to a lens without Astro; after the app is closed during Astro and opened again it is
+  still on, and leaving Astro later doesn't turn it off; on before Astro, or changed with the Control Center or Lock Screen control while Astro is on, it
+  stays as it is; with Keep Night Mode After Astro on, it stays on.
+
+Issue #108, the night mode record and the Lock Screen camera: with night mode off, turn Astro
+on in the app (night mode turns on), lock the phone, open the Lock Screen camera and take a
+photo, then unlock and return to the app, and leave Astro: night mode turns off. Repeat with the
+app closed by the system in between (it then keeps night mode on, as after any relaunch).
+
+### Bracketing on a device
+
+Exposure bracketing on the drive strip (docs/design/BRACKETING.md, section 9). The plan, the
+order, the progress and each photo's place are unit-tested against a scripted backend
+(`BracketDriveTests.swift`), and the screens with UI tests (`BracketUITests.swift`); these checks
+need each back lens of each supported iPhone, and gate release 1.0.0 (D4 is optional):
+
+- **D1** each order (Darkest First, Metered First, Brightest First) with 3, 5 and 7 frames where
+  the lens allows: the saved files' exposure times and ISO, in the order they were saved, match
+  The Frames in Bracket Settings. Decides whether Order ships.
+- **D2** a bracket in full auto, in bright and in dim light: the frames are planned from the
+  camera's reading at the press of the shutter (the files' exposures centre on the metered one).
+  Decides the footer under The Frames.
+- **D3** the limited-frame mark: at the longest shutter and highest ISO (Manual Controls, or dim
+  light), the frame taken has the offset The Frames states ("+2 EV, not +4"). Decides the mark's
+  wording.
+- **D4** (optional) whether the per-frame delegate calls arrive while later frames are still being
+  exposed. Decides whether "Taking 3 frames" could count frames; not needed to ship.
+
+Focus bracketing (issue #90; docs/design/BRACKETING.md, sections 8 and 9) is unit-tested against a
+scripted backend (`CameraModelFocusBracketTests.swift`, `FocusBracketSettingsTests.swift`) and its
+screens with UI tests (`FocusBracketUITests.swift`). The build uses provisional values that these
+checks replace: a reported position counts as at its plan within 0.02 (`FocusFramePlace.tolerance`)
+and each photo waits 0.1 seconds after the handler (`CameraModel.focusSettleSeconds`). Closest
+Focus of This Lens is not shown until D5 confirms it for a lens. At the largest text size the
+accessibility audit reports the texts of Bracket Settings' Type row ("Type", and its value
+"Exposure" or "Focus") as "Dynamic Type font sizes are partially unsupported" or "Text clipped" in
+some runs and not others, on the iPhone and the iPad Simulator, in every form of the row tried,
+while each is one whole line at the largest size's line height; the audit skips those findings
+(`measuredTypeRowLabels`) and `testFocusBracketAtTheLargestTextSize` measures the row instead.
+The device checks gate release 1.0.0:
+
+- **D5** `isLockingFocusWithCustomLensPositionSupported` and `minimumFocusDistance` for each lens,
+  and the real closest focus measured with a ruler. Decides which lenses offer Focus and whether
+  Closest Focus of This Lens is shown for a lens.
+- **D6** for positions 0 to 1 in steps of 0.05: the position reported after the handler, twice in
+  each direction. Decides the tolerance and whether a direction rule is needed.
+- **D7** the time from the request to the handler, and whether a photo taken at once after it is
+  sharp where expected (a slanted ruler); the same with a wait of 50, 100 and 200 ms. Decides the
+  wait, and go or no-go for the feature on a lens.
+- **D8** the time for each frame of a 12-frame series at 12 MP and at 48 MP, with a RAW and with a
+  RAW and a HEIF. Nothing is shown; decides whether the limit of 50 frames stands.
+- **D9** a 20-frame series over the whole range on a slanted ruler: whether the sharp zones of
+  neighboring frames overlap, by lens and step. Decides the default frame count.
+- **D10** the shift of the picture's scale between the two ends of the range. Decides the tripod
+  advice wording.
+- **D11** exposure and white balance read from each file of a series in changing light: constant
+  (acceptance criterion 4).
+- **D12** battery and heat over a 50-frame series; the pause and continue on a call. Decides the
+  stop rules.
+- **D13** the frames of one series stacked in two stacking programs: they load and align. No
+  program is named in the app.
+
+Record the device, lens, iOS version and the result of each check here.
+
+### The lens while the camera is busy on a device (issue #96)
+
+The rule (`CameraModel.canChangeLens`) is unit tested with a simulated backend that holds a photo
+in flight (`LensWhileBusyTests`), and the disabled lens controls with UI tests
+(`LensWhileBusyUITests`, `ShortcutUITests`). What only a device shows
+(docs/design/lens-while-busy.md, section 7):
+
+- a 1/60 s photo: the lens row does not blink. A 10 s exposure (manual shutter): the row dims
+  after about half a second and returns when the photo is saved;
+- a lens press during a long exposure, a burst and an interval series: nothing changes, and the
+  photo or series ends normally with one lens;
+- the capture backend's own check: the rule (`CapturePolicy.cameraToCapture`, a plan made for
+  lens A with lens B attached, a stopped session or no camera takes no photo) is unit-tested in
+  `CapturePolicyTests`; that `SystemCaptureHardware` calls it before a photo, a bracket and the
+  comparison shot needs camera hardware. It is not reachable from the interface any more; a
+  debug build that sends `.selectLens` during a long exposure should end that photo with
+  "camera not running" rather than lose it silently or raise an exception;
+- VoiceOver reads "dimmed" and, during a series, the hint "The camera is taking photos. Try
+  again when it's done."; focus stays on a control that becomes dimmed. Switch Control and Full
+  Keyboard Access skip the dimmed controls. The Large Content Viewer still shows a dimmed lens
+  button;
+- night mode in the dark: the dimmed outline is still visible and clearly weaker than the lens in
+  use.
+
+### Keep Screen On and the Night Mode search field on a device (issues #88, #97, #98, #99)
+
+Not yet checked on a device. Before the wording ships, run the device checks of
+`docs/design/keep-screen-on.md`, section 11 (the idle timer back on after the limit, Auto-Lock
+set to Never, Auto-Brightness while dimmed, the brightness restored after each way out, touches
+everywhere on the camera screen, Low Power Mode, the Lock Screen camera left alone, VoiceOver with
+the cover, energy with Instruments for the Honesty page, 10% in daylight and in the dark), and of
+`docs/design/night-search-field.md`, section 9 (the field, cursor and selection red; what the
+dark keyboard's bar still shows with autocorrection off; selection handles, the magnifier and the
+edit menu; dictation, a hardware keyboard and Escape; the two fields' heights when Night Mode
+changes and the iPad popover becoming the sheet; VoiceOver with both fields; the largest text size
+on the smallest iPhone). Also: a series (interval or Astro) with the screen already at 10% or
+darker shows no Brighten Screen cover (issue #99), and Every Tag in What's in This Photo shows the
+red field in Night Mode (issue #98).
+
+### Dim After on a device (issue #119)
+
+Not yet checked on a device. Dim After (Settings › Screen, under Keep Screen On) is covered by
+`KeepScreenOnTests` with a fake screen and clock (each choice, Never, Low Power Mode and the
+serious heat level, Battery Low, the limit, an unknown stored value, presets and Factory
+Defaults) and by `KeepScreenOnUITests.swift` (the row, the menu, the note for each choice,
+Never not dimming, search, the largest text size, right to left and Night Mode, with audits).
+In the UI tests `-NopeKeepScreenOnSeconds <dim>,<lowPowerDim>,<limit>` gives every choice but
+Never the same `<dim>`. The Simulator has no Low Power Mode or heat, so these need a phone,
+with Keep Screen On on and the camera showing:
+
+1. Each choice, 1, 2 and 5 minutes, against a stopwatch: the Brighten Screen cover comes at
+   that time after the last touch or photo, and not before.
+2. Never for 30 minutes without a touch: the screen keeps its brightness, and Auto-Lock applies
+   at 30 minutes. Note the battery level and how warm the phone feels (or the thermal state in
+   Xcode's energy gauge) before and after. This is the evidence for the note "Never uses more
+   battery and can warm the phone." in the Honesty review.
+3. Never with Low Power Mode on: the screen dims after 30 seconds.
+4. Never while the phone is hot (the serious thermal state, for example after a long 4K video
+   in the Camera app in the sun, read in Xcode's energy gauge): the screen dims after
+   30 seconds. Record how the state was reached.
+5. Never during an interval series and an Astro run: the screen still dims at once when the
+   series starts.
+6. VoiceOver reads the note with the row, and with Never also the cost; changing the choice
+   doesn't move focus. With Reduce Motion on, the dimming still fades as Keep Screen On's does.
+
+### The how-to-use guide on a device (issue #117)
+
+Not yet checked on a device. The invitation's rules are covered by `GuideInvitationTests` (when
+the card shows, what puts it away, the answer kept across a relaunch and Factory Defaults), the
+pages and words by `GuideTests`, and the card, every page, both links, the Settings and About
+rows, search, the largest text size, right to left and Night Mode by `GuideUITests.swift`, with
+audits. The UI tests' settings start with the invitation answered; `-NopeSimulatedGuideCard`
+shows the card. The audit's "Potentially inaccessible text" finding with no element is set aside
+while the guide is open (`isGuidePictureText`): it is the text of a page's picture, the camera's
+own controls drawn as decoration and hidden from VoiceOver by design. On a phone and an iPad:
+
+1. A fresh install: after the first-run screen and camera access, the card shows on the picture
+   once the camera is live, and not over the start indicator. A photo taken with the shutter, a
+   volume button and the Camera Control while it shows is saved, and the card stays.
+2. Dismiss, then close and reopen the app: the card doesn't come back. Factory Defaults
+   (Settings › Presets) doesn't bring it back either. An app updated from a build without the
+   guide shows the card once.
+3. Open: the guide opens at page 1; after Close the card is gone, and stays gone after a
+   relaunch. Opening the guide from Settings or About on a fresh install also removes the card.
+4. The Lock Screen camera never shows the card; its Settings row opens the guide.
+5. VoiceOver: the card is read after the picture's elements and doesn't take focus when it
+   appears; Open's and Dismiss's hints are read. In the guide each title is a heading, a page
+   reads title, text, link, then Back, "Page, 2 of 7", Next, and moving to a page announces
+   "Page 2 of 7: Photos as the camera took them". The pictures are not read.
+6. Voice Control: "Tap Open", "Tap Dismiss", "Tap Next", "Tap Back", "Tap Done", "Tap Close",
+   "Tap About processing" and "Tap Details in Each Photo" work.
+7. Switch Control and a hardware keyboard reach every button; the left and right arrows move
+   between pages (swapped right to left) and Escape closes the guide.
+8. The largest text size: the card's name wraps and its buttons move under it; each page
+   scrolls with Back, the page number and Next in reach.
+9. Reduce Motion: pages cross-fade. Night Mode: the card and every page are red on black, and
+   the links are underlined.
+10. iPad in both orientations and in Split View, and the iPhone Duo's inner display: the guide
+    is a form sheet with the text at a readable width, and the card sits on the picture in the
+    column layout.
+11. Each page's words against the device: page 4 names only the lenses it has, and pages 5 to 7
+    match the controls on the camera (Auto, the drive words, Q).
+
+### Burst Limit setting on a device (issue #121)
+
+The setting alone (Settings › Camera › Burst Limit) is covered by `NopeSettingsTests`,
+`SettingsPresetsTests`, `BurstLimitSearchTests` and `BurstLimitSettingUITests.swift` (the row,
+the menu, search, a preset round trip, the largest text size, right to left and Night Mode, with
+audits). On a phone: the row with VoiceOver (the explanation read with it, the value read as
+"Off" or the number) and Voice Control ("Burst Limit"); and the choice made in the app reaches
+the Lock Screen camera's Settings.
+
+### Burst Limit on a device (issue #121)
+
+The burst that runs to the limit is covered by `BurstTests` (a tap and a hold run to the count
+from each source; a second press, a hardware press, assistive activation and Stop Burst stop it
+after the photo being taken; Start Burst and `.capture` take the count; a limit of 50 ends by its
+count; storage still stops it; a running burst keeps its count when the limit changes; Siri
+keeps its own count), `WatchTests` (the watch's shutter still takes one photo in Burst with a
+limit, owner decision 9), `DriveCardsTests` and `DriveTextTests` (the cards' words and the
+announcements) and `BurstUITests.swift` (`testBurstLimitTapRunsToTheCount`,
+`testBurstLimitSecondPressStopsEarly`, with audits). On a phone, with Burst Limit 10:
+
+- a tap, a hold, and a second press at about photo 4, with the on-screen shutter, a volume
+  button and the Camera Control each: the tap and the hold take 10 photos ("10 of 10 photos
+  saved"), the second press stops after the photo being taken ("4 of 10 photos saved"), and every
+  photo taken is in Photos;
+- while it runs, the shutter shows the stop square and the card "3 of 10", "Press to stop" and
+  a bar;
+- VoiceOver: the shutter reads "Burst, fast, 10 photos." with the hint "Double tap to take 10
+  photos. Double tap again to stop."; a double tap announces "Burst started, 10 photos.", the
+  card reads "3 of 10" when focused, the shutter's actions include Stop Burst, and the end is
+  announced ("10 of 10 photos saved"); Switch Control and Voice Control can stop it ("Stop
+  Burst");
+- the Lock Screen camera with the limit set in the app;
+- the Apple Watch shutter in Burst with the limit: one photo, as before.
+
+### Pinch to switch lenses on a device (issue #95)
+
+The step logic, where a pinch is used, the settling and the setting are unit tested
+(`LensPinchTests`, `LensPinchSearchTests`), and the gesture with the simulated backend's one,
+two and three rear lenses in `LensPinchUITests` (`XCUIElement.pinch(withScale:velocity:)`). The
+values below are starting values from docs/design/pinch-lens.md, marked as device-tuning values
+in the code; tune them here and record what was tried:
+
+| Value | Start | Where |
+| --- | --- | --- |
+| First step | scale 1.25 spreading, 0.80 pinching | `LensPinch.firstSpreadStep`, `firstPinchStep` |
+| Each further step | factor 1.35 | `LensPinch.furtherStep` |
+| Return margin | 10% | `LensPinch.returnMargin` |
+| Settle time | 0.25 s | `LensPinchSwitcher.settleSeconds` |
+
+What only a device shows (docs/design/pinch-lens.md, section 11):
+
+- the thresholds with one hand and with two, on the smallest and the largest iPhone and on an
+  iPad: a short pinch moves one lens, a long one passes further lenses, a brush of a second
+  finger moves none, and a hand resting at a threshold doesn't flip between lenses;
+- the time a lens switch takes for each pair of lenses (record it here); the picture changes when
+  the next camera has started and is never drawn enlarged in between;
+- a long pinch across three lenses restarts the camera once, not for each lens passed;
+- one haptic tick for each step, also in clean view, and none at an end of the range;
+- a pinch that ends cancels a pending hold: no AE/AF lock, no tap focus and no clean-view swipe;
+- an inward pinch on an iPad held upright: on the iPad Simulator in portrait no simulated inward
+  pinch reached the picture, so the UI tests turn the iPad to landscape first;
+- a trackpad pinch on iPad, and AssistiveTouch's pinch;
+- the iPhone Duo on both displays; folding during a pinch keeps the lens the camera has;
+- the label with Increase Contrast and Reduce Transparency (solid black backing), in Night Mode
+  (red on black) and sideways (upright);
+- VoiceOver: a pinch isn't delivered while it is on; the lens buttons still change the lens.
 
 ### iPhone Duo (foldable) on a device
 
@@ -1464,12 +2875,21 @@ privacy list in [`PRIVACY.md`](PRIVACY.md) is based on what the device actually 
 #1, step 2). It has two parts: a debug-only capture mode in the app, and a tag dumper that runs
 on a Mac.
 
+### Each new iOS and iPadOS version
+
+The read-back fails closed for a tag a new iOS version adds, but nothing fails closed for a new
+processing switch. On each iOS and iPadOS beta and major release, as well as the tag check below,
+read the new SDK's `AVCapturePhotoSettings.h`, `AVCapturePhotoOutput.h`, `AVCaptureDevice.h` and
+`CIRAWFilter.h` for any new processing, fusion, distortion correction or RAW decoder setting, and
+check that `ProcessingSwitches.leastProcessing` and `NeutralDevelopment` set each one to its
+least-processing value.
+
 ### What the capture mode does
 
 The code is in `App/NopeApp/DebugTools/` (`TagCheckScreen.swift`, `TagCheckRunner.swift`,
 `TagCheckReport.swift`), wrapped in `#if DEBUG`. It is compiled only in the Debug
 configuration, and Release builds contain none of it. It runs only when the app is launched
-with the `-NopeTagCheck` launch argument, or from an armed run (below).
+with the `-NopeTagCheckRun` launch argument, or from an armed run (below).
 
 The tag check drives the app's own capture backend (`AVFoundationCaptureBackend`) through the
 `CaptureBackend` API only, the same instance the camera screen would use. It creates no capture
@@ -1524,11 +2944,11 @@ frames").
 2. Install a Debug build. Open the app normally from the Home Screen once and check that the
    viewfinder shows the scene.
 3. Launch the tag check. In Xcode: Product › Scheme › Edit Scheme › Run, keep the Build
-   Configuration at Debug, add `-NopeTagCheck` to "Arguments Passed On Launch", and run. From the
+   Configuration at Debug, add `-NopeTagCheckRun` to "Arguments Passed On Launch", and run. From the
    command line:
    ```sh
    xcrun devicectl device process launch --device <device-id> --terminate-existing \
-     com.photivra.nope.dev -- -NopeTagCheck
+     com.photivra.nope.dev -- -NopeTagCheckRun
    ```
    Arguments after the bundle ID must follow `--`; without it `devicectl` parses `-Nope...` as
    its own options and does not launch the app.
@@ -1639,13 +3059,19 @@ the camera picture is blanked gives blank frames whatever the pipeline, and prov
   the app and scene activation state, authorization, `isInterrupted`, every interruption or
   runtime-error notification, `isSuspended`, multitasking camera access, the exposure state,
   the photo's `{Exif}`, the decoded luminance and the raw luma-plane bytes of the frame.
-  `-NopeProbeNoVideoOutput` leaves out the video data output; `-NopeProbeFront` uses the front
+  `-NopeProbeNoVideoOutput` leaves out the video data output; `-NopeProbeFrontCamera` uses the front
   camera.
 - `-NopeArmDebugRun tagcheck` (or `probe`) only stores the run and shows a message. The next
   launch from the Home Screen performs it once and clears it.
+- `-NopeSimulatedHardwareButton` (UI tests): each `notify_post` of
+  `com.photivra.nope.debug.simulatedHardwareButton` is a hardware shutter press and release
+  (`SimulatedHardwareButton`), which the Simulator can't make.
+- `-NopeNoSavePreviews` makes the launch's saves make no preview for the Last Photo viewer, to
+  measure what previews cost a burst ("Burst rate" above). Debug builds also mark each preview
+  as a "Save preview" signpost interval.
 
 Pass every argument after `--`, for example
-`xcrun devicectl device process launch --device <device-id> --terminate-existing com.photivra.nope.dev -- -NopeCameraProbe -NopeProbeFront`.
+`xcrun devicectl device process launch --device <device-id> --terminate-existing com.photivra.nope.dev -- -NopeCameraProbe -NopeProbeFrontCamera`.
 
 ### The tag dumper
 

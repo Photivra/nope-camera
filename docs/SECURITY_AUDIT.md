@@ -95,12 +95,26 @@ MASVS-CODE (supply chain), AGENTS.md "Keep the repository clean".
 ### 3. Binary review
 
 MASVS-CODE, MASVS-RESILIENCE (information in the binary). Run on the Release `.app` inside the
-archive (`Products/Applications/NopeApp.app`).
+archive (`Products/Applications/nope.app`).
 
 - **Run:**
   - `strings -a NopeApp.app/NopeApp | grep -iE 'BEGIN (EC |RSA )?PRIVATE KEY|api[_-]?key|secret|token|password|/Users/|http://|https://'`
-  - `strings -a NopeApp.app/NopeApp | grep -E 'NopeTagCheck|NopeCameraProbe|NopeSimulatedCamera|NopeArmDebugRun'`
-    (Debug-only tools must not be in Release).
+  - `strings -a <binary> | grep -E -- '-Nope[A-Z]|NopeSimulated|NopeTagCheckRun|NopeCameraProbe|NopeArmDebugRun'`
+    on each of the four binaries: `NopeApp.app/NopeApp`,
+    `Extensions/NopeCaptureExtension.appex/NopeCaptureExtension`,
+    `PlugIns/NopeControls.appex/NopeControls` and `Watch/NopeWatch.app/NopeWatch`, each of
+    which must exist and not be empty (`[[ -s ]]`). No hits: Debug-only tools must not be in
+    Release (the UI-test scenarios, the simulated viewfinder still
+    `-NopeSimulatedViewfinderImage`, the test App Store ID `-NopeSimulatedAppStoreID`, the watch
+    app's `-NopeSimulatedPhone` and the galleries among them; `-Nope[A-Z]` matches every `-Nope…` launch argument, and the settings argument
+    domain `-NopeSettings.<key>` isn't a string in the binary). Optimized Swift keeps a string
+    literal of 15 UTF-8 bytes or fewer inside the instructions, where `strings` can't see it, so
+    `scripts/check-security.sh` fails on any `"-Nope…"` literal in app code shorter than 16
+    bytes; that is what makes the search cover every argument. CI runs the same search on every
+    Release build ("No Debug-only tools in the Release app") and fails if a binary is missing or
+    empty, and `scripts/check-security.sh` checks that every file in `App/NopeApp/DebugTools/` is
+    one `#if DEBUG` block with no `#else`, `#elseif`, code outside it, block comment or
+    multi-line string.
   - `nm -u NopeApp.app/NopeApp` and the same on every binary in `NopeApp.app/Frameworks/`,
     then search the undefined symbols for networking:
     `grep -E 'URLSession|NSURLConnection|nw_|CFSocket|CFStream|socket$|_connect$|getaddrinfo|SecTrust'`.
@@ -164,10 +178,19 @@ MASVS-PLATFORM-1, MASVS-PRIVACY-1, MASVS-PRIVACY-3.
     `NSPhotoLibraryAddUsageDescription`, and `NSLocationWhenInUseUsageDescription` (the location switch ships in 0.2.0). No `NSPhotoLibraryUsageDescription` (full library access), no
     microphone, contacts, tracking (`NSUserTrackingUsageDescription`), Bluetooth or local
     network strings.
-  - Each string is accurate, says "nope.", and is translated in all 11 languages.
+  - Each string is accurate, says "nope.", and is present in every language that ships (English
+    only in 1.0.0, issue #86; Spanish is in the backlog, issue #87).
+  - The items added to 1.0.0 on 2026-11-18 add no usage string: App Intents (#82) need no Siri
+    usage string or entitlement (only SiriKit's `INPreferences.requestSiriAuthorization` does,
+    and the app doesn't call it), and keeping the screen on (#97,
+    `UIApplication.isIdleTimerDisabled`) needs none. Recheck on the build that includes them.
   - No `UIBackgroundModes`, `CFBundleURLTypes` (URL schemes), `CFBundleDocumentTypes`,
     `UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace`, `NSAppTransportSecurity`
     exceptions, or `NSBonjourServices`.
+  - Issue #82 proposes `nope://` links. They would add `CFBundleURLTypes`, which this check,
+    check 17 and AGENTS.md ("Prevention first") don't allow today. They are built only after the
+    maintainer decides and these rules are updated in the same pull request; otherwise #82 ships
+    without them.
   - `ITSAppUsesNonExemptEncryption` is `NO` (set in the generated Info.plist since
     2026-11-12). Export compliance answer: **No** non-exempt
     encryption (maintainer's decision, 2026-11-12): the app uses the operating system's
@@ -186,7 +209,7 @@ app and for each third-party SDK it bundles
 [Describing use of required reason API](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api)).
 
 **Does the app need one?** Yes. `App/NopeApp/PrivacyInfo.xcprivacy` exists and declares no
-tracking, no tracking domains, no collected data and no required-reason APIs.
+tracking, no tracking domains and no collected data, and the required-reason APIs below.
 
 **State as of 2026-11-12:** the manifest declares `NSPrivacyAccessedAPICategoryUserDefaults`
 with `CA92.1` and `1C8F.1`, for the settings (`NopeSettings`, stored in the App Group's
@@ -206,6 +229,13 @@ code calls `ProcessInfo.systemUptime` to throttle exposure readings
 | `NSPrivacyAccessedAPICategoryFileTimestamp` | Only if code reads creation or modification dates (for example to clean up temp files) | `C617.1`: timestamps of files in the app container |
 | `NSPrivacyAccessedAPICategorySystemBootTime` | `ProcessInfo.systemUptime` for the exposure readings throttle (declared); any idle timer that uses it or `mach_absolute_time()` | `35F9.1`: measure elapsed time inside the app |
 | `NSPrivacyAccessedAPICategoryActiveKeyboards` | None expected | Not declared |
+
+Items added to 1.0.0 on 2026-11-18 (all built; #87, the Spanish translation, moved to the backlog):
+#82 (App Intents, the Assistant Access setting and its tip) is expected to use `UserDefaults`
+only, already declared with `CA92.1` and `1C8F.1` if the setting is shared with the controls
+extension; #97 (keep the screen on) uses the idle timer, which isn't a required-reason API; #87,
+#88, #90 and #95 add no listed API. Rerun the search below on the build that includes them, in
+the app and each extension.
 
 - **Run:**
   - Search Release code for the APIs Apple lists in each category, for example
@@ -237,9 +267,17 @@ AGENTS.md rule 4.
   - `scripts/check-security.sh` (bans `URLSession`, `NWConnection`, `import Network`,
     `CFNetwork`, `WebKit` and analytics SDK names in app code).
   - `grep -rnE 'import (Network|WebKit|SafariServices)|URLSession|NWConnection|URLRequest|openURL|UIApplication\.shared\.open|Link\(' Sources App`:
-    the only allowed hits are links that open in the browser (the privacy policy, the C2PA
-    checker, the source code), which hand the URL to the system and don't fetch anything in
-    the app.
+    the only allowed hits are the three links on the About screen: the privacy policy
+    (`https://nope.photivra.com/privacy/`) and the source code, which open in the browser, and
+    the App Store write-review page (`https://apps.apple.com/app/id<App Store ID>?action=write-review`),
+    which opens the App Store (`AboutScreen.privacyPolicyURL`, `sourceURL` and `rateURL`). Each
+    hands its URL to the system and fetches nothing in the app. The third is shown only once
+    `AboutScreen.appStoreID` is set. Also allowed: the Photos app's `photos-redirect://` address,
+    which opens Photos and reads nothing.
+  - `scripts/check-app-store-id.sh`: the App Store ID is set, so the Release build has its Rate or
+    Review row. It fails while `AboutScreen.appStoreID` is `nil`; it isn't run on pull requests,
+    because the id exists only once the app's App Store Connect record does (which is before any
+    build can be uploaded).
   - The binary checks in check 3 (`nm -u`, `otool -L`) on the app and every framework, and on
     the embedded Apple Watch app (`Watch/NopeWatch.app/NopeWatch`). It links WatchConnectivity,
     which carries the watch's commands over the system's paired-device connection; the app
@@ -371,6 +409,13 @@ MASVS-STORAGE-2, MASVS-PRIVACY-2.
   other key is `NopePresets.saved` (issue #72): JSON of the saved presets, each with the name the
   person typed, a random identifier, the same setting values and the camera values listed in
   `docs/PRIVACY.md`, "Settings presets"; nothing else.
+  Issue #82 adds the Assistant Access and Ask First settings and a count of
+  confirmed assistant requests for its one-time tip (`NopeAssistant.confirmedCount` in `UserDefaults`). That
+  count is the one allowed counter: a number only, kept on the device, removed by Factory
+  Defaults, with no dates or request contents. Issue #97 adds one Boolean. Issue #117 adds one
+  Boolean, `NopeGuide.invitationAnswered`: whether the how-to-use guide's invitation card was
+  answered (Open, Dismiss or the guide opened). It isn't a count or a date, is outside the
+  settings snapshot and presets, and Factory Defaults leaves it (owner decision).
 
 ### 13. Logging
 
@@ -430,7 +475,16 @@ MASVS-PLATFORM-1, MASVS-PLATFORM-2, MASVS-CODE-4.
   parameters are validated by `NopeCore` (`PhotoShortcut` clamps the delay to 0 to 60 seconds
   and the count to 1 to 50; `IntervalSettings` clamps an interval series; an unknown lens takes
   no photo and changes nothing), and the intents return only whether a photo was saved and
-  signed or what changed, never image data or metadata.
+  signed or what changed, never image data or metadata. Issue #82 adds intents
+  for every existing control: each checks Assistant Access inside `perform()`, its entry-point
+  test lists every intent, App Shortcut, control and link, and the results stay within this
+  rule (format, lens, RAW or processed, saved or not; no file, thumbnail or tag values).
+- **Run (Assistant Access, issue #82):** `scripts/check-security.sh` passes: every App Intent,
+  entity, query, App Shortcuts provider and control is in `security/assistant-entry-points.txt`
+  with its kind; each gated intent runs the check (`gate.answer`) and requires an unlocked device;
+  no intent returns more than a sentence and a number; no URL scheme, search indexing, donation,
+  user activity or assistant schema exists. On a device, the checks of `docs/TESTING.md`,
+  "Assistant Access on a device", are recorded.
 - **Pass:** no untrusted input other than the camera, the user's own taps and App Intents.
 
 ### 18. Static analysis
@@ -444,7 +498,7 @@ MASVS-CODE-4.
 
 ### 19. App Store privacy label and privacy policy
 
-MASVS-PRIVACY-3. The answers are in `docs/store/app-privacy-label.md`; the policy draft is
+MASVS-PRIVACY-3. The answers are in `docs/store/app-privacy-label.md`; the policy is
 `docs/store/privacy-policy-draft.md`.
 
 - **Run:** compare the App Store Connect answers and the published policy with the results of
@@ -481,9 +535,9 @@ Copy this into the audit report issue for each release.
 - [ ] 2. Full-history secret scan clean
 - [ ] 3. Binary: no secrets, no Debug tools, no networking symbols in the app or any linked binary (no exceptions); signature verifies
 - [ ] 4. Signed entitlements match the allowlist
-- [ ] 5. Info.plist: only the needed usage strings, accurate in 11 languages; no background modes, URL schemes, file sharing or ATS exceptions; `ITSAppUsesNonExemptEncryption` = `NO`
+- [ ] 5. Info.plist: only the needed usage strings, accurate in every language that ships; no background modes, URL schemes, file sharing or ATS exceptions; `ITSAppUsesNonExemptEncryption` = `NO`
 - [ ] 6. Privacy manifest matches every required-reason API in the binary; Xcode privacy report reviewed
-- [ ] 7. Static no-network proof
+- [ ] 7. Static no-network proof; App Store ID set (`scripts/check-app-store-id.sh`)
 - [ ] 8. Packet capture, App Privacy Report and offline run: zero app traffic
 - [ ] 9. Metadata dumps of every format and switch combination match the allowlist; fail-closed tests pass; tag check rerun on the release iOS version
 - [ ] 10. New Secure Enclave key per photo, never exported; generic certificate; valid in the C2PA reference tool; tampered files fail

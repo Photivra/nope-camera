@@ -233,6 +233,22 @@ Turns the camera's readings on or off.
 
 - Parameter enabled: Whether to send readings.
 
+## `AVFoundationCaptureBackend/setFocus(lensPosition:)`
+
+public, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
+
+```swift
+func setFocus(lensPosition: Double) async throws(CaptureError) -> Double
+```
+
+Locks focus at a lens position and returns the position the camera reports once it is
+applied: the step before each frame of a focus bracket.
+
+- Parameter lensPosition: The position, from 0 to 1.
+- Returns: The reported position.
+- Throws: `CaptureError.notRunning` if the camera isn't running, or
+  `CaptureError.configurationFailed` if its focus can't be locked at a position.
+
 ## `AVFoundationCaptureBackend/setFrameAnalysis(_:)`
 
 public, declared in `Sources/NopeCapture/LiveViewHardware.swift`
@@ -268,7 +284,9 @@ func setTorch(level: Double?) async -> TorchStatus
 Turns the running lens's torch on at a level, or off.
 
 - Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
-- Returns: The light's state; `TorchStatus.off` while the session isn't configured.
+- Returns: The light's state. While the session isn't configured (before a start, or
+  while it is reconfigured), a request for the light is `TorchStatus.pending`, never a
+  silent `TorchStatus.off` (issue #75); `LightModel` applies it after the start.
 
 ## `AVFoundationCaptureBackend/startSession(_:)`
 
@@ -528,6 +546,17 @@ let aperture: ApertureRange
 
 The aperture, as f-numbers.
 
+## `CameraDeviceDescription/canTurnOffDistortionCorrection`
+
+internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
+
+```swift
+let canTurnOffDistortionCorrection: Bool
+```
+
+Whether the camera lets apps turn its geometric distortion correction off
+(`isGeometricDistortionCorrectionSupported`); the app then does (issue #80).
+
 ## `CameraDeviceDescription/deviceType`
 
 internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
@@ -580,12 +609,12 @@ let hasTorch: Bool
 Whether the camera has a torch that can be turned on (`hasTorch` and
 `isTorchModeSupported(.on)`).
 
-## `CameraDeviceDescription/init(uniqueID:deviceType:position:isVirtual:rawPixelFormats:supportsHEVC:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:fieldOfViewDegrees:manualControls:flashModes:hasTorch:)`
+## `CameraDeviceDescription/init(uniqueID:deviceType:position:isVirtual:rawPixelFormats:supportsHEVC:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:fieldOfViewDegrees:canTurnOffDistortionCorrection:manualControls:flashModes:hasTorch:minimumFocusDistance:reportsStabilization:)`
 
 internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
 
 ```swift
-init(uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool, rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>, exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int, photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, manualControls: ManualControlSupport = .none, flashModes: [FlashMode] = [], hasTorch: Bool = false)
+init(uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool, rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>, exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int, photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, canTurnOffDistortionCorrection: Bool = false, manualControls: ManualControlSupport = .none, flashModes: [FlashMode] = [], hasTorch: Bool = false, minimumFocusDistance: Int = -1, reportsStabilization: Bool = false)
 ```
 
 Creates a camera description.
@@ -603,9 +632,15 @@ Creates a camera description.
   - maxBracketedPhotoCount: The most frames in one bracketed capture.
   - photoDimensions: The supported maximum photo sizes, as reported.
   - fieldOfViewDegrees: The horizontal field of view, in degrees.
+  - canTurnOffDistortionCorrection: Whether the camera lets apps turn its geometric
+    distortion correction off. Defaults to `false`.
   - manualControls: The camera's answers about manual control. Defaults to none.
   - flashModes: The supported flash modes. Defaults to none.
   - hasTorch: Whether the camera has a torch. Defaults to `false`.
+  - minimumFocusDistance: The minimum focus distance in millimeters, or −1 when unknown.
+    Defaults to −1.
+  - reportsStabilization: Whether the photo output supports lens stabilization with this
+    camera. Defaults to `false`.
 
 ## `CameraDeviceDescription/isVirtual`
 
@@ -648,6 +683,17 @@ let maxBracketedPhotoCount: Int
 
 The most frames in one bracketed capture (`maxBracketedCapturePhotoCount`).
 
+## `CameraDeviceDescription/minimumFocusDistance`
+
+internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
+
+```swift
+let minimumFocusDistance: Int
+```
+
+The camera's `minimumFocusDistance`, in millimeters; −1 or any negative value when the
+camera reports it as unknown.
+
 ## `CameraDeviceDescription/photoDimensions`
 
 internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
@@ -677,6 +723,18 @@ let rawPixelFormats: [RAWPixelFormat]
 ```
 
 The RAW pixel formats the photo output offers with this camera, Apple ProRAW off.
+
+## `CameraDeviceDescription/reportsStabilization`
+
+internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
+
+```swift
+let reportsStabilization: Bool
+```
+
+Whether the photo output supports lens stabilization with this camera attached
+(`isLensStabilizationDuringBracketedCaptureSupported`), the only public signal of lens
+stabilization found (docs/design/device-feedback-1.0.md, section 4).
 
 ## `CameraDeviceDescription/supportsHEVC`
 
@@ -767,7 +825,8 @@ own DNG is also flattened once, only to keep its RAW image data as a reference.
   - metadata: The plan the file's metadata is built from.
 - Returns: The file bytes, the reference RAW image data, a few bytes sampled from the
   photo's pixel buffer, and capture details.
-- Throws: `CaptureError.notRunning` if the session isn't running, or
+- Throws: `CaptureError.notRunning` if the session isn't running or the attached camera
+  isn't the plan's (`CapturePolicy.camera(_:matches:)`), or
   `CaptureError.captureFailed` if the system reports an error or no file.
 
 ## `CaptureHardware/captureBracket(_:frames:metadata:)`
@@ -786,7 +845,8 @@ built from the plan, as for ``capture(_:metadata:)``.
   - frames: Each frame's ISO and exposure duration.
   - metadata: The plan each file's metadata is built from.
 - Returns: The photos, in the order the system delivered them.
-- Throws: `CaptureError.notRunning` if the session isn't running, or
+- Throws: `CaptureError.notRunning` if the session isn't running or the attached camera
+  isn't the plan's (`CapturePolicy.camera(_:matches:)`), or
   `CaptureError.captureFailed` if the system reports an error.
 
 ## `CaptureHardware/configure(_:)`
@@ -849,6 +909,23 @@ var previewSource: any CameraPreviewSource { get }
 
 The handle the app turns into the live viewfinder.
 
+## `CaptureHardware/setFocus(lensPosition:)`
+
+internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
+
+```swift
+func setFocus(lensPosition: Double) async throws(CaptureError) -> Double
+```
+
+Locks focus at a lens position and returns the position the camera reports once the move
+is applied (`setFocusModeLocked(lensPosition:completionHandler:)`, whose handler runs
+when the position has been applied).
+
+- Parameter lensPosition: The position, from 0 to 1.
+- Returns: The camera's `lensPosition` when the handler has run.
+- Throws: `CaptureError.notRunning` if no camera is attached, or
+  `CaptureError.configurationFailed` if its focus can't be locked at a position.
+
 ## `CaptureHardware/setReadingsEnabled(_:)`
 
 internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
@@ -875,8 +952,9 @@ The system may refuse a level while the device is hot (`AVErrorTorchLevelUnavail
 or make the torch unavailable (`isTorchAvailable`); the light then stays off.
 
 - Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
-- Returns: The light's state afterwards: `TorchStatus.off` when no camera with a torch
-  is attached.
+- Returns: The light's state afterwards. While no camera with a torch is attached (during
+  discovery, a teardown or a reconfiguration), a request for the light is
+  `TorchStatus.pending` and a request to turn it off is `TorchStatus.off` (issue #75).
 
 ## `CaptureHardware/stop()`
 
@@ -900,6 +978,50 @@ enum CapturePolicy
 ```
 
 Turns a `NopeCore` capture request into hardware settings.
+
+## `CapturePolicy/camera(_:matches:)`
+
+internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
+
+```swift
+static func camera(_ deviceID: String, matches plan: PhotoSettingsPlan) -> Bool
+```
+
+Whether the attached camera is the one a photo was planned for, so the hardware may take
+it.
+
+The capture backend is an actor, and an actor runs other calls while one waits: a lens
+change can reconfigure the session while a photo waits for the output to be ready, so
+the attached camera may no longer be the plan's (issue #96). The model doesn't change the
+lens while a photo is taken (`CameraModel.canChangeLens`); this is the backend's own
+check, made on the session queue just before the capture starts. A plan not tied to a
+camera never matches.
+
+- Parameters:
+  - deviceID: The attached camera's `uniqueID`.
+  - plan: The photo's plan.
+- Returns: Whether they match.
+
+## `CapturePolicy/cameraToCapture(_:id:isRunning:plan:)`
+
+internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
+
+```swift
+static func cameraToCapture<Camera>(_ attached: Camera?, id: (Camera) -> String, isRunning: Bool, plan: PhotoSettingsPlan) -> Camera?
+```
+
+The camera to take a photo with: the attached camera, when the session runs and it is the
+one the plan was made for (``camera(_:matches:)``); otherwise `nil`, and the capture fails
+with `CaptureError.notRunning`. The one check before every capture in
+`SystemCaptureHardware` (a photo, a bracket and the comparison shot), made on the session
+queue; kept here so it is tested without camera hardware.
+
+- Parameters:
+  - attached: The session's camera now, or `nil` when none is attached.
+  - id: The camera's `uniqueID`.
+  - isRunning: Whether the capture session is running.
+  - plan: The photo's plan.
+- Returns: The camera, or `nil` when no photo may be taken with it.
 
 ## `CapturePolicy/comparisonPlan(for:)`
 
@@ -1225,7 +1347,8 @@ switches, and the app's photo just taken, are unchanged.
   - sessionPlan: The session's own photo settings, prepared again afterwards.
 - Returns: The file bytes from `AVCapturePhoto.fileDataRepresentation()`, with the
   system's metadata, and the resolved size. No pixel sample and no RAW data.
-- Throws: `CaptureError.notRunning` if the session isn't running, or
+- Throws: `CaptureError.notRunning` if the session isn't running or the attached camera
+  isn't the plan's (`CapturePolicy.camera(_:matches:)`), or
   `CaptureError.captureFailed` if the system reports an error or no file.
 
 ## `FlashMode/captureFlashMode`
@@ -1491,8 +1614,8 @@ init(_ reason: AVCaptureSession.InterruptionReason?)
 
 Converts the reason in `AVCaptureSession.wasInterruptedNotification`.
 
-A missing reason, or one added in a later iOS (such as sensitive content mitigation in
-iOS 26), becomes `InterruptionReason.other`.
+A missing reason, or one the app has no case for (such as sensitive content mitigation,
+iOS 26, or one added in a later iOS), becomes `InterruptionReason.other`.
 
 - Parameter reason: The value of `AVCaptureSessionInterruptionReasonKey`, or `nil`.
 
@@ -1887,7 +2010,7 @@ internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
 let exposureRegion: Bool
 ```
 
-iOS 26: `isExposureRectOfInterestSupported`.
+`isExposureRectOfInterestSupported`.
 
 ## `ManualControlSupport/focusPoint`
 
@@ -2669,14 +2792,39 @@ internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
 struct PhotoSettingsPlan
 ```
 
-What one photo asks for: Bayer RAW only, or one processed fallback format.
+What one photo asks for: Bayer RAW only, or one processed fallback format, from one camera.
 
-## `PhotoSettingsPlan/init(rawPixelFormat:processedFormat:switches:)`
+## `PhotoSettingsPlan/deviceID`
 
 internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
 
 ```swift
-init(rawPixelFormat: UInt32?, processedFormat: ProcessedFallback?, switches: ProcessingSwitches)
+let deviceID: String?
+```
+
+The `uniqueID` of the camera the plan was made for, or `nil` for a plan not yet tied to
+a camera (``CapturePolicy/photoSettings(for:)``). The hardware takes a photo only with
+that camera attached (``CapturePolicy/camera(_:matches:)``).
+
+## `PhotoSettingsPlan/forCamera(_:)`
+
+internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
+
+```swift
+func forCamera(_ deviceID: String) -> PhotoSettingsPlan
+```
+
+The same plan, made for one camera.
+
+- Parameter deviceID: The camera's `uniqueID`.
+- Returns: The plan with ``deviceID`` set.
+
+## `PhotoSettingsPlan/init(rawPixelFormat:processedFormat:switches:deviceID:)`
+
+internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
+
+```swift
+init(rawPixelFormat: UInt32?, processedFormat: ProcessedFallback?, switches: ProcessingSwitches, deviceID: String? = nil)
 ```
 
 Creates a photo plan.
@@ -2685,6 +2833,7 @@ Creates a photo plan.
   - rawPixelFormat: The Bayer RAW pixel format code, or `nil`.
   - processedFormat: The processed format, or `nil`.
   - switches: The processing switches.
+  - deviceID: The camera's `uniqueID`, or `nil` for a plan not yet tied to a camera.
 
 ## `PhotoSettingsPlan/processedFormat`
 
@@ -3659,7 +3808,69 @@ struct ReadingThrottle
 ```
 
 Lets through at most one reading per interval, so the camera's readings reach the interface
-at a reduced rate (AGENTS.md, "Battery").
+at a reduced rate (AGENTS.md, "Battery"), and makes sure the last one is not lost.
+
+A reading is triggered by a change the camera reports. When changes stop inside an interval
+(the lens comes to rest at its nearest position, autofocus stops searching), the last change
+would otherwise never be sent, and the close-up hint would judge an old reading
+(docs/design/device-feedback-1.0.md, section 6). So a reading held back schedules one more,
+at the end of the interval, that reads the camera's values then.
+
+## `ReadingThrottle/Decision`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+enum Decision
+```
+
+What to do with a reading.
+
+## `ReadingThrottle/Decision/drop`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+case drop
+```
+
+Hold it back: a later reading is already scheduled.
+
+## `ReadingThrottle/Decision/later(delay:ticket:)`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+case later(delay: Double, ticket: Int)
+```
+
+Hold it back, and call ``sendsLater(_:at:)`` with the ticket after the delay, in
+seconds: a reading of the values then is sent, unless one was sent since.
+
+## `ReadingThrottle/Decision/send`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+case send
+```
+
+Send it now.
+
+## `ReadingThrottle/decide(at:)`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+mutating func decide(at time: Double) -> Decision
+```
+
+What to do with a reading at a time, recorded.
+
+- Parameter time: The time of the reading, in seconds on any steady clock.
+- Returns: ``Decision/send`` for the first reading and for each one at least
+  ``interval`` after the last one sent; otherwise ``Decision/later(delay:ticket:)`` once,
+  then ``Decision/drop`` until that one is due.
 
 ## `ReadingThrottle/init()`
 
@@ -3682,19 +3893,20 @@ static let interval: Double
 The shortest time between two readings, in seconds: four readings a second, enough for
 a meter that a person reads.
 
-## `ReadingThrottle/shouldSend(at:)`
+## `ReadingThrottle/sendsLater(_:at:)`
 
 internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
 
 ```swift
-mutating func shouldSend(at time: Double) -> Bool
+mutating func sendsLater(_ ticket: Int, at time: Double) -> Bool
 ```
 
-Whether a reading at a time should be sent, and records it if so.
+Whether the reading scheduled with a ticket should be sent now, recorded.
 
-- Parameter time: The time of the reading, in seconds on any steady clock.
-- Returns: `true` for the first reading and for each one at least ``interval`` after the
-  last one let through.
+- Parameters:
+  - ticket: The ticket from ``decide(at:)``.
+  - time: The time now, in seconds on the same clock.
+- Returns: `true` when it is still the scheduled one: no reading was sent since.
 
 ## `ResourceStaging`
 
@@ -3774,7 +3986,9 @@ Writes a file with ``protection``, never over an existing file.
 
 - Parameter file: The file to write.
 - Returns: Where it was written.
-- Throws: The file system's error, for example while the device is locked.
+- Throws: The file system's error, for example while the device is locked. A file the
+  failed write left behind, part of it written, is deleted first (Privacy: photos never
+  linger; final review of 1.0.0, minor 2).
 
 ## `SessionConfiguration`
 
@@ -4044,6 +4258,19 @@ let previewSource: any CameraPreviewSource
 ```
 
 The session, for the app's preview layer.
+
+## `SystemCaptureHardware/setFocus(lensPosition:)`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+func setFocus(lensPosition: Double) async throws(CaptureError) -> Double
+```
+
+Locks focus at a lens position on `queue` and waits for the system's handler, which runs
+when the position has been applied (AVCaptureDevice.h,
+`setFocusModeLocked(lensPosition:completionHandler:)`); then reads `lensPosition` back on
+`queue`. Guarded by `isLockingFocusWithCustomLensPositionSupported`.
 
 ## `SystemCaptureHardware/setFrameAnalysis(_:)`
 

@@ -51,6 +51,15 @@ public enum CaptureError: Error, Equatable, Sendable, CaseIterable {
     /// Say that the photo wasn't saved and that the person can try again.
     case saveFailed
 
+    /// A bracket was asked for, but the camera reported no exposure to plan its frames around
+    /// within ``CameraModel/bracketReadingWaitSeconds`` (just after a lens change, or after
+    /// manual controls or the astro helper turned on or off), or the lens can't take it. No
+    /// photo was taken: a bracket never becomes a single photo.
+    ///
+    /// Say that no photos were taken because the camera wasn't ready for the bracket, and that
+    /// the person can try again.
+    case bracketNotReady
+
     /// This build of the app has no way to save photos (``CameraModel`` was created without a
     /// ``PhotoSaver``, as in previews and some tests).
     ///

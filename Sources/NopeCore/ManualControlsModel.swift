@@ -1,6 +1,21 @@
 import Foundation
 import Observation
 
+/// What came of one photo of an interval series (`CameraModel.takeIntervalPhoto()`).
+enum IntervalPhotoOutcome: Equatable, Sendable {
+    /// The photo was taken and saved. `startedAt` is when it really started, on the monotonic
+    /// clock, after any wait for the camera: the next photo is due one interval later.
+    case taken(startedAt: ContinuousClock.Instant)
+
+    /// The series stops after a time, and the time was up while the photo waited for the camera:
+    /// the series finished.
+    case timeUp
+
+    /// The photo couldn't be taken or saved, or the camera stopped for good: the series stopped,
+    /// and the camera says why.
+    case failed
+}
+
 /// The manual and pro controls: the state behind the control grid, the exposure modes, the
 /// locks, bracketing and interval shooting.
 ///
@@ -32,14 +47,25 @@ public final class ManualControlsModel {
     /// are off.
     public private(set) var reading: ExposureReading?
 
-    /// The exposure bracket for the next photo, or `nil` when bracketing is off.
+    /// The exposure bracket for the next press of the shutter, or `nil` when bracketing is off.
+    /// It works in full auto and with manual controls on (docs/design/BRACKETING.md, decision
+    /// 2). An interface shows it as the drive strip's Bracket word.
     public private(set) var bracket: BracketSettings?
 
-    /// The interval and photo count of the next interval series.
+    /// The bracket chosen last in this session: the one an interface turns on again when the
+    /// person chooses Bracket. ``BracketSettings/standard`` at first. Not stored between launches,
+    /// as the drive mode isn't (AGENTS.md, "Cognitive": no surprise modes).
+    public private(set) var lastBracket = BracketSettings.standard
+
+    /// The interval, and the number of photos or the time, of the next interval series.
     public private(set) var interval = IntervalSettings.standard
 
     /// The running interval series, or `nil` when none is running.
     public private(set) var intervalProgress: IntervalProgress?
+
+    /// How the last interval series ended, or `nil` before the first one ends. Cleared when the
+    /// next starts.
+    public private(set) var lastIntervalEnd: IntervalEnd?
 
     /// The selected lens, or `nil` before the camera is ready.
     public private(set) var lens: Lens?
@@ -47,11 +73,20 @@ public final class ManualControlsModel {
     /// The hardware, or `nil` when the backend has no manual controls.
     let backend: (any ManualCaptureBackend)?
 
-    /// Waits between interval photos; the time is in seconds.
-    private let sleep: @Sendable (Double) async throws -> Void
+    /// The clock of the camera model: interval photos wait on it, and a timed series' end is a
+    /// moment of its monotonic clock.
+    let clock: NopeClock
+
+    /// Reads the monotonic clock, for when each camera reading arrived (``CloseUpDetector``).
+    let now: @Sendable () -> ContinuousClock.Instant
 
     /// The running interval series.
     private var intervalTask: Task<Void, Never>?
+
+    /// Whether the camera's controls are held by a focus bracket, which sets focus, exposure and
+    /// white balance itself while it runs or while an end of its range is set. Changes to the
+    /// settings are kept, and applied when the hold ends.
+    var holdsControls = false
 
     // MARK: Automatic aids (ManualControlsModel+Auto.swift)
 
@@ -76,9 +111,11 @@ public final class ManualControlsModel {
     /// How fast a shutter full auto prefers. ``FastShutter/handheld`` by default.
     public internal(set) var fastShutter = FastShutter.handheld
 
-    /// Whether the camera should say "Hold it steady or use a tripod": in full auto when the
-    /// light is too low for a handheld-safe shutter, and with manual controls when the shutter
-    /// chosen or in use is slower than that.
+    /// Whether the camera should say "Hold it steady or use a tripod": in full auto only, when
+    /// the light is too low for the fast shutter limit and the camera's shutter is slower than
+    /// the lens's steady limit (``updateSteadyHint()``). Never with manual controls on. It
+    /// follows only readings taken in the current mode and lens. Interfaces show the hint from ``CameraModel/showsSteadyHint``, which leaves it
+    /// to the astro helper's own guidance while that is on.
     public internal(set) var showsSteadyHint = false
 
     /// Whether the subject seems closer than the lens can focus, so an interface may suggest
@@ -105,13 +142,40 @@ public final class ManualControlsModel {
     ///
     /// - Parameters:
     ///   - backend: The hardware, or `nil` when it has no manual controls.
+    ///   - clock: The clock interval photos wait on and a timed series ends by. Its monotonic
+    ///     clock also times the camera's readings.
+    public convenience init(backend: (any ManualCaptureBackend)?, clock: NopeClock = .system) {
+        self.init(backend: backend, clock: clock, measuredBy: clock.now)
+    }
+
+    /// Creates the model with a sleep of a number of seconds, as tests written before
+    /// ``NopeClock`` pass (``NopeClock/stepped(by:now:)``).
+    ///
+    /// - Parameters:
+    ///   - backend: The hardware, or `nil` when it has no manual controls.
     ///   - sleep: Waits a number of seconds between interval photos, throwing when cancelled.
-    public init(
+    ///   - now: Reads the monotonic clock, for when each reading arrived.
+    convenience init(
         backend: (any ManualCaptureBackend)?,
-        sleep: @escaping @Sendable (Double) async throws -> Void
+        sleep: @escaping @Sendable (Double) async throws -> Void,
+        now: @escaping @Sendable () -> ContinuousClock.Instant = { .now }
+    ) {
+        self.init(backend: backend, clock: .stepped(by: sleep), measuredBy: now)
+    }
+
+    /// Creates the model.
+    ///
+    /// - Parameters:
+    ///   - backend: The hardware, or `nil` when it has no manual controls.
+    ///   - clock: The clock interval photos wait on and a timed series ends by.
+    ///   - measure: Reads the monotonic clock that times the camera's readings.
+    init(
+        backend: (any ManualCaptureBackend)?, clock: NopeClock,
+        measuredBy measure: @escaping @Sendable () -> ContinuousClock.Instant
     ) {
         self.backend = backend
-        self.sleep = sleep
+        self.clock = clock
+        now = measure
     }
 
     // MARK: - What an interface reads
@@ -228,20 +292,18 @@ public final class ManualControlsModel {
         await apply(restoringOnFailure: settings)
     }
 
-    /// The frames of the next photo's exposure bracket, or `nil` for a single photo: bracketing
-    /// is off, the lens reports no ISO or shutter range, or there is no exposure to start from
-    /// yet. The bracket always fits the lens: ``lensWillStart(_:)`` drops one that doesn't.
-    ///
-    /// The base exposure is the person's ISO and shutter where set, otherwise the camera's
-    /// reading, which already includes exposure compensation.
-    func bracketFrames() -> [BracketFrame]? {
-        guard isEnabled, let bracket else { return nil }
-        return plan(bracket, iso: value(of: .iso), duration: value(of: .shutter))
+    /// The frames the next press of the shutter takes, as an interface lists them in Bracket
+    /// Settings, or `nil` for a single photo: bracketing is off, the lens reports no ISO or
+    /// shutter range, or there is nothing to plan from yet (see ``bracketFrames(once:)``). The
+    /// bracket always fits the lens: ``lensWillStart(_:)`` drops one that doesn't. It follows the camera's readings, so it changes as the light
+    /// does; the bracket is planned again from the reading when the shutter is pressed.
+    public var bracketPlan: [BracketFramePlan]? {
+        bracket.flatMap(bracketPlan(once:))
     }
 
     /// Whether the selected lens can take this bracket: it reports ISO and shutter ranges, the
     /// frame count is one ``bracketFrameCounts`` offers, and the step is one of
-    /// ``BracketSettings/steps``. The same limits as the bracket in Pro Tools.
+    /// ``BracketSettings/steps``. The same limits as the bracket the drive strip turns on.
     ///
     /// - Parameter bracket: The bracket.
     func canBracket(_ bracket: BracketSettings) -> Bool {
@@ -259,26 +321,32 @@ public final class ManualControlsModel {
     /// - Returns: The frames, or `nil` when the lens can't take it (``canBracket(_:)``) or the
     ///   camera hasn't reported an exposure yet.
     func bracketFrames(once bracket: BracketSettings) -> [BracketFrame]? {
-        guard canBracket(bracket) else { return nil }
-        return plan(
-            bracket, iso: settings.iso ?? lastReading?.iso, duration: settings.shutter ?? lastReading?.exposureDuration)
+        bracketPlan(once: bracket)?.map(\.frame)
     }
 
-    /// Plans a bracket's frames around a base exposure, within the lens's ranges.
+    /// Plans a bracket's frames around the base exposure, within the lens's ranges: the
+    /// person's ISO and shutter where set (only while manual controls are on), otherwise the
+    /// camera's last reading, which already includes exposure compensation. The parameter the
+    /// person didn't set changes first, the shutter when neither is set.
     ///
-    /// - Parameters:
-    ///   - bracket: The bracket.
-    ///   - iso: The base ISO, or `nil` when there is none yet.
-    ///   - duration: The base exposure duration in seconds, or `nil` when there is none yet.
-    /// - Returns: The frames, or `nil` without a base exposure or the lens's ranges.
-    private func plan(_ bracket: BracketSettings, iso: Double?, duration: Double?) -> [BracketFrame]? {
-        guard let lens, let isoRange = lens.isoRange, let durationRange = lens.exposureDurationRange, let iso,
-            let duration
+    /// - Parameter bracket: The bracket.
+    /// - Returns: One plan per frame, in the order taken, or `nil` when the lens can't take the
+    ///   bracket or there is no base exposure yet.
+    func bracketPlan(once bracket: BracketSettings) -> [BracketFramePlan]? {
+        guard canBracket(bracket), let lens, let isoRange = lens.isoRange,
+            let durationRange = lens.exposureDurationRange, let iso = settings.iso ?? lastReading?.iso,
+            let duration = settings.shutter ?? lastReading?.exposureDuration
         else { return nil }
-        return BracketFrame.plan(
+        return BracketFramePlan.plan(
             offsets: bracket.offsets, base: BracketFrame(iso: iso, exposureDuration: duration),
             shutterFirst: settings.shutter == nil || settings.iso != nil, isoRange: isoRange,
             durationRange: durationRange)
+    }
+
+    /// Whether the person set the shutter but not ISO, so a bracket changes ISO first; an
+    /// interface says which value changes from frame to frame.
+    public var bracketChangesISOFirst: Bool {
+        settings.shutter != nil && settings.iso == nil
     }
 
     /// Applies the backend's readings until its stream ends. Interfaces
@@ -296,22 +364,22 @@ public final class ManualControlsModel {
 
     /// Handles one intent. ``CameraModel/send(_:)`` calls it.
     ///
-    /// Settings intents have no effect while manual controls are off. Interval shooting works
-    /// in full auto too (each photo is then a full-auto photo), so choosing, starting and
-    /// stopping a series always applies.
+    /// Settings intents have no effect while manual controls are off. Interval shooting and
+    /// bracketing work in full auto too (each photo is then a full-auto photo, and a bracket is
+    /// planned around the camera's reading), so they always apply.
     ///
     /// - Parameters:
     ///   - intent: The intent.
     ///   - capture: Takes one photo of an interval series the way the shutter does, waiting
-    ///     while the series is paused, and returns whether the photo was taken and saved.
-    func handle(_ intent: ManualControlIntent, capture: @escaping @MainActor () async -> Bool) async {
+    ///     while the series is paused, and says what came of it.
+    func handle(_ intent: ManualControlIntent, capture: @escaping @MainActor () async -> IntervalPhotoOutcome) async {
         var next = settings
         switch intent {
         case .setEnabled(let enabled):
             await setEnabled(enabled)
             return
         case .setBracket(let bracket):
-            if isEnabled { setBracket(bracket) }
+            setBracket(bracket)
             return
         case .setInterval(let interval):
             self.interval = interval
@@ -362,26 +430,30 @@ public final class ManualControlsModel {
     // MARK: - Rules
 
     /// Turns manual controls on or off. Off returns everything to automatic; a running interval
-    /// series continues, with full-auto photos from then on.
+    /// series continues, with full-auto photos from then on, and a bracket stays on, planned
+    /// around the camera's reading from then on. Either way the fast shutter rule and the
+    /// steady hint start again from new readings (``resetReadingAids()``).
     ///
     /// - Parameter enabled: Whether manual controls are on.
     private func setEnabled(_ enabled: Bool) async {
         guard enabled != isEnabled else { return }
         isEnabled = enabled
+        let wasLimited = longestAutoShutter != nil
+        resetReadingAids()
         defer { updateSteadyHint() }
         guard !enabled else {
             // Full auto's limit doesn't apply to manual controls; P is the camera's own exposure.
-            if longestAutoShutter != nil { await applyCurrentControls() }
+            if wasLimited { await applyCurrentControls() }
             return
         }
-        bracket = nil
         reading = nil
         let previous = settings
         settings = .automatic
         if previous != settings || longestAutoShutter != nil { await apply(restoringOnFailure: previous) }
     }
 
-    /// Turns bracketing on with settings the lens supports, or off.
+    /// Turns bracketing on with settings the lens supports, or off. A bracket turned on becomes
+    /// the session's ``lastBracket``.
     ///
     /// - Parameter bracket: The bracket, or `nil` to turn it off.
     private func setBracket(_ bracket: BracketSettings?) {
@@ -391,6 +463,7 @@ public final class ManualControlsModel {
         }
         if bracketFrameCounts.contains(bracket.frameCount), BracketSettings.steps.contains(bracket.step) {
             self.bracket = bracket
+            lastBracket = bracket
         }
     }
 
@@ -507,7 +580,9 @@ public final class ManualControlsModel {
     ///
     /// - Parameter previous: The settings to restore when the camera refuses.
     func apply(restoringOnFailure previous: ManualSettings) async {
-        guard let backend, let lens else { return }
+        // A focus bracket sets the camera itself while it runs or its range is set; the settings
+        // still change and are applied when it ends (`CameraModel+FocusBracket.swift`).
+        guard !holdsControls, let backend, let lens else { return }
         do {
             try await backend.applyControls(DeviceControls(settings: settings, lens: lens, assist: assist))
         } catch .configurationFailed {
@@ -519,33 +594,104 @@ public final class ManualControlsModel {
 
     // MARK: - Interval shooting
 
-    /// Starts an interval series: takes a photo, waits ``interval``, and repeats until
-    /// ``IntervalSettings/count`` photos are taken or the series is stopped. Only photos taken and
+    /// Starts an interval series: takes a photo, and starts the next one ``interval`` after the
+    /// last one started, until ``IntervalSettings/count`` photos are taken, the time is up
+    /// (``IntervalSettings/StopAfter/time``), or the series is stopped. Only photos taken and
     /// saved are counted: `capture` waits while the series is paused (``setIntervalPaused(_:)``)
     /// instead of skipping a photo. A photo that can't be taken for another reason (the camera
     /// stopped for good, or the photo failed) ends the series, and the camera says why.
     ///
-    /// - Parameter capture: Takes one photo and returns whether it was taken and saved.
-    private func startInterval(capture: @escaping @MainActor () async -> Bool) {
+    /// Photos are spaced start to start on the monotonic clock (issue #123, owner decision):
+    /// - The next photo starts one interval after the moment the last one really started
+    ///   (``IntervalPhotoOutcome/taken(startedAt:)``), so the time a photo takes to be exposed and
+    ///   saved doesn't stretch the series.
+    /// - A photo that takes longer than the interval makes the next one start as soon as it is
+    ///   saved, and the series is marked behind schedule (``IntervalProgress/isBehindSchedule``)
+    ///   until a photo fits its interval again. No photo is taken twice to catch up: the schedule
+    ///   continues from each photo's own start.
+    /// - A series paused past a start takes that photo when it resumes, and continues from it.
+    ///
+    /// A series that stops after a time ends at a fixed moment of the monotonic clock
+    /// (``IntervalProgress/deadline``), set when it starts, so a change of the device's time
+    /// doesn't move it: it takes another photo while the next start is before that moment, and
+    /// when the time is up while it waits for the camera, `capture` says so and the series ends
+    /// as finished. A photo that fails ends any series as stopped, also one that fails at or
+    /// after the end (issue #105).
+    ///
+    /// - Parameter capture: Takes one photo and says whether it was taken and saved (and when it
+    ///   started), the time was up while it waited, or it failed.
+    private func startInterval(capture: @escaping @MainActor () async -> IntervalPhotoOutcome) {
         guard intervalProgress == nil else { return }
         let series = interval
-        intervalProgress = IntervalProgress(taken: 0, total: series.count)
+        let duration: Duration? = series.stopAfter == .time ? .seconds(series.duration) : nil
+        let deadline = duration.map { clock.now() + $0 }
+        lastIntervalEnd = nil
+        intervalProgress = IntervalProgress(
+            taken: 0, total: series.stopAfter == .numberOfPhotos ? series.count : nil, deadline: deadline,
+            duration: duration)
         intervalTask = Task {
-            for taken in 1...series.count {
-                let wasTaken = await capture()
+            var taken = 0
+            var isFinished = false
+            while true {
+                let outcome = await capture()
                 guard !Task.isCancelled else { return }
-                guard wasTaken else { break }
-                intervalProgress = IntervalProgress(taken: taken, total: series.count)
-                guard taken < series.count else { break }
+                guard case .taken(let started) = outcome else {
+                    // Only a time that was up while the series waited finishes it; a photo that
+                    // failed stops it, also when it failed at or after the end (issue #105).
+                    isFinished = outcome == .timeUp
+                    break
+                }
+                taken += 1
+                let nextStart = started + .seconds(series.interval)
+                let isBehind = clock.now() >= nextStart
+                intervalProgress = intervalProgress?.with(taken: taken, nextPhotoStart: nextStart, isBehindSchedule: isBehind)
+                guard hasTimeForAnotherPhoto(series, taken: taken, nextStart: nextStart, deadline: deadline) else {
+                    isFinished = true
+                    break
+                }
+                // Behind schedule, the next photo starts at once.
+                guard !isBehind else { continue }
                 do {
-                    try await sleep(series.interval)
+                    try await clock.sleep(nextStart)
                 } catch {
                     return
                 }
             }
+            lastIntervalEnd = isFinished ? .finished : .stopped
             intervalProgress = nil
             intervalTask = nil
         }
+    }
+
+    /// Whether a series takes another photo after this one: fewer than its count are taken, or,
+    /// for a series that stops after a time, the next photo's start is before the end.
+    ///
+    /// - Parameters:
+    ///   - series: The series' settings.
+    ///   - taken: The photos taken so far.
+    ///   - nextStart: When the next photo is due to start, on the monotonic clock.
+    ///   - deadline: When a series that stops after a time ends, on the monotonic clock, or `nil`.
+    /// - Returns: Whether to take another photo.
+    private func hasTimeForAnotherPhoto(
+        _ series: IntervalSettings, taken: Int, nextStart: ContinuousClock.Instant, deadline: ContinuousClock.Instant?
+    ) -> Bool {
+        guard let deadline else { return taken < series.count }
+        return nextStart < deadline
+    }
+
+    /// Whether the manual shutter time is longer than the series' interval, so its photos follow
+    /// one another rather than keep to the interval (decision 10 of the 1.0.0 plan): an interface
+    /// says so in Interval Shooting before the series starts. Only a shutter set by hand is known
+    /// in advance; in full auto, or with an automatic shutter, it is `false`.
+    public var isShutterLongerThanInterval: Bool {
+        guard isEnabled, let shutter = settings.shutter else { return false }
+        return shutter > interval.interval
+    }
+
+    /// Whether the running series stops after a time and that time is up, on the monotonic clock.
+    var isIntervalTimeUp: Bool {
+        guard let deadline = intervalProgress?.deadline else { return false }
+        return clock.now() >= deadline
     }
 
     /// Marks the running series as paused or running again, for the camera screen and the Live
@@ -554,13 +700,15 @@ public final class ManualControlsModel {
     /// - Parameter isPaused: Whether the series is paused.
     func setIntervalPaused(_ isPaused: Bool) {
         guard let progress = intervalProgress, progress.isPaused != isPaused else { return }
-        intervalProgress = IntervalProgress(taken: progress.taken, total: progress.total, isPaused: isPaused)
+        intervalProgress = progress.with(isPaused: isPaused)
     }
 
     /// Stops the running interval series, if any.
     private func stopInterval() {
+        guard intervalProgress != nil else { return }
         intervalTask?.cancel()
         intervalTask = nil
         intervalProgress = nil
+        lastIntervalEnd = .stopped
     }
 }

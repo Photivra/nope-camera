@@ -181,6 +181,40 @@ struct AstroTests {
         #expect(!model.manual.isEnabled)
     }
 
+    /// Section 6, item 5 of docs/design/BUILD-SPEC.md: the helper turns manual controls on without
+    /// changing the stored "Manual controls" option, which stays off. Storing off again changes
+    /// nothing an interface can follow, so one call must turn both off.
+    @Test func turningManualControlsOffAfterTheHelperTurnedThemOnTurnsBothOff() async {
+        let scratch = ScratchDefaults()
+        let settings = NopeSettings(defaults: scratch.defaults)
+        let (model, _) = await makeModel()
+        await model.send(.astro(.setOn(true)))
+        #expect(model.manual.isEnabled)
+        #expect(!settings.showsManualControls)
+        await model.setManualControls(false, settings: settings)
+        #expect(!model.manual.isEnabled)
+        #expect(!model.astro.isOn)
+        #expect(!settings.showsManualControls)
+        #expect(model.manual.settings == .automatic)
+    }
+
+    @Test func turningManualControlsOnStoresTheOptionAndKeepsThemAfterTheHelper() async {
+        let scratch = ScratchDefaults()
+        let settings = NopeSettings(defaults: scratch.defaults)
+        let (model, _) = await makeModel()
+        await model.setManualControls(true, settings: settings)
+        #expect(model.manual.isEnabled)
+        #expect(settings.showsManualControls)
+        // Turned on by the person while the helper is on: the controls are the person's, so
+        // turning the helper off leaves them on.
+        await model.setManualControls(false, settings: settings)
+        await model.send(.astro(.setOn(true)))
+        await model.setManualControls(true, settings: settings)
+        await model.send(.astro(.setOn(false)))
+        #expect(model.manual.isEnabled)
+        #expect(settings.showsManualControls)
+    }
+
     @Test func refusedOnALensItCannotUseAndWhileBusy() async {
         let (bareModel, _) = await makeModel(lenses: [Self.bare])
         #expect(!bareModel.canUseAstro)

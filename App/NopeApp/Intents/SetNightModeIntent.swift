@@ -14,7 +14,7 @@ struct SetNightModeIntent: AppIntent {
     /// What the action does, in the Shortcuts app.
     static let description = IntentDescription(
         LocalizedStringResource(
-            "Turns nope.'s night mode on or off: every nope. screen in red on black.",
+            "Turns nope.'s night mode on or off: every nope. screen in red on black. Needs Assistant Access, in nope. › Settings › Privacy.",
             comment: "Describes nope.'s Set Night Mode action in the Shortcuts app. Keep \"nope.\" unchanged."))
 
     /// Whether night mode should be on.
@@ -29,6 +29,12 @@ struct SetNightModeIntent: AppIntent {
 
     /// The person's settings, the same object the camera screen shows.
     @Dependency private var settings: NopeSettings
+
+    /// Every gated action needs an unlocked device (issue #82).
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
+
+    /// The Assistant Access check (issue #82).
+    @Dependency private var gate: AssistantGate
 
     /// How the action reads in the Shortcuts editor.
     static var parameterSummary: some ParameterSummary {
@@ -50,11 +56,14 @@ struct SetNightModeIntent: AppIntent {
     /// - Returns: The new state, said by Siri or shown by Shortcuts.
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        settings.setNightMode(isOn)
-        let message =
-            isOn
-            ? LocalizedStringResource("Night mode is on.", comment: "Siri's answer after nope.'s night mode was turned on.")
-            : LocalizedStringResource("Night mode is off.", comment: "Siri's answer after nope.'s night mode was turned off.")
-        return .result(dialog: IntentDialog(message))
+        let isOn = isOn
+        let answer = try await gate.answer(.setNightMode, question: AssistantQuestions.nightMode(isOn: isOn), intent: self, opensApp: false) {
+            settings.setNightMode(isOn)
+            return AssistantAnswer(
+                isOn
+                    ? LocalizedStringResource("Night mode is on.", comment: "Siri's answer after nope.'s night mode was turned on.")
+                    : LocalizedStringResource("Night mode is off.", comment: "Siri's answer after nope.'s night mode was turned off."))
+        }
+        return .result(dialog: IntentDialog(answer.sentence))
     }
 }

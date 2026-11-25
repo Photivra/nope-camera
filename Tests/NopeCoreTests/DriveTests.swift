@@ -110,6 +110,22 @@ func waitUntil(_ condition: () -> Bool) async {
     }
 }
 
+/// Waits as ``waitUntil(_:)`` does, then fails the test if the condition still doesn't hold, so
+/// a condition that never comes true ends the wait instead of hanging the run.
+///
+/// - Parameters:
+///   - what: What the test waits for, for the failure message.
+///   - sourceLocation: Where the failure is reported.
+///   - condition: The condition to wait for.
+@MainActor
+func waitOrFail(
+    _ what: String, sourceLocation: SourceLocation = #_sourceLocation, _ condition: () -> Bool
+) async {
+    await waitUntil(condition)
+    let met = condition()
+    #expect(met, "timed out waiting: \(what)", sourceLocation: sourceLocation)
+}
+
 /// Lets other tasks run for a moment.
 func settle() async {
     for _ in 0..<200 { await Task.yield() }
@@ -128,6 +144,17 @@ func tick(_ ticker: Ticker, whenWaiting count: Int = 1) async {
         try? await Task.sleep(for: .milliseconds(10))
     }
     await ticker.tick()
+}
+
+/// A burst's end and saved count, for tests that don't look at its timing.
+struct BurstOutcome: Equatable {
+    let end: BurstEnd
+    let saved: Int
+}
+
+extension Optional where Wrapped == BurstResult {
+    /// The end and the saved count.
+    var outcome: BurstOutcome? { map { BurstOutcome(end: $0.end, saved: $0.saved) } }
 }
 
 /// The self-timer, burst and hardware buttons through `CameraModel` (issues #37, #39, #46).
@@ -165,7 +192,7 @@ struct DriveTests {
         #expect(BurstResult(end: .stopped, saved: 3).saved == 3)
         let drive = DriveModel(sleep: { _ in })
         drive.endBurst(.stopped)
-        #expect(drive.lastBurst == BurstResult(end: .stopped, saved: 0))
+        #expect(drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 0))
     }
 
     // MARK: - Countdown
@@ -208,6 +235,92 @@ struct DriveTests {
         await settle()
         #expect(!fired)
         countdown.cancel()
+    }
+
+    /// Final review of 1.0.0, minor 6: an absurd delay is shortened, not a crash.
+    @Test func aDelayLongerThanADayIsShortenedToADay() async {
+        let ticker = Ticker()
+        let countdown = Countdown(sleep: { _ in await ticker.sleep() })
+        countdown.start(seconds: .max) {}
+        #expect(countdown.remainingSeconds == Countdown.longestSeconds)
+        countdown.cancel()
+    }
+
+    // MARK: - Countdown to a fixed deadline (issue #122)
+
+    @Test func aCountdownWhoseTicksWakeLateStillFiresAtItsDeadline() async {
+        let clock = FakeClock()
+        clock.lateness = .milliseconds(300)
+        let countdown = Countdown(clock: clock.clock)
+        var firedAt: Double?
+        var shown: [Int] = []
+        countdown.start(seconds: 10) { firedAt = clock.seconds(at: clock.now) }
+        shown.append(countdown.remainingSeconds ?? 0)
+        while firedAt == nil {
+            await waitUntil { clock.pendingSleeps > 0 || firedAt != nil }
+            guard firedAt == nil else { break }
+            clock.advanceToNextWake()
+            await waitUntil { clock.pendingSleeps > 0 || firedAt != nil }
+            if let remaining = countdown.remainingSeconds { shown.append(remaining) }
+        }
+        // Each wait is for the next whole second before the deadline, not a second after the
+        // last wake: the delays don't add up.
+        #expect(clock.requestedWakes.map { clock.seconds(at: $0) } == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        #expect(firedAt == 10.3, "late only by the last wake, not by ten of them")
+        #expect(shown == [10, 9, 8, 7, 6, 5, 4, 3, 2, 1])
+        #expect(!countdown.isRunning)
+        #expect(countdown.deadline == nil)
+    }
+
+    @Test func aWakeMoreThanASecondLateSkipsANumberAndKeepsTheDeadline() async {
+        let clock = FakeClock()
+        let countdown = Countdown(clock: clock.clock)
+        var firedAt: Double?
+        countdown.start(seconds: 5) { firedAt = clock.seconds(at: clock.now) }
+        #expect(countdown.deadline.map { clock.seconds(at: $0) } == 5)
+        await waitForSleeps(clock)
+        clock.advance(by: 2.5)
+        await waitUntil { countdown.remainingSeconds == 3 }
+        #expect(countdown.remainingSeconds == 3, "4 is skipped")
+        await waitForSleeps(clock)
+        #expect(clock.requestedWakes.map { clock.seconds(at: $0) } == [1, 3])
+        clock.advance(by: 2.5)
+        await waitUntil { firedAt != nil }
+        #expect(firedAt == 5, "on time")
+        #expect(clock.requestedWakes.map { clock.seconds(at: $0) } == [1, 3])
+    }
+
+    @Test func cancellingDuringALateTickDoesNotFire() async {
+        let clock = FakeClock()
+        clock.lateness = .milliseconds(300)
+        let countdown = Countdown(clock: clock.clock)
+        var fired = false
+        countdown.start(seconds: 3) { fired = true }
+        await waitForSleeps(clock)
+        clock.advance(by: 1.1)
+        countdown.cancel()
+        #expect(countdown.deadline == nil)
+        #expect(clock.pendingSleeps == 0, "the wait ends when it is cancelled")
+        clock.advance(by: 5)
+        await settle()
+        #expect(!fired)
+        #expect(countdown.remainingSeconds == nil)
+    }
+
+    @Test func aCountdownEndsWhereTheLiveActivityDrawsIt() async {
+        let clock = FakeClock(date: Date(timeIntervalSince1970: 1000))
+        let model = CameraModel(
+            backend: ScriptedBackend(capabilities: CameraModelTests.oneLens), saver: CameraModelTests.saver(),
+            clock: clock.clock)
+        await model.send(.start)
+        await model.send(.drive(.startTimer(seconds: 10)))
+        await waitForSleeps(clock)
+        clock.advance(by: 1.4)
+        await waitUntil { model.drive.countdown.remainingSeconds == 9 }
+        // The end is the deadline's date, not now plus the whole seconds shown.
+        let content = model.liveActivityContent(continuing: nil, isInForeground: true, now: clock.date)
+        #expect(content?.countdownEnd == Date(timeIntervalSince1970: 1010))
+        await model.send(.drive(.cancelTimer))
     }
 
     @Test func zeroSecondsDoesNothing() {
@@ -324,7 +437,7 @@ struct DriveTests {
         await model.send(.drive(.setMode(.burst)))
         await model.send(.drive(.hardwareButton(.pressed)))
         #expect(savedCount(model) == 3)
-        #expect(model.drive.lastBurst == BurstResult(end: .stopped, saved: 3))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 3))
         #expect(model.drive.burstProgress == nil)
     }
 
@@ -339,7 +452,7 @@ struct DriveTests {
         }
         await model.send(.drive(.setMode(.burst)))
         await model.send(.drive(.hardwareButton(.pressed)))
-        #expect(model.drive.lastBurst == BurstResult(end: .stopped, saved: 1))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 1))
     }
 
     @Test func hardwareReleaseInBurstModeCancelsATimerFromElsewhere() async {
@@ -361,9 +474,9 @@ struct DriveTests {
         let library = FakeLibrary()
         let model = await makeModel(backend: backend, saver: CameraModelTests.saver(library: library))
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
+        await model.send(.drive(.startBurst))
         #expect(savedCount(model) == DriveModel.maximumBurstFrames)
-        #expect(model.drive.lastBurst == BurstResult(end: .limitReached, saved: DriveModel.maximumBurstFrames))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .limitReached, saved: DriveModel.maximumBurstFrames))
         #expect(await backend.captureRequests.count == DriveModel.maximumBurstFrames)
         #expect(await library.added.count == DriveModel.maximumBurstFrames)
     }
@@ -379,8 +492,8 @@ struct DriveTests {
             await model.send(.capture)
         }
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
-        #expect(model.drive.lastBurst == BurstResult(end: .stopped, saved: 2))
+        await model.send(.drive(.startBurst))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 2))
     }
 
     @Test func stopBurstIntentStopsTheBurst() async {
@@ -392,8 +505,8 @@ struct DriveTests {
         }
         await model.send(.drive(.stopBurst))
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
-        #expect(model.drive.lastBurst == BurstResult(end: .stopped, saved: 4))
+        await model.send(.drive(.startBurst))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 4))
     }
 
     @Test func burstStopsBeforeStorageRunsOut() async {
@@ -403,7 +516,7 @@ struct DriveTests {
         reader.bytes = perPhoto * 3
         reader.shrinkPerRead = perPhoto / 2
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
+        await model.send(.drive(.startBurst))
         #expect(model.drive.lastBurst?.end == .storageFull)
         #expect((model.drive.lastBurst?.saved ?? 0) > 0)
         #expect(savedCount(model) == model.drive.lastBurst?.saved)
@@ -412,8 +525,8 @@ struct DriveTests {
     @Test func burstWithNoRoomSavesNothing() async {
         let model = await makeModel(reader: FakeStatusReader(bytes: 10))
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
-        #expect(model.drive.lastBurst == BurstResult(end: .storageFull, saved: 0))
+        await model.send(.drive(.startBurst))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .storageFull, saved: 0))
         #expect(model.captureStatus == .idle)
     }
 
@@ -431,8 +544,8 @@ struct DriveTests {
             }
         }
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
-        #expect(model.drive.lastBurst == BurstResult(end: .cameraStopped, saved: 2))
+        await model.send(.drive(.startBurst))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .cameraStopped, saved: 2))
         inner.finish()
         await events.value
     }
@@ -442,9 +555,9 @@ struct DriveTests {
         let library = FakeLibrary()
         let model = await makeModel(backend: backend, saver: CameraModelTests.saver(library: library))
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
+        await model.send(.drive(.startBurst))
         #expect(model.captureStatus == .failed(.captureFailed))
-        #expect(model.drive.lastBurst == BurstResult(end: .failed, saved: 2))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .failed, saved: 2))
         #expect(await library.added.count == 2)
     }
 
@@ -454,11 +567,33 @@ struct DriveTests {
         let saver = PhotoSaver(developer: FakeDeveloper(), signer: nil, reader: BytesReader(), library: library, appVersion: "0.2.0")
         let model = await makeModel(saver: saver)
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
+        await model.send(.drive(.startBurst))
         #expect(model.captureStatus == .failed(.saveFailed))
         #expect(model.drive.lastBurst?.end == .failed)
         // The frame taken while the failing one was saving is still saved: nothing is dropped.
         #expect(model.drive.lastBurst?.saved == failingAdd)
+        // Last Photo shows the newest of them.
+        #expect(model.lastPressPhotos.count == failingAdd)
+        #expect(model.lastPressPhotos.last == model.sessionPhotos.newest?.photo)
+    }
+
+    @Test func eachPressStartsItsOwnPhotos() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens, captureErrors: [nil, nil, .captureFailed, .captureFailed])
+        let model = await makeModel(backend: backend)
+        #expect(model.lastPressPhotos.isEmpty)
+        await model.send(.drive(.setMode(.burst)))
+        await model.send(.drive(.startBurst))
+        #expect(model.captureStatus == .failed(.captureFailed))
+        #expect(model.lastPressPhotos.count == 2)
+        // A press that saves nothing leaves nothing to show; Last Photo keeps the earlier photo.
+        await model.send(.drive(.setMode(.single)))
+        await model.send(.capture)
+        #expect(model.captureStatus == .failed(.captureFailed))
+        #expect(model.lastPressPhotos.isEmpty)
+        await model.send(.capture)
+        #expect(savedCount(model) == 1)
+        #expect(model.lastPressPhotos.count == 1)
+        #expect(model.sessionPhotos.photos.count == 3)
     }
 
     @Test func lastFrameThatCantBeSavedEndsTheBurst() async {
@@ -467,9 +602,9 @@ struct DriveTests {
         let saver = PhotoSaver(developer: FakeDeveloper(), signer: nil, reader: BytesReader(), library: library, appVersion: "0.2.0")
         let model = await makeModel(saver: saver)
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
+        await model.send(.drive(.startBurst))
         #expect(model.captureStatus == .failed(.saveFailed))
-        #expect(model.drive.lastBurst == BurstResult(end: .failed, saved: DriveModel.maximumBurstFrames - 1))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .failed, saved: DriveModel.maximumBurstFrames - 1))
     }
 
     @Test func aFailedCaptureAndAFailedSaveKeepTheFirstError() async {
@@ -479,14 +614,14 @@ struct DriveTests {
             appVersion: "0.2.0")
         let model = await makeModel(backend: backend, saver: saver)
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
+        await model.send(.drive(.startBurst))
         #expect(model.captureStatus == .failed(.captureFailed))
     }
 
     @Test func burstWithoutASaverSaysSo() async {
         let model = await makeModel(saver: nil)
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
+        await model.send(.drive(.startBurst))
         #expect(model.captureStatus == .failed(.savingUnavailable))
         #expect(model.drive.burstProgress == nil)
     }
@@ -495,6 +630,7 @@ struct DriveTests {
         let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
         let model = CameraModel(backend: backend, saver: CameraModelTests.saver())
         await model.send(.drive(.setMode(.burst)))
+        await model.send(.drive(.startBurst))
         await model.send(.capture)
         #expect(model.drive.lastBurst == nil)
         #expect(await backend.captureRequests.isEmpty)
@@ -508,7 +644,7 @@ struct DriveTests {
             if count == 2 { await model.send(.drive(.stopBurst)) }
         }
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
+        await model.send(.drive(.startBurst))
         let requests = await backend.captureRequests
         #expect(requests.count == 2)
         #expect(requests.allSatisfy { $0 == requests[0] })
@@ -540,19 +676,27 @@ struct DriveTests {
         let reader = FakeStatusReader(bytes: nil)
         let status = DeviceStatus(reader: reader)
         #expect(status.batteryWarning == nil)
+        #expect(DeviceStatus.lowBatteryLevel == 0.03)
         for battery in [
             BatteryReading(level: nil, isCharging: false, isLowPowerMode: false),
-            BatteryReading(level: 0.15, isCharging: true, isLowPowerMode: false),
-            BatteryReading(level: 0.21, isCharging: false, isLowPowerMode: false),
+            // Charging never warns, however low.
+            BatteryReading(level: 0.03, isCharging: true, isLowPowerMode: false),
+            BatteryReading(level: 0.01, isCharging: true, isLowPowerMode: true),
+            // Just above the threshold, and the old 20% threshold.
+            BatteryReading(level: 0.031, isCharging: false, isLowPowerMode: false),
+            BatteryReading(level: 0.2, isCharging: false, isLowPowerMode: true),
         ] {
             reader.batteryReading = battery
             status.refresh()
             #expect(status.battery == battery)
             #expect(status.batteryWarning == nil)
         }
-        reader.batteryReading = BatteryReading(level: 0.2, isCharging: false, isLowPowerMode: true)
+        reader.batteryReading = BatteryReading(level: 0.03, isCharging: false, isLowPowerMode: true)
         status.refresh()
-        #expect(status.batteryWarning == BatteryWarning(percent: 20, isLowPowerMode: true))
+        #expect(status.batteryWarning == BatteryWarning(percent: 3, isLowPowerMode: true))
+        reader.batteryReading = BatteryReading(level: 0.02, isCharging: false, isLowPowerMode: false)
+        status.refresh()
+        #expect(status.batteryWarning == BatteryWarning(percent: 2, isLowPowerMode: false))
         #expect(DeviceStatus(reader: nil).batteryWarning == nil)
     }
 
@@ -570,7 +714,7 @@ struct DriveTests {
 
     @Test func photoSizeEstimates() {
         let pixels = 4032.0 * 3024
-        var settings = SaveSettings()
+        var settings = SaveSettings.rawPlusHEIFSigned
         let rawAndHEIF = Int64(pixels * 2 + 1_000_000 + pixels * 1 + 1_000_000)
         #expect(PhotoSizeEstimate.bytes(for: Self.wide, settings: settings) == rawAndHEIF)
         _ = settings.setFormat(.jpeg, isSelected: true)
@@ -614,11 +758,14 @@ struct DriveTests {
         let screen = FakeScreen(brightness: 0.05)
         let keeper = SeriesScreenKeeper(screen: screen)
         keeper.update(isSeriesRunning: true, isInForeground: true)
-        // A screen darker than the dimmed level stays as it is.
+        // A screen darker than the dimmed level stays as it is, with no cover (issue #99).
         #expect(screen.brightness == 0.05)
+        #expect(!keeper.isDimmed)
+        #expect(screen.isIdleTimerDisabled)
+        // The person's own change is kept: the keeper didn't dim, so it puts nothing back.
         screen.brightness = 0.02
         keeper.update(isSeriesRunning: true, isInForeground: false)
-        #expect(screen.brightness == 0.05)
+        #expect(screen.brightness == 0.02)
         #expect(!screen.isIdleTimerDisabled)
         #expect(!keeper.isDimmed)
     }

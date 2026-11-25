@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="{{csp}}">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#000000">
+<title>{{title}}</title>
+{{meta}}
+<link rel="preload" href="{{font400}}" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="{{css}}">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="{{iconSvg}}" type="image/svg+xml">
+<link rel="apple-touch-icon" href="{{touchIcon}}">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="sitemap" type="application/xml" href="/sitemap.xml">
+{{jsonld}}
+</head>
+<body>
+<a class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-10 focus:bg-ground focus:text-ink focus:px-4 focus:py-3" href="#main">{{skip}}</a>
+{{header}}
+<main id="main">
+{{main}}
+</main>
+{{footer}}
+</body>
+</html>

@@ -29,19 +29,29 @@ public struct ImageIOThumbnailer: PhotoThumbnailing {
 
     /// Makes a thumbnail.
     ///
-    /// The thumbnail is drawn into a bitmap context that owns its memory, and the pixels are
-    /// copied out through the image it makes, so no pointer is handled here.
-    ///
     /// - Parameter file: A saved DNG, HEIF or JPEG.
     /// - Returns: The thumbnail, upright, or `nil` if ImageIO can't decode the file.
     public func thumbnail(of file: PhotoFile) -> PhotoThumbnail? {
+        Self.pixels(of: file.data, maximumPixelSize: maximumPixelSize)
+    }
+
+    /// Decodes an image at a reduced size, upright, and draws it into an 8-bit sRGB RGBA bitmap,
+    /// without caching. The drawn image is a new image with none of the file's properties, in a
+    /// form ImageIO's JPEG encoder takes: encoding the decoded image of a 10-bit HEIF directly
+    /// failed (`ThumbnailTests`, iOS 27.2 Simulator), and the drawn one encodes.
+    ///
+    /// - Parameters:
+    ///   - data: A DNG, HEIF or JPEG file's bytes.
+    ///   - maximumPixelSize: The longest side, in pixels.
+    /// - Returns: The image, or `nil` if ImageIO can't decode the data.
+    static func drawnImage(of data: Data, maximumPixelSize: Int) -> CGImage? {
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
             kCGImageSourceCreateThumbnailWithTransform: true,
             kCGImageSourceThumbnailMaxPixelSize: maximumPixelSize,
             kCGImageSourceShouldCache: false,
         ]
-        guard let source = CGImageSourceCreateWithData(file.data as CFData, nil),
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
             let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary),
             let space = CGColorSpace(name: CGColorSpace.sRGB),
             let context = CGContext(
@@ -50,8 +60,19 @@ public struct ImageIOThumbnailer: PhotoThumbnailing {
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
         else { return nil }
         context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
-        return context.makeImage()?.dataProvider?.data.flatMap {
-            PhotoThumbnail(width: image.width, height: image.height, rgba: $0 as Data)
-        }
+        return context.makeImage()
+    }
+
+    /// Decodes an image at a reduced size into the layout `PhotoThumbnail` describes. The
+    /// bitmap context owns its memory, and the pixels are copied out through the image it makes,
+    /// so no pointer is handled here.
+    ///
+    /// - Parameters:
+    ///   - data: A DNG, HEIF or JPEG file's bytes.
+    ///   - maximumPixelSize: The longest side, in pixels.
+    /// - Returns: The pixels, or `nil` if ImageIO can't decode the data.
+    static func pixels(of data: Data, maximumPixelSize: Int) -> PhotoThumbnail? {
+        guard let image = drawnImage(of: data, maximumPixelSize: maximumPixelSize) else { return nil }
+        return image.dataProvider?.data.flatMap { PhotoThumbnail(width: image.width, height: image.height, rgba: $0 as Data) }
     }
 }

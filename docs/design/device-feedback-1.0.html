@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nope. design: Device feedback for 1.0.0</title>
+<style>
+
+:root{--bg:#f2f2f7;--card:#fff;--ink:#1c1c1e;--muted:#5f5f64;--rule:#d1d1d6;--pick:#0b6b60}
+@media (prefers-color-scheme: dark){:root{--bg:#000;--card:#1c1c1e;--ink:#f2f2f7;--muted:#a1a1a6;--rule:#3a3a3c;--pick:#5fe0d0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+main{max-width:1120px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:28px;letter-spacing:-.02em;margin:0 0 8px}
+h2{font-size:22px;letter-spacing:-.01em;margin:48px 0 8px}
+h3{font-size:17px;margin:24px 0 4px}
+p{margin:0 0 12px;max-width:820px}
+a{color:inherit}
+.muted{color:var(--muted)}
+nav.set{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0}
+nav.set a{display:inline-block;padding:6px 12px;border-radius:16px;background:var(--card);text-decoration:none;font-size:13px;font-weight:600}
+nav.set a.here{background:var(--ink);color:var(--bg)}
+ul{margin:0 0 12px;padding-left:20px;max-width:820px}li{margin:0 0 4px}
+.figs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:32px 24px;margin-top:16px;align-items:start}
+.figs.wide{grid-template-columns:repeat(auto-fill,minmax(480px,1fr))}
+.figs.small{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+figure{margin:0}
+figure img{display:block;max-width:100%;height:auto;background:#000;box-shadow:0 0 0 1px var(--rule)}
+figcaption{font-size:13px;color:var(--muted);margin-top:12px}
+figcaption b{display:block;color:var(--ink);font-size:14px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:16px 0;background:var(--card);border-radius:12px;overflow:hidden;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:8px 12px;border-bottom:1px solid var(--rule)}
+tr:last-child td{border-bottom:0}
+thead th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+code{font:13px ui-monospace,Menlo,monospace}
+.pick{border-left:4px solid var(--pick);background:var(--card);border-radius:0 12px 12px 0;padding:16px 24px;margin-top:16px}
+.pick p:last-child,.pick ul:last-child{margin-bottom:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:16px}
+.cards a{display:block;background:var(--card);border-radius:16px;padding:16px 20px;text-decoration:none}
+.cards a b{display:block;font-size:17px}.cards a span{color:var(--muted);font-size:13px}
+.sw{border-radius:12px;padding:16px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.swl{font-size:12px;color:var(--muted);margin:16px 0 4px;font-weight:600}
+.scale{display:flex;align-items:flex-end;gap:16px;margin:8px 0 16px}
+.scale div{text-align:center;font-size:12px;color:var(--muted)}
+.scale i{display:block;background:var(--ink);height:16px;margin:0 auto 4px;border-radius:1px}
+.radii{display:flex;gap:16px;margin:8px 0}
+.radii div{text-align:center;font-size:12px;color:var(--muted)}
+.radii i{display:block;width:64px;height:64px;border:2px solid var(--ink);border-bottom-color:transparent;border-right-color:transparent;margin:0 auto 4px}
+.chip2{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;box-shadow:0 0 0 1px var(--rule)}
+
+
+</style>
+</head>
+<body>
+<main>
+<h1>Device feedback for 1.0.0</h1>
+<p class="muted">Design version: 1.0.0, direction B · Reach. Proposed 2026-11-18, after the app was used on an iPhone 16 Pro Max; not yet part of the plan or of the screen counts. The behavior, the wording, the tests, the device checks and the owner’s decisions are in device-feedback-1.0.md. Every new sentence is a draft for the Honesty review.</p>
+<nav class="set"><a href="overview.html">Overview</a><a href="design-system.html">Design system</a><a href="camera.html">Camera</a><a href="drive.html">Drive modes</a><a href="quick-menu.html">Q</a><a href="manual-controls.html">Manual Controls</a><a href="sheets.html">Sheets</a><a href="viewer.html">Last Photo viewer</a><a href="photo-details.html">Photo Details</a><a href="settings.html">Settings</a><a href="setting-scope.html">Where a setting applies</a><a href="layouts.html">Layouts</a><a href="ipad.html">iPad</a><a href="duo.html">iPhone Duo</a><a href="system.html">System</a><a href="watch.html">Apple Watch</a><a href="navigation.html">Navigation map</a><a href="icon.html">Icon</a><a href="device-feedback-1.0.html" class=here>Device feedback</a></nav>
+
+<p style="margin-top:24px">Five changes, designed as one batch. Q is not touched. Nothing is read from the photo library and nothing is stored. No distance or other number is shown that the device does not report and a device check has not confirmed.</p>
+<div class="tw"><table><thead><tr><th>Item</th><th>Today</th><th>Proposed</th></tr></thead><tbody>
+<tr><td>The Last Photo spot before the first photo</td><td>Empty, each time the app opens.</td><td>A button, Open Photos, that opens the Photos app. The first saved photo takes its place.</td></tr>
+<tr><td>Use the Whole Range, in Bracket Settings</td><td>Looks the same whether or not the whole range is set; the dimmed form failed the contrast check in night mode.</td><td>Never dimmed. A check mark and the selected trait while the whole range is in use.</td></tr>
+<tr><td>Close-up focus</td><td>The app never changes lenses by itself, and says so nowhere.</td><td>An Honesty entry, opened from the close-up hint by one new button.</td></tr>
+<tr><td>“Hold it steady or use a tripod.”</td><td>Shown with Manual Controls on whenever the shutter is slower than the handheld rule, and with them off whenever the Fast Shutter limit is lifted.</td><td>Never with Manual Controls on. With them off, only while the shutter in use is slower than the lens can be held at, counting its stabilization.</td></tr>
+<tr><td>The focus square and Lock</td><td>Stay until the scene changes.</td><td>Fade three seconds after a tap. Locked, they never fade.</td></tr>
+</tbody></table></div>
+
+<h2>1. The Last Photo spot before the first photo</h2>
+<p>The app can add photos to the library and cannot read it, and it keeps the thumbnail and previews in memory only. So the spot beside the shutter starts empty each time the app opens. It now holds a button that opens the Photos app. The button never says it shows the last photo: Photos opens where the person left it.</p>
+<div class="figs "><figure id="feedback-photos-button"><a href="screens/feedback-photos-button.html"><img src="screens/feedback-photos-button.png" width="260" alt="Camera, no photo yet: Open Photos" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Camera, no photo yet: Open Photos</b>Proposed. Before the first photo since the app opened, the Last Photo spot holds a button that opens the Photos app: the size and corner of the thumbnail, the fill of a control, no ring, because it is not a photo. Nothing is read from the library and nothing is stored. The first saved photo takes its place.</figcaption></figure><figure id="feedback-photos-button-night"><a href="screens/feedback-photos-button-night.html"><img src="screens/feedback-photos-button-night.png" width="260" alt="Open Photos in night mode" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Open Photos in night mode</b>Proposed. Open Photos is an off control: outlined, with a red symbol on black.</figcaption></figure><figure id="feedback-photos-button-lock"><a href="screens/feedback-photos-button-lock.html"><img src="screens/feedback-photos-button-lock.png" width="260" alt="Lock Screen camera, no photo yet" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Lock Screen camera, no photo yet</b>Proposed, and unchanged from the build: the Lock Screen camera cannot open another app, so the spot stays empty until the first photo.</figcaption></figure></div>
+<h3>iPad</h3>
+<div class="figs wide"><figure id="feedback-photos-button-ipad"><a href="screens/feedback-photos-button-ipad.html"><img src="screens/feedback-photos-button-ipad.png" width="480" alt="iPad, no photo yet: Open Photos" loading="lazy" style="border-radius:12px"></a><figcaption><b>iPad, no photo yet: Open Photos</b>Proposed. In the column layout Open Photos sits where Last Photo does, under the shutter.</figcaption></figure></div>
+
+<h2>2. Use the Whole Range</h2>
+<p>A row that is already in effect is shown selected, with a check mark, at full contrast. In night mode the words and the check mark are 5.2:1 on the row; the dimmed row this replaces was 1.6:1.</p>
+<div class="figs "><figure id="feedback-whole-range"><a href="screens/feedback-whole-range.html"><img src="screens/feedback-whole-range.png" width="260" alt="Use the Whole Range, in use" loading="lazy" style="border-radius:12px"></a><figcaption><b>Use the Whole Range, in use</b>Proposed. With the range at 0.00 to 1.00 the row keeps its place, its words and its full contrast, and gains a check mark: it is in use, so there is nothing to press. It is never dimmed. With another range set, the row has no check mark, as in figure bracket-focus-settings. Closest Focus of This Lens is not drawn: the build shows it only for a lens a device check has confirmed. Sample values.</figcaption></figure><figure id="feedback-whole-range-night"><a href="screens/feedback-whole-range-night.html"><img src="screens/feedback-whole-range-night.png" width="260" alt="Use the Whole Range, in use, in night mode" loading="lazy" style="border-radius:12px"></a><figcaption><b>Use the Whole Range, in use, in night mode</b>Proposed. The words and the check mark are the full red on black, 5.2:1. The dimmed row this replaces was 1.6:1.</figcaption></figure></div>
+
+<h2>3. Close-up focus</h2>
+<p>Each lens is its own camera, so the app never changes lenses by itself, and a subject nearer than a lens can focus stays soft. The Honesty page says so, with no distance, and the close-up hint links to it.</p>
+<div class="figs "><figure id="feedback-too-close"><a href="screens/feedback-too-close.html"><img src="screens/feedback-too-close.png" width="260" alt="Subject too close, with About Close-Up Focus" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Subject too close, with About Close-Up Focus</b>Proposed. The hint gains one button, About Close-Up Focus, which opens the Honesty entry that says why the app never changes lenses by itself. The sentence and the two buttons are unchanged.</figcaption></figure><figure id="feedback-honesty"><a href="screens/feedback-honesty.html"><img src="screens/feedback-honesty.png" width="260" alt="Honesty, with two new entries" loading="lazy" style="border-radius:12px"></a><figcaption><b>Honesty, with two new entries</b>Proposed. Two entries are added under What nope. Never Does: Lenses Never Switch on Their Own, after The RAW Is Never Changed, and Your Photo Library Is Never Read, after No Data Collected. Both are drafts for the Honesty review and are drawn in full; the other statements are shortened as in figure settings-honesty.</figcaption></figure></div>
+
+<h2>4. “Hold it steady or use a tripod.”</h2>
+<p>With Manual Controls on, the hint is never shown. With them off, it follows the shutter the camera is using, compared with a limit that counts the lens’s stabilization; it does not flicker, because it turns off only half a stop past the limit, and it stays at least two seconds. The limits are provisional until the device checks.</p>
+<div class="figs "><figure id="feedback-steady-hint"><a href="screens/feedback-steady-hint.html"><img src="screens/feedback-steady-hint.png" width="260" alt="Hold it steady, Manual Controls off" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Hold it steady, Manual Controls off</b>Proposed. The hint is shown only while Manual Controls are off, and only while the shutter in use is slower than this lens can be held at, counting its stabilization. With Manual Controls on it is never shown.</figcaption></figure></div>
+
+<h2>5. The focus square and Lock</h2>
+<p>After a tap the square and Lock show for three seconds, then fade; the camera keeps focusing and exposing at that point. A tap brings them back, and touch and hold locks at once. Locked, the square and AE/AF stay. With VoiceOver or Switch Control on, nothing fades.</p>
+<div class="figs "><figure id="feedback-focus-tap"><a href="screens/feedback-focus-tap.html"><img src="screens/feedback-focus-tap.png" width="260" alt="After a tap: the focus square and Lock" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>After a tap: the focus square and Lock</b>Proposed. A tap shows the focus square and Lock under it, as the build does today. Three seconds later both fade, and the camera keeps focusing and exposing at that point until the scene changes. Tap again, or touch and hold, to get the lock.</figcaption></figure><figure id="feedback-focus-locked"><a href="screens/feedback-focus-locked.html"><img src="screens/feedback-focus-locked.png" width="260" alt="Locked: the square and AE/AF stay" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Locked: the square and AE/AF stay</b>Proposed. Once locked, by touch and hold or by Lock, the square and the AE/AF button stay until the lock is released, with the AE/AF pill on the status line. A locked square never fades.</figcaption></figure><figure id="feedback-focus-tap-night"><a href="screens/feedback-focus-tap-night.html"><img src="screens/feedback-focus-tap-night.png" width="260" alt="After a tap, in night mode" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>After a tap, in night mode</b>Proposed. The square and Lock in red; they fade as in the other appearances.</figcaption></figure><figure id="feedback-accessibility"><a href="screens/feedback-accessibility.html"><img src="screens/feedback-accessibility.png" width="260" alt="Accessibility, with Focus and Exposure Lock" loading="lazy" style="border-radius:12px"></a><figcaption><b>Accessibility, with Focus and Exposure Lock</b>Proposed. One group of facts is added: how to lock focus and exposure, and that the focus square stays while VoiceOver or Switch Control is on. A draft for review.</figcaption></figure></div>
+
+<h2>Noted for the build</h2>
+<ul><li>The close-up hint’s detector is being fixed so the hint appears on real devices. Its sentence and buttons are unchanged apart from About Close-Up Focus.</li>
+<li>A focus bracket’s Live Activity gets the Stop button Interval and Astro already have, in the same place. Its VoiceOver name is Stop Bracket.</li></ul>
+<p>The decisions for the owner, 22 in all with a recommendation for each, are in device-feedback-1.0.md, section 7.</p>
+</main>
+</body>
+</html>

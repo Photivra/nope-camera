@@ -1,0 +1,22 @@
+{
+  "name": "nope-camera-site",
+  "private": true,
+  "description": "Build and check tools for the Photivra Nope Camera site (nope.photivra.com). Not part of the app. Only the generated CSS is served.",
+  "license": "GPL-3.0-only",
+  "engines": {
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "@sentry/node": "file:./stubs/sentry-node",
+    "@tailwindcss/cli": "4.3.4",
+    "axe-core": "4.14.0",
+    "chrome-launcher": "1.2.3",
+    "lighthouse": "13.6.0",
+    "puppeteer-core": "25.16.0",
+    "tailwindcss": "4.3.4",
+    "vnu-jar": "26.11.4"
+  },
+  "overrides": {
+    "@sentry/node": "$@sentry/node"
+  }
+}

@@ -79,8 +79,52 @@ struct ManualControlSupportTests {
 
     @Test func throttleSendsFourReadingsASecond() {
         var throttle = ReadingThrottle()
-        let sent = [10, 10.1, 10.25, 10.4, 11].map { throttle.shouldSend(at: $0) }
-        #expect(sent == [true, false, true, false, true])
+        let step1 = throttle.decide(at: 10)
+        #expect(step1 == .send)
+        // Held back: one more is scheduled for the end of the interval, then nothing more.
+        let step2 = throttle.decide(at: 10.1)
+        #expect(Self.isLater(step2, delay: 0.15, ticket: 0))
+        let step3 = throttle.decide(at: 10.2)
+        #expect(step3 == .drop)
+        // A reading sent before the scheduled one is due makes it unnecessary.
+        let step4 = throttle.decide(at: 10.25)
+        #expect(step4 == .send)
+        let step5 = throttle.sendsLater(0, at: 10.26)
+        #expect(!step5)
+        let step6 = throttle.decide(at: 10.4)
+        #expect(Self.isLater(step6, delay: 0.1, ticket: 1))
+        let step7 = throttle.decide(at: 11)
+        #expect(step7 == .send)
+        let step8 = throttle.sendsLater(1, at: 11.01)
+        #expect(!step8)
+    }
+
+    /// Whether a decision schedules a reading for later, after about a delay, with a ticket.
+    static func isLater(_ decision: ReadingThrottle.Decision, delay: Double, ticket: Int) -> Bool {
+        guard case .later(let actual, let actualTicket) = decision else { return false }
+        return abs(actual - delay) < 1e-9 && actualTicket == ticket
+    }
+
+    @Test func theLastReadingIsSentOnceThingsSettle() {
+        // The lens stops at its nearest position inside an interval: without the scheduled
+        // reading, its last position would never be sent (docs/design/device-feedback-1.0.md,
+        // section 6).
+        var throttle = ReadingThrottle()
+        let first = throttle.decide(at: 5)
+        #expect(first == .send)
+        guard case .later(let delay, let ticket) = throttle.decide(at: 5.05) else {
+            Issue.record("expected a reading for later")
+            return
+        }
+        #expect(abs(delay - 0.2) < 1e-9)
+        let scheduledIsSent = throttle.sendsLater(ticket, at: 5.25)
+        #expect(scheduledIsSent)
+        // Sent once only, and it counts as the last reading sent.
+        let sentAgain = throttle.sendsLater(ticket, at: 5.26)
+        #expect(!sentAgain)
+        let next = throttle.decide(at: 5.3)
+        #expect(next != .send)
+        #expect(ReadingThrottle.interval == 0.25)
     }
 
     @Test func bracketSettingsForRAW() {

@@ -50,7 +50,8 @@ protocol CaptureHardware: Sendable {
     ///   - metadata: The plan the file's metadata is built from.
     /// - Returns: The file bytes, the reference RAW image data, a few bytes sampled from the
     ///   photo's pixel buffer, and capture details.
-    /// - Throws: `CaptureError.notRunning` if the session isn't running, or
+    /// - Throws: `CaptureError.notRunning` if the session isn't running or the attached camera
+    ///   isn't the plan's (`CapturePolicy.camera(_:matches:)`), or
     ///   `CaptureError.captureFailed` if the system reports an error or no file.
     func capture(_ plan: PhotoSettingsPlan, metadata: MetadataPlan) async throws(CaptureError) -> HardwarePhoto
 
@@ -65,6 +66,16 @@ protocol CaptureHardware: Sendable {
     ///   `CaptureError.configurationFailed` if the camera can't be locked for configuration.
     func apply(_ controls: DeviceControls) async throws(CaptureError)
 
+    /// Locks focus at a lens position and returns the position the camera reports once the move
+    /// is applied (`setFocusModeLocked(lensPosition:completionHandler:)`, whose handler runs
+    /// when the position has been applied).
+    ///
+    /// - Parameter lensPosition: The position, from 0 to 1.
+    /// - Returns: The camera's `lensPosition` when the handler has run.
+    /// - Throws: `CaptureError.notRunning` if no camera is attached, or
+    ///   `CaptureError.configurationFailed` if its focus can't be locked at a position.
+    func setFocus(lensPosition: Double) async throws(CaptureError) -> Double
+
     /// Starts or stops observing the attached camera's exposure, focus and white balance.
     ///
     /// - Parameter enabled: Whether to send readings.
@@ -78,7 +89,8 @@ protocol CaptureHardware: Sendable {
     ///   - frames: Each frame's ISO and exposure duration.
     ///   - metadata: The plan each file's metadata is built from.
     /// - Returns: The photos, in the order the system delivered them.
-    /// - Throws: `CaptureError.notRunning` if the session isn't running, or
+    /// - Throws: `CaptureError.notRunning` if the session isn't running or the attached camera
+    ///   isn't the plan's (`CapturePolicy.camera(_:matches:)`), or
     ///   `CaptureError.captureFailed` if the system reports an error.
     func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame], metadata: MetadataPlan)
         async throws(CaptureError) -> [HardwarePhoto]
@@ -89,8 +101,9 @@ protocol CaptureHardware: Sendable {
     /// or make the torch unavailable (`isTorchAvailable`); the light then stays off.
     ///
     /// - Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
-    /// - Returns: The light's state afterwards: `TorchStatus.off` when no camera with a torch
-    ///   is attached.
+    /// - Returns: The light's state afterwards. While no camera with a torch is attached (during
+    ///   discovery, a teardown or a reconfiguration), a request for the light is
+    ///   `TorchStatus.pending` and a request to turn it off is `TorchStatus.off` (issue #75).
     func setTorch(level: Double?) async -> TorchStatus
 }
 

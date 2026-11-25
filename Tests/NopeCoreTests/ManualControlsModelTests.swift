@@ -70,7 +70,8 @@ struct ManualControlsModelTests {
         let (model, backend) = await makeModel(enabled: false)
         await send(model, .setValue(.iso, 400), .setBracket(BracketSettings(frameCount: 3, step: 1)))
         #expect(model.manual.settings == .automatic)
-        #expect(model.manual.bracket == nil)
+        // A bracket works in full auto (docs/design/BRACKETING.md, decision 2).
+        #expect(model.manual.bracket == BracketSettings(frameCount: 3, step: 1))
         await send(model, .setInterval(IntervalSettings(interval: 5, count: 3)))
         #expect(model.manual.interval == IntervalSettings(interval: 5, count: 3))
         #expect(await backend.applied.isEmpty)
@@ -95,7 +96,8 @@ struct ManualControlsModelTests {
         await send(model, .setEnabled(false))
         #expect(!model.manual.isEnabled)
         #expect(model.manual.settings == .automatic)
-        #expect(model.manual.bracket == nil)
+        // The bracket stays on, planned around the camera's reading from now on.
+        #expect(model.manual.bracket == BracketSettings(frameCount: 3, step: 1))
         #expect(await backend.readingSwitches == [true])
         #expect(await backend.applied.last == .automatic)
         let count = await backend.applied.count
@@ -392,9 +394,12 @@ struct ManualControlsModelTests {
         await model.send(.capture)
         #expect(await backend.captureCount == 1)
         await send(model, .setBracket(BracketSettings(frameCount: 3, step: 1)))
-        // No reading yet: nothing to start from, so a single photo.
+        // No reading yet, and none arrives while the shutter waits: nothing is taken, and the
+        // bracket never becomes a single photo (owner decision, second review of 1.0.0).
         await model.send(.capture)
-        #expect(await backend.captureCount == 2)
+        #expect(model.captureStatus == .failed(.bracketNotReady))
+        #expect(await backend.captureCount == 1)
+        #expect(await backend.brackets.isEmpty)
         await deliver(Fixtures.reading, to: model, from: backend)
         await model.send(.capture)
         let frames = try #require(await backend.brackets.first)
@@ -405,7 +410,8 @@ struct ManualControlsModelTests {
             return
         }
         #expect(photos.count == 3)
-        #expect(photos.allSatisfy { $0.signature == .unsigned(.unavailable) })
+        // Signing is off by default (issue #80).
+        #expect(photos.allSatisfy { $0.signature == .unsigned(.turnedOff) })
     }
 
     @Test func bracketInShutterPriorityChangesISO() async throws {
@@ -417,14 +423,15 @@ struct ManualControlsModelTests {
         #expect(frames.map(\.iso) == [100, 200, 400])
     }
 
-    @Test func bracketNeedsRangesAndManualControlsOn() async {
+    @Test func bracketNeedsRanges() async {
         let noRanges = Lens(id: "n", kind: .wide, bayerRAWFormat: nil, maxBracketedPhotoCount: 3)
         let (model, backend) = await makeModel(lenses: [noRanges])
         await send(model, .setBracket(BracketSettings(frameCount: 3, step: 1)))
         await deliver(Fixtures.reading, to: model, from: backend)
         await model.send(.capture)
         #expect(await backend.brackets.isEmpty)
-        #expect(await backend.captureCount == 1)
+        #expect(await backend.captureCount == 0, "a bracket never becomes a single photo")
+        #expect(model.captureStatus == .failed(.bracketNotReady))
     }
 
     @Test func aFailedBracketIsReported() async {
@@ -457,7 +464,7 @@ struct ManualControlsModelTests {
         #expect(model.captureStatus == .failed(.saveFailed))
     }
 
-    @Test func aBackendWithoutBracketsTakesASinglePhoto() async {
+    @Test func aBackendWithoutBracketsTakesNothing() async {
         let backend = ScriptedBackend(capabilities: DeviceCapabilities(lenses: [Fixtures.wide]))
         let model = CameraModel(backend: backend, saver: CameraModelTests.saver())
         await model.send(.start)
@@ -466,18 +473,15 @@ struct ManualControlsModelTests {
         await model.send(.manual(.setValue(.shutter, 0.01)))
         await model.send(.manual(.setBracket(BracketSettings(frameCount: 3, step: 1))))
         await model.send(.capture)
-        #expect(await backend.captureRequests.count == 1)
-        guard case .saved = model.captureStatus else {
-            Issue.record("expected one saved photo")
-            return
-        }
+        #expect(await backend.captureRequests.isEmpty, "a bracket never becomes a single photo")
+        #expect(model.captureStatus == .failed(.bracketNotReady))
     }
 
     // MARK: - Interval shooting
 
     /// Waits until the running series has ended.
     func waitForSeries(_ model: CameraModel) async {
-        while model.manual.intervalProgress != nil { await Task.yield() }
+        await waitOrFail("the series ends") { model.manual.intervalProgress == nil }
     }
 
     @Test func intervalTakesEveryPhoto() async {
@@ -498,7 +502,8 @@ struct ManualControlsModelTests {
         await send(model, .setInterval(IntervalSettings(interval: 60, count: 5)), .startInterval)
         var iterator = gate.stream.makeAsyncIterator()
         await iterator.next()
-        #expect(model.manual.intervalProgress == IntervalProgress(taken: 1, total: 5))
+        #expect(model.manual.intervalProgress?.taken == 1)
+        #expect(model.manual.intervalProgress?.total == 5)
         await send(model, .stopInterval)
         #expect(model.manual.intervalProgress == nil)
         for _ in 0..<20 { await Task.yield() }
@@ -510,7 +515,7 @@ struct ManualControlsModelTests {
         await send(model, .setInterval(IntervalSettings(interval: 1, count: 4)))
         await model.manual.handle(.startInterval) { [model] in
             await model.send(.manual(.stopInterval))
-            return true
+            return .taken(startedAt: model.clock.now())
         }
         for _ in 0..<20 { await Task.yield() }
         #expect(model.manual.intervalProgress == nil)

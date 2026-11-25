@@ -17,6 +17,19 @@ extension ManualControlsModel {
             farFocusLimit: farFocusLimit, followsFaces: followsFaces)
     }
 
+    /// Whether the selected lens is autofocusing now: it can autofocus, and focus is neither set
+    /// by hand nor locked in Manual Controls. The same rule ``DeviceControls/init(settings:lens:assist:)``
+    /// follows, so it is `false` exactly when the camera gets no Close-Up or Far Focus limit.
+    ///
+    /// Close-Up and Far Focus (``nearFocusLimit``, ``farFocusLimit``) limit only autofocus
+    /// (`AVCaptureDevice.autoFocusRangeRestriction`), so an interface shows them only while this
+    /// is `true` (issue #91, docs/design/SETTING-SCOPE.md, 6). The person's choice is kept and is
+    /// used again when focus returns to Auto. `false` before the camera is ready.
+    public var autoFocusIsInUse: Bool {
+        guard let lens else { return false }
+        return capabilities.supportsAutoFocus && DeviceControls(settings: settings, lens: lens).focus == .automatic
+    }
+
     /// Whether the selected lens can set exposure compensation now.
     public var canAdjustExposureCompensation: Bool {
         availability(of: .exposureCompensation) == .adjustable
@@ -131,14 +144,23 @@ extension ManualControlsModel {
     ///
     /// - Parameter reading: What the camera is using now.
     func record(_ reading: ExposureReading) async {
+        if !isEnabled, focusTarget?.isLocked != true, AutoShutter.predatesLimit(reading, limit: longestAutoShutter) {
+            // Taken before the camera applied full auto's limit (just after Manual, Astro or a
+            // lens change): it would lift the limit, and show the hint, for an exposure the
+            // camera no longer uses.
+            return
+        }
         lastReading = reading
         guard let lens else { return }
-        if closeUpDismissed || settings.focus != nil || focusTarget?.isLocked == true {
-            // Manual focus or a lock is the person's choice; nothing to suggest.
+        if closeUpDismissed || settings.focus != nil || focusTarget?.isLocked == true || holdsControls {
+            // Manual focus or a lock is the person's choice; nothing to suggest. So is a lens the
+            // app itself holds near (an end of the focus range being set, a focus bracket's
+            // frames): a near position or a move then is no sign of a subject too close to
+            // focus (third review of 1.0.0, S4).
             closeUpDetector = CloseUpDetector()
             suggestsCloseUpLens = false
         } else {
-            suggestsCloseUpLens = closeUpDetector.record(reading)
+            suggestsCloseUpLens = closeUpDetector.record(reading, at: now())
         }
         if !isEnabled {
             await setLongestAutoShutter(
@@ -165,6 +187,15 @@ extension ManualControlsModel {
         closeUpDetector = CloseUpDetector()
         closeUpDismissed = false
         suggestsCloseUpLens = false
+        resetReadingAids()
+    }
+
+    /// Starts the fast shutter rule and the steady hint again from the lens's fastest limit,
+    /// forgetting the last reading: after a lens change, and when manual controls turn on or off
+    /// (Astro too), the readings taken before belong to another exposure. Without this, a limit
+    /// lifted before Manual stayed lifted after it, and the hint stayed until enough new
+    /// readings brought the limit back past the half-stop ``AutoShutter/returnMargin``.
+    func resetReadingAids() {
         showsSteadyHint = false
         lastReading = nil
         longestAutoShutter = lens.flatMap { AutoShutter.limits(for: $0, fastShutter: fastShutter).first }
@@ -191,22 +222,24 @@ extension ManualControlsModel {
         updateSteadyHint()
     }
 
-    /// Decides whether to show "Hold it steady or use a tripod".
+    /// Decides whether to show "Hold it steady or use a tripod."
+    /// (docs/design/device-feedback-1.0.md, section 4):
     ///
-    /// - Full auto: when the fast shutter limit had to be lifted past the handheld rule.
-    /// - Manual controls: when the person's shutter, or the camera's while it is Auto, is slower
-    ///   than the handheld rule. The app changes nothing; it only says so.
+    /// - Manual controls: never. The Shutter readout shows the speed in use, and the person has
+    ///   chosen to decide.
+    /// - Full auto: while the fast shutter limit is lifted and the camera's shutter is slower
+    ///   than the lens's steady limit (``AutoShutter/steadyLimit(for:)``). It turns off only at a
+    ///   reading half a stop faster than the limit (``AutoShutter/returnMargin``), and between
+    ///   the two it keeps its state. While the limit holds, the shutter is never slower than the
+    ///   handheld rule, so the hint can't show.
     func updateSteadyHint() {
-        guard let lens, let lastReading else {
+        guard !isEnabled, let lens, let reading = lastReading, longestAutoShutter == nil,
+            let limit = AutoShutter.steadyLimit(for: lens)
+        else {
             showsSteadyHint = false
             return
         }
-        if isEnabled {
-            showsSteadyHint = AutoShutter.risksBlur(settings.shutter ?? lastReading.exposureDuration, on: lens)
-        } else {
-            showsSteadyHint =
-                longestAutoShutter == nil && lens.isoRange != nil && AutoShutter.handheldLimit(for: lens) != nil
-        }
+        showsSteadyHint = AutoShutter.showsSteadyHint(shutter: reading.exposureDuration, limit: limit, isShown: showsSteadyHint)
     }
 
     /// Sends the settings and aids to the camera. If it refuses, nothing is kept from the

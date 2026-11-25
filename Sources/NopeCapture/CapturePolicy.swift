@@ -125,7 +125,7 @@ struct SessionConfiguration: Equatable, Sendable {
     }
 }
 
-/// What one photo asks for: Bayer RAW only, or one processed fallback format.
+/// What one photo asks for: Bayer RAW only, or one processed fallback format, from one camera.
 struct PhotoSettingsPlan: Equatable, Sendable {
     /// The Bayer RAW pixel format code, or `nil` for the processed fallback.
     let rawPixelFormat: UInt32?
@@ -133,6 +133,10 @@ struct PhotoSettingsPlan: Equatable, Sendable {
     let processedFormat: ProcessedFallback?
     /// The processing switches.
     let switches: ProcessingSwitches
+    /// The `uniqueID` of the camera the plan was made for, or `nil` for a plan not yet tied to
+    /// a camera (``CapturePolicy/photoSettings(for:)``). The hardware takes a photo only with
+    /// that camera attached (``CapturePolicy/camera(_:matches:)``).
+    let deviceID: String?
 
     /// Creates a photo plan.
     ///
@@ -140,10 +144,24 @@ struct PhotoSettingsPlan: Equatable, Sendable {
     ///   - rawPixelFormat: The Bayer RAW pixel format code, or `nil`.
     ///   - processedFormat: The processed format, or `nil`.
     ///   - switches: The processing switches.
-    init(rawPixelFormat: UInt32?, processedFormat: ProcessedFallback?, switches: ProcessingSwitches) {
+    ///   - deviceID: The camera's `uniqueID`, or `nil` for a plan not yet tied to a camera.
+    init(
+        rawPixelFormat: UInt32?, processedFormat: ProcessedFallback?, switches: ProcessingSwitches,
+        deviceID: String? = nil
+    ) {
         self.rawPixelFormat = rawPixelFormat
         self.processedFormat = processedFormat
         self.switches = switches
+        self.deviceID = deviceID
+    }
+
+    /// The same plan, made for one camera.
+    ///
+    /// - Parameter deviceID: The camera's `uniqueID`.
+    /// - Returns: The plan with ``deviceID`` set.
+    func forCamera(_ deviceID: String) -> PhotoSettingsPlan {
+        PhotoSettingsPlan(
+            rawPixelFormat: rawPixelFormat, processedFormat: processedFormat, switches: switches, deviceID: deviceID)
     }
 }
 
@@ -166,7 +184,7 @@ enum CapturePolicy {
             deviceID: request.lens.id,
             maxPhotoDimensions: request.photoSize.flatMap { request.lens.photoDimensions.contains($0) ? $0 : nil }
                 ?? request.lens.defaultPhotoSize,
-            photoSettings: plan,
+            photoSettings: plan.forCamera(request.lens.id),
             switches: .leastProcessing
         )
     }
@@ -184,7 +202,44 @@ enum CapturePolicy {
     static func photoSettings(_ plan: PhotoSettingsPlan, flashMode: FlashMode) -> PhotoSettingsPlan {
         PhotoSettingsPlan(
             rawPixelFormat: plan.rawPixelFormat, processedFormat: plan.processedFormat,
-            switches: plan.switches.withFlashMode(flashMode.captureFlashMode))
+            switches: plan.switches.withFlashMode(flashMode.captureFlashMode), deviceID: plan.deviceID)
+    }
+
+    /// Whether the attached camera is the one a photo was planned for, so the hardware may take
+    /// it.
+    ///
+    /// The capture backend is an actor, and an actor runs other calls while one waits: a lens
+    /// change can reconfigure the session while a photo waits for the output to be ready, so
+    /// the attached camera may no longer be the plan's (issue #96). The model doesn't change the
+    /// lens while a photo is taken (`CameraModel.canChangeLens`); this is the backend's own
+    /// check, made on the session queue just before the capture starts. A plan not tied to a
+    /// camera never matches.
+    ///
+    /// - Parameters:
+    ///   - deviceID: The attached camera's `uniqueID`.
+    ///   - plan: The photo's plan.
+    /// - Returns: Whether they match.
+    static func camera(_ deviceID: String, matches plan: PhotoSettingsPlan) -> Bool {
+        plan.deviceID == deviceID
+    }
+
+    /// The camera to take a photo with: the attached camera, when the session runs and it is the
+    /// one the plan was made for (``camera(_:matches:)``); otherwise `nil`, and the capture fails
+    /// with `CaptureError.notRunning`. The one check before every capture in
+    /// `SystemCaptureHardware` (a photo, a bracket and the comparison shot), made on the session
+    /// queue; kept here so it is tested without camera hardware.
+    ///
+    /// - Parameters:
+    ///   - attached: The session's camera now, or `nil` when none is attached.
+    ///   - id: The camera's `uniqueID`.
+    ///   - isRunning: Whether the capture session is running.
+    ///   - plan: The photo's plan.
+    /// - Returns: The camera, or `nil` when no photo may be taken with it.
+    static func cameraToCapture<Camera>(
+        _ attached: Camera?, id: (Camera) -> String, isRunning: Bool, plan: PhotoSettingsPlan
+    ) -> Camera? {
+        guard isRunning, let attached, camera(id(attached), matches: plan) else { return nil }
+        return attached
     }
 
     /// The format of the file a plan produces: DNG for RAW, otherwise the processed format.

@@ -14,6 +14,14 @@ extension CameraModel {
             bytes: bytesPerFrame * Int64(astro.frameCount), framesThatFit: framesThatFit)
     }
 
+    /// Whether the camera should say "Hold it steady or use a tripod.":
+    /// ``ManualControlsModel/showsSteadyHint``, except while the astro helper is on. Its long exposures are meant for a tripod, and its
+    /// own guidance already says "Use a tripod.", so the hint would only repeat it (the Astro
+    /// screens in docs/design draw no hint). Interfaces show the hint from this property.
+    public var showsSteadyHint: Bool {
+        manual.showsSteadyHint && !astro.isOn
+    }
+
     /// Whether the helper can be turned on: the selected lens suits it, and the storage and
     /// battery can be read, so a run can stop before either runs out (not in the Lock Screen
     /// capture extension, which has no reader).
@@ -21,19 +29,26 @@ extension CameraModel {
         deviceStatus.canRead && (selectedLens.map(AstroModel.isAvailable(on:)) ?? false)
     }
 
+    /// Whether the device offers the helper at all: a lens suits it, and storage and battery can
+    /// be read (not in the Lock Screen capture extension). `false` before the camera is ready.
+    /// An interface shows settings about the helper only then (AGENTS.md, "Progressive
+    /// enhancement"), such as Keep Night Mode After Astro (``NopeSettings/keepsNightModeAfterAstro``).
+    public var deviceOffersAstro: Bool {
+        deviceStatus.canRead && (capabilities?.lenses.contains(where: AstroModel.isAvailable(on:)) ?? false)
+    }
+
     /// Handles one astro intent.
     ///
     /// - Parameter intent: The intent.
     ///
     /// Side effects: turning the helper on may turn manual controls on, sets focus, shutter and
-    /// ISO, and turns the light off; turning it off may turn manual controls off.
+    /// ISO, and turns the light off; turning it off may turn manual controls off, and night mode
+    /// if ``setAstro(_:settings:)`` turned it on.
     func handle(_ intent: AstroIntent) async {
         let isIdle = !drive.isBusy && !astro.isRunning
         switch intent {
         case .setOn(true):
-            guard !astro.isOn, isIdle, canCapture, deviceStatus.canRead, manual.intervalProgress == nil,
-                let lens = selectedLens, let exposure = AstroModel.startingExposure(for: lens)
-            else { return }
+            guard let exposure = astroExposureIfItCanTurnOn() else { return }
             await turnOnAstro(exposure)
         case .setOn(false):
             await turnOffAstro()
@@ -44,6 +59,71 @@ extension CameraModel {
         case .stop:
             stopAstroRun()
         }
+    }
+
+    /// Turns the helper on or off from an interface's Astro control, with night mode: turning it
+    /// on turns night mode on too (issue #60), and turning it off, in any way, returns night mode
+    /// to what it was before.
+    ///
+    /// The night mode rule mirrors the one for manual controls:
+    /// - Night mode that was off is turned on, and turned off again when the helper ends: Astro
+    ///   off, another drive mode, a lens without the helper, manual controls off, or a preset. A
+    ///   relaunch keeps night mode as it was (``forgetNightModeFromAstroAtLaunch(settings:)``).
+    /// - Night mode that was already on stays on.
+    /// - A change the person makes to night mode while the helper is on
+    ///   (``NopeSettings/setNightMode(_:)``) is theirs, and is kept.
+    /// - With ``NopeSettings/keepsNightModeAfterAstro`` on, night mode stays on.
+    ///
+    /// The helper alone (``CameraIntent/astro(_:)``, as a preset sends it) never changes night
+    /// mode: night mode is a setting of the screens, and a preset brings its own.
+    ///
+    /// Side effects: as ``AstroIntent/setOn(_:)``; may turn night mode on and store it. Turning on
+    /// is ignored, and night mode left alone, where the helper can't turn on.
+    ///
+    /// - Parameters:
+    ///   - isOn: Whether the helper is on.
+    ///   - settings: The person's settings, where night mode is stored.
+    public func setAstro(_ isOn: Bool, settings: NopeSettings) async {
+        guard isOn else {
+            await turnOffAstro()
+            return
+        }
+        guard let exposure = astroExposureIfItCanTurnOn() else { return }
+        // Night mode first, so the screen is already red when the helper's announcement names it.
+        settings.turnOnNightModeForAstro()
+        astro.nightModeSettings = settings
+        await turnOnAstro(exposure)
+    }
+
+    /// Forgets that the astro helper turned night mode on, without changing night mode, when the
+    /// helper ended without leaving it: the app was quit or closed by the system while the helper
+    /// was on, and the helper is off at every launch. Night mode stays as it was, so a relaunch in
+    /// the dark opens red (owner decision, 2026-11-18); it is the person's from then on. It does
+    /// nothing while the helper is on.
+    ///
+    /// Only the app calls it, once its camera screen shows; the Lock Screen camera never does
+    /// (issue #108). The record is the app's state: a process that isn't the app, though it
+    /// shows the same camera screen, must leave it, or leaving Astro in the app would no longer
+    /// turn night mode off.
+    ///
+    /// Side effects: may store that night mode is no longer the helper's.
+    ///
+    /// - Parameter settings: The person's settings, where the record is stored.
+    public func forgetNightModeFromAstroAtLaunch(settings: NopeSettings) {
+        guard !astro.isOn, settings.isNightModeFromAstro else { return }
+        settings.setNightModeFromAstro(false)
+    }
+
+    /// The helper's starting values for the selected lens, when it can turn on now: it is off,
+    /// nothing is being taken, the camera can take photos, storage and battery can be read, no
+    /// interval series runs, and the lens suits it.
+    ///
+    /// - Returns: The values, or `nil` when the helper can't turn on.
+    private func astroExposureIfItCanTurnOn() -> AstroExposure? {
+        guard !astro.isOn, !drive.isBusy, !astro.isRunning, canCapture, deviceStatus.canRead,
+            manual.intervalProgress == nil, let lens = selectedLens
+        else { return nil }
+        return AstroModel.startingExposure(for: lens)
     }
 
     /// Turns the helper on and sets up the camera for it.
@@ -72,12 +152,16 @@ extension CameraModel {
         await send(.manual(.setValue(.iso, exposure.iso)))
     }
 
-    /// Turns the helper off, stopping a run, and turns manual controls off again if the helper
-    /// turned them on.
+    /// Turns the helper off, stopping a run, and turns manual controls and night mode off again
+    /// if the helper turned them on (``setAstro(_:settings:)``).
     private func turnOffAstro() async {
         guard astro.isOn else { return }
         stopAstroRun()
         astro.setOn(false)
+        if let settings = astro.nightModeSettings {
+            astro.nightModeSettings = nil
+            settings.nightModeAstroDidEnd()
+        }
         if astro.turnedOnManualControls {
             astro.turnedOnManualControls = false
             await send(.manual(.setEnabled(false)))
@@ -101,6 +185,28 @@ extension CameraModel {
         guard astro.isOn, case .setEnabled(let isOn) = intent else { return }
         astro.turnedOnManualControls = false
         if !isOn { await turnOffAstro() }
+    }
+
+    /// Turns manual controls on or off and stores the choice as the "Manual controls" option
+    /// (``NopeSettings/showsManualControls``). Use it for every control that turns manual
+    /// controls on or off, such as a Manual Controls button.
+    ///
+    /// Storing the option alone isn't enough: the astro helper turns manual controls on without
+    /// changing the option, so storing "off" while the helper had turned them on changes no
+    /// stored value, and an interface that follows the option (a SwiftUI `.task(id:)`) sends
+    /// nothing. This call stores the option and sends ``ManualControlIntent/setEnabled(_:)``
+    /// itself, so turning manual controls off always turns them and the helper off. An interface
+    /// that also follows the option may send the same intent again; it changes nothing then.
+    ///
+    /// Side effects: as ``ManualControlIntent/setEnabled(_:)``; off returns every control to
+    /// automatic and turns the astro helper off.
+    ///
+    /// - Parameters:
+    ///   - isOn: Whether manual controls are on.
+    ///   - settings: The person's settings, where the option is stored.
+    public func setManualControls(_ isOn: Bool, settings: NopeSettings) async {
+        settings.setShowsManualControls(isOn)
+        await send(.manual(.setEnabled(isOn)))
     }
 
     /// Applies the helper to a newly selected lens: its starting values for that lens, or the
@@ -140,6 +246,29 @@ extension CameraModel {
         await takeFrames(limit: astro.frameCount, tracker: astro, stopsOnLowBattery: true, pausesWithCamera: true)
     }
 
+    /// Applies a change of the app's scene phase to or from the background: going to the
+    /// background turns the light off (AGENTS.md, "Battery"), then sends
+    /// ``CameraIntent/setInForeground(_:)`` with `false`; coming back sends it with `true`.
+    ///
+    /// Each change waits until the one before it has been applied. Without that, a quick return
+    /// while the light was turning off could set the foreground before the older change set the
+    /// background, and leave an interval series or Astro run paused with no previews until the
+    /// next trip to the background (final review of 1.0.0, S4). Call it from the scene phase's
+    /// change, once for each change.
+    ///
+    /// - Parameter isInBackground: Whether the app is now in the background.
+    public func sceneDidChange(isInBackground: Bool) async {
+        let previous = sceneChange
+        // The task holds the model only until the change is applied.
+        let change = Task {
+            await previous?.value
+            if isInBackground { await send(.light(.setTorch(false))) }
+            await send(.setInForeground(!isInBackground))
+        }
+        sceneChange = change
+        await change.value
+    }
+
     /// Records whether the app is in the foreground, and applies it to the self-timer and the
     /// astro helper (``CameraIntent/setInForeground(_:)``).
     ///
@@ -147,7 +276,10 @@ extension CameraModel {
     func setInForeground(_ isInForeground: Bool) {
         self.isInForeground = isInForeground
         guard !isInForeground else { return }
-        guard astro.isOn else {
+        // A running focus bracket's countdown to continue is never an astro start delay, also
+        // with the helper on: cancelling it only pauses the bracket again, and no astro run
+        // starts beside it (third review of 1.0.0, S3).
+        guard astro.isOn, !bracketing.isRunning else {
             // The camera stops in the background, so the self-timer can't take its photo.
             drive.countdown.cancel()
             return

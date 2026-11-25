@@ -175,6 +175,27 @@ enum AutoShutter {
     /// assumption, checked on the device: docs/TESTING.md).
     static let returnMargin = pow(2, -0.5)
 
+    /// How much longer than full auto's limit a reading's shutter may be and still count as
+    /// taken under that limit: a quarter stop. Auto exposure keeps the shutter within
+    /// `AVCaptureDevice.activeMaxExposureDuration`, so a reading clearly longer than the limit
+    /// was taken before the camera applied it (after a manual or astro exposure, or on the
+    /// previous lens). The margin allows for a reported shutter rounded to the sensor's timing;
+    /// its size is an assumption, checked on the device (docs/TESTING.md).
+    static let predatesLimitMargin = pow(2, 0.25)
+
+    /// Whether a full-auto reading was taken before the camera applied the limit in use, so it
+    /// says nothing about the scene under that limit.
+    ///
+    /// - Parameters:
+    ///   - reading: The reading.
+    ///   - limit: The limit in use, in seconds, or `nil` when it is lifted.
+    /// - Returns: `true` when the reading's shutter is longer than the limit by more than
+    ///   ``predatesLimitMargin``; `false` when the limit is lifted.
+    static func predatesLimit(_ reading: ExposureReading, limit: Double?) -> Bool {
+        guard let limit else { return false }
+        return reading.exposureDuration > limit * predatesLimitMargin
+    }
+
     /// The handheld rule: 1/(2 × 35 mm-equivalent focal length) seconds, inside the lens's
     /// shutter range.
     ///
@@ -224,55 +245,131 @@ enum AutoShutter {
         }
     }
 
-    /// Whether a shutter is slow enough to risk blur from hand shake, for the hint in manual
-    /// controls.
+    /// How many stops slower than the handheld rule a lens that reports stabilization
+    /// (``Lens/reportsStabilization``) is taken to hold steady, for the steady hint: 2. A
+    /// provisional value until device check S2 sets it (docs/TESTING.md; decision 12 of
+    /// docs/design/device-feedback-1.0.md).
+    static let stabilizationAllowance = 2.0
+
+    /// The steady limit of a lens: the handheld rule moved by the lens's stabilization,
+    /// `1/(2 × focal length) × 2^allowance`, inside the lens's shutter range. The allowance is
+    /// ``stabilizationAllowance`` on a lens that reports stabilization and 0 on any other.
+    ///
+    /// - Parameter lens: The lens.
+    /// - Returns: The slowest shutter in seconds the lens is taken to hold by hand, or `nil`
+    ///   when the lens reports no focal length or no shutter range.
+    static func steadyLimit(for lens: Lens) -> Double? {
+        guard let focalLength = lens.equivalentFocalLength, focalLength > 0, let range = lens.exposureDurationRange
+        else { return nil }
+        let allowance = lens.reportsStabilization ? stabilizationAllowance : 0
+        return (pow(2, allowance) / (2 * focalLength)).limited(to: range)
+    }
+
+    /// Whether "Hold it steady or use a tripod." shows after a reading in full auto, with a
+    /// margin so it doesn't flicker (docs/design/device-feedback-1.0.md, section 4).
     ///
     /// - Parameters:
-    ///   - duration: The shutter in use or chosen, in seconds.
-    ///   - lens: The lens.
-    /// - Returns: `true` when it is longer than ``handheldLimit(for:)``; `false` without a limit.
-    static func risksBlur(_ duration: Double, on lens: Lens) -> Bool {
-        guard let limit = handheldLimit(for: lens) else { return false }
-        return duration > limit
+    ///   - duration: The shutter the camera is using, in seconds.
+    ///   - limit: The lens's ``steadyLimit(for:)``.
+    ///   - isShown: Whether the hint shows now.
+    /// - Returns: `true` when the shutter is slower than the limit; `false` when it is at least
+    ///   ``returnMargin`` (half a stop) faster; otherwise `isShown`, unchanged.
+    static func showsSteadyHint(shutter duration: Double, limit: Double, isShown: Bool) -> Bool {
+        if duration > limit { return true }
+        if duration <= limit * returnMargin { return false }
+        return isShown
     }
 }
 
-/// Notices when the subject seems closer than the lens can focus: the lens stays at its nearest
-/// position while autofocus keeps searching (issue #51, "Close-up assist").
+/// Notices when the subject seems closer than the lens can focus: autofocus searched, and the
+/// lens then stays at, or keeps coming back to, its nearest position (issue #51, "Close-up
+/// assist").
 ///
-/// It only suggests the ultra wide lens; the app never switches lenses on its own. The thresholds
-/// are assumptions to check on the device (docs/TESTING.md, "Close-up focus aids"):
-/// `lensPosition` is relative (0 is the nearest the lens can focus), not a distance.
+/// It only suggests the ultra wide lens; the app never switches lenses on its own. It judges by
+/// time, not by a count of readings, because the readings come only when something changes
+/// (``ExposureReading``; at most four a second). It allows for what autofocus does on a real
+/// device: the search is often seen only while the lens moves into the near band, and autofocus
+/// may search again for a moment once there.
+///
+/// Every threshold is an assumption until the device checks (docs/TESTING.md, "Close-up focus
+/// aids", check C1): `lensPosition` is relative (0 is the nearest the lens can focus), not a
+/// distance.
 struct CloseUpDetector: Equatable, Sendable {
     /// How near the nearest position the lens must be, on the 0-to-1 relative scale.
     static let nearestPosition = 0.05
 
-    /// How many readings in a row must find the lens there: two seconds at four readings a
-    /// second (``ExposureReading`` rate).
-    static let requiredReadings = 8
+    /// How far back the detector looks: 2.5 seconds.
+    static let window = Duration.milliseconds(2500)
 
-    /// Readings in a row with the lens at its nearest position.
-    private var readingsAtNearest = 0
+    /// How much of ``window`` the lens must spend in the near band: 2 seconds, so a short search
+    /// out of the band and back doesn't start the count again.
+    static let requiredNearTime = Duration.seconds(2)
 
-    /// Whether autofocus searched during that run.
-    private var searched = false
+    /// How long a search counts after it was last seen: 4 seconds, enough for ``requiredNearTime``
+    /// after a search seen on the way into the near band.
+    static let searchMemory = Duration.seconds(4)
+
+    /// One reading's time and whether the lens was in the near band.
+    private struct Sample: Equatable, Sendable {
+        /// When the reading arrived.
+        let time: ContinuousClock.Instant
+
+        /// Whether the lens was at its nearest position.
+        let isNear: Bool
+    }
+
+    /// The readings in ``window``, and the last one before it, whose state holds at its start.
+    private var samples: [Sample] = []
+
+    /// When autofocus was last seen searching, or `nil`.
+    private var lastSearch: ContinuousClock.Instant?
+
+    /// Whether the detector reported a close subject at the last reading.
+    private var isReporting = false
 
     /// Creates a detector with no readings.
     init() {}
 
     /// Records a reading.
     ///
-    /// - Parameter reading: The camera's reading.
-    /// - Returns: Whether the subject seems too close: the lens stayed at its nearest position
-    ///   for ``requiredReadings`` readings in a row, and autofocus searched during them.
-    mutating func record(_ reading: ExposureReading) -> Bool {
-        guard reading.lensPosition <= Self.nearestPosition else {
-            self = CloseUpDetector()
+    /// - Parameters:
+    ///   - reading: The camera's reading.
+    ///   - time: When it arrived.
+    /// - Returns: Whether the subject seems too close: the lens was in the near band for
+    ///   ``requiredNearTime`` of the last ``window``, and autofocus searched within
+    ///   ``searchMemory`` when this began. Once reported, it stays reported while the lens keeps
+    ///   to the near band that long.
+    mutating func record(_ reading: ExposureReading, at time: ContinuousClock.Instant) -> Bool {
+        if reading.isAdjustingFocus { lastSearch = time }
+        samples.append(Sample(time: time, isNear: reading.lensPosition <= Self.nearestPosition))
+        let start = time - Self.window
+        if let firstInside = samples.firstIndex(where: { $0.time >= start }), firstInside > 1 {
+            samples.removeFirst(firstInside - 1)
+        }
+        guard Self.nearTime(of: samples, from: start, to: time) >= Self.requiredNearTime else {
+            isReporting = false
             return false
         }
-        readingsAtNearest += 1
-        searched = searched || reading.isAdjustingFocus
-        return searched && readingsAtNearest >= Self.requiredReadings
+        if !isReporting, let lastSearch, time - lastSearch <= Self.searchMemory { isReporting = true }
+        return isReporting
+    }
+
+    /// How long the lens was in the near band between two times: each reading's state holds
+    /// until the next one.
+    ///
+    /// - Parameters:
+    ///   - samples: The readings, oldest first.
+    ///   - start: The start of the span.
+    ///   - end: The end of the span, the time of the last reading.
+    /// - Returns: The time in the near band.
+    private static func nearTime(of samples: [Sample], from start: ContinuousClock.Instant, to end: ContinuousClock.Instant) -> Duration {
+        var total = Duration.zero
+        for (index, sample) in samples.enumerated() where sample.isNear {
+            let until = index + 1 < samples.count ? samples[index + 1].time : end
+            let from = max(sample.time, start)
+            if until > from { total += until - from }
+        }
+        return total
     }
 }
 

@@ -1,32 +1,40 @@
 import NopeCore
 import SwiftUI
 
-/// The camera when it is ready, in the approved clean layout (issue #68, "UX v3").
+/// The camera when it is ready, in direction B of the 1.0.0 design (docs/design/BUILD-SPEC.md,
+/// 3.1, 3.11 and 3.12).
 ///
-/// Full auto shows the format chip, Settings, the lens row below the 4:3 picture with the
-/// quick-controls button (⋯) at its end, the shutter, the camera flip and, after the first photo
-/// of the session, the last-photo thumbnail. Everything else appears only when it isn't at its
-/// default: state pills (``StatePills``), warning chips (``CameraWarnings``), the manual
-/// readout row and its dial when the "Manual controls" option is on, and a failure banner.
+/// Full auto shows the format status, the picture, the lens row (Manual Controls, the lenses,
+/// Switch Camera), the drive strip (Single, Timer, Burst, Interval, Astro), and the shutter row:
+/// the last photo after the first of the session, the shutter, and Q, which opens the quick
+/// menu. Everything else appears only when it isn't at its default: state pills
+/// (``StatePills``), warning chips (``CameraWarnings``), and on the picture's lower edge the
+/// hints, the open dial, the running mode's card and the manual readouts.
 ///
 /// ``CameraLayout`` chooses the arrangement:
-/// - **Stacked** (iPhone): top bar 44 points, the whole picture, the lens row, the manual
-///   readout, and the shutter row 88 points. When the bands don't fit below the picture, as on a
-///   4.7-inch iPhone, they overlay its bottom on a dark backing. The layout stays put when the
-///   iPhone turns; icons and text blocks turn upright as units, and the chip, pills and warnings
-///   move to the picture's upper edge.
-/// - **Scrolling**: the same bands in a scroll view at accessibility text sizes, in every window,
-///   with the enlarged manual controls list; the viewfinder is clipped to the scroll view.
-/// - **Column** (iPad, or a window wider than tall, below the accessibility sizes): the picture
-///   beside a trailing column with the shutter centered; pills, chip and warnings over the
-///   picture's top, and the manual controls and tray over its bottom.
+/// - **Stacked** (iPhone, the iPhone Duo's outer display, compact iPad windows): the status line
+///   (format status leading, pills trailing), the whole picture, the lens row and drive strip,
+///   and the shutter row. When the rows don't fit below the picture, as on a 4.7-inch iPhone,
+///   they overlay its bottom (``StackedMiddle``). The layout stays put when the iPhone turns;
+///   icons and text blocks turn upright as units, the status moves onto the picture's upper
+///   edge, Manual Controls shows "A" or "M", and the drive strip shows symbols with the mode
+///   named in a pill on the picture. No Settings button: Settings opens from Q.
+/// - **Scrolling**: at accessibility text sizes, in every window. The status, a 280-point
+///   picture, then every control as a full-width row; the shutter row stays pinned.
+/// - **Column** (iPad, the iPhone Duo's inner display, any window wider than tall): the picture
+///   beside a trailing column with Settings, the lenses and Manual Controls at the top, Q, the
+///   shutter and the last photo centered, and Switch Camera at the bottom. Format status and
+///   warnings sit on the picture's top leading corner and pills on its top trailing corner; the
+///   bottom stack and the drive strip are centered on its lower edge.
 ///
-/// Clean view leaves only the picture, the shutter, a Show Controls button in the thumbnail's
-/// place and any warning. Every gesture has a button: swiping the picture down or up is a
-/// shortcut for Hide Controls (in the tray) and Show Controls.
+/// Clean view leaves only the picture, the shutter, a Show Controls button in the last photo's
+/// place, any warning and any running series. Every gesture has a button: swiping the picture
+/// down or up is a shortcut for Hide Controls (in the quick menu) and Show Controls.
 ///
 /// The picture's frame is left clear and reported (``ViewfinderFrame``): ``CameraScreen`` draws
-/// the live viewfinder there, behind this view, so it stays the same view in every mode.
+/// the live viewfinder there, behind this view, so it stays the same view in every mode. The view
+/// keeps its state (the open dial, the quick menu, the timer delay) when the window changes
+/// layout, as when an iPhone Duo folds or unfolds.
 struct CameraReadyView: View {
     /// The model to render and send intents to.
     let model: CameraModel
@@ -40,7 +48,7 @@ struct CameraReadyView: View {
     /// Opens Settings.
     let openSettings: () -> Void
 
-    /// The saved settings presets (issue #72), or `nil` for no Presets tray item.
+    /// The saved settings presets (issue #72), or `nil` for no Presets item.
     let presets: SettingsPresets?
 
     /// The current text size; accessibility sizes switch to the scrolling layout.
@@ -56,11 +64,24 @@ struct CameraReadyView: View {
     /// Which way up the person holds the iPhone.
     @Environment(\.cameraUprightRotation) private var rotation
 
-    /// Whether Reduce Motion is on: the thumbnail fades in instead of sliding.
+    /// Whether Reduce Motion is on: the thumbnail and the quick menu fade instead of moving.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Whether ``CameraScreen`` shows the camera's first start indicator: the scrolling layout
+    /// then waits to draw its scrolling content (docs/design/LAUNCH-SCREEN.md, 13.2).
+    @Environment(\.showsStartIndicator) private var showsStartIndicator
 
     /// Tells the app that a sheet opened or closed, so it can rotate.
     @Environment(\.cameraPresentsSheet) private var presentsSheet
+
+    /// Whether the app offers Keep Screen On, for the Battery Low warning's explanation.
+    @Environment(\.offersKeepScreenOn) private var offersKeepScreenOn
+
+    /// Whether a sheet, popover or full-screen cover opened here is over the camera.
+    private var presentsOwnSheet: Bool {
+        showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || showsIntervalSettings
+            || showsBracketSettings || showsPresets || showsGuide || model.comparison.isPresented || model.isViewerOpen
+    }
 
     /// Whether night mode is on, so the sheets opened here are red too.
     private var isNightMode: Bool { settings.isNightModeOn }
@@ -68,8 +89,18 @@ struct CameraReadyView: View {
     /// The space the screen has.
     @State private var size = CGSize.zero
 
-    /// The height of the lens row and manual readout, measured.
+    /// The height of the lens row and drive strip, measured with the gap between them: what Q's
+    /// panel covers.
     @State private var bandsHeight: CGFloat = 0
+
+    /// The height of the lens row's controls, measured without the row's insets.
+    @State private var lensControlsHeight: CGFloat = NopeSize.minTarget
+
+    /// The height of the drive strip, measured.
+    @State private var driveStripHeight: CGFloat = NopeSize.driveRow
+
+    /// The height of the stacked layout's status line, measured.
+    @State private var statusLineHeight: CGFloat = CameraLayout.topBarHeight
 
     /// The manual control whose dial is open, or `nil`.
     @State private var openControl: ManualControl?
@@ -80,14 +111,39 @@ struct CameraReadyView: View {
     /// Whether the format sheet is shown.
     @State private var showsFormats = false
 
-    /// Whether the quick-controls tray is open.
-    @State private var showsTray = false
+    /// Whether the quick menu (Q) is open.
+    @State private var showsQuickMenu = false
+
+    /// Whether VoiceOver focus is on Q, to return it there when the quick menu closes.
+    @AccessibilityFocusState private var isQuickButtonFocused: Bool
 
     /// Whether the last photo's details are shown (issue #53).
     @State private var showsPhotoDetails = false
 
+    /// Whether VoiceOver focus is on Last Photo, to return it there when the viewer closes.
+    @AccessibilityFocusState private var isLastPhotoFocused: Bool
+
     /// Opens Photos, or `nil` when the app can't.
     @Environment(\.openPhotosApp) private var openPhotosApp
+
+    /// When the focus square and Lock fade (docs/design/device-feedback-1.0.md, section 5).
+    @State private var focusAidLinger = FocusAidLinger()
+
+    /// The time the focus aids were last judged at: set when their clock starts and when it runs
+    /// out, so nothing runs in between.
+    @State private var focusAidTime = ContinuousClock.now
+
+    /// Whether Lock is pressed or has the keyboard's focus, which holds the fade.
+    @State private var isLockHeld = false
+
+    /// Whether VoiceOver is on: the focus aids don't fade.
+    @Environment(\.accessibilityVoiceOverEnabled) private var isVoiceOverOn
+
+    /// Whether Switch Control is on: the focus aids don't fade.
+    @Environment(\.accessibilitySwitchControlEnabled) private var isSwitchControlOn
+
+    /// Whether the UI tests simulate VoiceOver or Switch Control, which the Simulator can't run.
+    @Environment(\.simulatesAssistiveTechnology) private var simulatesAssistiveTechnology
 
     /// The photos the last good save added this session, or `nil` before the first.
     @State private var sessionPhotos: [SavedPhoto]?
@@ -104,7 +160,7 @@ struct CameraReadyView: View {
     /// The rear lens to return to from the front camera.
     @State private var lastRearLensID: Lens.ID?
 
-    /// Whether the full-auto exposure dial is open (the Exposure tray item).
+    /// Whether the full-auto exposure dial is open (the Exposure item).
     @State private var showsExposureDial = false
 
     /// Whether the astro helper's settings are shown (issue #60).
@@ -113,11 +169,34 @@ struct CameraReadyView: View {
     /// Whether the presets sheet is shown (issue #72).
     @State private var showsPresets = false
 
-    /// Whether the Interval sheet is shown (the Drive menu's Interval Shooting).
+    /// Whether the how-to-use guide is shown, from its invitation card (issue #117).
+    @State private var showsGuide = false
+
+    /// The invitation to the how-to-use guide, or `nil` where the camera shows none (the Lock
+    /// Screen camera).
+    @Environment(\.guideInvitation) private var guideInvitation
+
+    /// What assistants did since the app opened, for the hint that takes the guide card's place.
+    @Environment(\.assistantSession) private var assistantSession
+
+    /// Whether the Interval sheet is shown (the selected Interval word, or the interval card).
     @State private var showsIntervalSettings = false
+
+    /// Whether Bracket Settings is shown (the selected Bracket word, or the bracket's card).
+    @State private var showsBracketSettings = false
+
+    /// The self-timer delay the Timer word chooses: the last one chosen in this session, 3
+    /// seconds at first (BUILD-SPEC.md, 3.5; not stored, section 6, item 8).
+    @State private var timerDelay = SelfTimerDelay.threeSeconds
 
     /// The viewfinder's size, to turn a touch into a point in the picture.
     @State private var viewfinderSize = CGSize.zero
+
+    /// A pinch on the viewfinder that switches lenses (issue #95).
+    @State private var pinch = ViewfinderPinch()
+
+    /// How long the lens label of a pinch stays after the fingers lift.
+    @Environment(\.lensPinchLabelSeconds) private var pinchLabelSeconds
 
     /// Creates the ready view.
     ///
@@ -126,7 +205,7 @@ struct CameraReadyView: View {
     ///   - settings: The person's settings.
     ///   - lenses: The lenses, in display order.
     ///   - openSettings: Opens Settings.
-    ///   - presets: The saved settings presets, or `nil` for no Presets tray item.
+    ///   - presets: The saved settings presets, or `nil` for no Presets item.
     init(
         model: CameraModel, settings: NopeSettings, lenses: [Lens], openSettings: @escaping () -> Void,
         presets: SettingsPresets? = nil
@@ -141,6 +220,7 @@ struct CameraReadyView: View {
     /// The registries' context.
     private var context: CameraControlContext {
         var context = CameraControlContext(model: model, settings: settings)
+        context.offersKeepScreenOn = offersKeepScreenOn
         context.showsExposureDial = $showsExposureDial
         context.presets = presets
         context.showsPresets = $showsPresets
@@ -155,8 +235,44 @@ struct CameraReadyView: View {
             isRegularSize: CameraLayout.isRegularSize(horizontal: horizontalSizeClass, vertical: verticalSizeClass))
     }
 
-    /// Whether the bands are shown: not in clean view.
+    /// Whether the controls are shown: not in clean view.
     private var showsControls: Bool { !model.isCleanView }
+
+    /// Whether a pinch on the viewfinder switches lenses now (docs/design/pinch-lens.md,
+    /// section 5): the camera's rule, and nothing of the screen's own open over the picture (Q,
+    /// a dial, a sheet), outside the scrolling layout.
+    private var pinchSwitchesLenses: Bool {
+        model.pinchSwitchesLenses(setting: settings.pinch) && layout != .scrolling && !showsQuickMenu
+            && openControl == nil && !showsExposureDial && !presentsOwnSheet
+    }
+
+    /// The lens the lens buttons show selected: the lens a pinch has reached while it is shown,
+    /// otherwise the lens in use.
+    private var shownLensID: Lens.ID? {
+        pinch.shownLens?.id ?? model.selectedLensID
+    }
+
+    /// Whether a countdown, burst, interval series or astro run is going: the shutter stops it,
+    /// and the readout row and dials give the picture to the running mode's card.
+    private var isSeriesRunning: Bool {
+        model.drive.isBusy || model.astro.isRunning || model.manual.intervalProgress != nil || model.bracketing.isRunning
+    }
+
+    /// Whether a countdown or series runs or is paused, so leaving for Photos would interrupt
+    /// it and Open Photos isn't offered (docs/design/device-feedback-1.0.md, decision 4).
+    private var isSeriesUnderWay: Bool {
+        isSeriesRunning || model.drive.countdown.isRunning || model.astro.progress != nil
+            || model.bracketing.progress != nil || model.bracketProgress != nil
+    }
+
+    /// What the shutter's disc shows: a stop square while a series runs (not a burst the
+    /// shutter holds, which ends when it comes up), the self-timer's delay while Timer is
+    /// chosen, otherwise the plain disc.
+    private var shutterFace: ShutterButton.Face {
+        if isSeriesRunning, model.drive.burstProgress?.start != .held { return .stop }
+        if !model.astro.isOn, case .timer(let delay) = model.drive.mode { return .timer(seconds: delay.seconds) }
+        return .photo
+    }
 
     /// The screen.
     var body: some View {
@@ -169,19 +285,23 @@ struct CameraReadyView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
-        // While Pro Tools covers the screen, the camera controls under it are hidden from
-        // assistive technologies, so VoiceOver reads only the form.
-        .accessibilityHidden(showsProTools)
+        // The lens controls follow the model's one rule for a lens change (issue #96).
+        .tracksLensBusy(model.lensChangeBlocker)
+        // While Pro Tools or the Last Photo viewer covers the screen, the camera controls under
+        // it are hidden from assistive technologies, so VoiceOver reads only what covers them.
+        .accessibilityHidden(showsProTools || model.isViewerOpen)
         .fullScreenCover(isPresented: $showsProTools) {
             ProToolsSheet(model: model, settings: settings)
                 .nightModeStyle(isNightMode)
         }
         .comparisonCover(model, isNightMode: isNightMode)
+        .photoViewerCover(model, isNightMode: isNightMode) { isLastPhotoFocused = true }
         .adaptivePresentation(isPresented: $showsFormats, prefersSheet: isNightMode) {
             if let format = model.captureFormat {
                 FormatDetailsSheet(
                     settings: settings, format: format,
-                    deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true)
+                    deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true,
+                    distortionCorrection: model.selectedLens?.distortionCorrection ?? .notSwitchable)
                     .nightModeStyle(isNightMode)
                     .frame(idealWidth: 420, idealHeight: 560)
                     // Opaque: a translucent sheet or popover lets the live picture through and
@@ -195,7 +315,11 @@ struct CameraReadyView: View {
         // glass, the audit reported the list's rows as low contrast and as not following Dynamic
         // Type at the largest size, and a swipe outside the small popover didn't scroll it.
         .sheet(isPresented: $showsPhotoDetails) {
-            PhotoDetailsSheet(photos: sessionPhotos ?? [], openPhoto: openPhotosApp.map { open in { open() } })
+            PhotoDetailsSheet(
+                photos: sessionPhotos ?? [], openPhoto: openPhotosApp.map { open in { open() } },
+                lenses: model.capabilities?.lenses ?? [], session: model.sessionPhotos.photos)
+                // Red on black in night mode, as every other sheet of the camera.
+                .nightModeStyle(isNightMode)
                 .presentationBackground(.background)
                 // Page sized on iPad: in the shorter form sheet the list's last rows sat at the
                 // sheet's lower edge, where the audit measured them against the dimmed camera.
@@ -228,6 +352,16 @@ struct CameraReadyView: View {
                 .presentationDetents([.large])
                 .presentationSizing(.page)
         }
+        // Bracket Settings, as Interval Settings above: full height and page sized, so the audit
+        // measures every row against the sheet (docs/design/BRACKETING.md, section 7).
+        .sheet(isPresented: $showsBracketSettings) {
+            BracketSheet(model: model)
+                .nightModeStyle(isNightMode)
+                .presentationBackground(.background)
+                .presentationDetents([.large])
+                .presentationSizing(.page)
+        }
+        .onChange(of: model.isBracketOn) { _, isOn in if !isOn { showsBracketSettings = false } }
         // The same presets list as in Settings (issue #72), a sheet for the reasons above.
         .sheet(isPresented: $showsPresets) {
             if let presets {
@@ -240,7 +374,11 @@ struct CameraReadyView: View {
                     .presentationSizing(.page)
             }
         }
-        .onChange(of: showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || showsIntervalSettings || showsPresets || model.comparison.isPresented) { _, isPresenting in presentsSheet(isPresenting) }
+        // The how-to-use guide, from its invitation card (issue #117).
+        .guideSheet(isPresented: $showsGuide, lenses: lenses)
+        .onChange(of: presentsOwnSheet) { _, isPresenting in presentsSheet(isPresenting) }
+        // Keep Screen On is used only while no sheet is over the camera (SeriesScreen).
+        .preference(key: CameraCoveredPreference.self, value: presentsOwnSheet)
         .task { await recordCaptureResults() }
         .onChange(of: model.selectedLensID, initial: true) { _, id in
             openControl = nil
@@ -251,52 +389,154 @@ struct CameraReadyView: View {
             openControl = nil
             showsExposureDial = false
         }
+        // VoiceOver focus goes back to Q when the quick menu closes (BUILD-SPEC.md, 3.6).
+        .onChange(of: showsQuickMenu) { _, isOpen in
+            if !isOpen, showsControls { isQuickButtonFocused = true }
+        }
         .onChange(of: model.isCleanView) {
-            showsTray = false
+            showsQuickMenu = false
             showsExposureDial = false
+        }
+        // A delay chosen elsewhere (Siri, a preset) becomes the one Timer chooses next; a
+        // bracket's start delay is the bracket's own.
+        .onChange(of: model.drive.mode, initial: true) { _, mode in
+            if !model.isBracketOn, case .timer(let delay) = mode { timerDelay = delay }
         }
         .onChange(of: model.manual.focusTarget?.isLocked) { wasLocked, isLocked in
             // Announced only when the lock itself changes, not on every tap.
             guard wasLocked == true || isLocked == true else { return }
             AccessibilityNotification.Announcement(FocusText.announcement(isLocked: isLocked == true)).post()
         }
-        .sensoryFeedback(.impact(weight: .light), trigger: saveCount)
-        .sensoryFeedback(.error, trigger: failureCount)
+        .sensoryFeedback(NopeHaptic.saved, trigger: saveCount)
+        .sensoryFeedback(NopeHaptic.notSaved, trigger: failureCount)
         .driveFeedback(model.drive)
-        .astroFeedback(model.astro)
+        .astroFeedback(model.astro, isNightModeOn: isNightMode)
         .announcesResourceWarnings(model)
     }
 
     // MARK: - Arrangements
 
-    /// Top bar, picture with bands, shutter row (iPhone).
+    /// Status line, picture with the rows, shutter row (iPhone).
+    ///
+    /// When the picture and the rows fit one above the other, the spare height is shared between
+    /// the gap under the lens row (``CameraLayout/rowGap(spareHeight:)``) and the shutter row,
+    /// which takes the rest with the shutter centered in it (issue #116;
+    /// docs/design/finish-1.0.md, 1.2: 94 points on a 402 × 874 point screen); otherwise the
+    /// shutter row keeps its smallest height and the rows overlay the picture. The picture keeps
+    /// its size either way.
     private var stacked: some View {
         VStack(spacing: 0) {
-            topBar
+            statusLine
                 .frame(minHeight: CameraLayout.topBarHeight)
-                .padding(.horizontal, CameraStyle.targetSpacing)
+                .padding(.horizontal, NopeSpace.m)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { statusLineHeight = $0 }
             StackedMiddle(
-                bandsHeight: bandsHeight,
-                picture: { pictureArea(clusterOverPicture: rotation.isSideways) },
-                dial: { stackedDial },
+                width: size.width, bandsOverlayPicture: bandsOverlayPicture,
+                picture: { pictureArea(isColumn: false) },
+                dial: {
+                    // Sideways, the bottom stack sits on the picture's lower edge as seen
+                    // sideways instead (pictureArea).
+                    if !rotation.isSideways, !isQuickMenuOpen { pictureBottomStack }
+                },
                 bands: {
-                    bands
-                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { bandsHeight = $0 }
+                    if isQuickMenuOpen {
+                        // Covered by Q's panel: their space is kept, and they leave the
+                        // accessibility tree, which hiding them alone didn't do for the audit.
+                        Color.clear.frame(height: bandsHeight)
+                    } else {
+                        rows
+                            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { bandsHeight = $0 }
+                    }
                 })
-            shutterRow
-                .frame(minHeight: CameraLayout.shutterRowHeight)
-                .padding(.horizontal)
+                // Q's panel covers the lens row and the drive strip, never the shutter row.
+                .overlay(alignment: .bottom) { quickMenu(rotation.isSideways ? .sideways : .stacked) }
+            shutterRow(quickSize: NopeSize.quick)
+                // Keeps the shutter 8 points below the drive strip's targets where the row is too
+                // short to center it with that gap (a 4.7-inch iPhone).
+                .padding(.top, showsControls ? CameraLayout.shutterRowTopPadding(shutterRowHeight: stackedShutterRowHeight) : 0)
+                .frame(minHeight: CameraLayout.shutterRowHeight, maxHeight: bandsOverlayPicture ? nil : .infinity)
+                .padding(.horizontal, NopeSpace.xl)
         }
     }
 
-    /// The stacked bands in a scroll view, with a shorter picture (accessibility text sizes).
+    /// The height of the lens row and the drive strip without the gap between them, in points:
+    /// zero in clean view, where they are hidden. Worked out from the measured controls and
+    /// strip rather than from the stack that holds the gap, so the gap doesn't feed back into
+    /// the spare height it comes from (docs/design/finish-1.0.md, 1.5).
+    private var stackedRowsHeight: CGFloat {
+        guard showsControls else { return 0 }
+        let lensRow = max(lensControlsHeight + 2 * CameraLayout.lensRowInset, NopeSize.lensRow)
+        return lensRow + max(driveStripHeight, NopeSize.driveRow)
+    }
+
+    /// The spare height of the stacked layout (``CameraLayout/spareHeight(in:bandsHeight:)``).
+    private var stackedSpareHeight: CGFloat {
+        CameraLayout.spareHeight(in: stackedMiddleSpace, bandsHeight: stackedRowsHeight)
+    }
+
+    /// The gap between the lens row and the drive strip (``CameraLayout/rowGap(spareHeight:)``):
+    /// zero in clean view.
+    private var stackedRowGap: CGFloat {
+        showsControls ? CameraLayout.rowGap(spareHeight: stackedSpareHeight) : 0
+    }
+
+    /// The shutter row's height in the stacked layout, in points: its smallest height and the
+    /// spare height the row gap leaves.
+    private var stackedShutterRowHeight: CGFloat {
+        CameraLayout.shutterRowHeight + max(stackedSpareHeight - stackedRowGap, 0)
+    }
+
+    /// The space between the status line and the shutter row at its smallest height, in the
+    /// stacked layout.
+    private var stackedMiddleSpace: CGSize {
+        CGSize(width: size.width, height: max(size.height - statusLineHeight - CameraLayout.shutterRowHeight, 0))
+    }
+
+    /// Whether the lens row and drive strip overlay the bottom of the picture in the stacked
+    /// layout (``CameraLayout/bandsOverlayPicture(in:bandsHeight:)``).
+    private var bandsOverlayPicture: Bool {
+        CameraLayout.bandsOverlayPicture(in: stackedMiddleSpace, bandsHeight: stackedRowsHeight)
+    }
+
+    /// How far the lens row and drive strip reach up over the picture in the stacked layout, in
+    /// points: zero when they are below it. While the iPhone is sideways, the turned status and
+    /// bottom stack run along the picture's side edges and stop this far above its lower edge, so
+    /// they never run under the rows (a 4.7-inch iPhone).
+    private var rowsOverPicture: CGFloat {
+        guard layout == .stacked else { return 0 }
+        return CameraLayout.rowsOverPicture(in: stackedMiddleSpace, bandsHeight: stackedRowsHeight)
+    }
+
+    /// The rows in a scroll view, with a shorter picture (accessibility text sizes).
     private var scrolling: some View {
         // The shutter row stays pinned below the scroll view, so the shutter is always in reach.
         VStack(spacing: 0) {
-            scrollingContent
-            shutterRow
-                .padding(.horizontal)
-                .padding(.vertical, CameraStyle.targetSpacing)
+            // Q's list takes the scrolling content's place while it is open (BUILD-SPEC.md, 3.6).
+            if showsControls, showsQuickMenu {
+                QuickMenuList(context: context, isPresented: $showsQuickMenu, openSettings: openSettings)
+                    // Q opened during a slow first start: the indicator shows the mark alone, so
+                    // its words and plate never lie over Q's rows (LAUNCH-SCREEN.md, 13.2, part 3).
+                    .preference(key: QuickMenuListIsOpen.self, value: true)
+            } else {
+                scrollingContent
+                    // During the camera's first start everything that scrolls waits: laid out,
+                    // not drawn, no touches, hidden from VoiceOver, so nothing is under the
+                    // start indicator's plate. It fades in with the indicator's fade
+                    // (docs/design/LAUNCH-SCREEN.md, 13.2, decision 9).
+                    .opacity(showsStartIndicator ? 0 : 1)
+                    .allowsHitTesting(!showsStartIndicator)
+                    .accessibilityHidden(showsStartIndicator)
+            }
+            // The pinned row is drawn from the start, so the shutter and Q are in reach during a
+            // slow start; its top edge tells the indicator how much room it has (13.2, decision 10).
+            shutterRow(quickSize: NopeSize.scrollingRowButton)
+                .padding(.horizontal, NopeSpace.m)
+                .padding(.vertical, NopeSpace.xs)
+                .background {
+                    GeometryReader { proxy in
+                        Color.clear.preference(key: PinnedRowTop.self, value: proxy.frame(in: .global).minY)
+                    }
+                }
         }
     }
 
@@ -304,189 +544,258 @@ struct CameraReadyView: View {
     private var scrollingContent: some View {
         ScrollView {
             scrollingStack
+                // Hidden here too, inside the scroll view: hidden only outside it, the rows were
+                // still found by UI tests during the first start (LAUNCH-SCREEN.md, 13.2).
+                .accessibilityHidden(showsStartIndicator)
         }
         .hardScrollEdges()
         // The viewfinder is drawn outside the scroll view (CameraScreen); this keeps it inside.
         .transformAnchorPreference(key: ViewfinderFrame.self, value: .bounds) { $0.clip = $1 }
     }
 
-    /// The scrolling layout's parts, top to bottom.
+    /// The scrolling layout's parts, top to bottom (BUILD-SPEC.md, 3.12): format status, pills,
+    /// warnings, the picture, the mode card, then Manual Controls, one row per lens, one row per
+    /// drive mode, and the manual controls list when manual controls are on.
     private var scrollingStack: some View {
-        Group {
-            VStack(spacing: 12) {
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: CameraStyle.targetSpacing) { topBarItems }
-                    VStack(spacing: CameraStyle.targetSpacing) { topBarItems }
-                }
-                warningsAndBanner(sidewaysWidth: nil)
-                // The session's message goes above the short picture here, not over it: at
-                // these text sizes it is taller than the picture and overlapped the banner and
-                // the lens buttons.
-                SessionStatusView(status: model.sessionStatus)
-                // Landscape in a wide window, where the preview turns with the interface.
-                picture(showsStatus: false)
-                    .aspectRatio(CameraLayout.pictureAspectRatio(in: size), contentMode: .fit)
-                    .frame(height: CameraLayout.scrollingPictureHeight)
-                if LiveAidsPanel.isShown(model) {
-                    LiveAidsPanel(model: model, settings: settings)
-                }
-                if showsControls, showsExposureDial {
-                    AutoExposureDial(model: model) { showsExposureDial = false }
-                }
-                if showsControls {
-                    if model.manual.isEnabled {
-                        ManualControlsList(model: model)
-                        ManualOptionsMenu(model: model, openControl: $openControl, showsProTools: $showsProTools)
-                    }
-                    VStack(spacing: CameraStyle.targetSpacing) {
-                        LensButtons(lenses: LensButtons.rear(lenses), selectedID: model.selectedLensID, isVertical: true) { select($0) }
-                        QuickControlsButton(isOpen: showsTray) { showsTray.toggle() }
-                        if showsTray {
-                            QuickControlsTray(items: QuickControls.current(context)) { showsTray = false }
-                        }
-                    }
+        VStack(alignment: .leading, spacing: NopeSpace.s) {
+            formatChip
+            StatePillRow(pills: showsControls ? StatePills.current(context) : StatePills.cleanView(context))
+            warningsAndBanner
+            // The session's message goes above the short picture here, not over it: at these
+            // text sizes it is taller than the picture and overlapped the banner and the lens
+            // buttons.
+            SessionStatusView(status: model.sessionStatus)
+            // Landscape in a wide window, where the preview turns with the interface.
+            picture(showsStatus: false)
+                .aspectRatio(CameraLayout.pictureAspectRatio(in: size), contentMode: .fit)
+                .frame(height: CameraLayout.scrollingPictureHeight)
+                .frame(maxWidth: .infinity)
+            if LiveAidsPanel.isShown(model) {
+                LiveAidsPanel(model: model, settings: settings)
+            }
+            modeCards
+            CameraHints(model: model)
+            if showsControls, showsExposureDial {
+                AutoExposureDial(model: model) { showsExposureDial = false }
+            }
+            guideCard
+            if showsControls {
+                manualControlsButton(.row)
+                LensRows(lenses: lenses, selectedID: model.selectedLensID) { select($0) }
+                driveStrip(.rows)
+                if model.manual.isEnabled {
+                    ManualControlsList(model: model)
+                    ManualOptionsMenu(model: model, openControl: $openControl, showsProTools: $showsProTools)
                 }
             }
-            .padding()
         }
+        .padding(NopeSpace.m)
     }
 
-    /// The picture beside a trailing control column (iPad, wide windows).
+    /// The picture beside a trailing control column (iPad, the iPhone Duo's inner display,
+    /// wide windows).
     private var column: some View {
         HStack(spacing: 0) {
             ZStack {
-                pictureArea(clusterOverPicture: true)
+                pictureArea(isColumn: true)
                     .aspectRatio(CameraLayout.pictureAspectRatio(in: size), contentMode: .fit)
                     .overlay(alignment: .bottom) {
-                        VStack(spacing: CameraStyle.targetSpacing) {
-                            if showsControls {
-                                if showsTray {
-                                    QuickControlsTray(items: QuickControls.current(context), wraps: true) { showsTray = false }
-                                }
-                                if showsExposureDial {
-                                    AutoExposureDial(model: model) { showsExposureDial = false }
-                                }
-                                if model.manual.isEnabled {
-                                    if let openControl {
-                                        ControlDial(model: model, control: openControl)
-                                    }
-                                    ManualReadoutRow(model: model, openControl: $openControl, showsProTools: $showsProTools)
-                                        .padding(4)
-                                        .darkBacking()
+                        VStack(spacing: NopeSpace.xs) {
+                            // Q's panel may cover them; they return when it closes.
+                            if !isQuickMenuOpen {
+                                pictureBottomStack
+                                if showsControls {
+                                    driveStrip(.backedWords)
                                 }
                             }
                         }
-                        .padding(CameraStyle.targetSpacing)
+                        .frame(maxWidth: NopeSize.pictureStackMaxWidth)
+                        .padding(NopeSpace.xs)
                     }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Q's panel opens beside the column, its bottom level with Q's.
+            .overlay(alignment: .bottomTrailing) { quickMenu(.column) }
             controlColumn
         }
     }
 
-    /// The trailing column: Settings, lenses and ⋯ at the top, the shutter centered, the camera
-    /// flip and the thumbnail at the bottom. The top part scrolls if the text is too large to
-    /// fit, and stops above the shutter: the two halves around the shutter share the height
-    /// equally, so the shutter stays centered and nothing scrolls under it, even in a short
-    /// window such as the unfolded inner display of a foldable iPhone held like a book.
+    /// The trailing column (BUILD-SPEC.md, 3.11): Settings, the lenses and Manual Controls at the
+    /// top; Q, the shutter and the last photo centered on the shutter; Switch Camera at the
+    /// bottom. The top part scrolls if the text is too large to fit, and stops above Q: the two
+    /// halves around the shutter share the height equally, so the shutter stays centered and
+    /// nothing scrolls under it, even in a short window such as the unfolded inner display of an
+    /// iPhone Duo held like a book.
+    ///
+    /// Q and Last Photo are 16 points from the shutter in a column at least 600 points tall, 8 in
+    /// a shorter one (``CameraLayout/columnShutterGap(columnHeight:)``, issue #116).
     private var controlColumn: some View {
-        VStack(spacing: CameraStyle.targetSpacing) {
-            VStack(spacing: CameraStyle.targetSpacing) {
+        VStack(spacing: CameraLayout.columnShutterGap(columnHeight: size.height)) {
+            VStack(spacing: NopeSpace.xs) {
                 if showsControls {
                     SettingsButton(action: openSettings)
                     ScrollView {
-                        VStack(spacing: CameraStyle.targetSpacing) {
-                            LensButtons(lenses: LensButtons.rear(lenses), selectedID: model.selectedLensID, isVertical: true) { select($0) }
-                            QuickControlsButton(isOpen: showsTray) { showsTray.toggle() }
+                        VStack(spacing: NopeSpace.xs) {
+                            LensButtons(lenses: LensButtons.rear(lenses), selectedID: shownLensID, isVertical: true) { select($0) }
+                            manualControlsButton(.compactCapsule)
                         }
                     }
                     .scrollBounceBehavior(.basedOnSize)
+                    Spacer(minLength: 0)
+                    quickButton(size: NopeSize.quick)
                 }
             }
             .frame(maxHeight: .infinity, alignment: .top)
             shutter
-            VStack(spacing: CameraStyle.targetSpacing) {
+            VStack(spacing: NopeSpace.xs) {
+                thumbnailOrShowControls
+                Spacer(minLength: 0)
                 if showsControls, let flip = flipTarget {
                     CameraFlipButton { select(flip) }
                 }
-                thumbnailOrShowControls
             }
             .frame(maxHeight: .infinity, alignment: .bottom)
         }
-        .frame(minWidth: ShutterButton.diameter + 2 * CameraStyle.targetSpacing)
-        .padding(.vertical)
-        .padding(.horizontal, CameraStyle.targetSpacing)
-        // The column takes the width its controls need at the current text size; the picture
-        // gets the rest.
+        .frame(minWidth: NopeSize.column)
+        .padding(.vertical, NopeSpace.m)
+        .padding(.horizontal, NopeSpace.xs)
+        // The column takes the width its controls need at the current text size, at least
+        // NopeSize.column; the picture gets the rest.
         .fixedSize(horizontal: true, vertical: false)
     }
 
-    // MARK: - Parts
+    // MARK: - Rows
 
-    /// The top bar: pills on the leading side, the format chip and Settings on the trailing side.
-    /// While the iPhone is on its side, the pills and chip move over the picture and only
-    /// Settings stays.
-    private var topBar: some View {
-        HStack(spacing: CameraStyle.targetSpacing) {
-            if rotation.isSideways {
-                Spacer(minLength: 0)
-                if showsControls {
-                    SettingsButton(action: openSettings).uprightUnit()
-                }
-            } else {
-                topBarItems
-            }
+    /// The status line of the stacked layout: format status leading, pills trailing. While the
+    /// iPhone is on its side its content moves onto the picture's upper edge, and the line
+    /// stays as a margin of the same height, hidden, so the picture doesn't move. (An empty
+    /// `Color.clear` there took a share of the free height: the picture moved down 41 points on
+    /// a 440 × 956 point iPhone, leaving the shutter 6 points below the drive strip, and on a
+    /// 4.7-inch iPhone the picture shrank to 210 × 279 points.)
+    @ViewBuilder private var statusLine: some View {
+        if rotation.isSideways {
+            statusLineContent
+                .hidden()
+                .accessibilityHidden(true)
+        } else {
+            statusLineContent
         }
     }
 
-    /// The top bar's items in portrait.
-    @ViewBuilder private var topBarItems: some View {
-        StatePillRow(pills: showsControls ? StatePills.current(context) : StatePills.cleanView(context))
-        Spacer(minLength: 0)
-        formatChip
-        if showsControls {
-            SettingsButton(action: openSettings)
+    /// The status line's content: format status leading, pills trailing.
+    private var statusLineContent: some View {
+        HStack(spacing: NopeSpace.xs) {
+            formatChip
+            Spacer(minLength: 0)
+            StatePillRow(pills: showsControls ? StatePills.current(context) : StatePills.cleanView(context))
         }
     }
 
-    /// The format chip; in clean view only its warning stays.
+    /// The format status; in clean view only its warning, the "Processed" marker, stays. When the
+    /// person turns the marker off in Settings (issue #80) it names the processed file instead,
+    /// and VoiceOver still says it is processed (``FormatChip``).
     @ViewBuilder private var formatChip: some View {
-        if let format = model.captureFormat, showsControls || !format.isBayerRAW {
-            FormatChip(format: format, savedFormats: settings.selectedFormats(deviceSupportsBayerRAW: format.isBayerRAW)) {
+        if let format = model.captureFormat,
+            FormatChip.isShown(for: format, showsControls: showsControls, showsProcessedMarker: settings.showsProcessedMarker)
+        {
+            FormatChip(
+                format: format, savedFormats: settings.selectedFormats(deviceSupportsBayerRAW: format.isBayerRAW),
+                showsProcessedMarker: settings.showsProcessedMarker
+            ) {
                 showsFormats = true
             }
         }
     }
 
-    /// The lens row (or the tray in its place) and the manual readout row.
-    @ViewBuilder private var bands: some View {
+    /// The lens row and the drive strip of the stacked layout, with the gap the spare height
+    /// gives between them (``CameraLayout/rowGap(spareHeight:)``); nothing in clean view.
+    ///
+    /// The lens controls are always at least 8 points from the drive strip's targets
+    /// (``NopeSize/targetGap``): where the spare height gives less than 2 points, as where the
+    /// rows overlay the picture, the controls move up by what is missing
+    /// (``CameraLayout/lensRowLift(rowGap:)``) and the rows keep their height.
+    @ViewBuilder private var rows: some View {
         if showsControls {
+            let lift = CameraLayout.lensRowLift(rowGap: stackedRowGap)
             VStack(spacing: 0) {
-                HStack(spacing: CameraStyle.targetSpacing) {
-                    if showsTray {
-                        QuickControlsTray(items: QuickControls.current(context)) { showsTray = false }
-                    } else {
-                        Spacer(minLength: 0)
-                        LensButtons(lenses: LensButtons.rear(lenses), selectedID: model.selectedLensID) { select($0) }
-                        Spacer(minLength: 0)
-                    }
-                    QuickControlsButton(isOpen: showsTray) { showsTray.toggle() }
-                }
-                .frame(minHeight: CameraStyle.minimumTarget)
-                .padding(.horizontal, CameraStyle.targetSpacing)
-                if model.manual.isEnabled {
-                    ManualReadoutRow(model: model, openControl: $openControl, showsProTools: $showsProTools)
-                        .padding(.horizontal, 4)
-                }
+                lensRow
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { lensControlsHeight = $0 }
+                    // The lens row's controls keep the design's gap from the picture above and the
+                    // drive strip below (CameraLayout.lensRowInset) even when they grow taller
+                    // than the row, rather than reaching its edges.
+                    .padding(.top, CameraLayout.lensRowInset - lift)
+                    .padding(.bottom, CameraLayout.lensRowInset)
+                    .frame(minHeight: NopeSize.lensRow - lift)
+                    .padding(.horizontal, NopeSpace.m)
+                    // The gap from the spare height, and the 2 points the lift took from above.
+                    .padding(.bottom, stackedRowGap + lift)
+                driveStrip(rotation.isSideways ? .symbols : .words)
+                    .frame(maxWidth: .infinity, minHeight: NopeSize.driveRow)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { driveStripHeight = $0 }
+                    .padding(.horizontal, NopeSpace.m)
             }
         }
     }
 
-    /// The shutter row: thumbnail (or Show Controls) on the leading side, the shutter in the
-    /// middle, the camera flip on the trailing side.
-    private var shutterRow: some View {
+    /// Manual Controls at the leading end, the lens group centered over the shutter, Switch
+    /// Camera at the trailing end. When the words don't fit, as with larger text, Manual Controls
+    /// shows its letter instead (A or M), as it does sideways.
+    private var lensRow: some View {
+        ViewThatFits(in: .horizontal) {
+            if !rotation.isSideways {
+                lensRow(manualPresentation: .capsule)
+            }
+            lensRow(manualPresentation: .letter)
+        }
+    }
+
+    /// The lens row with Manual Controls drawn one way.
+    ///
+    /// - Parameter manualPresentation: How Manual Controls is drawn.
+    private func lensRow(manualPresentation: ManualControlsButton.Presentation) -> some View {
+        CenteredRowLayout(spacing: NopeSpace.xs) {
+            manualControlsButton(manualPresentation)
+            LensButtons(lenses: LensButtons.rear(lenses), selectedID: shownLensID) { select($0) }
+            if let flip = flipTarget {
+                CameraFlipButton { select(flip) }
+                    .uprightUnit()
+            } else {
+                Color.clear.frame(width: 0, height: 0)
+            }
+        }
+    }
+
+    /// The Manual Controls button (issue #77): one tap turns manual controls on or off through
+    /// `CameraModel.setManualControls(_:settings:)`.
+    ///
+    /// - Parameter presentation: How it is drawn for its place.
+    private func manualControlsButton(_ presentation: ManualControlsButton.Presentation) -> some View {
+        ManualControlsButton(isOn: model.manual.isEnabled, presentation: presentation) {
+            let model = model
+            let settings = settings
+            let isOn = !model.manual.isEnabled
+            Task { await model.setManualControls(isOn, settings: settings) }
+        }
+    }
+
+    /// The drive strip.
+    ///
+    /// - Parameter presentation: How it is drawn for its place.
+    private func driveStrip(_ presentation: DriveStrip.Presentation) -> some View {
+        DriveStrip(
+            model: model, settings: settings, presentation: presentation, timerDelay: $timerDelay,
+            openIntervalSettings: { showsIntervalSettings = true },
+            openAstroSettings: { showsAstroSettings = true },
+            openBracketSettings: { showsBracketSettings = true })
+    }
+
+    /// The shutter row: the last photo (or Show Controls) on the leading side, the shutter in
+    /// the middle, Q on the trailing side, each side the same width so the shutter is centered
+    /// and the two are the same distance from it.
+    ///
+    /// - Parameter quickSize: Q's diameter.
+    private func shutterRow(quickSize: CGFloat) -> some View {
         HStack(spacing: 0) {
-            // Each side keeps its width even when empty, so the shutter stays centered.
             ZStack {
                 Color.clear.frame(width: 1, height: 1)
                 thumbnailOrShowControls
@@ -495,23 +804,71 @@ struct CameraReadyView: View {
             shutter
             ZStack {
                 Color.clear.frame(width: 1, height: 1)
-                if showsControls, let flip = flipTarget {
-                    CameraFlipButton { select(flip) }
-                        .uprightUnit()
+                if showsControls {
+                    quickButton(size: quickSize)
                 }
             }
             .frame(maxWidth: .infinity)
         }
     }
 
-    /// The shutter. Pressing it closes the tray and takes a photo.
+    /// Q: opens and closes the quick menu.
+    ///
+    /// - Parameter size: Its diameter.
+    private func quickButton(size: CGFloat) -> some View {
+        QuickButton(isOpen: showsQuickMenu, size: size) { showsQuickMenu.toggle() }
+            // Escape (or Command-Period) on a hardware keyboard closes the open menu.
+            .keyboardShortcut(showsQuickMenu ? .cancelAction : nil)
+            .accessibilityFocused($isQuickButtonFocused)
+    }
+
+    /// Whether Q's panel is open over the camera (not the scrolling layout's list).
+    private var isQuickMenuOpen: Bool {
+        showsControls && showsQuickMenu && layout != .scrolling
+    }
+
+    /// Whether holding the shutter takes a burst (docs/design/BURST.md, 3.1): not while a
+    /// series runs, which the shutter stops in every drive mode (`CameraModel.isBurstShutter`).
+    private var isBurstShutter: Bool {
+        model.isBurstShutter
+    }
+
+    /// The shutter. Pressing it closes the quick menu and takes a photo (or stops a series). In
+    /// burst mode it reports going down and coming up, so holding it takes a burst, and it has
+    /// the action Start Burst while nothing runs.
     private var shutter: some View {
-        ShutterButton(isEnabled: model.canPressShutter) {
-            showsTray = false
+        ShutterButton(
+            isEnabled: model.canPressShutter, face: shutterFace,
+            // Straight to the model, with no task in between, so a press and its release are
+            // handled in order (issue #100). The end of a touch is still sent after the camera
+            // leaves burst-shutter mode (issue #101).
+            reportsPhases: isBurstShutter,
+            onPhase: { phase, press in
+                if phase == .pressed { showsQuickMenu = false }
+                model.shutter(phase, from: .onScreen, press: press)
+            }
+        ) {
+            showsQuickMenu = false
             Task { await model.send(.capture) }
         }
         .shutterDriveValue(model)
         .accessibilityActions {
+            if isBurstShutter, !isSeriesRunning {
+                Button {
+                    Task { await model.send(.drive(.startBurst)) }
+                } label: {
+                    ModeCardText.startBurst
+                }
+            }
+            // While a burst that needs no holding runs (Start Burst, or a Burst Limit), VoiceOver,
+            // Switch Control and Voice Control can stop it from the shutter (issue #121).
+            if let burst = model.drive.burstProgress, burst.start != .held, !burst.isSaving {
+                Button {
+                    Task { await model.send(.drive(.stopBurst)) }
+                } label: {
+                    ModeCardText.stopBurst
+                }
+            }
             if model.isCleanView {
                 Button {
                     Task { await model.send(.setCleanView(false)) }
@@ -532,67 +889,203 @@ struct CameraReadyView: View {
                 photos: sessionPhotos,
                 image: sessionPhotos?.last?.thumbnail.flatMap(Image.photo),
                 isBusy: model.captureStatus == .capturing || model.captureStatus == .saving,
+                openViewer: { Task { await model.send(.setViewerOpen(true)) } },
                 openPhoto: openPhotosApp.map { open in { open() } },
-                showDetails: { showsPhotoDetails = true }
+                showDetails: { showsPhotoDetails = true },
+                isSeriesRunning: isSeriesUnderWay
             )
+            .accessibilityFocused($isLastPhotoFocused)
             .uprightUnit()
             .transition(reduceMotion ? .opacity : .move(edge: .leading).combined(with: .opacity))
-            .animation(reduceMotion ? nil : .snappy, value: sessionPhotos)
+            .animation(reduceMotion ? nil : NopeMotion.panel, value: sessionPhotos)
         }
     }
 
-    /// The picture with everything drawn over it: the session's pause message in the middle,
-    /// warnings, the failure banner and a running interval series at the top, the open dial at
-    /// the bottom.
+    // MARK: - Quick menu
+
+    /// Where Q's panel opens.
+    private enum QuickMenuPlacement {
+        /// Over the lens row and drive strip, the width of the screen less a margin.
+        case stacked
+
+        /// Upright, over the picture's part beside the controls, while the iPhone is sideways.
+        case sideways
+
+        /// Over the picture beside the control column, near Q.
+        case column
+    }
+
+    /// Q's panel in its place, while it is open.
     ///
-    /// - Parameter clusterOverPicture: Whether the pills and format chip sit over the picture's
-    ///   upper edge (iPhone on its side, iPad), rather than in the top bar.
-    private func pictureArea(clusterOverPicture: Bool) -> some View {
+    /// The panel (``QuickPanel``) closes itself through the binding; what it covers is taken out
+    /// of the layout while it is open.
+    ///
+    /// - Parameter placement: Where it opens.
+    @ViewBuilder private func quickMenu(_ placement: QuickMenuPlacement) -> some View {
+        if isQuickMenuOpen {
+            let panel = QuickPanel(context: context, isPresented: $showsQuickMenu, openSettings: openSettings)
+            switch placement {
+            case .stacked:
+                panel
+                    // At least as tall as the lens row and drive strip, which it covers.
+                    .frame(minHeight: bandsHeight, alignment: .bottom)
+                    .padding(.horizontal, NopeSpace.xs)
+                    .padding(.bottom, NopeSpace.xs)
+                    .transition(NopeMotion.panelTransition(reduceMotion: reduceMotion))
+            case .sideways:
+                panel
+                    .uprightUnit(sidewaysWidth: min(NopeSize.panelMaxWidth, sidewaysBannerWidth ?? NopeSize.panelMaxWidth))
+                    .padding(NopeSpace.xs)
+            case .column:
+                panel
+                    .frame(maxWidth: NopeSize.panelMaxWidth)
+                    .padding(.trailing, NopeSpace.xs)
+                    .padding(.top, NopeSpace.xs)
+                    // The shutter is centered in the column with Q just above it, so Q's bottom
+                    // is half the height less half the shutter and the gap above it.
+                    .padding(
+                        .bottom,
+                        max(size.height / 2 + NopeSize.shutter / 2 + CameraLayout.columnShutterGap(columnHeight: size.height), NopeSpace.xs))
+                    .transition(NopeMotion.panelTransition(reduceMotion: reduceMotion))
+            }
+        }
+    }
+
+    // MARK: - Picture
+
+    /// The picture with everything drawn over it: the session's pause message and the countdown
+    /// in the middle; the status, warnings and failure banner on the upper edge; the bottom
+    /// stack on the lower edge where the layout puts it there.
+    ///
+    /// - Parameter isColumn: Whether this is the column layout, where the format status and
+    ///   warnings sit on the top leading corner and the pills on the top trailing corner. Sideways
+    ///   on an iPhone, the status turns upright on the edge that is up, as one unit.
+    private func pictureArea(isColumn: Bool) -> some View {
         picture
             .overlay(alignment: overlayTopAlignment) {
-                VStack(alignment: .leading, spacing: CameraStyle.targetSpacing) {
-                    if clusterOverPicture {
-                        HStack(spacing: CameraStyle.targetSpacing) {
-                            StatePillRow(pills: showsControls ? StatePills.current(context) : StatePills.cleanView(context))
-                            formatChip
-                        }
-                        // At its natural width: in the iPad column layout the row was laid out
-                        // narrower than the picture's room and cut the Astro pill to "As…".
-                        .fixedSize()
+                VStack(alignment: .leading, spacing: NopeSpace.xs) {
+                    if isColumn {
+                        formatChip
+                    } else if rotation.isSideways {
+                        sidewaysStatus
                     }
-                    warningsAndBanner(sidewaysWidth: sidewaysBannerWidth)
+                    warningsAndBanner
                 }
                 .uprightUnit(sidewaysWidth: rotation.isSideways ? sidewaysBannerWidth : nil)
-                .padding(CameraStyle.targetSpacing)
+                .padding(NopeSpace.xs)
+                .padding(.bottom, isColumn ? 0 : sidewaysRowsInset)
+                // The status is on the picture here, so it gets the dark backing.
+                .environment(\.isStatusOnPicture, true)
             }
-            .overlay(alignment: .bottom) {
+            .overlay(alignment: .topTrailing) {
+                if isColumn {
+                    StatePillRow(pills: showsControls ? StatePills.current(context) : StatePills.cleanView(context))
+                        // At its natural width: in the iPad column layout the row was laid out
+                        // narrower than the picture's room and cut a pill short.
+                        .fixedSize()
+                        .padding(NopeSpace.xs)
+                        .environment(\.isStatusOnPicture, true)
+                }
+            }
+            .overlay(alignment: overlayBottomAlignment) {
+                if !isColumn, rotation.isSideways {
+                    pictureBottomStack
+                        .uprightUnit(sidewaysWidth: sidewaysBannerWidth)
+                        .padding(NopeSpace.xs)
+                        .padding(.bottom, sidewaysRowsInset)
+                }
             }
     }
 
-    /// The open dial in the stacked layout, which places it over the picture's bottom, above
-    /// the bands when they overlay the picture. The column layout puts it above the readout row.
-    @ViewBuilder private var stackedDial: some View {
-        if showsControls, let openControl, model.manual.isEnabled, !dynamicTypeSize.isAccessibilitySize {
-            ControlDial(model: model, control: openControl)
-                .uprightUnit(sidewaysWidth: sidewaysBannerWidth)
-                .padding(CameraStyle.targetSpacing)
-        } else if showsControls, showsExposureDial, !dynamicTypeSize.isAccessibilitySize {
-            AutoExposureDial(model: model) { showsExposureDial = false }
-                .uprightUnit(sidewaysWidth: sidewaysBannerWidth)
-                .padding(CameraStyle.targetSpacing)
+    /// The status on the picture while the iPhone is on its side: the format status leading;
+    /// the pills and the drive mode's name trailing.
+    private var sidewaysStatus: some View {
+        HStack(spacing: NopeSpace.xs) {
+            formatChip
+            Spacer(minLength: 0)
+            StatePillRow(pills: showsControls ? StatePills.current(context) : StatePills.cleanView(context))
+            if showsControls {
+                DriveModePill(word: DriveWord.selected(mode: model.drive.mode, isAstroOn: model.astro.isOn, isBracketOn: model.isBracketOn))
+            }
         }
+    }
+
+    /// The bottom stack on the picture's lower edge, from the top: hints, the open dial, the
+    /// running mode's card, the manual readouts (BUILD-SPEC.md, 3.1, `PictureBottomStack`). While
+    /// a series runs, the readouts and dials are hidden.
+    private var pictureBottomStack: some View {
+        VStack(spacing: NopeSpace.xs) {
+            CameraHints(model: model)
+            if showsControls, !hidesReadouts, !dynamicTypeSize.isAccessibilitySize {
+                if let openControl, model.manual.isEnabled {
+                    ControlDial(model: model, control: openControl)
+                } else if showsExposureDial {
+                    AutoExposureDial(model: model) { showsExposureDial = false }
+                }
+            }
+            modeCards
+            guideCard
+            if showsControls, model.manual.isEnabled, !hidesReadouts {
+                // Each readout is a tile with its own backing (docs/design/screens/camera-manual).
+                ManualReadoutRow(model: model, openControl: $openControl, showsProTools: $showsProTools)
+            }
+        }
+        .padding(rotation.isSideways ? 0 : NopeSpace.xs)
+    }
+
+    /// The invitation to the how-to-use guide (issue #117), while `GuideInvitation.showsCard(_:)`
+    /// says so. It never covers a control: it is one more card of the picture's lower edge.
+    @ViewBuilder private var guideCard: some View {
+        if let guideInvitation,
+            guideInvitation.showsCard(GuideCardContext(camera: model, showsOtherCard: showsOtherBottomCard))
+        {
+            GuideCard {
+                showsGuide = true
+            } dismiss: {
+                guideInvitation.dismiss()
+            }
+        }
+    }
+
+    /// Whether a card, dial or hint shows on the picture's lower edge, which takes the guide
+    /// card's place while it shows (docs/design/finish-1.0.md, 2.1): a drive mode's card, an open
+    /// dial, or a hint (hold steady, close-up, comparison, an assistant's action).
+    private var showsOtherBottomCard: Bool {
+        ModeCardState.current(model, endedBurst: nil, showsControls: showsControls) != nil
+            || openControl != nil || showsExposureDial || model.showsSteadyHint || model.closeUpLens != nil
+            || model.comparisonAppliesToNextPhoto || assistantSession?.notice != nil
+    }
+
+    /// The running or chosen mode's card (BUILD-SPEC.md, 3.5, ``ModeCards``).
+    private var modeCards: some View {
+        ModeCards(
+            model: model, showsControls: showsControls, openIntervalSettings: { showsIntervalSettings = true },
+            openAstroSettings: { showsAstroSettings = true }, openBracketSettings: { showsBracketSettings = true })
+    }
+
+    /// Whether the readouts and dials step back for a running mode's card: a series, or a
+    /// bracket being taken and saved (docs/design/BRACKETING.md, section 4).
+    private var hidesReadouts: Bool {
+        isSeriesRunning || model.bracketProgress != nil
     }
 
     /// The width text blocks wrap at while the iPhone is on its side: the picture's height,
     /// less margins, so a turned block fits across the picture.
     private var sidewaysBannerWidth: CGFloat? {
         guard rotation.isSideways else { return nil }
-        let pictureHeight = min(CameraLayout.pictureHeight(forWidth: size.width), size.height)
-        return max(pictureHeight - 4 * CameraStyle.targetSpacing, 200)
+        let pictureHeight = min(CameraLayout.pictureHeight(forWidth: size.width), size.height) - sidewaysRowsInset
+        return max(pictureHeight - 4 * NopeSpace.xs, NopeSize.minTarget * 4)
     }
 
-    /// Where the top-of-picture overlay sits: the top in portrait, or the edge that is up while
-    /// the iPhone is on its side (the physical right edge when the device's top points left).
+    /// While the iPhone is sideways, how far above the picture's lower edge the turned status and
+    /// bottom stack stop: the part of the picture under the rows (``rowsOverPicture``).
+    private var sidewaysRowsInset: CGFloat {
+        rotation.isSideways ? rowsOverPicture : 0
+    }
+
+    /// Where the top-of-picture overlay sits: the top leading corner in portrait, or the edge
+    /// that is up while the iPhone is on its side (the physical right edge when the device's top
+    /// points left).
     private var overlayTopAlignment: Alignment {
         switch rotation {
         case .portrait: .topLeading
@@ -601,16 +1094,24 @@ struct CameraReadyView: View {
         }
     }
 
+    /// Where the bottom stack sits while the iPhone is on its side: the edge that is down, the
+    /// opposite of ``overlayTopAlignment``.
+    private var overlayBottomAlignment: Alignment {
+        switch rotation {
+        case .portrait: .bottom
+        case .landscapeLeft: layoutDirection == .rightToLeft ? .trailing : .leading
+        case .landscapeRight: layoutDirection == .rightToLeft ? .leading : .trailing
+        }
+    }
+
     /// The layout direction, to place overlays on physical edges.
     @Environment(\.layoutDirection) private var layoutDirection
 
-    /// Warning chips, the failure banner and a running interval series.
-    ///
-    /// - Parameter sidewaysWidth: The wrapping width while the iPhone is on its side.
-    @ViewBuilder private func warningsAndBanner(sidewaysWidth: CGFloat?) -> some View {
+    /// Warning chips and the failure banner.
+    @ViewBuilder private var warningsAndBanner: some View {
         let warnings = CameraWarnings.current(context, lastSignature: sessionPhotos?.first(where: { $0.signature != .signed })?.signature)
         if !warnings.isEmpty {
-            HStack(spacing: CameraStyle.targetSpacing) {
+            HStack(spacing: NopeSpace.xs) {
                 ForEach(warnings) { WarningChip(warning: $0) }
             }
         }
@@ -618,24 +1119,17 @@ struct CameraReadyView: View {
             FailureBanner(
                 error: bannerError, canCapture: model.canCapture,
                 tryAgain: { Task { await model.send(.capture) } },
-                dismiss: { self.bannerError = nil })
+                dismiss: { self.bannerError = nil }, failedBracket: model.failedBracket)
         }
-        if let progress = model.manual.intervalProgress {
-            IntervalProgressView(progress: progress) {
-                Task { await model.send(.manual(.stopInterval)) }
-            }
-        }
-        DriveProgressView(model: model)
-        AstroPanel(model: model, showsControls: showsControls) { showsAstroSettings = true }
-        CameraHints(model: model)
     }
 
     /// The viewfinder with the focus square and the session's pause message over it.
     ///
     /// VoiceOver reads it as one element that names the lens and the format (AGENTS.md,
     /// "VoiceOver"), with the actions Focus on Center and Lock (or Unlock) Focus and Exposure.
-    /// Smart Invert leaves it alone. A tap focuses and exposes there (or closes the tray when it
-    /// is open), a press and hold locks, and a vertical swipe is a shortcut for clean view.
+    /// Smart Invert leaves it alone. A tap focuses and exposes there (or closes the quick menu
+    /// when it is open), a press and hold locks, and a vertical swipe is a shortcut for clean
+    /// view.
     private var picture: some View {
         picture(showsStatus: true)
     }
@@ -648,12 +1142,19 @@ struct CameraReadyView: View {
         ZStack {
             viewfinderLayer
             ViewfinderOverlays(model: model, settings: settings)
+                .transformEnvironment(\.cameraIsCovered) { $0 = $0 || presentsOwnSheet }
             if showsStatus {
                 SessionStatusView(status: model.sessionStatus)
                     .uprightUnit(sidewaysWidth: sidewaysBannerWidth)
             }
             CountdownNumber(drive: model.drive)
                 .uprightUnit()
+            LensPinchLabel(lens: pinch.shownLens)
+                // The lens row ticks for each step; in clean view, where it is hidden, the label
+                // does (docs/design/pinch-lens.md, section 4).
+                .sensoryFeedback(NopeHaptic.lensChanged, trigger: pinch.shownLens?.id) { _, new in
+                    new != nil && model.isCleanView
+                }
         }
         .clipped()
         .contentShape(.rect)
@@ -671,27 +1172,48 @@ struct CameraReadyView: View {
             // Reported outside the enlargement, so CameraScreen gets the picture's own frame and
             // enlarges the viewfinder the same way (FocusMagnifier).
             .background { Color.clear.anchorPreference(key: ViewfinderFrame.self, value: .bounds) { ViewfinderAnchors(frame: $0) } }
-            .overlay { FocusSquareLayer(model: model, part: .square) }
+            .overlay { FocusSquareLayer(model: model, part: .square, isShown: showsFocusAids) }
             .accessibilityIgnoresInvertColors()
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text("Viewfinder", bundle: .module, comment: "VoiceOver name of the live camera view."))
             .accessibilityValue(viewfinderDescription)
             .accessibilityActions { viewfinderActions }
-            .overlay { FocusSquareLayer(model: model, part: .lockButton) }
+            .overlay {
+                FocusSquareLayer(model: model, part: .lockButton, isShown: showsFocusAids) { isLockHeld = $0 }
+            }
+            // The fade of the focus square and Lock: the clock starts at each tap and each new
+            // target, and again when what held them ends; one wait until it runs out.
+            .onChange(of: model.manual.focusTarget) { restartFocusAidClock() }
+            .onChange(of: holdsFocusAids) { _, holds in
+                if !holds { restartFocusAidClock() }
+            }
+            .task(id: focusAidLinger) {
+                guard let remaining = focusAidLinger.remaining(at: .now) else { return }
+                try? await Task.sleep(for: remaining)
+                guard !Task.isCancelled else { return }
+                focusAidTime = .now
+            }
             .onGeometryChange(for: CGSize.self) { $0.size } action: { viewfinderSize = $0 }
             .contentShape(.rect)
             .modifier(
                 ViewfinderTouches(
                     allowsDrags: layout != .scrolling,
                     tap: { location in
-                        guard !showsTray else {
-                            showsTray = false
+                        guard !showsQuickMenu else {
+                            showsQuickMenu = false
                             return
                         }
                         sendFocus(at: location, locks: false)
                     },
                     hold: { sendFocus(at: $0, locks: true) },
-                    swipe: { height in Task { await model.send(.setCleanView(height > 0)) } }))
+                    swipe: { height in Task { await model.send(.setCleanView(height > 0)) } },
+                    allowsPinch: pinchSwitchesLenses,
+                    pinchChanged: { pinch.change(scale: $0, model: model, isAvailable: pinchSwitchesLenses) },
+                    pinchEnded: { pinch.end(model: model, labelSeconds: pinchLabelSeconds) }))
+            // A pinch that can no longer switch lenses (a photo started, Q opened) stops at once.
+            .onChange(of: pinchSwitchesLenses) { _, isAvailable in
+                if !isAvailable { pinch.cancel() }
+            }
             .environment(\.layoutDirection, .leftToRight)
     }
 
@@ -720,6 +1242,25 @@ struct CameraReadyView: View {
         }
     }
 
+    /// Whether something holds the focus square and Lock on screen: VoiceOver or Switch Control,
+    /// a finger or the keyboard's focus on Lock, or the scrolling layout, where touch and hold
+    /// isn't available on the picture.
+    private var holdsFocusAids: Bool {
+        isVoiceOverOn || isSwitchControlOn || simulatesAssistiveTechnology || isLockHeld || layout == .scrolling
+    }
+
+    /// Whether the focus square and Lock show now.
+    private var showsFocusAids: Bool {
+        focusAidLinger.isShown(target: model.manual.focusTarget, at: focusAidTime, isHeld: holdsFocusAids)
+    }
+
+    /// Starts the focus aids' clock again: they show for ``NopeMotion/focusAidLinger`` from now.
+    private func restartFocusAidClock() {
+        let now = ContinuousClock.now
+        focusAidLinger.restart(at: now)
+        focusAidTime = now
+    }
+
     /// Focuses and exposes at a touched location, through the magnifier when it is on.
     ///
     /// - Parameters:
@@ -734,6 +1275,8 @@ struct CameraReadyView: View {
             point = point.unmagnified(scale: FocusMagnifier.scale, anchor: FocusMagnifier.anchor(for: model.manual.focusTarget))
         }
         let target = point
+        // A tap at the same point sets the same target; the square and Lock show again anyway.
+        restartFocusAidClock()
         Task { await model.send(.auto(locks ? .lockFocusAndExposure(at: target) : .focusAndExpose(at: target))) }
     }
 
@@ -749,7 +1292,7 @@ struct CameraReadyView: View {
 
     // MARK: - Lenses
 
-    /// The lens the camera flip switches to: the front camera from a rear lens, or the rear lens
+    /// The lens Switch Camera switches to: the front camera from a rear lens, or the rear lens
     /// last used from the front camera. `nil` when the device has no front or no rear camera.
     private var flipTarget: Lens.ID? {
         guard let front = lenses.first(where: { $0.kind == .front }) else { return nil }
@@ -760,11 +1303,11 @@ struct CameraReadyView: View {
         return lastRearLensID ?? defaultRear.id
     }
 
-    /// Switches to a lens and closes the tray.
+    /// Switches to a lens and closes the quick menu.
     ///
     /// - Parameter id: The lens.
     private func select(_ id: Lens.ID) {
-        showsTray = false
+        showsQuickMenu = false
         Task { await model.send(.selectLens(id)) }
     }
 
@@ -798,7 +1341,9 @@ struct CameraReadyView: View {
 
     /// Records a capture result: a good save updates the thumbnail quietly, with a light haptic
     /// and a low-priority VoiceOver announcement, and clears the banner; a failure shows the
-    /// banner until it is dismissed or the next good save.
+    /// banner until it is dismissed or the next good save. A bracket, burst or astro run that
+    /// stopped on an error after saving some frames shows the newest of them as Last Photo,
+    /// with their badges and Not Signed warning (`CameraModel.lastPressPhotos`).
     ///
     /// - Parameter status: The new capture status.
     private func record(_ status: CaptureStatus) {
@@ -810,79 +1355,84 @@ struct CameraReadyView: View {
             announcement.accessibilitySpeechAnnouncementPriority = .low
             AccessibilityNotification.Announcement(announcement).post()
         } else if let error = CaptureMessages.error(in: status) {
+            if !model.lastPressPhotos.isEmpty { sessionPhotos = model.lastPressPhotos }
             bannerError = error
             failureCount += 1
         }
     }
 }
 
-/// The middle of the stacked layout: the whole picture with the bands below it when they fit,
-/// otherwise the bands over the bottom of the picture on a dark backing (4.7-inch iPhones). The
-/// open dial sits over the bottom of the picture, above the bands.
+/// The middle of the stacked layout: the whole picture with the rows below it when they fit,
+/// otherwise the rows over the bottom of the picture on ``NopeMaterial/rowOverlay`` (4.7-inch
+/// iPhones, the iPhone Duo's outer display). The bottom stack sits over the bottom of the
+/// picture, above the rows.
 struct StackedMiddle<Picture: View, Dial: View, Bands: View>: View {
-    /// The measured height of the bands.
-    let bandsHeight: CGFloat
+    /// The width of the picture, in points: the screen's.
+    let width: CGFloat
+
+    /// Whether the bands overlay the bottom of the picture
+    /// (``CameraLayout/bandsOverlayPicture(in:bandsHeight:)``).
+    let bandsOverlayPicture: Bool
 
     /// The picture with its overlays.
     let picture: Picture
 
-    /// The open manual dial, or nothing.
+    /// The bottom stack (hints, dial, mode card, readouts), or nothing.
     let dial: Dial
 
-    /// The lens row and the manual readout.
+    /// The lens row and the drive strip.
     let bands: Bands
-
-    /// The space between the top bar and the shutter row.
-    @State private var space = CGSize.zero
 
     /// Creates the middle.
     ///
     /// - Parameters:
-    ///   - bandsHeight: The measured height of the bands.
+    ///   - width: The width of the picture, in points.
+    ///   - bandsOverlayPicture: Whether the bands overlay the bottom of the picture.
     ///   - picture: The picture with its overlays.
-    ///   - dial: The open manual dial, or nothing.
-    ///   - bands: The lens row and the manual readout.
+    ///   - dial: The bottom stack, or nothing.
+    ///   - bands: The lens row and the drive strip.
     init(
-        bandsHeight: CGFloat, @ViewBuilder picture: () -> Picture, @ViewBuilder dial: () -> Dial,
-        @ViewBuilder bands: () -> Bands
+        width: CGFloat, bandsOverlayPicture: Bool, @ViewBuilder picture: () -> Picture,
+        @ViewBuilder dial: () -> Dial, @ViewBuilder bands: () -> Bands
     ) {
-        self.bandsHeight = bandsHeight
+        self.width = width
+        self.bandsOverlayPicture = bandsOverlayPicture
         self.picture = picture()
         self.dial = dial()
         self.bands = bands()
     }
 
-    /// The picture and the bands.
+    /// The picture and the rows: over the picture, taking the height the shutter row leaves;
+    /// or below it, at their own height, so the shutter row takes the rest.
     var body: some View {
-        Group {
-            if CameraLayout.bandsOverlayPicture(in: space, bandsHeight: bandsHeight) {
-                ZStack(alignment: .bottom) {
-                    picture
-                        .aspectRatio(1 / CameraLayout.photoAspectRatio, contentMode: .fit)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    VStack(spacing: 0) {
-                        dial
-                        bands
-                            .darkBacking(Rectangle())
-                    }
-                }
-            } else {
+        if bandsOverlayPicture {
+            ZStack(alignment: .bottom) {
+                picture
+                    .aspectRatio(1 / CameraLayout.photoAspectRatio, contentMode: .fit)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 VStack(spacing: 0) {
-                    picture
-                        .frame(width: space.width, height: CameraLayout.pictureHeight(forWidth: space.width))
-                        .overlay(alignment: .bottom) { dial }
+                    dial
                     bands
-                    Spacer(minLength: 0)
+                        .nopeBackground(.rowOverlay, in: Rectangle())
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            VStack(spacing: 0) {
+                picture
+                    .frame(width: width, height: CameraLayout.pictureHeight(forWidth: width))
+                    .overlay(alignment: .bottom) { dial }
+                bands
+            }
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onGeometryChange(for: CGSize.self) { $0.size } action: { space = $0 }
     }
 }
 
-/// Opens Settings. Its name, "Settings", is what VoiceOver reads and what Voice Control users
-/// say; the Large Content Viewer shows it at accessibility text sizes.
+/// Opens Settings: at the top of the column layout, and above the screens shown before the camera
+/// is ready. In the stacked and scrolling layouts Settings opens from Q instead. Its name,
+/// "Settings", is what VoiceOver reads and what Voice Control users say; the Large Content Viewer
+/// shows it at accessibility text sizes.
 struct SettingsButton: View {
     /// Opens Settings.
     let action: () -> Void
@@ -904,15 +1454,8 @@ struct SettingsButton: View {
             }
             .labelStyle(.iconOnly)
             .font(.title3)
-            .foregroundStyle(.white)
-            .padding(8)
-            .frame(minWidth: CameraStyle.minimumTarget, minHeight: CameraStyle.minimumTarget)
-            .background(Color(white: 0.2), in: .circle)
-            .contentShape(.circle)
         }
-        .buttonStyle(.plain)
-        .hoverEffect(.highlight)
-        .accessibilityShowsLargeContentViewer()
+        .buttonStyle(NopeIconButtonStyle())
     }
 }
 
@@ -939,14 +1482,8 @@ struct ShowControlsButton: View {
             }
             .labelStyle(.iconOnly)
             .font(.title3)
-            .foregroundStyle(.white)
-            .padding(8)
-            .frame(minWidth: ThumbnailSlot.side, minHeight: ThumbnailSlot.side)
-            .background(Color(white: 0.2), in: .circle)
-            .contentShape(.circle)
         }
-        .buttonStyle(.plain)
-        .accessibilityShowsLargeContentViewer()
+        .buttonStyle(NopeIconButtonStyle(size: NopeSize.thumbnail))
     }
 }
 

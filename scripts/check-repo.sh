@@ -17,6 +17,11 @@ if ! grep -q "@AGENTS.md" CLAUDE.md; then echo "CLAUDE.md must import AGENTS.md"
 while read -r target; do
   if [[ ! -e "$target" ]]; then echo "llms.txt links to a missing file: $target"; fail=1; fi
 done < <(grep -oE '\]\([^)#]+\)' llms.txt | sed -E 's/^\]\((.*)\)$/\1/' | grep -vE '^[a-z]+://')
+# llms.txt: every Markdown document in docs/ is listed (AGENTS.md, "Agent support"), except the
+# generated API files, which are listed by module.
+while IFS= read -r doc; do
+  if ! grep -qF "]($doc)" llms.txt; then echo "llms.txt doesn't list $doc"; fail=1; fi
+done < <(git ls-files 'docs/*.md' | grep -v '^docs/api/')
 
 # Version (AGENTS.md, "Versioning"): the app's marketing version, written into the Software tag,
 # the C2PA claim and About, is the newest release in CHANGELOG.md.

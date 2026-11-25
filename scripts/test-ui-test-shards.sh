@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Tests for scripts/ui-test-shards.sh, the classification and second-run rules of
 # scripts/ui-test-run-lib.sh, scripts/flaky-tests.sh, scripts/stop-simulator-push.sh,
-# scripts/stop-simulator-background-tasks.sh and scripts/wait-for-simulator-runtimes.sh: each
-# case builds a small tree or log and checks the result.
+# scripts/stop-simulator-background-tasks.sh, scripts/wait-for-simulator-runtimes.sh,
+# scripts/with-timeout.sh, scripts/prepare-simulator.sh and scripts/add-simulator-runtime.sh:
+# each case builds a small tree, log or stand-in and checks the result.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -217,7 +218,10 @@ STUB
 #!/usr/bin/env bash
 set -euo pipefail
 source "$lib"
-prepare() { [[ $prepare == ok ]]; }
+prepare() {
+  echo x >>"$d/prepares"
+  case $prepare in ok) true ;; once) [[ \$(wc -l <"$d/prepares") -gt 1 ]] ;; *) false ;; esac
+}
 reboot() { :; }
 tests=(-only-testing:T/C/testOne -only-testing:T/C/testTwo -only-testing:T/C/testThree)
 xcodebuild_args=(-xctestrun x)
@@ -267,6 +271,9 @@ case_job "a test failure in the second run is a test failure" 1 2 "ui-tests 1/3:
 Test Case '-[T.C testTwo]' started.
 Test Case '-[T.C testTwo]' failed (1.0 seconds)."
 case_job "preparing the Simulator fails twice: no test runs" 1 0 "Preparing the Simulator failed twice" fails 0 ""
+case_job "preparing the Simulator fails once: it is done again and the tests run" 0 1 "Preparing the Simulator failed once" once 0 "$one
+$two
+$three"
 case_job "a test cut short without a sign of the Simulator dying is not run again" 1 1 "ui-tests 1/3: Test failure" ok 65 "$one
 Test Case '-[T.C testTwo]' started.
 Restarting after unexpected exit, crash, or test timeout; summary will include totals from previous launches.
@@ -370,8 +377,11 @@ cat <<JSON
 JSON
 STUB
   chmod +x "$d/xcrun"
+  # A job that first used simctl long ago has nothing left to wait for.
+  [[ -z ${CASE_RUNTIMES_FIRST_USE:-} ]] || echo "$CASE_RUNTIMES_FIRST_USE" >"$d/first-use"
   if got=$(PATH="$d:$PATH" SIMULATOR_RUNTIMES_ON_DISK_IMAGES="com.apple.CoreSimulator.SimRuntime.watchOS-27-0" \
       SIMULATOR_RUNTIME_SETTLE_SECONDS=2 SIMULATOR_RUNTIME_POLL_SECONDS=1 SIMULATOR_RUNTIME_FIRST_LOOK_SECONDS=0 \
+      SIMULATOR_FIRST_USE_FILE="$d/first-use" \
       "$runtimes" 2>&1) && grep -q "$3" <<<"$got"; then
     echo "ok   $name"
   else
@@ -382,10 +392,118 @@ STUB
 case_runtimes "runtimes mounted as expected: no wait" \
   "/private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.abc" \
   "Simulator runtimes: mounted as expected"
+# The first poll's time is 1 second, or 2 on a busy machine.
 case_runtimes "the runtime under test on a plain disk image: wait" \
-  "/Library/Developer/CoreSimulator/Volumes/iOS_24B8117" "Simulator runtimes: waited"
+  "/Library/Developer/CoreSimulator/Volumes/iOS_24B8117" "After [0-9]* seconds: "
 case_runtimes "the wait names the runtime" \
   "/Library/Developer/CoreSimulator/Volumes/iOS_24B8117" "iOS-27-2 (24B8117) at /Library/Developer/CoreSimulator/Volumes/iOS_24B8117"
+CASE_RUNTIMES_FIRST_USE=1000 case_runtimes "a later call in the job doesn't wait again" \
+  "/Library/Developer/CoreSimulator/Volumes/iOS_24B8117" "since the job first used simctl"
 
+# A command that doesn't return is ended, with status 124; one that returns keeps its status.
+timeout="$here/with-timeout.sh"
+case_timeout() { # case_timeout "name" "want status" <seconds> <command…>
+  local name=$1 want=$2 got=0
+  shift 2
+  "$timeout" "$@" >/dev/null 2>&1 || got=$?
+  if [[ $got == "$want" ]]; then echo "ok   $name"; else echo "FAIL $name (expected $want, got $got)"; failures=$((failures + 1)); fi
+}
+case_timeout "a command that returns in time" 0 5 true
+case_timeout "a command's own failure" 3 5 bash -c 'exit 3'
+case_timeout "a command that doesn't return" 124 1 sleep 30
+case_timeout "a missing command" 127 5 /no/such/command
+started=$SECONDS
+"$timeout" 1 sleep 30 >/dev/null 2>&1 || true
+if (( SECONDS - started < 10 )); then echo "ok   the time limit ends the command"; else echo "FAIL the time limit ends the command"; failures=$((failures + 1)); fi
+
+# Finding a Simulator boots nothing; preparing one fails, within its limits, when a simctl call
+# fails. A stand-in for xcrun lists one watch Simulator and records what it is asked.
+prepare="$here/prepare-simulator.sh"
+case_prepare() { # case_prepare "name" "want exit" "want output text" "simctl boot: ok|fails" [script args…]
+  local name=$1 want=$2 text=$3 boot=$4 d got status=0
+  shift 4
+  d=$(mktemp -d)
+  cat >"$d/xcrun" <<STUB
+#!/usr/bin/env bash
+echo "\$*" >>"$d/calls"
+case "\$*" in
+  *"list devices available -j") echo '{"devices": {"com.apple.CoreSimulator.SimRuntime.watchOS-27-2": [{"name": "Watch", "udid": "WATCH-1"}]}}' ;;
+  *"list pairs -j") echo '{"pairs": {}}' ;;
+  *"runtime list -j") echo '{}' ;;
+  *"bootstatus"*) [[ $boot == ok ]] ;;
+  *"launchctl print"*) exit 1 ;;
+  *) exit 0 ;;
+esac
+STUB
+  chmod +x "$d/xcrun"
+  got=$(PATH="$d:$PATH" SIMULATOR_FIRST_USE_FILE="$d/first-use" SIMULATOR_RUNTIME_FIRST_LOOK_SECONDS=0 \
+    "$prepare" "$@" 2>&1) || status=$?
+  if [[ $status == "$want" ]] && grep -q "$text" <<<"$got" \
+      && { [[ -z ${CASE_PREPARE_NEVER:-} ]] || ! grep -q -- "$CASE_PREPARE_NEVER" "$d/calls"; }; then
+    echo "ok   $name"
+  else
+    echo "FAIL $name (exit $status): $got"; failures=$((failures + 1))
+  fi
+  rm -rf "$d"
+}
+watch="platform=watchOS Simulator,name=Watch,OS=27.2"
+CASE_PREPARE_NEVER="simctl boot" case_prepare "finding a Simulator boots nothing" 0 "udid=WATCH-1" ok --find "$watch"
+case_prepare "starting a boot doesn't wait for it" 0 "Booting Watch (WATCH-1)" fails --start "$watch"
+case_prepare "preparing boots the Simulator" 0 "Booting Watch (WATCH-1)" ok "$watch"
+case_prepare "a Simulator that doesn't finish booting fails the preparation" 1 "Booting Watch" fails "$watch"
+case_prepare "a Simulator that isn't there" 1 "no Other Simulator" ok "platform=watchOS Simulator,name=Other,OS=27.2"
+
+# An older runtime is downloaded only when it isn't installed, and a Simulator is created on it
+# only when there isn't one. Stand-ins for xcrun and xcodebuild keep the runtime's state in a
+# file: the download "installs" it unless told to fail.
+add_runtime="$here/add-simulator-runtime.sh"
+case_runtime_add() { # case_runtime_add "name" "want exit" "want output text" "installed|missing" "download: works|fails" "device: present|absent"
+  local name=$1 want=$2 text=$3 d got status=0
+  d=$(mktemp -d)
+  [[ $4 == installed ]] && touch "$d/installed"
+  [[ $6 == present ]] && touch "$d/device"
+  [[ $4 == unanswered ]] && touch "$d/unanswered"
+  cat >"$d/xcrun" <<STUB
+#!/usr/bin/env bash
+echo "\$*" >>"$d/calls"
+case "\$*" in
+  *"list runtimes -j")
+    if [[ -e "$d/unanswered" ]]; then exit 1
+    elif [[ -e "$d/installed" ]]; then
+      echo '{"runtimes": [{"platform": "iOS", "version": "26.5", "isAvailable": true, "identifier": "com.apple.CoreSimulator.SimRuntime.iOS-26-5"}]}'
+    else echo '{"runtimes": []}'; fi ;;
+  *"list devices available -j")
+    if [[ -e "$d/device" ]]; then echo '{"devices": {"com.apple.CoreSimulator.SimRuntime.iOS-26-5": [{"name": "iPhone 17 Pro", "udid": "OLD-1"}]}}'
+    else echo '{"devices": {}}'; fi ;;
+  *"simctl create"*) touch "$d/device"; echo NEW-1 ;;
+esac
+STUB
+  cat >"$d/xcodebuild" <<STUB
+#!/usr/bin/env bash
+echo "xcodebuild \$*" >>"$d/calls"
+[[ $5 == works ]] && touch "$d/installed"
+[[ $5 == works ]]
+STUB
+  chmod +x "$d/xcrun" "$d/xcodebuild"
+  [[ -z ${CASE_RUNTIME_FIRST_USE:-} ]] || echo "$CASE_RUNTIME_FIRST_USE" >"$d/first-use"
+  got=$(PATH="$d:$PATH" GITHUB_OUTPUT= SIMULATOR_FIRST_USE_FILE="$d/first-use" \
+    "$add_runtime" iOS 26.5 iPhone-17-Pro "iPhone 17 Pro" 2>&1) || status=$?
+  # The first use of simctl is noted for the runtime wait, and an earlier note is kept.
+  if [[ $status == "$want" ]] && grep -q "$text" <<<"$got" \
+      && grep -Eq "^${CASE_RUNTIME_FIRST_USE:-[0-9]+}$" "$d/first-use" \
+      && { [[ -z ${CASE_RUNTIME_NEVER:-} ]] || ! grep -q -- "$CASE_RUNTIME_NEVER" "$d/calls"; }; then
+    echo "ok   $name"
+  else
+    echo "FAIL $name (exit $status): $got"; failures=$((failures + 1))
+  fi
+  rm -rf "$d"
+}
+CASE_RUNTIME_NEVER="downloadPlatform" case_runtime_add "an installed runtime isn't downloaded again" 0 "udid=OLD-1" installed works present
+CASE_RUNTIME_NEVER="simctl create" case_runtime_add "an existing Simulator is used" 0 "udid=OLD-1" installed works present
+case_runtime_add "a missing runtime is downloaded and a Simulator created" 0 "udid=NEW-1" missing works absent
+case_runtime_add "a download that fails twice fails the step" 1 "no iOS 26.5 Simulator runtime" missing fails absent
+CASE_RUNTIME_FIRST_USE=1000 case_runtime_add "an earlier first use of simctl is kept" 0 "udid=OLD-1" installed works present
+CASE_RUNTIME_NEVER="downloadPlatform" case_runtime_add "a simctl call that fails twice says so and stops" 1 \
+  "simctl list runtimes -j failed twice" unanswered works absent
 if [[ $failures -ne 0 ]]; then echo "$failures case(s) failed"; exit 1; fi
 echo "all UI test shard tests passed"

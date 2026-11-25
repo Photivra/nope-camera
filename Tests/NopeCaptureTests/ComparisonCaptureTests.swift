@@ -30,6 +30,9 @@ actor FakeComparisonHardware: CaptureHardware, ComparisonHardware {
         try await camera.capture(plan, metadata: metadata)
     }
     func apply(_ controls: DeviceControls) async throws(CaptureError) { try await camera.apply(controls) }
+    func setFocus(lensPosition: Double) async throws(CaptureError) -> Double {
+        try await camera.setFocus(lensPosition: lensPosition)
+    }
     func setReadingsEnabled(_ enabled: Bool) async { await camera.setReadingsEnabled(enabled) }
     func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame], metadata: MetadataPlan)
         async throws(CaptureError) -> [HardwarePhoto]

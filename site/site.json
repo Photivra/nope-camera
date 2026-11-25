@@ -1,0 +1,10 @@
+{
+  "domain": "nope.photivra.com",
+  "policy": "docs/store/privacy-policy-draft.md",
+  "appStoreId": "6838151647",
+  "available": true,
+  "badge": "assets/app-store-badge.svg",
+  "repository": "https://github.com/Photivra/nope-camera",
+  "contactEmail": "hello@photivra.com",
+  "publisherUrl": "https://photivra.com/"
+}

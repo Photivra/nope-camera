@@ -1,0 +1,23 @@
+{
+  "about": "Sentences on every page: the header, the footer and the shared labels. \"claims\" as in home.json. {version}, {commit}, {commitUrl} and {copyright} are filled by the build.",
+  "text": {
+    "skip": {"md": "Skip to content", "claims": ["none"]},
+    "name": {"md": "Photivra Nope Camera", "claims": ["none"]},
+    "navLabel": {"md": "Site", "claims": ["none"]},
+    "navPrivacy": {"md": "Privacy", "claims": ["none"]},
+    "navSupport": {"md": "Support", "claims": ["none"]},
+    "navAccessibility": {"md": "Accessibility", "claims": ["none"]},
+    "navSource": {"md": "Source code", "claims": ["none"]},
+    "footHome": {"md": "Home", "claims": ["none"]},
+    "footPrivacy": {"md": "Privacy policy", "claims": ["none"]},
+    "footSupport": {"md": "Support", "claims": ["none"]},
+    "footAccessibility": {"md": "Accessibility", "claims": ["none"]},
+    "footSource": {"md": "Source code on GitHub", "claims": ["none"]},
+    "built": {"md": "Photivra Nope Camera {version}. This site was built from the public source at commit [{commit}]({commitUrl}). It sets no cookies, runs no JavaScript and loads nothing from other sites.", "claims": ["none"]},
+    "owner": {"md": "An app from [Photivra](https://photivra.com/). © {copyright}. Photivra, Nope Camera, “nope.” and the app icon are trademarks of Shackelford Creative, LLC. The source code is free software under the GNU General Public License, version 3.", "claims": ["C12"]},
+    "dng": {"md": "This product includes DNG technology under license by Adobe.", "claims": ["none"]},
+    "lastUpdated": {"md": "Last updated", "claims": ["none"]},
+    "appVersion": {"md": "App version", "claims": ["none"]},
+    "socialAlt": {"md": "nope. Photivra Nope Camera", "claims": ["none"]}
+  }
+}

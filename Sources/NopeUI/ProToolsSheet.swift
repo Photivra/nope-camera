@@ -1,11 +1,15 @@
 import NopeCore
 import SwiftUI
 
-/// The exposure mode, metering, AE and AF locks, exposure bracketing and interval shooting, in a
-/// standard form, opened from the last button of the manual controls row.
+/// The exposure mode, metering, AE and AF locks and the live aids, in a standard form, opened
+/// from More at the end of the manual readout row (docs/design/BUILD-SPEC.md, 3.4).
 ///
-/// Each section appears only when the selected lens supports it. Like the camera it covers, the
-/// sheet is dark in either system setting (``ScreenAppearance/camera``).
+/// Interval shooting and exposure bracketing are not here: the drive strip and its cards are
+/// their one home, so no second control behaves differently (docs/design/SETTINGS-PLAN.md,
+/// decision 8; docs/design/BRACKETING.md, decision 1). Each section
+/// appears only when the selected lens supports it. Like the camera it covers, the sheet is dark
+/// in either system setting (``ScreenAppearance/camera``), and it covers the whole window on
+/// every device.
 struct ProToolsSheet: View {
     /// The camera model.
     let model: CameraModel
@@ -33,22 +37,27 @@ struct ProToolsSheet: View {
     /// The form.
     var body: some View {
         NavigationStack {
-            Form {
-                if manual.exposureModes.count > 1 {
-                    exposureModeSection
-                }
-                if manual.capabilities.meteringModes.count > 1 {
-                    meteringSection
+            NopeForm {
+                if manual.exposureModes.count > 1 || manual.capabilities.meteringModes.count > 1 {
+                    // One group, as drawn (docs/design/screens/manual-pro-tools).
+                    Section {
+                        if manual.exposureModes.count > 1 {
+                            exposureModePicker
+                        }
+                        if manual.capabilities.meteringModes.count > 1 {
+                            meteringPicker
+                        }
+                    }
                 }
                 if manual.capabilities.supportsExposureLock || manual.capabilities.supportsFocusLock {
                     locksSection
                 }
-                if !manual.bracketFrameCounts.isEmpty {
-                    bracketSection
-                }
-                intervalSection
                 if let settings {
-                    Section { LiveAidToggles(settings: settings) }
+                    Section {
+                        LiveAidToggles(settings: settings)
+                    } header: {
+                        Text("Live Aids", bundle: .module, comment: "Settings section header above focus peaking, the histogram and the live camera readout.")
+                    }
                 }
                 // Done is a row of the form, not a bar button: the accessibility audit can't
                 // measure the contrast of the glass bar button.
@@ -73,33 +82,29 @@ struct ProToolsSheet: View {
     }
 
     /// The exposure mode picker: P, S, I or M, as the lens supports.
-    private var exposureModeSection: some View {
-        Section {
-            Picker(
-                selection: Binding(get: { manual.settings.exposureMode }, set: { send(.setExposureMode($0)) })
-            ) {
-                ForEach(manual.exposureModes, id: \.self) { mode in
-                    Text(verbatim: ControlText.name(mode)).tag(mode)
-                }
-            } label: {
-                Text("Exposure Mode", bundle: .module, comment: "Name of the picker for the exposure mode: P, S, I or M.")
+    private var exposureModePicker: some View {
+        Picker(
+            selection: Binding(get: { manual.settings.exposureMode }, set: { send(.setExposureMode($0)) })
+        ) {
+            ForEach(manual.exposureModes, id: \.self) { mode in
+                Text(verbatim: ControlText.name(mode)).tag(mode)
             }
-            .accessibilityIdentifier("exposure-mode")
+        } label: {
+            Text("Exposure Mode", bundle: .module, comment: "Name of the picker for the exposure mode: P, S, I or M.")
         }
+        .accessibilityIdentifier("exposure-mode")
     }
 
     /// The metering mode picker.
-    private var meteringSection: some View {
-        Section {
-            Picker(
-                selection: Binding(get: { manual.settings.metering }, set: { send(.setMetering($0)) })
-            ) {
-                ForEach(manual.capabilities.meteringModes, id: \.self) { mode in
-                    Text(verbatim: ControlText.name(mode)).tag(mode)
-                }
-            } label: {
-                Text("Metering", bundle: .module, comment: "Picker for how auto exposure measures the scene.")
+    private var meteringPicker: some View {
+        Picker(
+            selection: Binding(get: { manual.settings.metering }, set: { send(.setMetering($0)) })
+        ) {
+            ForEach(manual.capabilities.meteringModes, id: \.self) { mode in
+                Text(verbatim: ControlText.name(mode)).tag(mode)
             }
+        } label: {
+            Text("Metering", bundle: .module, comment: "Picker for how auto exposure measures the scene.")
         }
     }
 
@@ -119,97 +124,5 @@ struct ProToolsSheet: View {
                 .disabled(!manual.canLockFocus && !manual.settings.focusLocked)
             }
         }
-    }
-
-    /// The bracketing switch, frame count and step.
-    private var bracketSection: some View {
-        Section {
-            Toggle(
-                isOn: Binding(
-                    get: { manual.bracket != nil },
-                    set: { isOn in
-                        let first = manual.bracketFrameCounts[0]
-                        send(.setBracket(isOn ? BracketSettings(frameCount: first, step: 1) : nil))
-                    })
-            ) {
-                Text("Bracketing", bundle: .module, comment: "Switch for exposure bracketing: several photos at different exposures from one press.")
-            }
-            if let bracket = manual.bracket {
-                Picker(
-                    selection: Binding(
-                        get: { bracket.frameCount },
-                        set: { send(.setBracket(BracketSettings(frameCount: $0, step: bracket.step))) })
-                ) {
-                    ForEach(manual.bracketFrameCounts, id: \.self) { count in
-                        Text(verbatim: count.formatted()).tag(count)
-                    }
-                } label: {
-                    Text("Frames", bundle: .module, comment: "Picker for how many photos one bracket takes.")
-                }
-                Picker(
-                    selection: Binding(
-                        get: { bracket.step },
-                        set: { send(.setBracket(BracketSettings(frameCount: bracket.frameCount, step: $0))) })
-                ) {
-                    ForEach(BracketSettings.steps, id: \.self) { step in
-                        Text(verbatim: ControlText.step(step)).tag(step)
-                    }
-                } label: {
-                    Text("Step", bundle: .module, comment: "Picker for the exposure difference between bracketed photos.")
-                }
-            }
-        } footer: {
-            Text(
-                "Each frame is a separate single-frame photo. Nothing is merged.", tableName: "Honesty", bundle: .module,
-                comment: "Explains exposure bracketing. Must not claim more than the English: the photos are never combined.")
-        }
-    }
-
-    /// The interval, photo count, and start or stop: the same section as the Drive menu's
-    /// Interval sheet.
-    private var intervalSection: some View {
-        IntervalSection(model: model) { dismiss() }
-    }
-}
-
-/// The progress of a running interval series and a button to stop it. It stays on screen, even
-/// in clean view, until the series ends.
-struct IntervalProgressView: View {
-    /// The progress.
-    let progress: IntervalProgress
-
-    /// Stops the series.
-    let stop: () -> Void
-
-    /// Creates the progress view.
-    ///
-    /// - Parameters:
-    ///   - progress: The progress.
-    ///   - stop: Stops the series.
-    init(progress: IntervalProgress, stop: @escaping () -> Void) {
-        self.progress = progress
-        self.stop = stop
-    }
-
-    /// The count and the Stop button.
-    var body: some View {
-        HStack(spacing: 12) {
-            Group {
-                if progress.isPaused {
-                    Text("Paused: \(progress.taken) of \(progress.total) photos taken", bundle: .module, comment: "Interval shooting progress while the series is paused because the camera is paused (for example by a call) or nope. is in the background: it continues when the camera is back. Both numbers are counts of photos; the second is at least 2. Keep \"nope.\" unchanged.")
-                } else {
-                    Text("\(progress.taken) of \(progress.total) photos taken", bundle: .module, comment: "Interval shooting progress: how many photos of the series are taken so far. Both numbers are counts of photos; the second is at least 2.")
-                }
-            }
-            .font(.callout.monospacedDigit())
-            Button(role: .destructive, action: stop) {
-                Text("Stop", bundle: .module, comment: "Button that stops interval shooting.")
-                    .frame(minHeight: 44)
-            }
-            // Borderless: red on the black backing passes the contrast audit; on a bordered fill
-            // it doesn't.
-        }
-        .padding(.horizontal, 12)
-        .background(.black, in: .rect(cornerRadius: 10))
     }
 }

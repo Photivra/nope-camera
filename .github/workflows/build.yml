@@ -1,7 +1,10 @@
 name: build
 
 # Builds and tests the app on GitHub-hosted macOS runners (AGENTS.md, "Keep the repository
-# clean"). The job names are stable so they can be required status checks.
+# clean"). The job names are stable so they can be required status checks. The three UI checks,
+# `ui-tests`, `ui-tests-ipad` and `ui-tests-watch`, also accept a valid proof from the owner's
+# Mac when their shards didn't pass (scripts/check-owner-mac-proof.sh; docs/TESTING.md, "When
+# the GitHub UI runners are failing: a proof from the owner's Mac").
 #
 # Runner: the `xcode-27` image (macOS with Xcode 27), with Xcode 27.2 selected explicitly so CI
 # matches the local toolchain. See docs/TESTING.md, "Continuous integration".
@@ -23,6 +26,14 @@ env:
   SIMULATOR: platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2
   IPAD_SIMULATOR: platform=iOS Simulator,name=iPad Air 11-inch (M4),OS=27.2
   WATCH_SIMULATOR: platform=watchOS Simulator,name=Apple Watch Series 12 (46mm),OS=27.2
+  # The oldest supported versions (iOS, iPadOS and watchOS 26): the newest 26.x runtimes Apple
+  # offers, downloaded in the jobs that use them (scripts/add-simulator-runtime.sh), with a
+  # Simulator of a device those runtimes support.
+  OLDEST_OS: "26.5"
+  OLDEST_IPHONE: iPhone 17 Pro
+  OLDEST_IPHONE_TYPE: iPhone-17-Pro
+  OLDEST_WATCH: Apple Watch Series 11 (46mm)
+  OLDEST_WATCH_TYPE: Apple-Watch-Series-11-46mm
   # Every job builds against the C2PA library built from source in the c2pa-lib job, whose
   # checksum must equal the one Package.swift pins for the published asset (c2pa-lib/README.md).
   NOPE_C2PA_LIB_FROM_SOURCE: "1"
@@ -94,6 +105,28 @@ jobs:
             "$app/Extensions/NopeCaptureExtension.appex/NopeCaptureExtension" \
             "$app/PlugIns/NopeControls.appex/NopeControls" \
             "$app/Watch/NopeWatch.app/NopeWatch"
+      - name: No Debug-only tools in the Release app (docs/SECURITY_AUDIT.md, check 3)
+        shell: bash
+        run: |
+          set -euo pipefail
+          app=DerivedData-app/Build/Products/Release-iphoneos/nope.app
+          # The launch arguments of the UI-test scenarios, the simulated viewfinder still and App
+          # Store ID, the simulated phone of the watch app, the galleries, the tag check, the
+          # camera probe and debug runs exist only in Debug builds (`#if DEBUG`). `-Nope[A-Z]`
+          # covers every `-Nope…` argument: scripts/check-security.sh keeps each one at least 16
+          # bytes, since optimized Swift keeps a shorter literal out of the string section where
+          # `strings` looks. The settings argument domain (`-NopeSettings.<key>`) isn't a string in
+          # the binary. A missing or empty binary, or `strings` failing, fails the step.
+          for binary in "$app/nope" \
+                        "$app/Extensions/NopeCaptureExtension.appex/NopeCaptureExtension" \
+                        "$app/PlugIns/NopeControls.appex/NopeControls" \
+                        "$app/Watch/NopeWatch.app/NopeWatch"; do
+            [[ -s "$binary" ]] || { echo "missing or empty $binary"; exit 1; }
+            text=$(strings -a "$binary")
+            if grep -E -- '-Nope[A-Z]|NopeSimulated|NopeTagCheckRun|NopeCameraProbe|NopeArmDebugRun' <<<"$text"; then
+              echo "Debug-only tool strings in $binary"; exit 1
+            fi
+          done
       - name: A normal build fetches the published library (SwiftPM verifies the pinned checksum)
         env:
           NOPE_C2PA_LIB_FROM_SOURCE: ""
@@ -158,15 +191,16 @@ jobs:
           path: unit-tests.xcresult
           retention-days: 7
 
-  # The UI tests are built once, then run in shards: three on the iPhone Simulator and two on
+  # The UI tests are built once, then run in shards: six on the iPhone Simulator and five on
   # the iPad Simulator, each its own job. scripts/ui-test-shards.txt assigns every test to one
   # shard per device, balanced by test time measured on the runner; repo checks fail when a
   # test is in no shard or in two (docs/TESTING.md, "UI test shards"). A shard job says in its
   # summary whether a failure is a test failure or an infrastructure failure, runs an
   # infrastructure failure's unfinished tests once more, and uploads its per-test results. The iPhone and iPad Simulators run in
   # separate jobs: running both in one job stalled the test runner before the second
-  # destination's first test. The `ui-tests` and `ui-tests-ipad` jobs pass only when all their shards pass, so the
-  # required status checks keep their names.
+  # destination's first test. The `ui-tests` and `ui-tests-ipad` jobs pass when all their shards
+  # pass, or else with a valid proof from the owner's Mac, so the required status checks keep
+  # their names.
   ui-build:
     name: ui-build
     needs: c2pa-lib
@@ -190,6 +224,8 @@ jobs:
           -destination "$SIMULATOR"
           -derivedDataPath DerivedData
           CODE_SIGNING_ALLOWED=NO
+      - name: Launch screen checks of the built app
+        run: scripts/check-launch-screen.sh DerivedData/Build/Products/Debug-iphonesimulator/nope.app
       - name: Pack the test run and the apps
         run: |
           cd DerivedData/Build/Products
@@ -204,17 +240,18 @@ jobs:
           retention-days: 1
 
   ui-tests-shard:
-    name: ui-tests ${{ matrix.shard }}/3
+    name: ui-tests ${{ matrix.shard }}/6
     needs: ui-build
     runs-on: xcode-27
-    # About 44 minutes of tests on the runner and 7 of setup; on a runner that has to remount a
+    # About 93 to 102 minutes of tests by the listed times (most of them estimates, docs/TESTING.md;
+    # `scripts/ui-test-shards.sh times`) and 7 of setup; on a runner that has to remount a
     # Simulator runtime first, scripts/wait-for-simulator-runtimes.sh waits up to 12.5 more. The
     # rest is room for one second run of unfinished tests after an infrastructure failure.
-    timeout-minutes: 100
+    timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4, 5, 6]
     env:
       NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
@@ -250,29 +287,44 @@ jobs:
             ui-tests-interrupted.xcresult
           retention-days: 7
 
+  # Passes when every shard passed; otherwise only with a valid proof from the owner's Mac, a
+  # "ui-tests (owner Mac)" commit status for this commit's UI test inputs
+  # (scripts/check-owner-mac-proof.sh; docs/TESTING.md, "When the GitHub UI runners are failing:
+  # a proof from the owner's Mac").
   ui-tests:
     name: ui-tests
     needs: ui-tests-shard
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      statuses: read
     steps:
-      - name: All iPhone shards passed
-        run: '[[ "${{ needs.ui-tests-shard.result }}" == success ]]'
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: All iPhone shards passed, or a proof from the owner's Mac
+        env:
+          SHARDS: ${{ needs.ui-tests-shard.result }}
+          NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/check-owner-mac-proof.sh ui-tests "$SHARDS"
 
-  # The source link test is skipped on iPad: there the link isn't found in the Settings popover
-  # (docs/TESTING.md).
+  # The source link test is skipped on iPad: there the source link wasn't found in the Settings
+  # popover (docs/TESTING.md, issue #147). The privacy policy link test runs on iPad.
   ui-tests-ipad-shard:
-    name: ui-tests-ipad ${{ matrix.shard }}/2
+    name: ui-tests-ipad ${{ matrix.shard }}/5
     needs: ui-build
     runs-on: xcode-27
-    # About 69 minutes of tests on the runner and 7 of setup, up to 12.5 more for a runtime
-    # remount, and room for one second run of unfinished tests after an infrastructure failure.
-    timeout-minutes: 130
+    # About 117 to 124 minutes of tests by the listed times (most of them estimates;
+    # `scripts/ui-test-shards.sh times`) and 7 of setup, up to 12.5 more for a runtime remount,
+    # and room for one second run of unfinished tests after an infrastructure failure.
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3, 4, 5]
     env:
       NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
@@ -307,24 +359,46 @@ jobs:
             ui-tests-ipad-interrupted.xcresult
           retention-days: 7
 
+  # Passes when every shard passed; otherwise only with a valid proof from the owner's Mac, a
+  # "ui-tests (owner Mac)" commit status for this commit's UI test inputs
+  # (scripts/check-owner-mac-proof.sh; docs/TESTING.md, "When the GitHub UI runners are failing:
+  # a proof from the owner's Mac").
   ui-tests-ipad:
     name: ui-tests-ipad
     needs: ui-tests-ipad-shard
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      statuses: read
     steps:
-      - name: All iPad shards passed
-        run: '[[ "${{ needs.ui-tests-ipad-shard.result }}" == success ]]'
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: All iPad shards passed, or a proof from the owner's Mac
+        env:
+          SHARDS: ${{ needs.ui-tests-ipad-shard.result }}
+          NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/check-owner-mac-proof.sh ui-tests-ipad "$SHARDS"
 
   # The Apple Watch app's UI tests (issue #63), with a simulated phone and accessibility audits.
-  ui-tests-watch:
-    name: ui-tests-watch
+  # Three jobs, so the required check keeps its name: the tests ("ui-tests-watch 1/1"); the same
+  # tests on a second runner, only when the first runner was lost before the job ended (in build
+  # 44222358365 the job stopped reporting in its boot step, left no log and was cancelled after
+  # 55 minutes); and "ui-tests-watch", which passes when either of them passed. A job that ended
+  # on its runner, with a test failure or an infrastructure failure, is not run again by the
+  # second job (docs/TESTING.md, "A runner that is lost").
+  ui-tests-watch-run:
+    name: ui-tests-watch 1/1
     needs: c2pa-lib
     runs-on: xcode-27
     timeout-minutes: 45
     env:
       NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    outputs:
+      ended: ${{ steps.ended.outputs.ended }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -337,11 +411,13 @@ jobs:
         run: mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../../C2PAC.xcframework.zip)
       # The watch Simulator is named by its identifier: on the runner the name also matches the
       # iPhone paired with it, and build-for-testing stopped with "multiple devices matched".
-      # The paired iPhone Simulator is booted here too, so it boots during the build and not
-      # during the first test, whose launch then timed out (docs/TESTING.md).
-      - name: Find and boot the watch Simulator and its paired iPhone
+      # The watch and its paired iPhone start booting here, so they boot during the build, but
+      # this step doesn't wait for them and doesn't fail when a boot doesn't start: waiting for
+      # the boot is part of the test step, where it has a time limit and a failure is run again
+      # once as an infrastructure failure (docs/TESTING.md).
+      - name: Find the watch Simulator and start booting it and its paired iPhone
         id: watch
-        run: scripts/prepare-simulator.sh "$WATCH_SIMULATOR"
+        run: scripts/prepare-simulator.sh --start "$WATCH_SIMULATOR"
       - name: Build the watch app and its UI tests
         run: >
           xcodebuild build-for-testing
@@ -350,10 +426,12 @@ jobs:
           -destination "id=${{ steps.watch.outputs.udid }}"
           -derivedDataPath DerivedData
           CODE_SIGNING_ALLOWED=NO
-      # As for the iPhone and iPad shards: the app is launched once before the tests (its first
-      # launch on a Simulator that has just booted took longer than XCTest waits), a test
-      # failure is never run again, and an infrastructure failure is, once, without the tests
-      # that passed (scripts/run-watch-ui-tests.sh).
+      # Boots the watch Simulator and its paired iPhone before the tests, so the iPhone doesn't
+      # boot during the first test, whose launch then timed out. As for the iPhone and iPad
+      # shards, the app is launched once before the tests (its first launch on a Simulator that
+      # has just booted took longer than XCTest waits), a test failure is never run again, and
+      # an infrastructure failure, a failed or stuck boot included, is run again once, without
+      # the tests that passed (scripts/run-watch-ui-tests.sh).
       - name: Run the watch UI tests with accessibility audits
         run: scripts/run-watch-ui-tests.sh "$WATCH_SIMULATOR" DerivedData ui-tests-watch.xcresult
       - name: Upload the per-test results
@@ -373,6 +451,250 @@ jobs:
             ui-tests-watch.xcresult
             ui-tests-watch-interrupted.xcresult
           retention-days: 7
+      # Reached whenever the job ends on its runner, whatever its result. When the runner itself
+      # is lost, it isn't, and the job below runs the watch tests on a second runner.
+      - name: Note that the job ended on its runner
+        id: ended
+        if: always()
+        run: echo "ended=yes" >> "$GITHUB_OUTPUT"
+
+  ui-tests-watch-again:
+    name: ui-tests-watch 1/1 (second runner)
+    needs: [c2pa-lib, ui-tests-watch-run]
+    if: ${{ !cancelled() && needs.c2pa-lib.result == 'success' && needs.ui-tests-watch-run.result != 'success' && needs.ui-tests-watch-run.outputs.ended != 'yes' }}
+    runs-on: xcode-27
+    timeout-minutes: 45
+    env:
+      NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Get the C2PA library built from source
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: C2PAC.xcframework
+      - name: Unpack the C2PA library
+        run: mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../../C2PAC.xcframework.zip)
+      # The watch Simulator is named by its identifier: on the runner the name also matches the
+      # iPhone paired with it, and build-for-testing stopped with "multiple devices matched".
+      # The watch and its paired iPhone start booting here, so they boot during the build, but
+      # this step doesn't wait for them and doesn't fail when a boot doesn't start: waiting for
+      # the boot is part of the test step, where it has a time limit and a failure is run again
+      # once as an infrastructure failure (docs/TESTING.md).
+      - name: Find the watch Simulator and start booting it and its paired iPhone
+        id: watch
+        run: scripts/prepare-simulator.sh --start "$WATCH_SIMULATOR"
+      - name: Build the watch app and its UI tests
+        run: >
+          xcodebuild build-for-testing
+          -project App/NopeCamera.xcodeproj
+          -scheme NopeWatch
+          -destination "id=${{ steps.watch.outputs.udid }}"
+          -derivedDataPath DerivedData
+          CODE_SIGNING_ALLOWED=NO
+      # Boots the watch Simulator and its paired iPhone before the tests, so the iPhone doesn't
+      # boot during the first test, whose launch then timed out. As for the iPhone and iPad
+      # shards, the app is launched once before the tests (its first launch on a Simulator that
+      # has just booted took longer than XCTest waits), a test failure is never run again, and
+      # an infrastructure failure, a failed or stuck boot included, is run again once, without
+      # the tests that passed (scripts/run-watch-ui-tests.sh).
+      - name: Run the watch UI tests with accessibility audits
+        run: scripts/run-watch-ui-tests.sh "$WATCH_SIMULATOR" DerivedData ui-tests-watch.xcresult
+      - name: Upload the per-test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-results-ui-tests-watch-second-runner
+          path: ui-tests-watch-results.jsonl
+          if-no-files-found: ignore
+          retention-days: 30
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ui-tests-watch-second-runner-xcresult
+          path: |
+            ui-tests-watch.xcresult
+            ui-tests-watch-interrupted.xcresult
+          retention-days: 7
+
+  # Passes when the watch tests passed on either runner; otherwise only with a valid proof from
+  # the owner's Mac, as `ui-tests` (scripts/check-owner-mac-proof.sh).
+  ui-tests-watch:
+    name: ui-tests-watch
+    needs: [ui-tests-watch-run, ui-tests-watch-again]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      statuses: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The watch tests passed, on the first runner or on the second, or a proof from the owner's Mac
+        env:
+          SHARDS: ${{ (needs.ui-tests-watch-run.result == 'success' || needs.ui-tests-watch-again.result == 'success') && 'success' || needs.ui-tests-watch-run.result }}
+          NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/check-owner-mac-proof.sh ui-tests-watch "$SHARDS"
+
+  # The oldest supported versions, iOS and watchOS 26 (AGENTS.md, "Code"; docs/TESTING.md,
+  # "Continuous integration"), on the same Xcode 27 runner: the unit tests, the first iPhone UI
+  # test shard and the watch UI tests, each on a 26.x runtime the job downloads from Apple first
+  # (scripts/add-simulator-runtime.sh). The `oldest-os` job passes when all three pass.
+  unit-tests-oldest-os:
+    name: unit-tests (iOS 26)
+    needs: c2pa-lib
+    runs-on: xcode-27
+    # About 10 minutes to download the runtime (scripts/add-simulator-runtime.sh allows two
+    # attempts of up to 40 minutes each), up to 12.5 for the runtime wait and 20 of build and
+    # tests.
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Get the C2PA library built from source
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: C2PAC.xcframework
+      - name: Unpack the C2PA library
+        run: mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../../C2PAC.xcframework.zip)
+      - name: Add the iOS 26 Simulator runtime and an iPhone on it
+        id: iphone
+        run: scripts/add-simulator-runtime.sh iOS "$OLDEST_OS" "$OLDEST_IPHONE_TYPE" "$OLDEST_IPHONE"
+      # Before the tests boot the Simulator, as in the UI test jobs: a runtime the runner remounts
+      # later would end the Simulator under the tests (docs/TESTING.md).
+      - name: Wait for the Simulator runtimes to settle
+        run: scripts/wait-for-simulator-runtimes.sh
+      - name: Build and test NopeKit on iOS 26
+        run: >
+          xcodebuild test
+          -scheme NopeKit-Package
+          -destination "id=${{ steps.iphone.outputs.udid }}"
+          -derivedDataPath DerivedData
+          -resultBundlePath unit-tests-oldest-os.xcresult
+          CODE_SIGNING_ALLOWED=NO
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: unit-tests-oldest-os-xcresult
+          path: unit-tests-oldest-os.xcresult
+          retention-days: 7
+
+  ui-tests-oldest-os:
+    name: ui-tests 1/6 (iOS 26)
+    needs: ui-build
+    runs-on: xcode-27
+    # The iPhone shard's 150 minutes, and about 10 to download the runtime.
+    timeout-minutes: 160
+    env:
+      NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Get the build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ui-tests-build
+      - name: Unpack the build
+        run: mkdir -p products && tar -xzf ui-tests-build.tgz -C products
+      - name: Add the iOS 26 Simulator runtime and an iPhone on it
+        run: scripts/add-simulator-runtime.sh iOS "$OLDEST_OS" "$OLDEST_IPHONE_TYPE" "$OLDEST_IPHONE"
+      # The same script as the iOS 27 shards, on the iOS 26 iPhone (SIMULATOR_OS).
+      - name: Run the first iPhone UI test shard with accessibility audits on iOS 26
+        run: SIMULATOR_OS="$OLDEST_OS" scripts/run-ui-test-shard.sh 1 "$OLDEST_IPHONE" products ui-tests-oldest-os.xcresult
+      - name: Upload the per-test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-results-ui-tests-oldest-os
+          path: ui-tests-oldest-os-results.jsonl
+          if-no-files-found: ignore
+          retention-days: 30
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ui-tests-oldest-os-xcresult
+          path: |
+            ui-tests-oldest-os.xcresult
+            ui-tests-oldest-os-interrupted.xcresult
+          retention-days: 7
+
+  ui-tests-watch-oldest-os:
+    name: ui-tests-watch (watchOS 26)
+    needs: c2pa-lib
+    runs-on: xcode-27
+    # The watch job's 45 minutes, about 10 to download the runtime and up to 12.5 for the
+    # runtime wait (scripts/wait-for-simulator-runtimes.sh, through prepare-simulator.sh).
+    timeout-minutes: 70
+    env:
+      NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Get the C2PA library built from source
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: C2PAC.xcframework
+      - name: Unpack the C2PA library
+        run: mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../../C2PAC.xcframework.zip)
+      # The watch app runs with a simulated phone (-NopeSimulatedPhone), so the watch needs no
+      # paired iPhone.
+      - name: Add the watchOS 26 Simulator runtime and a watch on it
+        id: watch
+        run: scripts/add-simulator-runtime.sh watchOS "$OLDEST_OS" "$OLDEST_WATCH_TYPE" "$OLDEST_WATCH"
+      - name: Start booting the watch Simulator
+        run: scripts/prepare-simulator.sh --start "platform=watchOS Simulator,name=$OLDEST_WATCH,OS=$OLDEST_OS"
+      - name: Build the watch app and its UI tests
+        run: >
+          xcodebuild build-for-testing
+          -project App/NopeCamera.xcodeproj
+          -scheme NopeWatch
+          -destination "id=${{ steps.watch.outputs.udid }}"
+          -derivedDataPath DerivedData
+          CODE_SIGNING_ALLOWED=NO
+      - name: Run the watch UI tests with accessibility audits on watchOS 26
+        run: >
+          scripts/run-watch-ui-tests.sh "platform=watchOS Simulator,name=$OLDEST_WATCH,OS=$OLDEST_OS"
+          DerivedData ui-tests-watch-oldest-os.xcresult
+      - name: Upload the per-test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-results-ui-tests-watch-oldest-os
+          path: ui-tests-watch-oldest-os-results.jsonl
+          if-no-files-found: ignore
+          retention-days: 30
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ui-tests-watch-oldest-os-xcresult
+          path: |
+            ui-tests-watch-oldest-os.xcresult
+            ui-tests-watch-oldest-os-interrupted.xcresult
+          retention-days: 7
+
+  oldest-os:
+    name: oldest-os
+    needs: [unit-tests-oldest-os, ui-tests-oldest-os, ui-tests-watch-oldest-os]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: The unit, UI and watch tests passed on iOS and watchOS 26
+        run: >
+          [[ "${{ needs.unit-tests-oldest-os.result }}" == success
+          && "${{ needs.ui-tests-oldest-os.result }}" == success
+          && "${{ needs.ui-tests-watch-oldest-os.result }}" == success ]]
 
   # External validators on the pipeline-generated fixtures (issue #58): c2patool and exiftool
   # -validate, both maintainer-approved (security/allowed-dependencies.txt). They are installed

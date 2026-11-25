@@ -5,7 +5,7 @@ import Observation
 /// Screen and in the Dynamic Island (issue #64), and asks for time to finish saving when the app
 /// leaves the foreground.
 ///
-/// The app owns one for its lifetime, runs ``observe(_:)`` while the camera screen is shown, and
+/// The app owns one for its lifetime, runs ``observe(_:notifications:)`` while the camera screen is shown, and
 /// keeps ``isEnabled`` (the Settings switch, off by default), ``isInForeground``, ``isActive``
 /// and ``isNightMode`` current. The coordinator follows the camera model; it holds no camera
 /// rules.
@@ -16,9 +16,10 @@ import Observation
 ///   Live Activities.
 /// - **Updates:** local only, no push and no network. While the app is in the foreground the
 ///   activity isn't on screen, so a change of the counts alone is sent at most every
-///   ``minimumUpdateInterval``; a change of phase, and the content when the app leaves the
-///   foreground, are sent at once. A countdown is drawn by the system from its end time, with no
-///   updates (AGENTS.md, "Battery": no timers that keep running).
+///   ``minimumUpdateInterval``, measured on the monotonic clock (issue #125); a change of phase,
+///   the content when the app leaves the foreground, and the dates after a change of the
+///   device's clock (``clockChanged(_:)``) are sent at once. A countdown is drawn by the system
+///   from its end time, with no updates (AGENTS.md, "Battery": no timers that keep running).
 /// - **End:** when the run ends, at once if the app is in the foreground, where the camera screen
 ///   says how it went; otherwise its final content stays on the Lock Screen for
 ///   ``endedActivityDuration``. Stop on the activity ends it at once (``stopSeries(_:)``).
@@ -59,8 +60,13 @@ public final class LiveActivityCoordinator {
     /// The content of the activity shown now, or `nil` when none is shown.
     @ObservationIgnored public private(set) var shown: LiveActivityContent?
 
-    /// When the shown activity was last started or updated.
-    @ObservationIgnored private var lastSent = Date.distantPast
+    /// When the shown activity was last started or updated, on the monotonic clock, so a change
+    /// of the device's time can't hold back or hurry the next update (issue #125).
+    @ObservationIgnored private var lastSent: ContinuousClock.Instant
+
+    /// Whether the content is being sent again because the device's clock changed
+    /// (``clockChanged(_:)``), so an update with only its dates changed goes out at once.
+    @ObservationIgnored private var resendsDates = false
 
     /// Whether the system refused to start an activity for the run that runs now, so it isn't
     /// asked again until that run ends.
@@ -78,35 +84,63 @@ public final class LiveActivityCoordinator {
     /// Asks for time to finish saving.
     @ObservationIgnored private let backgroundTime: any BackgroundTimeRequesting
 
-    /// Reads the current time.
-    @ObservationIgnored private let now: () -> Date
+    /// The clock: the camera model's (``CameraModel/clock``), so both read the same time.
+    @ObservationIgnored private let clock: NopeClock
 
     /// Creates a coordinator with no activity shown.
     ///
     /// - Parameters:
     ///   - presenter: Shows the activity.
     ///   - backgroundTime: Asks for time to finish saving.
-    ///   - now: Reads the current time. Tests pass their own.
+    ///   - clock: The clock, the same as the camera model's. ``NopeClock/system`` by default;
+    ///     tests pass one they move.
     public init(
         presenter: any LiveActivityPresenting, backgroundTime: any BackgroundTimeRequesting,
-        now: @escaping () -> Date = Date.init
+        clock: NopeClock = .system
     ) {
         self.presenter = presenter
         self.backgroundTime = backgroundTime
-        self.now = now
+        self.clock = clock
+        lastSent = clock.now()
     }
 
     /// Follows the model until the calling task is cancelled: applies every change of the model
     /// or of ``isEnabled``, ``isInForeground``, ``isActive`` and ``isNightMode`` as it happens.
     /// Nothing polls; it waits for Observation's change notifications.
     ///
-    /// - Parameter model: The camera model.
-    public func observe(_ model: CameraModel) async {
+    /// While it follows the model it also listens for the system's notice that the device's clock
+    /// changed (`NSSystemClockDidChange`), and then sends the content again (``clockChanged(_:)``).
+    ///
+    /// - Parameters:
+    ///   - model: The camera model.
+    ///   - notifications: Where the clock-change notice is posted: the default center, or a
+    ///     test's own.
+    public func observe(_ model: CameraModel, notifications: NotificationCenter = .default) async {
+        let clockChanges = notifications.addObserver(
+            forName: .NSSystemClockDidChange, object: nil, queue: .main
+        ) { _ in
+            MainActor.assumeIsolated { self.clockChanged(model) }
+        }
+        defer { notifications.removeObserver(clockChanges) }
         let (changes, continuation) = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
         track(model, continuation: continuation)
         for await _ in changes {
             track(model, continuation: continuation)
         }
+    }
+
+    /// Sends the shown activity's content again after the device's clock changed, when it holds a
+    /// date: a countdown's end or a timed series' time. iOS draws those from absolute dates, which
+    /// are stale after the change; the content's dates are worked out again from the monotonic
+    /// clock, so the time left the activity shows is right at once (issue #125). Nothing is sent
+    /// for an activity without dates.
+    ///
+    /// - Parameter model: The camera model.
+    public func clockChanged(_ model: CameraModel) {
+        guard shown?.hasDates == true else { return }
+        resendsDates = true
+        defer { resendsDates = false }
+        apply(model)
     }
 
     /// Applies the model's state once, and asks to hear of the next change.
@@ -122,13 +156,16 @@ public final class LiveActivityCoordinator {
         }
     }
 
-    /// Stops the interval series or astro run from the activity's Stop button, and ends the
+    /// Stops the interval series, astro run or focus bracket from the activity's Stop button, and ends the
     /// activity at once, with every photo already taken saved.
     ///
     /// - Parameter model: The camera model.
     public func stopSeries(_ model: CameraModel) async {
         await model.send(.manual(.stopInterval))
         await model.send(.astro(.stop))
+        // A focus bracket stops after its current frame, or before its first; sent only for its
+        // own activity, since the same intent also cancels a countdown.
+        if shown?.kind == .focusBracket { await model.send(.bracket(.stop)) }
         guard let shown else { return }
         presenter.end(model.liveActivityOutcome(after: shown), dismissal: .immediate)
         self.shown = nil
@@ -139,7 +176,7 @@ public final class LiveActivityCoordinator {
     /// - Parameter model: The camera model.
     func apply(_ model: CameraModel) {
         applyBackgroundTime(model)
-        var content = model.liveActivityContent(continuing: shown?.kind, isInForeground: isInForeground, now: now())
+        var content = model.liveActivityContent(continuing: shown?.kind, isInForeground: isInForeground, now: clock.date())
         content?.isNightMode = isNightMode
         if content?.phase == .saving, backgroundTimeRanOut { content?.phase = .savingPaused }
         if content == nil { wasRefused = false }
@@ -173,7 +210,7 @@ public final class LiveActivityCoordinator {
             return
         }
         shown = content
-        lastSent = now()
+        lastSent = clock.now()
     }
 
     /// Ends the shown activity with its run's final content.
@@ -185,7 +222,7 @@ public final class LiveActivityCoordinator {
         var outcome = model.liveActivityOutcome(after: shown)
         outcome.isNightMode = isNightMode
         let dismissal: LiveActivityDismissal =
-            isInForeground ? .immediate : .after(now().addingTimeInterval(Self.endedActivityDuration))
+            isInForeground ? .immediate : .after(clock.date().addingTimeInterval(Self.endedActivityDuration))
         presenter.end(outcome, dismissal: dismissal)
         self.shown = nil
     }
@@ -198,13 +235,14 @@ public final class LiveActivityCoordinator {
     private func update(_ shown: LiveActivityContent, to content: LiveActivityContent) {
         let changesOnlyCounts =
             content.phase == shown.phase && content.total == shown.total && content.isNightMode == shown.isNightMode
-        if changesOnlyCounts {
+        if changesOnlyCounts, !resendsDates {
             guard content.taken != shown.taken || content.saved != shown.saved else { return }
-            guard !isInForeground || now().timeIntervalSince(lastSent) >= Self.minimumUpdateInterval else { return }
+            let sinceLast = clock.now() - lastSent
+            guard !isInForeground || sinceLast >= .seconds(Self.minimumUpdateInterval) else { return }
         }
         presenter.update(content)
         self.shown = content
-        lastSent = now()
+        lastSent = clock.now()
     }
 
     /// Holds time to finish saving while the app is out of the foreground with photos still being

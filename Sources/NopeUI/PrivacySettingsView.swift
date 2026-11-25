@@ -1,13 +1,15 @@
 import NopeCore
 import SwiftUI
 
-/// The metadata switches, the signing switch and the locked items, as in `docs/PRIVACY.md`,
-/// "Metadata plan".
+/// Details in Each Photo: the metadata switches and the locked items, as in `docs/PRIVACY.md`,
+/// "Metadata plan" (`docs/design/BUILD-SPEC.md`, 3.10; it replaces Choose Details and the
+/// master switch that was also on the Settings list).
 ///
-/// The master switch comes first, then one switch per optional item with what turning it off
-/// costs, then the Standard File Tags switch (outside the master switch, on by default), then the
-/// items every file keeps, each marked locked with the reason. The signing switch
-/// is on the Settings screen itself, outside the master switch. All wording is a privacy claim, so it lives in
+/// Sections, in order: Remove All Optional Details with its explanation; Location, with the
+/// access notice and Open Settings under it when access is refused; Other Details, one switch
+/// per other optional item with what turning it off costs; Standard File Tags (outside the
+/// master switch, on by default); Always Saved, the items every file keeps, each locked with the
+/// reason. The signing switch is on the Settings list itself, outside the master switch. All wording is a privacy claim, so it lives in
 /// `Honesty.xcstrings` (AGENTS.md, "Honesty wording is kept apart"). The rules are in
 /// `MetadataSettings`; this view only shows them.
 struct PrivacySettingsView: View {
@@ -21,6 +23,9 @@ struct PrivacySettingsView: View {
     /// Opens the app's page in the Settings app, where location access can be allowed.
     @Environment(\.openAppSettings) private var openAppSettings
 
+    /// Where Settings is, to scroll to a row search opened, or `nil`.
+    @Environment(SettingsNavigation.self) private var navigation: SettingsNavigation?
+
     /// Creates the privacy settings.
     ///
     /// - Parameters:
@@ -33,20 +38,24 @@ struct PrivacySettingsView: View {
 
     /// The form.
     var body: some View {
-        Form {
+        NopeForm {
             masterSection
+            if location != nil {
+                locationSection
+            }
             itemsSection
             standardTagsSection
             lockedSection
         }
         .navigationTitle(Self.title)
+        .modifier(SettingsScrollTarget(navigation: navigation, page: .details))
         .task { await location?.refreshAccess() }
     }
 
-    /// The items whose switches are shown: every offered item, without Location when there is no
-    /// location service.
-    private var shownItems: [MetadataItem] {
-        MetadataItem.offeredInSettings.filter { $0 != .location || location != nil }
+    /// The items under Other Details: every offered item but Location, which has its own
+    /// section.
+    private var otherItems: [MetadataItem] {
+        MetadataItem.offeredInSettings.filter { $0 != .location }
     }
 
     /// Turns an item on or off. Location is turned on through ``LocationTagging/turnOn(in:)``,
@@ -93,9 +102,9 @@ struct PrivacySettingsView: View {
             }
     }
 
-    /// The settings row and screen title, "Choose Details".
+    /// The settings row and screen title, "Details in Each Photo".
     static var title: Text {
-        Text("Choose Details", tableName: "Honesty", bundle: .module, comment: "Settings row and screen title: choose which optional details, such as the date or camera model, are saved in each photo.")
+        Text(SettingsText.details)
     }
 
     /// "Remove all optional details".
@@ -106,8 +115,9 @@ struct PrivacySettingsView: View {
                     get: { settings.metadata.removesAllOptionalDetails },
                     set: { settings.setRemovesAllOptionalDetails($0) })
             ) {
-                Text("Remove All Optional Details", tableName: "Honesty", bundle: .module, comment: "Master switch: when on, photos keep only the details they need to open.")
+                Text(SettingsText.removeAll)
             }
+            .settingsRow(.detailsRemoveAll)
         } footer: {
             Text(
                 "On: each photo keeps only what it needs to open. Off: choose each item below.", tableName: "Honesty", bundle: .module,
@@ -115,24 +125,45 @@ struct PrivacySettingsView: View {
         }
     }
 
-    /// One switch per optional item, each with what turning it off costs.
-    private var itemsSection: some View {
+    /// An optional item's switch, with what turning it off costs.
+    ///
+    /// - Parameter item: The item.
+    private func itemToggle(_ item: MetadataItem) -> some View {
+        Toggle(
+            isOn: Binding(
+                get: { settings.metadata.isOn(item) },
+                set: { set(item, isOn: $0) })
+        ) {
+            SettingLabel(title: Text(Self.title(of: item)), explanation: Text(Self.explanation(of: item)))
+        }
+        .accessibilityIdentifier(SettingsID.details(item)?.rawValue ?? "")
+        .id(SettingsID.details(item))
+    }
+
+    /// The Location switch in its own section, with why it can't be turned on and how to allow
+    /// it right under it.
+    private var locationSection: some View {
         Section {
-            ForEach(shownItems, id: \.self) { item in
-                Toggle(
-                    isOn: Binding(
-                        get: { settings.metadata.isOn(item) },
-                        set: { set(item, isOn: $0) })
-                ) {
-                    SettingLabel(title: Text(Self.title(of: item)), explanation: Text(Self.explanation(of: item)))
-                }
-                // Right under the Location switch: why it can't be turned on, and how to allow it.
-                if item == .location, let location, location.access == .denied || location.access == .restricted {
-                    locationAccessRows(location.access)
-                }
+            itemToggle(.location)
+            if let location, location.access == .denied || location.access == .restricted {
+                locationAccessRows(location.access)
             }
         } header: {
-            Text("In Each Photo", tableName: "Honesty", bundle: .module, comment: "Section header above the switches for optional details saved in each photo.")
+            Text(
+                String(
+                    localized: "Details in each photo: Location", defaultValue: "Location", table: "Honesty", bundle: .module,
+                    comment: "Section header above the Location switch on Details in Each Photo (its own key: Location is also the switch's name)."))
+        }
+    }
+
+    /// One switch per other optional item, each with what turning it off costs.
+    private var itemsSection: some View {
+        Section {
+            ForEach(otherItems, id: \.self) { item in
+                itemToggle(item)
+            }
+        } header: {
+            Text("Other Details", tableName: "Honesty", bundle: .module, comment: "Section header on Details in Each Photo, above the switches for the optional details other than Location.")
         }
     }
 
@@ -147,12 +178,13 @@ struct PrivacySettingsView: View {
                     set: { settings.setWritesStandardFileTags($0) })
             ) {
                 SettingLabel(
-                    title: Text("Standard File Tags", tableName: "Honesty", bundle: .module, comment: "Switch: files carry the fixed tags the photo file standard (Exif) asks for, such as version numbers and the color space."),
+                    title: Text(SettingsText.standardFileTags),
                     explanation: Text(
-                        "Fixed values the file standard asks for, such as version numbers and the color space. They say nothing about you, your phone or the photo. On by default.",
+                        "Fixed values the file standard asks for, such as version numbers and the color space. Nothing in them identifies you or your phone.",
                         tableName: "Honesty", bundle: .module,
                         comment: "Explains the Standard File Tags switch. Must not claim more than the English."))
             }
+            .settingsRow(.detailsStandardFileTags)
         }
     }
 
@@ -170,21 +202,26 @@ struct PrivacySettingsView: View {
                 .accessibilityValue(Text("Locked", tableName: "Honesty", bundle: .module, comment: "VoiceOver: this detail is always saved and can't be turned off."))
             }
         } header: {
-            Text("Always Saved", tableName: "Honesty", bundle: .module, comment: "Section header above the details every photo keeps.")
+            Text(SettingsText.alwaysSaved)
+                .id(SettingsID.detailsAlwaysSaved)
+                .accessibilityIdentifier(SettingsID.detailsAlwaysSaved.rawValue)
         } footer: {
             Text(
-                "A photo can't be opened or shown correctly without these. None of them identify you or link your photos.",
+                "A photo can't be opened or shown correctly without these. They describe the camera's sensor and color, not you.",
                 tableName: "Honesty", bundle: .module, comment: "Explains why the locked details are always saved. Must not claim more than the English.")
         }
     }
 
-    /// The settings row's value: "All Removed" or "Custom".
+    /// The settings row's value: "All Optional Removed", "Custom, Location On" or "Custom", so
+    /// the list answers whether a location is written without opening the page.
     ///
     /// - Parameter metadata: The metadata settings.
     /// - Returns: The summary text.
     static func summary(of metadata: MetadataSettings) -> Text {
         if metadata.removesAllOptionalDetails {
             Text("All Optional Removed", tableName: "Honesty", bundle: .module, comment: "Settings row value: the master switch is on and no optional details are saved.")
+        } else if metadata.isOn(.location) {
+            Text("Custom, Location On", tableName: "Honesty", bundle: .module, comment: "Value of the Details in Each Photo row in Settings: the details are chosen one by one, and Location is one of them. One whole value, not Custom joined to another phrase.")
         } else {
             Text("Custom", tableName: "Honesty", bundle: .module, comment: "Settings row value: the person chose the optional details one by one.")
         }
@@ -194,7 +231,7 @@ struct PrivacySettingsView: View {
     ///
     /// - Parameter item: The item.
     /// - Returns: A localized title from `Honesty.xcstrings`.
-    static func title(of item: MetadataItem) -> LocalizedStringResource {
+    nonisolated static func title(of item: MetadataItem) -> LocalizedStringResource {
         switch item {
         case .location: LocalizedStringResource("Location", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "Metadata item: where the photo was taken.")
         case .dateAndTime: LocalizedStringResource("Date and Time Taken", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "Metadata item.")
@@ -222,15 +259,15 @@ struct PrivacySettingsView: View {
         case .dateAndTime: LocalizedStringResource("Off: Photos sorts it by the date it was saved instead.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the date costs. Photos is the system photo library app.")
         case .subSecondTime: LocalizedStringResource("Off: nothing visible changes.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off a metadata item costs: nothing the person can see.")
         case .timeZone: LocalizedStringResource("Off: the photo's local time can't be converted to other time zones.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the time zone costs.")
-        case .cameraMakeAndModel: LocalizedStringResource("Off: apps can't show which device took it.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the camera model costs.")
-        case .lensMakeAndModel: LocalizedStringResource("Off: apps can't show which lens took it.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the lens model costs.")
+        case .cameraMakeAndModel: LocalizedStringResource("Off: the file doesn't name the device.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the camera model costs.")
+        case .lensMakeAndModel: LocalizedStringResource("Off: the file doesn't name the lens.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the lens model costs.")
         case .exactCameraModel: LocalizedStringResource("Off: some RAW editors can't choose their color profile for this camera and use the file's own color data instead. The DNG standard requires this item, so nope. writes a generic value instead.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the exact model costs. RAW and DNG are file format names. Keep \"nope.\" unchanged.")
-        case .lensCorrections: LocalizedStringResource("Off: editors can't automatically correct this lens's distortion and vignetting. The pixels are never corrected either way.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off lens correction instructions costs.")
+        case .lensCorrections: LocalizedStringResource("Off: editors can't automatically correct this lens's distortion and vignetting. The RAW's pixels are never corrected either way.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off lens correction instructions costs.")
         case .exposureSettings: LocalizedStringResource("Shutter speed, ISO, aperture and focal length. Off: you can't see later how the photo was taken.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What the exposure settings are, and what turning them off costs.")
         case .systemVersion: LocalizedStringResource("Off: nothing visible changes.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off a metadata item costs: nothing the person can see.")
         case .makerNotes: LocalizedStringResource("Hold the time since the device restarted and IDs for each photo, which can link your photos. Off: nothing visible changes.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What maker notes contain, and what turning them off costs.")
         case .nameAndCopyright: LocalizedStringResource("Off: nothing is lost. Only written if you enter them.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the name and copyright costs.")
-        case .appNameAndVersion: LocalizedStringResource("Off: apps can't show what made the file.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the app name costs.")
+        case .appNameAndVersion: LocalizedStringResource("Off: the file doesn't name the app that made it.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the app name costs.")
         }
     }
 
@@ -288,7 +325,7 @@ struct SettingLabel: View {
 
     /// The name above the explanation.
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: NopeSpace.xxs) {
             title
             explanation
                 .font(.footnote)

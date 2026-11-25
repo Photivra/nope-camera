@@ -1,14 +1,18 @@
 import NopeCore
 import SwiftUI
 
-/// The manual controls' readout row, shown only when the "Manual controls" option is on: one
-/// button per control in a fixed order (`ManualControl`), each with its short name, A or M, and
-/// the value in use, then a last button with "All Auto" and Pro Tools (issue #68, "Manual").
+/// The manual controls' readout row on the picture's lower edge, shown only while manual
+/// controls are on (docs/design/BUILD-SPEC.md, 3.4): six readouts of equal width in a fixed
+/// order (`ManualControl`), each with A or M over the value in use, then More (All Auto and Pro
+/// Tools).
 ///
-/// Pressing a readout opens its dial (``ControlDial``) and fills the readout white; pressing it
-/// again closes the dial. A control the lens can't set stays in its place. At accessibility text
-/// sizes ``ManualControlsList`` replaces the row. Every value and rule comes from
-/// `ManualControlsModel`.
+/// Pressing a readout opens its dial (``ControlDial``) above the row and fills the readout white;
+/// pressing it again closes the dial. A control the lens can't set stays in its place. The camera
+/// hides the row while a series runs, and at accessibility text sizes ``ManualControlsList``
+/// replaces it. Every value and rule comes from `ManualControlsModel`.
+///
+/// VoiceOver reads the row as the container "Manual Controls"; each readout is adjustable
+/// (docs/design/ACCESSIBILITY.md, row 8).
 struct ManualReadoutRow: View {
     /// The camera model.
     let model: CameraModel
@@ -31,25 +35,15 @@ struct ManualReadoutRow: View {
         _showsProTools = showsProTools
     }
 
-    /// The row, or two rows when seven readouts don't fit side by side (narrow phones, larger
-    /// text). Values never break inside a number.
+    /// The row, or two rows when the readouts don't fit side by side at an equal width (narrow
+    /// screens, larger text, long values). Values never break inside a number.
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 4) { readouts }
-            Grid(horizontalSpacing: 4, verticalSpacing: 4) {
-                GridRow { readouts(Array(ManualControl.allCases.prefix(4))) }
-                GridRow {
-                    readouts(Array(ManualControl.allCases.dropFirst(4)))
-                    optionsMenu
-                }
-            }
+        ReadoutRowLayout(spacing: NopeSpace.xxs) {
+            readouts(ManualControl.allCases)
+            optionsMenu
         }
-    }
-
-    /// Every readout and the options menu, in order.
-    @ViewBuilder private var readouts: some View {
-        readouts(ManualControl.allCases)
-        optionsMenu
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Text("Manual Controls", bundle: .module, comment: "Switch that shows manual exposure controls on the camera screen."))
     }
 
     /// The readouts of some controls.
@@ -60,19 +54,175 @@ struct ManualReadoutRow: View {
             ControlReadout(model: model, control: control, isOpen: openControl == control) {
                 openControl = openControl == control ? nil : control
             }
-            .uprightUnit()
         }
     }
 
-    /// "All Auto" and Pro Tools.
+    /// More: "All Auto" and Pro Tools.
     private var optionsMenu: some View {
         ManualOptionsMenu(model: model, openControl: $openControl, showsProTools: $showsProTools)
-            .uprightUnit()
     }
 }
 
-/// The last readout button: "All Auto" and Pro Tools (metering, modes, locks, bracketing,
-/// interval shooting).
+/// The readout row's arrangement: the readouts side by side, then More at
+/// ``NopeSize/minTarget``, filling the width offered. The readouts share the width equally; a
+/// readout whose value needs more than its share (its ideal width plus ``NopeSpace/xxs``) gets
+/// what it needs and the others share the rest equally, as the design's flexible row does
+/// (docs/design/screens/drive-astro: "ISO 3200" beside "1 s"). Only when the readouts' needs
+/// don't fit together do they take two rows of four equal cells: the first four readouts, then
+/// the rest and More.
+///
+/// A long value on its own, such as the highest ISO that Astro sets ("ISO 12,096"), so keeps the
+/// one row on a 402-point iPhone: two rows pushed the Astro card up to a third of the picture,
+/// against the quarter BUILD-SPEC.md, 3.5, allows.
+///
+/// It is a layout rather than `ViewThatFits` over an `HStack` and a `Grid`, so the readouts get
+/// exactly equal widths whenever they fit, More keeps its own width, and one row is chosen
+/// whenever the values fit (docs/design/screens/camera-manual, a 402-point iPhone).
+struct ReadoutRowLayout: Layout {
+    /// The space between views, in points.
+    let spacing: CGFloat
+
+    /// How many cells each of the two rows has.
+    static let cellsPerRow = 4
+
+    /// Creates the layout.
+    ///
+    /// - Parameter spacing: The space between views, in points.
+    init(spacing: CGFloat) {
+        self.spacing = spacing
+    }
+
+    /// How the views are arranged at one width.
+    struct Arrangement: Equatable {
+        /// Whether everything is in one row.
+        let isOneRow: Bool
+        /// The width of a readout, in points: the equal share of the readouts that need no more
+        /// than it, or the width of every cell in two rows.
+        let cellWidth: CGFloat
+        /// Each readout's width in one row, in points, in order; empty in two rows.
+        let cellWidths: [CGFloat]
+        /// The height of a row, in points.
+        let rowHeight: CGFloat
+        /// The whole size.
+        let size: CGSize
+
+        /// Creates an arrangement.
+        ///
+        /// - Parameters:
+        ///   - isOneRow: Whether everything is in one row.
+        ///   - cellWidth: The width of a readout, in points.
+        ///   - cellWidths: Each readout's width in one row, in points; empty in two rows.
+        ///   - rowHeight: The height of a row, in points.
+        ///   - size: The whole size, in points.
+        init(isOneRow: Bool, cellWidth: CGFloat, cellWidths: [CGFloat] = [], rowHeight: CGFloat, size: CGSize) {
+            self.isOneRow = isOneRow
+            self.cellWidth = cellWidth
+            self.cellWidths = cellWidths
+            self.rowHeight = rowHeight
+            self.size = size
+        }
+    }
+
+    /// The arrangement for some ideal sizes in a width.
+    ///
+    /// - Parameters:
+    ///   - ideals: The views' ideal sizes; the last is More.
+    ///   - width: The width offered, or `nil` for the ideal width.
+    ///   - spacing: The space between views, in points.
+    static func arrangement(ideals: [CGSize], width: CGFloat?, spacing: CGFloat) -> Arrangement {
+        let readoutCount = max(ideals.count - 1, 0)
+        let needs = ideals.dropLast().map { $0.width + NopeSpace.xxs }
+        let widest = needs.max() ?? NopeSpace.xxs
+        let rowHeight = ideals.map(\.height).max() ?? 0
+        let fixedWidth = NopeSize.minTarget + spacing * CGFloat(readoutCount)
+        let oneRowWidth = widest * CGFloat(readoutCount) + fixedWidth
+        let available = width.flatMap { $0.isFinite ? $0 : nil } ?? oneRowWidth
+        if needs.reduce(0, +) + fixedWidth <= available {
+            let (share, widths) = sharedWidths(needs: needs, total: available - fixedWidth)
+            return Arrangement(
+                isOneRow: true, cellWidth: share, cellWidths: widths, rowHeight: rowHeight,
+                size: CGSize(width: available, height: rowHeight))
+        }
+        let columns = CGFloat(cellsPerRow)
+        let cell = max((available - spacing * (columns - 1)) / columns, widest)
+        let totalWidth = cell * columns + spacing * (columns - 1)
+        return Arrangement(
+            isOneRow: false, cellWidth: cell, rowHeight: rowHeight,
+            size: CGSize(width: totalWidth, height: rowHeight * 2 + spacing))
+    }
+
+    /// The readouts' widths in one row: an equal share of the total, except that a readout that
+    /// needs more than the share gets what it needs and the others share the rest, repeated
+    /// until every readout has at least what it needs.
+    ///
+    /// - Parameters:
+    ///   - needs: Each readout's ideal width plus ``NopeSpace/xxs``, in points; their sum is at
+    ///     most `total`.
+    ///   - total: The width the readouts share, in points.
+    /// - Returns: The share of the readouts that need no more than it, and every readout's width.
+    static func sharedWidths(needs: [CGFloat], total: CGFloat) -> (share: CGFloat, widths: [CGFloat]) {
+        var fixed = Set<Int>()
+        var share = total / CGFloat(max(needs.count, 1))
+        while true {
+            let grown = needs.indices.filter { !fixed.contains($0) && needs[$0] > share }
+            guard !grown.isEmpty else { break }
+            fixed.formUnion(grown)
+            let left = needs.count - fixed.count
+            guard left > 0 else { break }
+            share = (total - fixed.map { needs[$0] }.reduce(0, +)) / CGFloat(left)
+        }
+        let widths = needs.indices.map { fixed.contains($0) ? needs[$0] : share }
+        return (share, widths)
+    }
+
+    /// The row's size for the width offered.
+    ///
+    /// - Parameters:
+    ///   - proposal: The offered size.
+    ///   - subviews: The readouts, then More.
+    ///   - cache: Unused.
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard !subviews.isEmpty else { return .zero }
+        let ideals = subviews.map { $0.sizeThatFits(.unspecified) }
+        return Self.arrangement(ideals: ideals, width: proposal.width, spacing: spacing).size
+    }
+
+    /// Places the readouts and More.
+    ///
+    /// - Parameters:
+    ///   - bounds: The row's rectangle.
+    ///   - proposal: The offered size.
+    ///   - subviews: The readouts, then More.
+    ///   - cache: Unused.
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard !subviews.isEmpty else { return }
+        let ideals = subviews.map { $0.sizeThatFits(.unspecified) }
+        let arrangement = Self.arrangement(ideals: ideals, width: bounds.width, spacing: spacing)
+        var oneRowX = bounds.minX
+        for (index, subview) in subviews.enumerated() {
+            let isMore = index == subviews.count - 1
+            let column = arrangement.isOneRow ? index : index % Self.cellsPerRow
+            let row = arrangement.isOneRow ? 0 : index / Self.cellsPerRow
+            let width: CGFloat
+            let x: CGFloat
+            if arrangement.isOneRow {
+                width = isMore ? NopeSize.minTarget : arrangement.cellWidths[index]
+                x = oneRowX
+                oneRowX += width + spacing
+            } else {
+                width = arrangement.cellWidth
+                x = bounds.minX + CGFloat(column) * (arrangement.cellWidth + spacing)
+            }
+            let origin = CGPoint(x: x, y: bounds.minY + CGFloat(row) * (arrangement.rowHeight + spacing))
+            subview.place(
+                at: origin, anchor: .topLeading,
+                proposal: ProposedViewSize(width: width, height: arrangement.rowHeight))
+        }
+    }
+}
+
+/// More, the last button of the readout row: "All Auto" and Pro Tools (exposure mode, metering,
+/// the locks, bracketing and the live aids).
 struct ManualOptionsMenu: View {
     /// The camera model.
     let model: CameraModel
@@ -107,7 +257,8 @@ struct ManualOptionsMenu: View {
                 Task {
                     await model.send(.manual(.allAuto))
                     AccessibilityNotification.Announcement(
-                        String(localized: "Full auto", bundle: .module, comment: "Announced after All Auto returned every control to automatic.")
+                        // Manual Controls stay on, so not "full auto" (docs/design/SETTING-SCOPE.md, decision 4).
+                        String(localized: "All controls on Auto", bundle: .module, comment: "VoiceOver announcement after All Auto returned every manual control to Auto. Manual Controls stay on, so don't say \"full auto\". \"Auto\" is the word on a manual readout; use its translation.")
                     ).post()
                 }
             } label: {
@@ -131,21 +282,23 @@ struct ManualOptionsMenu: View {
             Label {
                 Text("More Manual Controls", bundle: .module, comment: "VoiceOver and Voice Control name of the last button of the manual controls row: opens All Auto and Pro Tools.")
             } icon: {
-                Image(systemName: "slider.horizontal.3")
+                Image(systemName: "ellipsis")
+                    .font(NopeFont.tileValue)
             }
             .labelStyle(.iconOnly)
         }
-        .buttonStyle(SelectableCapsuleStyle(isSelected: false))
-        .sensoryFeedback(.success, trigger: allAutoPresses)
+        .buttonStyle(NopeTileStyle(isOn: false, minHeight: NopeSize.readout, alignment: .center))
+        .sensoryFeedback(NopeHaptic.allAuto, trigger: allAutoPresses)
         .accessibilityShowsLargeContentViewer()
     }
 }
 
-/// One readout of the manual controls row: the short name with A or M, and the value in use.
+/// One readout of the manual controls row: A or M over the value in use, in a tile
+/// (``NopeTileStyle``) that is filled white while its dial is open.
 ///
-/// For VoiceOver it is one adjustable element: swipe up or down steps the value, double-tap
-/// opens its dial, and actions switch it between Auto and Manual or return everything to Auto
-/// (AGENTS.md, "Manual controls are adjustable elements").
+/// For VoiceOver it is one adjustable element: swipe up or down steps the value without opening
+/// the dial, double-tap opens its dial, and actions switch it between Auto and Manual or return
+/// everything to Auto (AGENTS.md, "Manual controls are adjustable elements").
 struct ControlReadout: View {
     /// The camera model.
     let model: CameraModel
@@ -182,19 +335,9 @@ struct ControlReadout: View {
     /// The button.
     var body: some View {
         Button(action: toggle) {
-            VStack(spacing: 0) {
-                // The letter says A or M, so the mode never depends on color. The control's full
-                // name is the VoiceOver label; the value shows which control it is, as on a
-                // camera's readout ("ISO 200", "1/125", "f/1.8").
-                Text(verbatim: isManual ? "M" : "A")
-                    .font(.caption2.weight(.semibold))
-                Text(verbatim: visibleValue)
-                    .font(.footnote.monospacedDigit())
-            }
-            // Never truncated or broken inside a number: the row becomes two rows instead.
-            .fixedSize()
+            ReadoutLabel(isManual: isManual, value: visibleValue)
         }
-        .buttonStyle(SelectableCapsuleStyle(isSelected: isOpen, horizontalPadding: 6))
+        .buttonStyle(NopeTileStyle(isOn: isOpen, minHeight: NopeSize.readout, alignment: .center))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: ControlText.name(control)))
         .accessibilityValue(Text(verbatim: SlotValue.spoken(for: control, in: manual)))
@@ -216,6 +359,10 @@ struct ControlReadout: View {
             }
         }
         .accessibilityInputLabels([Text(verbatim: ControlText.shortName(control)), Text(verbatim: ControlText.name(control))])
+        // The readouts keep their size so six fit across the picture; the viewer shows them large.
+        .accessibilityShowsLargeContentViewer {
+            Text(verbatim: visibleValue)
+        }
     }
 
     /// The readout's text: the value, with "ISO" before an ISO value, which is a bare number.
@@ -232,6 +379,73 @@ struct ControlReadout: View {
     }
 }
 
+/// A readout's content: the mode letter over the value. "M" is drawn in a filled badge and "A"
+/// plain, so the mode never depends on color alone; the letters are the same in every language,
+/// as on a camera's readout.
+struct ReadoutLabel: View {
+    /// Whether the control is set manually.
+    let isManual: Bool
+
+    /// The value, such as "ISO 400" or "1/60".
+    let value: String
+
+    /// The color of the "A", set by the tile style for its state.
+    @Environment(\.nopeSecondaryLabel) private var secondaryLabel
+
+    /// Creates the content.
+    ///
+    /// - Parameters:
+    ///   - isManual: Whether the control is set manually.
+    ///   - value: The value.
+    init(isManual: Bool, value: String) {
+        self.isManual = isManual
+        self.value = value
+    }
+
+    /// The letter over the value. Neither is truncated or broken inside a number: the row
+    /// becomes two rows instead.
+    var body: some View {
+        VStack(spacing: NopeSpace.xxs) {
+            if isManual {
+                ManualBadge()
+            } else {
+                Text(verbatim: "A")
+                    .font(NopeFont.readoutMode)
+                    .foregroundStyle(secondaryLabel)
+            }
+            Text(verbatim: value)
+                .font(NopeFont.tileName)
+        }
+        .fixedSize()
+        // Six readouts and More fit across a 402-point picture only with less side padding than
+        // a Q tile's (docs/design/screens/camera-manual): the label takes back the tile's
+        // padding, and the row keeps a margin around the widest value (ReadoutRowLayout).
+        .padding(.horizontal, -NopeSpace.xs)
+    }
+}
+
+/// "M" in a badge of the label's color, with the letter cut out of it, so the tile's own fill
+/// shows through: white on a dark tile, dark on the open (white) tile, and black on red in night
+/// mode.
+struct ManualBadge: View {
+    /// Creates the badge. It holds no state.
+    init() {}
+
+    /// The badge.
+    var body: some View {
+        Text(verbatim: "M")
+            .font(NopeFont.readoutMode)
+            .padding(.horizontal, NopeSpace.xxs)
+            .hidden()
+            .background(Capsule().fill(.foreground))
+            .overlay {
+                Text(verbatim: "M")
+                    .font(NopeFont.readoutMode)
+                    .blendMode(.destinationOut)
+            }
+            .compositingGroup()
+    }
+}
 /// The text a readout shows for a control, from the model.
 @MainActor
 enum SlotValue {

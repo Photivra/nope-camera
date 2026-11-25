@@ -41,8 +41,8 @@ public final class WatchRemote {
         /// The watch hasn't heard from the phone yet. Show a neutral placeholder.
         case connecting
 
-        /// The iPhone app can't be reached: the phone is away, off or locked out of the link.
-        /// Say to keep the phone nearby with the app open.
+        /// The iPhone app can't be reached: the phone is away, off or locked, or the app is
+        /// closed or in the background. Say to unlock the phone and open the app.
         case phoneNotReachable
 
         /// The phone's camera is ready. Enable the shutter.
@@ -78,6 +78,11 @@ public final class WatchRemote {
     /// How the last photo the watch asked for ended, or `nil` before one ends. Cleared when the
     /// next photo is asked for.
     public private(set) var lastResult: WatchResult?
+
+    /// Why the photos of ``lastResult`` aren't all signed (``PhoneUpdate/unsignedReason``), or
+    /// `nil` when they are, there is no result, or the phone didn't say. Show
+    /// ``SignatureStatus/UnsignedReason/turnedOff`` as plain status: signing is off by choice.
+    public private(set) var lastUnsignedReason: SignatureStatus.UnsignedReason?
 
     /// Whether a photo was asked for and its result hasn't arrived yet.
     public private(set) var isAwaitingResult = false
@@ -134,6 +139,7 @@ public final class WatchRemote {
     public func takePhoto() async {
         guard canTakePhoto else { return }
         lastResult = nil
+        lastUnsignedReason = nil
         isAwaitingResult = true
         await send(.takePhoto(delay: delay))
     }
@@ -185,14 +191,17 @@ public final class WatchRemote {
             return finish(with: .notUnderstood)
         }
         status = update.status
-        if let result = update.result { finish(with: result) }
+        if let result = update.result { finish(with: result, unsignedReason: update.unsignedReason) }
     }
 
     /// Ends the wait for a result.
     ///
-    /// - Parameter result: How the photo ended.
-    private func finish(with result: WatchResult) {
+    /// - Parameters:
+    ///   - result: How the photo ended.
+    ///   - unsignedReason: Why its photos aren't all signed, or `nil`.
+    private func finish(with result: WatchResult, unsignedReason: SignatureStatus.UnsignedReason? = nil) {
         lastResult = result
+        lastUnsignedReason = unsignedReason
         isAwaitingResult = false
     }
 

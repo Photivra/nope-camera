@@ -2,7 +2,8 @@ import AppIntents
 import NopeCore
 
 /// "Take Bracket" for Siri and the Shortcuts app (issue #62): opens the app to the camera and
-/// takes one exposure bracket: 3, 5 or 7 separate photos, a chosen number of stops apart.
+/// takes one exposure bracket: 3, 5 or 7 separate photos, a chosen number of stops apart, in a
+/// chosen order (darkest, metered or brightest first; docs/design/BRACKETING.md, decision 17).
 ///
 /// A separate action from ``TakePhotoIntent``, not a parameter of it: a bracket and a burst are
 /// different captures (exposures set exactly per frame, against frames as fast as the camera
@@ -11,27 +12,50 @@ import NopeCore
 ///
 /// The intent holds no rules (AGENTS.md, "Siri and Shortcuts"): it hands a ``BracketShortcut``
 /// to the app's ``ShortcutInbox`` and says the outcome. The bracket is taken once, through the
-/// same bracket path as the one in Pro Tools; the person's own bracket setting doesn't change.
+/// same bracket path as the shutter's; the bracket chosen on the drive strip doesn't change.
 struct TakeBracketIntent: AppIntent {
     /// The action's name in the Shortcuts app.
     static let title = LocalizedStringResource(
-        "Take Bracket", comment: "The name of nope.'s action that takes an exposure bracket: several separate photos at different exposures, in the Shortcuts app.")
+        "Take Bracket", comment: "The name of nope.'s action that takes a bracket: several separate photos at different exposures or focus positions, in the Shortcuts app.")
 
     /// What the action does, in the Shortcuts app.
     static let description = IntentDescription(
         LocalizedStringResource(
-            "Opens nope. and takes separate photos at different exposures, once. Your bracket setting doesn't change.",
+            "Opens nope. and takes separate photos at different exposures or focus positions, once. Your bracket setting doesn't change. Needs Assistant Access, in nope. › Settings › Privacy.",
             comment: "Describes nope.'s Take Bracket action in the Shortcuts app. Keep \"nope.\" unchanged."))
 
-    /// The camera needs the app in the foreground, so the app opens before the intent runs.
-    static let openAppWhenRun = true
+    /// Runs in the background first, so a refused or cancelled request never opens the app;
+    /// the app opens once the request is allowed (`continueInForeground`; issue #82, device
+    /// check 1 in docs/TESTING.md). The camera needs the app in the foreground.
+    static let supportedModes: IntentModes = [.background, .foreground(.dynamic)]
 
-    /// The number of frames.
+    /// Exposure (the default) or Focus.
+    @Parameter(
+        title: LocalizedStringResource(
+            "Type", comment: "A setting of nope.'s Take Bracket action: the kind of bracket, exposure or focus."),
+        default: .exposure)
+    var type: BracketTypeChoice
+
+    /// An exposure bracket's frames.
     @Parameter(
         title: LocalizedStringResource(
             "Frames", comment: "A setting of nope.'s Take Bracket action: how many photos the bracket takes."),
         default: .three)
     var frames: BracketFrameChoice
+
+    /// A focus bracket's frames, moved to the nearest the app offers (3 to 50).
+    @Parameter(
+        title: LocalizedStringResource(
+            "Focus Frames", comment: "A setting of nope.'s Take Bracket action with the type Focus: how many photos the focus bracket takes."),
+        default: 10, inclusiveRange: (3, 50))
+    var focusFrames: Int
+
+    /// A focus bracket's range: as set in the app, or the whole range.
+    @Parameter(
+        title: LocalizedStringResource(
+            "Range", comment: "A setting of nope.'s Take Bracket action with the type Focus: which focus positions the bracket covers."),
+        default: .asSet)
+    var range: FocusRangeChoiceEntity
 
     /// The exposure difference between neighboring frames.
     @Parameter(
@@ -39,6 +63,13 @@ struct TakeBracketIntent: AppIntent {
             "Step", comment: "A setting of nope.'s Take Bracket action: the exposure difference between neighboring photos, in stops."),
         default: .oneStop)
     var step: BracketStepChoice
+
+    /// The order of the frames; Darkest First, the order of earlier versions, by default.
+    @Parameter(
+        title: LocalizedStringResource(
+            "Order", comment: "A setting of nope.'s Take Bracket action: the order in which the photos are taken."),
+        default: .darkestFirst)
+    var order: BracketOrderChoice
 
     /// The preset delay: none, 3 or 10 seconds, as the self-timer offers.
     @Parameter(
@@ -56,23 +87,48 @@ struct TakeBracketIntent: AppIntent {
     /// The app's inbox, which the camera screen serves.
     @Dependency private var inbox: ShortcutInbox
 
+    /// Every gated action needs an unlocked device (issue #82).
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
+
+    /// The Assistant Access check (issue #82).
+    @Dependency private var gate: AssistantGate
+
     /// How the action reads in the Shortcuts editor.
     static var parameterSummary: some ParameterSummary {
-        Summary("Take a bracket of \(\.$frames), \(\.$step) apart") {
-            \.$delay
-            \.$lens
+        Switch(\.$type) {
+            Case(.focus) {
+                Summary("Take a \(\.$type) bracket of \(\.$focusFrames) photos") {
+                    \.$range
+                    \.$delay
+                    \.$lens
+                }
+            }
+            DefaultCase {
+                Summary("Take a bracket of \(\.$frames), \(\.$step) apart") {
+                    \.$type
+                    \.$order
+                    \.$delay
+                    \.$lens
+                }
+            }
         }
     }
 
     /// Hands the request to the camera screen and says how it ended.
     ///
-    /// - Returns: The outcome, said by Siri or shown by Shortcuts.
+    /// - Returns: The outcome, said by Siri or shown by Shortcuts, and the number of photos
+    ///   saved ("Photos Saved"; 0 when none was).
     @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
+    func perform() async throws -> some IntentResult & ReturnsValue<Int> & ProvidesDialog {
         let request = BracketShortcut(
-            frameCount: frames.count, step: step.stops, delaySeconds: delay.timer?.seconds ?? 0, lensKind: lens?.kind)
-        let outcome = await inbox.submit(.takeBracket(request))
-        return .result(dialog: IntentDialog(ShortcutDialog.message(for: outcome)))
+            type: type.type, focusFrameCount: focusFrames, focusRange: range.range, frameCount: frames.count,
+            step: step.stops, order: order.order, delaySeconds: delay.timer?.seconds ?? 0, lensKind: lens?.kind)
+        let answer = try await gate.answer(
+            .takeBracket, question: AssistantQuestions.takeBracket(request), intent: self, opensApp: true
+        ) {
+            AssistantAnswer(await inbox.submit(.takeBracket(request)))
+        }
+        return .result(value: answer.photosSaved, dialog: IntentDialog(answer.sentence))
     }
 }
 
@@ -145,6 +201,90 @@ enum BracketStepChoice: String, AppEnum {
         case .twoThirdsStop: 2.0 / 3.0
         case .oneStop: 1
         case .twoStops: 2
+        }
+    }
+}
+
+/// The orders ``TakeBracketIntent`` offers: those of `BracketOrder`.
+enum BracketOrderChoice: String, AppEnum {
+    /// The darkest frame first.
+    case darkestFirst
+    /// The metered frame first, then outward.
+    case meteredFirst
+    /// The brightest frame first.
+    case brightestFirst
+
+    /// The type's name in the Shortcuts app.
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(
+        name: LocalizedStringResource(
+            "Order", comment: "A setting of nope.'s Take Bracket action: the order in which the photos are taken."))
+
+    /// Each order's name.
+    static let caseDisplayRepresentations: [BracketOrderChoice: DisplayRepresentation] = [
+        .darkestFirst: DisplayRepresentation(
+            title: LocalizedStringResource("Darkest First", comment: "A choice of the Order setting of nope.'s Take Bracket action: the darkest photo first.")),
+        .meteredFirst: DisplayRepresentation(
+            title: LocalizedStringResource("Metered First", comment: "A choice of the Order setting of nope.'s Take Bracket action: the photo at the metered exposure first, then darker and brighter ones.")),
+        .brightestFirst: DisplayRepresentation(
+            title: LocalizedStringResource("Brightest First", comment: "A choice of the Order setting of nope.'s Take Bracket action: the brightest photo first.")),
+    ]
+
+    /// The order.
+    var order: BracketOrder {
+        switch self {
+        case .darkestFirst: .darkestFirst
+        case .meteredFirst: .meteredFirst
+        case .brightestFirst: .brightestFirst
+        }
+    }
+}
+
+/// The Type setting of Take Bracket.
+enum BracketTypeChoice: String, AppEnum {
+    case exposure
+    case focus
+
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(
+        name: LocalizedStringResource(
+            "Type", comment: "A setting of nope.'s Take Bracket action: the kind of bracket, exposure or focus."))
+
+    static let caseDisplayRepresentations: [BracketTypeChoice: DisplayRepresentation] = [
+        .exposure: DisplayRepresentation(
+            title: LocalizedStringResource("Exposure", comment: "A choice of the Type setting of nope.'s Take Bracket action: photos at different exposures.")),
+        .focus: DisplayRepresentation(
+            title: LocalizedStringResource("Focus", comment: "A choice of the Type setting of nope.'s Take Bracket action: photos at different focus positions, for stacking in other software.")),
+    ]
+
+    /// The type in `NopeCore`.
+    var type: BracketType {
+        switch self {
+        case .exposure: .exposure
+        case .focus: .focus
+        }
+    }
+}
+
+/// The Range setting of Take Bracket with the type Focus.
+enum FocusRangeChoiceEntity: String, AppEnum {
+    case asSet
+    case wholeRange
+
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(
+        name: LocalizedStringResource(
+            "Range", comment: "A setting of nope.'s Take Bracket action with the type Focus: which focus positions the bracket covers."))
+
+    static let caseDisplayRepresentations: [FocusRangeChoiceEntity: DisplayRepresentation] = [
+        .asSet: DisplayRepresentation(
+            title: LocalizedStringResource("As Set in nope.", comment: "A choice of the Range setting of nope.'s Take Bracket action: the focus range set in the app. Keep \"nope.\" unchanged.")),
+        .wholeRange: DisplayRepresentation(
+            title: LocalizedStringResource("Whole Range", comment: "A choice of the Range setting of nope.'s Take Bracket action: every focus position from the closest to the farthest.")),
+    ]
+
+    /// The range in `NopeCore`.
+    var range: FocusBracketRange {
+        switch self {
+        case .asSet: .asSet
+        case .wholeRange: .wholeRange
         }
     }
 }

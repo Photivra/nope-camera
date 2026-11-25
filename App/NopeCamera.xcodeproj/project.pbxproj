@@ -22,9 +22,19 @@
 		A10000000000000000000109 /* NopeCaptureExtension.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000505 /* NopeCaptureExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B70000000000000000000101 /* NopeWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = B70000000000000000000501 /* NopeWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B70000000000000000000102 /* NopeCore in Frameworks */ = {isa = PBXBuildFile; productRef = B70000000000000000000201 /* NopeCore */; };
+		C80000000000000000000101 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = C80000000000000000000501 /* DesignTokens.swift */; };
+		C80000000000000000000102 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = C80000000000000000000501 /* DesignTokens.swift */; };
+		C80000000000000000000103 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = C80000000000000000000501 /* DesignTokens.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		C10000000000000000000301 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000401;
+			remoteInfo = NopeApp;
+		};
 		A10000000000000000000301 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A10000000000000000000001 /* Project object */;
@@ -101,6 +111,7 @@
 /* Begin PBXFileReference section */
 		A10000000000000000000501 /* nope.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = nope.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000502 /* NopeAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NopeAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C10000000000000000000502 /* NopeAppIntentsUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NopeAppIntentsUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000507 /* NopeControls.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NopeControls.entitlements; sourceTree = "<group>"; };
 		A10000000000000000000508 /* NopeApp-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "NopeApp-Info.plist"; sourceTree = "<group>"; };
 		A10000000000000000000503 /* NopeApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NopeApp.entitlements; sourceTree = "<group>"; };
@@ -109,6 +120,7 @@
 		A10000000000000000000506 /* NopeControls.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NopeControls.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B70000000000000000000501 /* NopeWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NopeWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B70000000000000000000502 /* NopeWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NopeWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C80000000000000000000501 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DesignTokens.swift; path = ../Sources/NopeUI/DesignTokens.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -141,6 +153,7 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A10000000000000000000601 /* NopeApp */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A10000000000000000000E01 /* Exceptions for "NopeApp" folder in "NopeCaptureExtension" target */, ); path = NopeApp; sourceTree = "<group>"; };
 		A10000000000000000000602 /* NopeAppUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; path = NopeAppUITests; sourceTree = "<group>"; };
+		C10000000000000000000602 /* NopeAppIntentsUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; path = NopeAppIntentsUITests; sourceTree = "<group>"; };
 		A10000000000000000000603 /* Shared */ = {isa = PBXFileSystemSynchronizedRootGroup; path = Shared; sourceTree = "<group>"; };
 		A10000000000000000000604 /* NopeCaptureExtension */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A10000000000000000000E02 /* Exceptions for "NopeCaptureExtension" folder in "NopeCaptureExtension" target */, ); path = NopeCaptureExtension; sourceTree = "<group>"; };
 		A10000000000000000000605 /* NopeControls */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A10000000000000000000E03 /* Exceptions for "NopeControls" folder in "NopeControls" target */, ); path = NopeControls; sourceTree = "<group>"; };
@@ -162,6 +175,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A10000000000000000000702 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C10000000000000000000702 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -210,11 +230,13 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000504 /* Base.xcconfig */,
+				C80000000000000000000501 /* DesignTokens.swift */,
 				A10000000000000000000503 /* NopeApp.entitlements */,
 				A10000000000000000000508 /* NopeApp-Info.plist */,
 				A10000000000000000000507 /* NopeControls.entitlements */,
 				A10000000000000000000601 /* NopeApp */,
 				A10000000000000000000602 /* NopeAppUITests */,
+				C10000000000000000000602 /* NopeAppIntentsUITests */,
 				A10000000000000000000603 /* Shared */,
 				A10000000000000000000604 /* NopeCaptureExtension */,
 				A10000000000000000000605 /* NopeControls */,
@@ -229,6 +251,7 @@
 			children = (
 				A10000000000000000000501 /* nope.app */,
 				A10000000000000000000502 /* NopeAppUITests.xctest */,
+				C10000000000000000000502 /* NopeAppIntentsUITests.xctest */,
 				A10000000000000000000505 /* NopeCaptureExtension.appex */,
 				A10000000000000000000506 /* NopeControls.appex */,
 				B70000000000000000000501 /* NopeWatch.app */,
@@ -295,6 +318,29 @@
 			);
 			productName = NopeAppUITests;
 			productReference = A10000000000000000000502 /* NopeAppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		C10000000000000000000402 /* NopeAppIntentsUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C10000000000000000000A03 /* Build configuration list for PBXNativeTarget "NopeAppIntentsUITests" */;
+			buildPhases = (
+				C10000000000000000000902 /* Sources */,
+				C10000000000000000000702 /* Frameworks */,
+				C10000000000000000000904 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C10000000000000000000B01 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				C10000000000000000000602 /* NopeAppIntentsUITests */,
+			);
+			name = NopeAppIntentsUITests;
+			packageProductDependencies = (
+			);
+			productName = NopeAppIntentsUITests;
+			productReference = C10000000000000000000502 /* NopeAppIntentsUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 		A10000000000000000000403 /* NopeCaptureExtension */ = {
@@ -412,6 +458,10 @@
 						CreatedOnToolsVersion = 27.2;
 						TestTargetID = A10000000000000000000401;
 					};
+					C10000000000000000000402 = {
+						CreatedOnToolsVersion = 27.2;
+						TestTargetID = A10000000000000000000401;
+					};
 					A10000000000000000000403 = {
 						CreatedOnToolsVersion = 27.2;
 					};
@@ -433,16 +483,6 @@
 			knownRegions = (
 				en,
 				Base,
-				ja,
-				es,
-				fr,
-				de,
-				ko,
-				"zh-Hant",
-				"zh-Hans",
-				"pt-BR",
-				it,
-				nl,
 			);
 			mainGroup = A10000000000000000000801;
 			minimizedProjectReferenceProxies = 1;
@@ -456,6 +496,7 @@
 			targets = (
 				A10000000000000000000401 /* NopeApp */,
 				A10000000000000000000402 /* NopeAppUITests */,
+				C10000000000000000000402 /* NopeAppIntentsUITests */,
 				A10000000000000000000403 /* NopeCaptureExtension */,
 				A10000000000000000000404 /* NopeControls */,
 				B70000000000000000000401 /* NopeWatch */,
@@ -473,6 +514,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A10000000000000000000904 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C10000000000000000000904 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -514,10 +562,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C80000000000000000000101 /* DesignTokens.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A10000000000000000000902 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C10000000000000000000902 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -535,6 +591,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C80000000000000000000102 /* DesignTokens.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -542,6 +599,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C80000000000000000000103 /* DesignTokens.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -559,6 +617,11 @@
 			isa = PBXTargetDependency;
 			target = A10000000000000000000401 /* NopeApp */;
 			targetProxy = A10000000000000000000301 /* PBXContainerItemProxy */;
+		};
+		C10000000000000000000B01 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000401 /* NopeApp */;
+			targetProxy = C10000000000000000000301 /* PBXContainerItemProxy */;
 		};
 		A10000000000000000000B02 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -609,19 +672,19 @@
 		A10000000000000000000D03 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = NopeApp.entitlements;
 				INFOPLIST_FILE = "NopeApp-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = nope.;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "nope. uses the camera to take the photos you ask for.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "nope. adds where each photo was taken, only while Location is on in nope.'s settings. Your location is never sent anywhere.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "nope. adds where each photo was taken, only while Location is on in nope.'s settings. nope. never sends your location anywhere.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "nope. adds the photos you take to your photo library. It can't see your existing photos.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleLightContent;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UIRequiresFullScreen = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -633,19 +696,19 @@
 		A10000000000000000000D04 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = NopeApp.entitlements;
 				INFOPLIST_FILE = "NopeApp-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = nope.;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "nope. uses the camera to take the photos you ask for.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "nope. adds where each photo was taken, only while Location is on in nope.'s settings. Your location is never sent anywhere.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "nope. adds where each photo was taken, only while Location is on in nope.'s settings. nope. never sends your location anywhere.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "nope. adds the photos you take to your photo library. It can't see your existing photos.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleLightContent;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UIRequiresFullScreen = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -669,6 +732,26 @@
 			buildSettings = {
 				GENERATE_INFOPLIST_FILE = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOPE_BUNDLE_IDENTIFIER).uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_TARGET_NAME = NopeApp;
+			};
+			name = Release;
+		};
+		C10000000000000000000D05 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOPE_BUNDLE_IDENTIFIER).intentsuitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_TARGET_NAME = NopeApp;
+			};
+			name = Debug;
+		};
+		C10000000000000000000D06 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOPE_BUNDLE_IDENTIFIER).intentsuitests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_TARGET_NAME = NopeApp;
 			};
@@ -753,6 +836,7 @@
 		B70000000000000000000D01 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				INFOPLIST_KEY_CFBundleDisplayName = nope.;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "$(NOPE_BUNDLE_IDENTIFIER)";
@@ -767,13 +851,14 @@
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Debug;
 		};
 		B70000000000000000000D02 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				INFOPLIST_KEY_CFBundleDisplayName = nope.;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "$(NOPE_BUNDLE_IDENTIFIER)";
@@ -788,7 +873,7 @@
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Release;
 		};
@@ -802,7 +887,7 @@
 				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				TARGETED_DEVICE_FAMILY = 4;
 				TEST_TARGET_NAME = NopeWatch;
-				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Debug;
 		};
@@ -816,7 +901,7 @@
 				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				TARGETED_DEVICE_FAMILY = 4;
 				TEST_TARGET_NAME = NopeWatch;
-				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Release;
 		};
@@ -846,6 +931,15 @@
 			buildConfigurations = (
 				A10000000000000000000D05 /* Debug */,
 				A10000000000000000000D06 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C10000000000000000000A03 /* Build configuration list for PBXNativeTarget "NopeAppIntentsUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C10000000000000000000D05 /* Debug */,
+				C10000000000000000000D06 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

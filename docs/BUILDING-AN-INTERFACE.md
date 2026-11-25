@@ -20,7 +20,7 @@ Your interface depends on `NopeCore` only. It does three things:
    In the ready state, render `sessionStatus`, `captureStatus`, `selectedLensID` and
    `captureFormat` (say plainly when it is the processed fallback; when `captureStatus` is
    `.saved`, always say whether the photo is signed), and enable the shutter only
-   when `canCapture` is true.
+   when `canCapture` is true and your lens controls only when `canChangeLens` is true.
 3. **Holds no rules.** Don't decide privacy, formats, exposure or what the device supports. If
    you need a decision, it belongs in `NopeCore` as state or a capability value.
 
@@ -49,17 +49,25 @@ must not claim more than `docs/research/privacy-claims.md` supports.
 
 ## Manual controls
 
-Manual controls are off by default; the "Manual controls" option in Settings turns them on, and
-the app target sends `.manual(.setEnabled(_:))` when it changes. Everything about them is in
+Manual controls are off by default; the Manual Controls button on the camera turns them on and
+off with `CameraModel.setManualControls(_:settings:)`, which stores the "Manual controls" option
+and sends `.manual(.setEnabled(_:))` at once. Everything about them is in
 `CameraModel.manual` (`ManualControlsModel`): which controls the selected lens offers
 (`availability(of:)`), the steps of each one (`scale(for:)`), the value in use (`value(of:)`), the
-exposure modes, bracketing and interval shooting (which, unlike the other manual intents, works
-in full auto too; the `.interval` drive mode starts it from the shutter). Send `.manual(...)`
-intents to change them; the
+exposure modes, bracketing and interval shooting (which, unlike the other manual intents, work
+in full auto too; the `.interval` drive mode starts a series from the shutter, and a bracket that
+is on (`CameraModel.isBracketOn`) is what the shutter takes in Single or with the self-timer). A
+series stops after a number of photos or a time (`IntervalSettings.stopAfter`); for a timed one
+show the time left from `intervalProgress.secondsLeft(at: model.clock.now())` and the end time
+from `endDate(clock: model.clock)` (its end is a moment of the monotonic clock, keeps running
+while the series is paused, and doesn't move when the device's time is changed), and while `intervalBlocker` is set, disable Start
+and say why. Send `.manual(...)` intents to change them; the
 model keeps the combination valid for the lens. Offer "All Auto" whenever
 `manual.settings.isAutomatic` is false. The full-auto aids (tap to focus and the lock, exposure
-compensation, Close-Up, Far Focus, Face Detection, the fast shutter choice and the magnifier) are `.auto(AutoControlIntent)`
-intents that work with manual controls off; see the DocC article for what to show. Run
+compensation, Close-Up, Far Focus, Focus on Faces, the fast shutter choice and the magnifier) are `.auto(AutoControlIntent)`
+intents that work with manual controls off; see the DocC article for what to show. Show Close-Up
+and Far Focus only while `manual.autoFocusIsInUse` (they limit autofocus only), and the flash
+only while `shutterUsesFlash` (no flash in Burst, with a bracket or with Astro). Run
 `manual.observeReadings()` in a second `.task` so the
 values the camera is using appear. Clean view is `CameraModel.isCleanView`; it must never hide
 a warning that changes what the photo is.
@@ -71,7 +79,16 @@ The shutter, and every hardware shutter, sends `.capture`; the model applies `dr
 or burst. Enable the shutter with `canPressShutter`, not `canCapture`, so it can stop them. Show
 `drive.countdown.remainingSeconds` and `drive.burstProgress` with a visible way to stop each
 (`.drive(.cancelTimer)`, `.drive(.stopBurst)`), and announce them. Pass the hardware buttons'
-phases as `.drive(.hardwareButton(_:))`. Pass a `DeviceStatusReading` to `CameraModel` and show
+phases to `model.shutter(_:from: .hardware)`, straight from their event handler. In burst mode,
+also pass the on-screen shutter's touch to `model.shutter(.pressed, from: .onScreen, press:)`
+when it goes down and `.released` or `.cancelled`, with the same press number, when it comes up
+or the finger slides off, and skip that touch's `.capture`: holding takes a burst and a tap one
+photo. Call it with no `Task` in between, so a release can't overtake its press (issue #100). Offer `.drive(.startBurst)` as a button and an accessibility action, so no one has to hold
+the shutter, and the speeds in `burstSpeeds` with `.drive(.setBurstSpeed(_:))`. Send the
+person's Burst Limit with `.drive(.setBurstLimit(_:))`; with a limit, a press takes
+`burstProgress.limit` photos, so show "3 of 10" and a way to stop it. Show
+`burstProgress.rate` only when it isn't `nil`, and dim the shutter while
+`burstProgress.isSaving` (`canPressShutter` does). Pass a `DeviceStatusReading` to `CameraModel` and show
 `storageWarning` and `deviceStatus.batteryWarning`. During an interval series, call
 `SeriesScreenKeeper.update(isSeriesRunning:isInForeground:)` so the screen stays awake and is
 dimmed, with a visible way to brighten it.
@@ -88,14 +105,18 @@ warnings to `CameraWarnings.builders`; the layout places them. The app target su
 environment values: `cameraUprightRotation` (which way up the iPhone is held),
 `cameraPresentsSheet` (so the app can rotate sheets while the camera stays in portrait),
 `openAppSettings` (Open Settings buttons; leave it `nil` and they are hidden) and
-`openPhotosApp` (the last-photo thumbnail's Open in Photos; leave it `nil` and a tap shows the
-photo's details instead). Each `SavedPhoto` carries its `thumbnail` and `details` for your own
-last-photo view.
+`openPhotosApp` (Open in Photos in the Last Photo viewer and among the thumbnail's VoiceOver
+actions, and Open Photos in the Last Photo spot before the first photo since the app opened;
+leave it `nil`, as the Lock Screen camera does, and both are hidden and the spot starts empty).
+A tap on the thumbnail opens the Last Photo viewer (`PhotoViewer.swift`), which shows
+`CameraModel.sessionPhotos` and tells the model it is open with `CameraIntent.setViewerOpen(_:)`.
+Each `SavedPhoto` carries its `thumbnail` and `details`, and each `SessionPhoto` its preview, for
+your own last-photo view.
 
 ## Rules that still apply
 
 Your interface follows AGENTS.md like the standard one: native controls, Dynamic Type, VoiceOver
-labels, 44-point touch targets, every string in a String Catalog in all eleven languages, and the
+labels, 44-point touch targets, every string in a String Catalog in every language that ships, and the
 name written "nope.".
 
 ## Reference

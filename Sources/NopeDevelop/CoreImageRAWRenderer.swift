@@ -29,21 +29,13 @@ struct CoreImageRAWRenderer: RAWRendering {
     /// Creates the renderer. It holds no state.
     init() {}
 
-    /// Sets the filter's neutral options and the look's tone.
+    /// Sets the filter's neutral options and the look's tone (``NeutralDevelopment``).
     ///
     /// - Parameters:
     ///   - filter: The RAW filter for the DNG.
     ///   - look: The tone: one global tone curve, or none.
     static func configure(_ filter: CIRAWFilter, look: DevelopedLook) {
-        if filter.isLuminanceNoiseReductionSupported { filter.luminanceNoiseReductionAmount = 0 }
-        if filter.isColorNoiseReductionSupported { filter.colorNoiseReductionAmount = 0 }
-        if filter.isSharpnessSupported { filter.sharpnessAmount = 0 }
-        if filter.isContrastSupported { filter.contrastAmount = 0 }
-        if filter.isDetailSupported { filter.detailAmount = 0 }
-        if filter.isMoireReductionSupported { filter.moireReductionAmount = 0 }
-        if filter.isLocalToneMapSupported { filter.localToneMapAmount = 0 }
-        if filter.isLensCorrectionSupported { filter.isLensCorrectionEnabled = false }
-        filter.boostAmount = look == .flat ? 0 : 1
+        NeutralDevelopment.apply(to: filter, look: look)
     }
 
     /// Renders a DNG.

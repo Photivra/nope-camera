@@ -74,9 +74,11 @@ extension CameraModel {
     /// Takes the photos for a request: waits for the camera, switches the lens if asked, then
     /// takes them at once or after the self-timer.
     ///
-    /// The request's count decides what is taken, whatever the drive mode: one photo (a bracket
-    /// that is on in the manual controls still applies, as it does to the shutter), or a burst
-    /// of exactly that many frames through the burst's own loop (`takeBurst(frames:)`).
+    /// The request's count decides what is taken, whatever the drive mode: one photo, or a
+    /// burst of exactly that many frames through the burst's own loop (`takeBurst(frames:)`).
+    /// An exposure bracket on in the manual controls applies to the one photo only where the
+    /// request says so (``PhotoShortcut/appliesBracketInApp``: the Apple Watch); Siri and
+    /// Shortcuts' Take Photo always takes one photo, and Take Bracket takes brackets.
     ///
     /// - Parameters:
     ///   - photo: The request's delay, lens and count.
@@ -86,28 +88,50 @@ extension CameraModel {
         if let problem = await prepareCamera(lensKind: photo.lensKind, inbox: inbox) { return problem }
         guard canCapture, !isRunningSeries else { return .busy }
         let before = captureStatus
+        // How many photos were planned, for an answer after a part-way failure: the burst's
+        // count, or the frames of the app's bracket when it applied.
+        let planned = { photo.count > 1 ? photo.count : (self.failedBracket?.total ?? 1) }
         if photo.delaySeconds == 0 {
-            await takeShortcutPhotos(count: photo.count)
-            return outcome(of: captureStatus)
+            await takeShortcutPhotos(photo)
+            return outcome(of: captureStatus, planned: planned())
         }
-        startTimer(seconds: photo.delaySeconds) { [weak self] in await self?.takeShortcutPhotos(count: photo.count) }
-        return await outcomeAfterCountdown(since: before, inbox: inbox)
+        startTimer(seconds: photo.delaySeconds) { [weak self] in await self?.takeShortcutPhotos(photo) }
+        if let started = timerStartedAnswer(delaySeconds: photo.delaySeconds) { return started }
+        return await outcomeAfterCountdown(since: before, inbox: inbox, planned: planned)
     }
 
-    /// Waits for the camera and switches to the lens a request asks for, if any.
+    /// Waits for the camera and switches to the lens a request asks for, if any, unless the
+    /// lens can't be changed now (``canChangeLens``).
     ///
     /// - Parameters:
     ///   - lensKind: The kind of lens, or `nil` to keep the lens in use.
     ///   - inbox: The inbox, for its waits and timeouts.
-    /// - Returns: The outcome that ends the request when the camera can't be used or has no such
-    ///   lens, otherwise `nil`.
+    /// - Returns: The outcome that ends the request when the camera can't be used, has no such
+    ///   lens, or is busy and would have to switch (``ShortcutOutcome/busy``), otherwise `nil`.
     private func prepareCamera(lensKind: Lens.Kind?, inbox: ShortcutInbox) async -> ShortcutOutcome? {
         if let problem = await cameraProblem(inbox: inbox) { return .cameraUnavailable(problem) }
         guard let kind = lensKind, selectedLens?.kind != kind else { return nil }
         guard let lens = capabilities?.lenses.first(where: { $0.kind == kind }) else { return .lensUnavailable }
+        // Checked before switching: a switch would restart the camera under a photo or a series
+        // that is already running, and the request is refused anyway (issue #96).
+        guard canChangeLens else { return .busy }
         await send(.selectLens(lens.id))
         if let problem = await cameraProblem(inbox: inbox) { return .cameraUnavailable(problem) }
         return nil
+    }
+
+    /// The answer as a request's self-timer starts, for a delay too long for Siri and Shortcuts
+    /// to wait (``PhotoShortcut/answersWhenTimerStarts(delaySeconds:)``, issue #126), or `nil`
+    /// to wait for the photos. The photos are then taken when the timer ends, as with the
+    /// camera's own self-timer, and the camera shows their result.
+    ///
+    /// Called right after ``startTimer(seconds:shot:)``, whose own check (``canCapture`` and no
+    /// countdown or burst) the caller has already passed, so the countdown runs.
+    ///
+    /// - Parameter delaySeconds: The request's delay in seconds.
+    /// - Returns: ``ShortcutOutcome/timerStarted(seconds:)``, or `nil`.
+    private func timerStartedAnswer(delaySeconds: Int) -> ShortcutOutcome? {
+        PhotoShortcut.answersWhenTimerStarts(delaySeconds: delaySeconds) ? .timerStarted(seconds: delaySeconds) : nil
     }
 
     /// Waits for a self-timer a request started, then for its photos, and reports how it ended.
@@ -115,24 +139,28 @@ extension CameraModel {
     /// - Parameters:
     ///   - before: The capture status before the countdown started.
     ///   - inbox: The inbox, for its waits.
+    ///   - planned: How many photos were planned, read once they are taken, for the answer
+    ///     after a part-way failure.
     /// - Returns: How it ended: cancelled, the camera stopped, or the photos' outcome.
-    private func outcomeAfterCountdown(since before: CaptureStatus, inbox: ShortcutInbox) async -> ShortcutOutcome {
+    private func outcomeAfterCountdown(
+        since before: CaptureStatus, inbox: ShortcutInbox, planned: () -> Int = { 1 }
+    ) async -> ShortcutOutcome {
         _ = await inbox.wait { !self.drive.countdown.isRunning }
         guard isTakingPhoto || captureStatus != before else {
             return sessionStatus.canCapture ? .cancelled : .cameraUnavailable(.notRunning)
         }
         _ = await inbox.wait { !self.isTakingPhoto }
-        return outcome(of: captureStatus)
+        return outcome(of: captureStatus, planned: planned())
     }
 
-    /// Takes one photo or a burst of `count` frames at once.
+    /// Takes a request's one photo or its burst of `count` frames at once.
     ///
-    /// - Parameter count: How many photos.
-    private func takeShortcutPhotos(count: Int) async {
-        if count == 1 {
-            await capture()
+    /// - Parameter photo: The request.
+    private func takeShortcutPhotos(_ photo: PhotoShortcut) async {
+        if photo.count == 1 {
+            await capture(appliesBracketInApp: photo.appliesBracketInApp)
         } else {
-            await takeBurst(frames: count)
+            await takeBurst(frames: photo.count)
         }
     }
 
@@ -143,8 +171,8 @@ extension CameraModel {
 
     /// Takes one exposure bracket for a request: waits for the camera, switches the lens if
     /// asked, then takes the bracket at once or after the self-timer, through the same bracket
-    /// path as the shutter (`capture(onceBracket:)`). The bracket chosen in Pro Tools, and every
-    /// other setting, stays as it is.
+    /// path as the shutter (`capture(onceBracket:)`). The bracket chosen on the drive strip, and
+    /// every other setting, stays as it is.
     ///
     /// - Parameters:
     ///   - request: The request's frames, step, delay and lens.
@@ -152,6 +180,7 @@ extension CameraModel {
     /// - Returns: How it ended.
     private func takeBracket(_ request: BracketShortcut, inbox: ShortcutInbox) async -> ShortcutOutcome {
         if let problem = await prepareCamera(lensKind: request.lensKind, inbox: inbox) { return problem }
+        if request.type == .focus { return await takeFocusBracket(request, inbox: inbox) }
         let bracket = request.bracket
         guard manual.canBracket(bracket) else { return .bracketUnavailable }
         guard canCapture, !isRunningSeries else { return .busy }
@@ -159,15 +188,66 @@ extension CameraModel {
         guard await inbox.wait(timeoutSeconds: Self.bracketReadingTimeoutSeconds, until: { self.manual.bracketFrames(once: bracket) != nil })
         else { return .cameraUnavailable(.notRunning) }
         let before = captureStatus
+        let planned = { self.failedBracket?.total ?? bracket.frameCount }
         if request.delaySeconds == 0 {
             await capture(onceBracket: bracket)
-            return outcome(of: captureStatus)
+            return outcome(of: captureStatus, planned: planned())
         }
         startTimer(seconds: request.delaySeconds) { [weak self] in await self?.capture(onceBracket: bracket) }
-        return await outcomeAfterCountdown(since: before, inbox: inbox)
+        if let started = timerStartedAnswer(delaySeconds: request.delaySeconds) { return started }
+        return await outcomeAfterCountdown(since: before, inbox: inbox, planned: planned)
     }
 
-    /// Switches to a lens of the kind asked for, as a lens button does.
+    /// Takes one focus bracket for a request, at once or after the self-timer, through the same
+    /// path as the shutter (``takeFocusBracket(_:)``), with the request's frames and range. The
+    /// focus bracket set in the app stays as it is. Refused while the astro helper is on
+    /// (``ShortcutOutcome/focusBracketBlockedByAstro``), where the app treats a focus bracket as
+    /// off and the shutter belongs to the astro run.
+    ///
+    /// The answer comes from the bracket this request began, never from an earlier one: a
+    /// countdown that was cancelled, or a bracket that didn't begin, answers as such, with no
+    /// photos saved. A delay too long for Siri to wait is answered as the timer starts
+    /// (``ShortcutOutcome/timerStarted(seconds:)``).
+    ///
+    /// - Parameters:
+    ///   - request: The request's frames, range and delay.
+    ///   - inbox: The inbox, for its waits and timeouts.
+    /// - Returns: How it ended.
+    private func takeFocusBracket(_ request: BracketShortcut, inbox: ShortcutInbox) async -> ShortcutOutcome {
+        guard canFocusBracket else { return .focusBracketUnavailable }
+        guard canCapture, !isRunningSeries else { return .busy }
+        guard !astro.isOn else { return .focusBracketBlockedByAstro }
+        let asSet = bracketing.focus.with(frameCount: request.focusFrameCount)
+        let settings = request.focusRange == .wholeRange ? asSet.with(nearest: 0, farthest: 1) : asSet
+        let before = captureStatus
+        let runsBefore = bracketing.runCount
+        if request.delaySeconds == 0 {
+            // Checked above that it can be taken, so only a missing save pipeline stops it here,
+            // and the capture status says so.
+            guard await takeFocusBracket(settings) else { return outcome(of: captureStatus) }
+        } else {
+            startTimer(seconds: request.delaySeconds) { [weak self] in await self?.takeFocusBracket(settings) }
+            if let started = timerStartedAnswer(delaySeconds: request.delaySeconds) { return started }
+            let counted = await outcomeAfterCountdown(since: before, inbox: inbox)
+            // Cancelled, or not begun at zero: the countdown's own answer.
+            guard bracketing.runCount != runsBefore else { return counted }
+        }
+        return focusBracketOutcome
+    }
+
+    /// The outcome of the focus bracket a request just took: stopped with its count when it
+    /// ended early, how many were saved when it failed part-way, or as its capture status says
+    /// otherwise.
+    private var focusBracketOutcome: ShortcutOutcome {
+        if let run = bracketing.lastRun, !run.isFinished {
+            if run.end != .failed { return .focusBracketStopped(saved: run.saved, total: run.total) }
+            if run.saved > 0 { return .savedSome(saved: run.saved, total: run.total) }
+        }
+        return outcome(of: captureStatus)
+    }
+
+    /// Switches to a lens of the kind asked for, as a lens button does, unless the lens can't be
+    /// changed now (``canChangeLens``).
     ///
     /// - Parameters:
     ///   - kind: The kind of lens.
@@ -177,8 +257,8 @@ extension CameraModel {
         if let problem = await cameraProblem(inbox: inbox) { return .cameraUnavailable(problem) }
         guard selectedLens?.kind != kind else { return .lensSelected(kind) }
         guard let lens = capabilities?.lenses.first(where: { $0.kind == kind }) else { return .lensUnavailable }
-        // Switching restarts the camera, which would end a burst or a series part-way.
-        guard !isTakingPhoto, !isRunningSeries else { return .busy }
+        // Switching restarts the camera, which would end a burst or a series part-way (issue #96).
+        guard canChangeLens else { return .lensBusy }
         await send(.selectLens(lens.id))
         if let problem = await cameraProblem(inbox: inbox) { return .cameraUnavailable(problem) }
         return .lensSelected(kind)
@@ -205,20 +285,24 @@ extension CameraModel {
     }
 
     /// Starts an interval series with ``ManualControlIntent/startInterval``, as the shutter in
-    /// the Interval drive mode and Start in Pro Tools do, after choosing the request's interval
-    /// and count with ``ManualControlIntent/setInterval(_:)``. It runs in full auto, or with the
-    /// manual settings while manual controls are on; it never turns them on. Refused while the
-    /// astro helper is on (``IntervalBlocker/astroIsOn``), as Start is.
+    /// the Interval drive mode and Start in Interval Settings do, after choosing the request's
+    /// interval, count and time with ``ManualControlIntent/setInterval(_:)``. It runs in full
+    /// auto, or with the manual settings while manual controls are on; it never turns them on.
+    /// Refused while the astro helper is on (``IntervalBlocker/astroIsOn``), as Start is, and
+    /// when the interval isn't shorter than the time
+    /// (``IntervalBlocker/intervalNotShorterThanTime``); the chosen values are kept then.
     ///
     /// - Parameters:
-    ///   - series: The request's interval and count.
+    ///   - series: The request's interval, count and time.
     ///   - inbox: The inbox, for its waits and timeouts.
     /// - Returns: How it ended.
     private func startInterval(_ series: IntervalShortcut, inbox: ShortcutInbox) async -> ShortcutOutcome {
         if let problem = await cameraProblem(inbox: inbox) { return .cameraUnavailable(problem) }
         guard canCapture, !isRunningSeries else { return .busy }
         guard intervalBlocker != .astroIsOn else { return .intervalBlockedByAstro }
-        await send(.manual(.setInterval(series.settings(over: manual.interval))))
+        let settings = series.settings(over: manual.interval)
+        guard settings.isIntervalShorterThanTime else { return .intervalNotShorterThanTime }
+        await send(.manual(.setInterval(settings)))
         await send(.manual(.startInterval))
         return .intervalStarted
     }
@@ -279,17 +363,6 @@ extension CameraModel {
         return .photoSizeSet
     }
 
-    /// Whether a countdown, a burst, an interval series or an astro run is in progress, so a
-    /// request mustn't start another.
-    private var isRunningSeries: Bool {
-        drive.isBusy || manual.intervalProgress != nil || astro.isRunning
-    }
-
-    /// Whether a photo is being taken or saved.
-    private var isTakingPhoto: Bool {
-        captureStatus == .capturing || captureStatus == .saving
-    }
-
     /// Waits for the camera to finish starting, at most ``ShortcutInbox/startTimeoutSeconds``,
     /// then says why it can't take a photo, if it can't.
     ///
@@ -315,6 +388,20 @@ extension CameraModel {
         }
     }
 
+    /// The outcome a capture status reports, with the photos saved before a part-way failure
+    /// (``lastPressPhotos``): a bracket or burst that saved some of its photos and then failed
+    /// answers how many of how many were saved, and Photos Saved is that number (third review
+    /// of 1.0.0, question 6).
+    ///
+    /// - Parameters:
+    ///   - status: The status after the photos.
+    ///   - planned: How many photos were planned.
+    /// - Returns: The outcome.
+    func outcome(of status: CaptureStatus, planned: Int) -> ShortcutOutcome {
+        guard case .failed = status, !lastPressPhotos.isEmpty else { return outcome(of: status) }
+        return .savedSome(saved: lastPressPhotos.count, total: max(planned, lastPressPhotos.count))
+    }
+
     /// The outcome a capture status reports.
     ///
     /// - Parameter status: The status after the photo.
@@ -323,7 +410,7 @@ extension CameraModel {
         switch status {
         case .saved(let photo): .saved(isSigned: photo.signature == .signed)
         case .savedBracket(let photos), .savedBurst(let photos):
-            .savedSeveral(allSigned: photos.allSatisfy { $0.signature == .signed })
+            .savedSeveral(count: photos.count, allSigned: photos.allSatisfy { $0.signature == .signed })
         case .failed(let error): .notSaved(error)
         case .idle, .capturing, .saving: .notSaved(.notRunning)
         }

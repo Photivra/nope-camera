@@ -6,8 +6,10 @@ import SwiftUI
 /// reason as its hint (issue #1, "Lenses"). It stays selectable, because its labeled fallback is
 /// still a photo. The front camera has its own button (``CameraFlipButton``).
 ///
-/// In a row the buttons sit side by side and wrap into a column when the text is too large; in
-/// the iPad's control column they are one column.
+/// The buttons sit in one capsule group with ``NopeColor/controlFill``, the selected lens filled
+/// white (docs/design/BUILD-SPEC.md, 3.1): side by side in the lens row, one above the other in
+/// the column layout. Each lens's 36-point capsule sits in its 44-point target, so neighbors'
+/// capsules are at least ``NopeSpace/xxs`` apart inside the group.
 struct LensButtons: View {
     /// The lenses, in display order.
     let lenses: [Lens]
@@ -39,12 +41,33 @@ struct LensButtons: View {
     var body: some View {
         Group {
             if isVertical {
-                VStack(spacing: CameraStyle.targetSpacing) { buttons }
+                VStack(spacing: 0) { buttons }
+                    .padding(.horizontal, NopeSpace.xxs)
             } else {
-                HStack(spacing: CameraStyle.targetSpacing) { buttons }
+                HStack(spacing: NopeSpace.xxs) { buttons }
+                    .padding(.horizontal, NopeSpace.xxs)
             }
         }
-        .sensoryFeedback(.selection, trigger: selectedID)
+        // Each lens is 36 points high in its 44-point target, so the group is 44 points across
+        // with the selected lens inset 4 points (docs/design/tokens.md, "lensItem").
+        .background(groupFill, in: Capsule())
+        .overlay {
+            if isNightMode || contrast == .increased {
+                Capsule().strokeBorder(isNightMode ? NopeColor.nightOutlineUnderMultiply : NopeColor.labelSecondary, lineWidth: NopeSize.outline)
+            }
+        }
+        .sensoryFeedback(NopeHaptic.lensChanged, trigger: selectedID)
+    }
+
+    /// Whether night mode is on: the group is outlined instead of filled.
+    @Environment(\.isNightMode) private var isNightMode
+
+    /// Whether Increase Contrast is on: the group gets an outline.
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    /// The group's fill: the control fill, or near black in night mode.
+    private var groupFill: Color {
+        isNightMode ? NopeColor.controlFillNight : NopeColor.controlFill
     }
 
     /// One button per lens.
@@ -63,7 +86,8 @@ struct LensButtons: View {
     }
 }
 
-/// One lens button: its magnification (or name), and "No RAW" when it has no Bayer RAW.
+/// One lens button: its magnification (or name), and "No RAW" when it has no Bayer RAW. While the
+/// lens can't be changed (``LensBusyState``), it is disabled unless it is the lens in use.
 struct LensButton: View {
     /// The lens.
     let lens: Lens
@@ -91,17 +115,26 @@ struct LensButton: View {
         Button(action: action) {
             VStack(spacing: 0) {
                 title
-                    .font(.subheadline.monospacedDigit())
+                    .font(NopeFont.lens)
                 if !lens.supportsBayerRAW {
                     Text("No RAW", tableName: "Honesty", bundle: .module, comment: "Under a lens button: this lens can't save RAW. RAW is a file format name.")
-                        .font(.caption2)
+                        .font(NopeFont.readoutMode)
                 }
             }
+            // At least 40 points wide with 4 points each side (docs/design/tokens.md,
+            // "lensItem"; the design's lenses). With the compact capsule's 12 points each side
+            // "0.5×" was 53 points wide; turned upright while the iPhone is sideways, that width
+            // became the lens group's height, past the 44-point row, and the group touched the
+            // picture's lower edge.
+            .frame(minWidth: NopeSize.lensItemMinWidth - 2 * NopeSpace.xxs)
         }
-        .buttonStyle(SelectableCapsuleStyle(isSelected: isSelected))
+        .buttonStyle(
+            NopeCapsuleStyle(
+                isSelected: isSelected, size: NopeSize.lensItem, isCompact: true, idleFill: .none, labelPadding: NopeSpace.xxs))
         .accessibilityLabel(Text(verbatim: LensName.string(for: lens.kind)))
         .accessibilityValue(title)
-        .accessibilityHint(hint)
+        // Disabled while the lens can't be changed, unless it is the lens in use (issue #96).
+        .lensBusyControl(isSelected: isSelected, hint: lens.supportsBayerRAW ? nil : Self.noRAWHint)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityInputLabels([title, Text(verbatim: LensName.string(for: lens.kind))])
         .accessibilityShowsLargeContentViewer()
@@ -119,19 +152,19 @@ struct LensButton: View {
         }
     }
 
-    /// The reason a lens without RAW says "No RAW", or nothing.
-    private var hint: Text {
-        lens.supportsBayerRAW
-            ? Text(verbatim: "")
-            : Text(
-                "This lens can't save unprocessed RAW. Its photos have some device processing.",
-                tableName: "Honesty", bundle: .module,
-                comment: "Explains the no-RAW fallback. Must not claim more than the English: the photo IS processed by the device.")
+    /// Why a lens says "No RAW".
+    static var noRAWHint: Text {
+        Text(
+            "This lens can't save unprocessed RAW. Its photos have some device processing.",
+            tableName: "Honesty", bundle: .module,
+            comment: "Explains the no-RAW fallback. Must not claim more than the English: the photo IS processed by the device.")
     }
 }
 
-/// Switches between the front camera and the rear lens last used, as its own button beside the
-/// shutter rather than a lens button (issue #68).
+/// Switches between the front camera and the rear lens last used, as its own round button at the
+/// trailing end of the lens row (the bottom of the column layout), rather than a lens button
+/// (issue #68; docs/design/BUILD-SPEC.md, 3.1). Disabled while the lens can't be changed
+/// (``LensBusyState``).
 struct CameraFlipButton: View {
     /// Switches the camera.
     let action: () -> Void
@@ -153,50 +186,130 @@ struct CameraFlipButton: View {
             }
             .labelStyle(.iconOnly)
             .font(.title3)
-            .foregroundStyle(.white)
-            .padding(8)
-            .frame(minWidth: ThumbnailSlot.side, minHeight: ThumbnailSlot.side)
-            .background(Color(white: 0.2), in: .circle)
-            .contentShape(.circle)
         }
-        .buttonStyle(.plain)
-        .hoverEffect(.highlight)
-        .accessibilityShowsLargeContentViewer()
+        .buttonStyle(NopeIconButtonStyle())
+        // Disabled while the lens can't be changed (issue #96).
+        .lensBusyControl()
     }
 }
 
-/// The ⋯ button at the end of the lens row: opens and closes the quick-controls tray.
-struct QuickControlsButton: View {
-    /// Whether the tray is open.
+/// Q, beside the shutter: opens and closes the quick menu (docs/design/BUILD-SPEC.md, 3.6). It is
+/// filled white while the menu is open. Its name, "Quick Menu", is what VoiceOver reads and what
+/// Voice Control users say; the Large Content Viewer shows it.
+struct QuickButton: View {
+    /// Whether the quick menu is open.
     let isOpen: Bool
 
-    /// Opens or closes the tray.
+    /// The diameter: ``NopeSize/quick``, or ``NopeSize/scrollingRowButton`` in the scrolling
+    /// layout.
+    let size: CGFloat
+
+    /// Opens or closes the quick menu.
     let action: () -> Void
 
     /// Creates the button.
     ///
     /// - Parameters:
-    ///   - isOpen: Whether the tray is open.
-    ///   - action: Opens or closes the tray.
-    init(isOpen: Bool, action: @escaping () -> Void) {
+    ///   - isOpen: Whether the quick menu is open.
+    ///   - size: The diameter, in points.
+    ///   - action: Opens or closes the quick menu.
+    init(isOpen: Bool, size: CGFloat = NopeSize.quick, action: @escaping () -> Void) {
         self.isOpen = isOpen
+        self.size = size
         self.action = action
+    }
+
+    /// "Quick Menu".
+    static var name: Text {
+        QuickControlsText.title
     }
 
     /// The button.
     var body: some View {
         Button(action: action) {
-            Label {
-                Text("Quick Controls", bundle: .module, comment: "VoiceOver and Voice Control name of the button at the end of the lens row that opens a row of camera toggles, and of that row.")
-            } icon: {
-                Image(systemName: isOpen ? "xmark" : "ellipsis")
-            }
-            .labelStyle(.iconOnly)
+            // "Q" is the button's mark, the same in every launch language, as the shutter's ring
+            // is; its name is localized.
+            Text(verbatim: "Q")
+                .font(NopeFont.q)
         }
-        .buttonStyle(SelectableCapsuleStyle(isSelected: isOpen))
+        .buttonStyle(NopeIconButtonStyle(size: size, isSelected: isOpen))
+        .accessibilityLabel(Self.name)
+        // Voice Control: the name, then the letter the button shows (docs/design/ACCESSIBILITY.md).
+        .accessibilityInputLabels([Self.name, Text(verbatim: "Q")])
+        .accessibilityIdentifier("quickMenuButton")
         .accessibilityAddTraits(isOpen ? .isSelected : [])
-        .accessibilityShowsLargeContentViewer()
+        .accessibilityShowsLargeContentViewer {
+            Label { Self.name } icon: { Image(systemName: "square.grid.3x3") }
+        }
         .uprightUnit()
+    }
+}
+
+/// One full-width row per lens, the front camera included, for the scrolling layout at
+/// accessibility text sizes (docs/design/BUILD-SPEC.md, 3.12): the lens's name over its
+/// magnification, the selected lens filled white. A lens without RAW says "No RAW". While the
+/// lens can't be changed (``LensBusyState``), every row but the lens in use is disabled.
+struct LensRows: View {
+    /// The lenses, in display order.
+    let lenses: [Lens]
+
+    /// The selected lens's identifier.
+    let selectedID: Lens.ID?
+
+    /// Called with a lens's identifier when it is pressed.
+    let select: (Lens.ID) -> Void
+
+    /// Creates the rows.
+    ///
+    /// - Parameters:
+    ///   - lenses: The lenses, in display order.
+    ///   - selectedID: The selected lens's identifier.
+    ///   - select: Called with a lens's identifier when it is pressed.
+    init(lenses: [Lens], selectedID: Lens.ID?, select: @escaping (Lens.ID) -> Void) {
+        self.lenses = lenses
+        self.selectedID = selectedID
+        self.select = select
+    }
+
+    /// The rows.
+    var body: some View {
+        // 12 points apart, as every row of the scrolling layout (docs/design/screens/ax-camera).
+        VStack(spacing: NopeSpace.s) {
+            ForEach(lenses) { lens in
+                let isSelected = lens.id == selectedID
+                Button {
+                    select(lens.id)
+                } label: {
+                    CameraRowLabel(name: Text(verbatim: LensName.string(for: lens.kind)), value: value(of: lens), detail: detail(of: lens))
+                }
+                .buttonStyle(NopeTileStyle(isOn: isSelected, minHeight: NopeSize.scrollingRowButton))
+                // Named as the lens buttons are: the lens's name, with the magnification as the
+                // value and the reason for "No RAW" as the hint. Disabled while the lens can't be
+                // changed, unless it is the lens in use; no row is added or removed (issue #96).
+                .accessibilityLabel(Text(verbatim: LensName.string(for: lens.kind)))
+                .accessibilityValue(value(of: lens) ?? Text(verbatim: ""))
+                .lensBusyControl(isSelected: isSelected, hint: detail(of: lens) == nil ? nil : LensButton.noRAWHint)
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+                .accessibilityInputLabels([Text(verbatim: LensName.string(for: lens.kind))])
+            }
+        }
+        .sensoryFeedback(NopeHaptic.lensChanged, trigger: selectedID)
+    }
+
+    /// "1×", or nothing for a lens without a magnification.
+    ///
+    /// - Parameter lens: The lens.
+    private func value(of lens: Lens) -> Text? {
+        lens.magnification.map { Text(verbatim: $0.formatted(.number.precision(.fractionLength(0...1))) + "×") }
+    }
+
+    /// "No RAW" under a lens that can't save RAW, or nothing.
+    ///
+    /// - Parameter lens: The lens.
+    private func detail(of lens: Lens) -> Text? {
+        lens.supportsBayerRAW
+            ? nil
+            : Text("No RAW", tableName: "Honesty", bundle: .module, comment: "Under a lens button: this lens can't save RAW. RAW is a file format name.")
     }
 }
 
@@ -217,5 +330,14 @@ enum LensName {
         case .front:
             String(localized: "Front", bundle: .module, comment: "Name of the front (selfie) camera.")
         }
+    }
+
+    /// The label the lens buttons show for a lens's magnification, such as "0.5×", or `nil` for
+    /// a lens without one.
+    ///
+    /// - Parameter lens: The lens.
+    /// - Returns: The label.
+    static func magnificationLabel(for lens: Lens) -> String? {
+        lens.magnification.map { $0.formatted(.number.precision(.fractionLength(0...1))) + "×" }
     }
 }

@@ -1,10 +1,11 @@
 import NopeCore
 import SwiftUI
 
-/// The manual controls at accessibility text sizes: one row per control, in the grid's order,
-/// with an Auto/Manual switch and a stepper, so nothing is clipped (AGENTS.md, "Larger Text").
+/// The manual controls at accessibility text sizes: one row per control, in the readout row's
+/// order, with an Auto/Manual switch and a stepper, so nothing is clipped (AGENTS.md, "Larger
+/// Text"; docs/design/BUILD-SPEC.md, 3.12).
 ///
-/// It shows the same values as the grid and sends the same intents.
+/// It shows the same values as the readout row and sends the same intents.
 struct ManualControlsList: View {
     /// The camera model.
     let model: CameraModel
@@ -18,13 +19,13 @@ struct ManualControlsList: View {
 
     /// One row per control.
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: NopeSpace.m) {
             ForEach(ManualControl.allCases, id: \.self) { control in
                 ControlRow(model: model, control: control)
             }
         }
-        .padding(12)
-        .background(.black, in: .rect(cornerRadius: 12))
+        .padding(NopeSpace.s)
+        .nopeBackground(.solid, in: RoundedRectangle(cornerRadius: NopeRadius.small))
     }
 }
 
@@ -51,7 +52,7 @@ struct ControlRow: View {
 
     /// The row.
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: NopeSpace.xs) {
             Text(verbatim: ControlText.name(control))
                 .font(.headline)
                 .accessibilityAddTraits(.isHeader)

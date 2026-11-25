@@ -189,6 +189,35 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         try result.get()
     }
 
+    /// Locks focus at a lens position on `queue` and waits for the system's handler, which runs
+    /// when the position has been applied (AVCaptureDevice.h,
+    /// `setFocusModeLocked(lensPosition:completionHandler:)`); then reads `lensPosition` back on
+    /// `queue`. Guarded by `isLockingFocusWithCustomLensPositionSupported`.
+    func setFocus(lensPosition: Double) async throws(CaptureError) -> Double {
+        let result: Result<Double, CaptureError> = await withCheckedContinuation { continuation in
+            queue.async {
+                guard let device = self.currentInput?.device else {
+                    continuation.resume(returning: .failure(.notRunning))
+                    return
+                }
+                guard device.isLockingFocusWithCustomLensPositionSupported, (try? device.lockForConfiguration()) != nil
+                else {
+                    continuation.resume(returning: .failure(.configurationFailed))
+                    return
+                }
+                device.setFocusModeLocked(lensPosition: Float(min(max(lensPosition, 0), 1))) { _ in
+                    // The handler runs on an arbitrary queue; the device is read on `queue`.
+                    self.queue.async {
+                        let reported = self.currentInput?.device.lensPosition ?? Float(lensPosition)
+                        continuation.resume(returning: .success(Double(reported)))
+                    }
+                }
+                device.unlockForConfiguration()
+            }
+        }
+        return try result.get()
+    }
+
     /// Starts or stops the readings, on `queue`.
     func setReadingsEnabled(_ enabled: Bool) async {
         await perform {
@@ -210,7 +239,10 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         }
         let result: Result<[HardwarePhoto], CaptureError> = await withCheckedContinuation { continuation in
             queue.async {
-                guard self.session.isRunning, let device = self.currentInput?.device else {
+                guard
+                    let device = CapturePolicy.cameraToCapture(
+                        self.currentInput?.device, id: \.uniqueID, isRunning: self.session.isRunning, plan: plan)
+                else {
                     continuation.resume(returning: .failure(.notRunning))
                     return
                 }
@@ -237,10 +269,15 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     /// `AVErrorTorchLevelUnavailable` (`AVCaptureDevice.h`, `setTorchModeOn(level:)`); the light
     /// is then left off and reported unavailable, rather than silently brighter or dimmer.
     ///
+    /// Without an attached camera that has a torch (during discovery, which attaches each
+    /// camera in turn, or between a teardown and the next attach), a request for the light
+    /// can't be applied yet: it is answered `.pending`, not `.off`, and `LightModel` applies it
+    /// after the start (issue #75).
+    ///
     /// - Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
     /// - Returns: The light's state afterwards.
     private func switchTorch(level: Double?) -> TorchStatus {
-        guard let device = currentInput?.device, device.hasTorch else { return .off }
+        guard let device = currentInput?.device, device.hasTorch else { return level == nil ? .off : .pending }
         guard let level else {
             turnTorchOff(device)
             return .off
@@ -372,11 +409,16 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
                 PhotoDimensions(width: Int($0.width), height: Int($0.height))
             },
             fieldOfViewDegrees: Double(format.videoFieldOfView),
+            canTurnOffDistortionCorrection: device.isGeometricDistortionCorrectionSupported,
             manualControls: Self.manualSupport(of: device),
             // Read with this camera attached: the list is "for the current capture session
             // configuration" (`AVCapturePhotoOutput.supportedFlashModes`).
             flashModes: device.hasFlash ? photoOutput.supportedFlashModes.compactMap(FlashMode.init) : [],
-            hasTorch: device.hasTorch && device.isTorchModeSupported(.on)
+            hasTorch: device.hasTorch && device.isTorchModeSupported(.on),
+            minimumFocusDistance: device.minimumFocusDistance,
+            // Read with this camera attached, as the flash modes: the photo output answers for
+            // its current configuration. A device check confirms it per lens (docs/TESTING.md, S1).
+            reportsStabilization: photoOutput.isLensStabilizationDuringBracketedCaptureSupported
         )
     }
 
@@ -401,8 +443,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
                     lensAperture: AVCaptureDevice.currentLensAperture, duration: AVCaptureDevice.autoExposureDuration,
                     iso: AVCaptureDevice.autoISO)
         }
-        var exposureRegion = false
-        if #available(iOS 26.0, *) { exposureRegion = device.isExposureRectOfInterestSupported }
+        let exposureRegion = device.isExposureRectOfInterestSupported
         return ManualControlSupport(
             customExposure: device.isExposureModeSupported(.custom),
             continuousAutoExposure: device.isExposureModeSupported(.continuousAutoExposure),
@@ -467,7 +508,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     ///   - metering: The metering mode.
     ///   - device: The camera.
     private func applyMetering(_ metering: MeteringMode, to device: AVCaptureDevice) {
-        if #available(iOS 26.0, *), device.isExposureRectOfInterestSupported {
+        if device.isExposureRectOfInterestSupported {
             let minimum = device.minExposureRectOfInterestSize
             if let region = MeteringRegion.region(
                 for: metering, minimumWidth: Double(minimum.width), minimumHeight: Double(minimum.height))
@@ -694,23 +735,44 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     /// Observes the attached camera while readings are on, and stops observing otherwise. Call
     /// only on `queue`.
     ///
-    /// The exposure offset changes as the meter updates, and the lens position as the lens
-    /// moves; either triggers a reading of every value, sent at most four times a second
-    /// (``ReadingThrottle``). Nothing is observed while readings are off.
+    /// The exposure offset changes as the meter updates, the lens position as the lens moves,
+    /// and whether autofocus is searching as it starts and stops; any of them triggers a reading
+    /// of every value, sent at most four times a second (``ReadingThrottle``). A change held
+    /// back by the throttle schedules one more reading at the end of the interval, so the last
+    /// values are sent once things settle. Nothing is observed while readings are off.
     private func observeReadings() {
         readingObservations.forEach { $0.invalidate() }
         readingObservations = []
+        // A new throttle: a reading scheduled for the camera observed before is not sent.
+        throttle.withLock { $0 = ReadingThrottle() }
         guard readingsEnabled, let device = currentInput?.device else { return }
-        let send: @Sendable (AVCaptureDevice) -> Void = { [throttle, readingsContinuation, live] device in
-            let now = ProcessInfo.processInfo.systemUptime
-            guard throttle.withLock({ $0.shouldSend(at: now) }) else { return }
+        let send: @Sendable (AVCaptureDevice) -> Void = { [readingsContinuation, live] device in
             readingsContinuation.yield(Self.reading(of: device))
             // The live camera readout is built from the same observations, not a second set.
             live.readingDidArrive(from: device)
         }
+        let changed: @Sendable (AVCaptureDevice) -> Void = { [weak self, throttle, queue] device in
+            switch throttle.withLock({ $0.decide(at: ProcessInfo.processInfo.systemUptime) }) {
+            case .send:
+                send(device)
+            case .later(let delay, let ticket):
+                // On `queue`, where the attached camera is read: its values then are sent.
+                queue.asyncAfter(deadline: .now() + delay) { [weak self] in
+                    guard throttle.withLock({ $0.sendsLater(ticket, at: ProcessInfo.processInfo.systemUptime) }),
+                        let device = self?.currentInput?.device
+                    else { return }
+                    send(device)
+                }
+            case .drop:
+                break
+            }
+        }
         readingObservations = [
-            device.observe(\.exposureTargetOffset, options: [.initial]) { device, _ in send(device) },
-            device.observe(\.lensPosition) { device, _ in send(device) },
+            device.observe(\.exposureTargetOffset, options: [.initial]) { device, _ in changed(device) },
+            device.observe(\.lensPosition) { device, _ in changed(device) },
+            // Key-value observable (AVCaptureDevice, `isAdjustingFocus`): the start and end of a
+            // search arrive even while the lens position and meter hold still.
+            device.observe(\.isAdjustingFocus) { device, _ in changed(device) },
         ]
     }
 
@@ -855,7 +917,11 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     private func startCapture(
         _ plan: PhotoSettingsPlan, metadata: MetadataPlan, completion: @escaping @Sendable (Result<HardwarePhoto, CaptureError>) -> Void
     ) {
-        guard session.isRunning, let device = currentInput?.device else {
+        // The attached camera must be the plan's: a lens change may have reconfigured the
+        // session while this photo waited for the output (CapturePolicy.cameraToCapture).
+        guard
+            let device = CapturePolicy.cameraToCapture(currentInput?.device, id: \.uniqueID, isRunning: session.isRunning, plan: plan)
+        else {
             completion(.failure(.notRunning))
             return
         }
@@ -1129,7 +1195,10 @@ extension SystemCaptureHardware: ComparisonHardware {
         }
         let result: Result<HardwarePhoto, CaptureError> = await withCheckedContinuation { continuation in
             queue.async {
-                guard self.session.isRunning, self.currentInput != nil else {
+                guard
+                    CapturePolicy.cameraToCapture(
+                        self.currentInput?.device, id: \.uniqueID, isRunning: self.session.isRunning, plan: plan) != nil
+                else {
                     continuation.resume(returning: .failure(.notRunning))
                     return
                 }

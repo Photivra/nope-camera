@@ -88,11 +88,45 @@ struct WatchTests {
         PhoneUpdate(status: .busy, result: .saved(isSigned: true)),
         PhoneUpdate(status: .unavailable(.permissionDenied), result: .notTaken(.noCamera)),
         PhoneUpdate(status: .ready, result: .savedSeveral(allSigned: false)),
+        PhoneUpdate(status: .ready, result: .saved(isSigned: false), unsignedReason: .turnedOff),
+        PhoneUpdate(status: .ready, result: .savedSeveral(allSigned: false), unsignedReason: .failed),
         PhoneUpdate(status: .ready, result: .cancelled),
         PhoneUpdate(status: .ready, result: .notUnderstood),
     ])
     func updatesRoundTrip(update: PhoneUpdate) throws {
         #expect(try WatchMessageCoding.decodeUpdate(WatchMessageCoding.encode(update)) == update)
+    }
+
+    /// The unsigned reason is optional, so an update from a phone app without it still decodes,
+    /// and the reasons keep stable names in the message.
+    @Test func anUpdateWithoutTheUnsignedReasonDecodes() throws {
+        let older = Data(#"{"version":1,"body":{"status":{"ready":{}},"result":{"saved":{"isSigned":false}}}}"#.utf8)
+        #expect(try WatchMessageCoding.decodeUpdate(older) == PhoneUpdate(status: .ready, result: .saved(isSigned: false)))
+        let update = PhoneUpdate(status: .ready, result: .saved(isSigned: false), unsignedReason: .signedFileFailedCheck)
+        let json = try JSONSerialization.jsonObject(with: WatchMessageCoding.encode(update)) as? [String: Any]
+        let body = json?["body"] as? [String: Any]
+        #expect(body?["unsignedReason"] as? String == "signedFileFailedCheck")
+        #expect(SignatureStatus.UnsignedReason.allCases.map(\.rawValue) == ["turnedOff", "unavailable", "failed", "signedFileFailedCheck"])
+    }
+
+    @Test func theUnsignedReasonComesFromTheSavedPhotos() {
+        func photo(_ signature: SignatureStatus) -> SavedPhoto {
+            SavedPhoto(formats: [.raw], isProcessedFallback: false, signature: signature, metadata: [:])
+        }
+        typealias Reason = SignatureStatus.UnsignedReason
+        #expect(Reason(photosOf: .saved(photo(.unsigned(.turnedOff)))) == .turnedOff)
+        #expect(Reason(photosOf: .saved(photo(.signed))) == nil)
+        // A photo that couldn't be signed wins over signing turned off.
+        #expect(Reason(photosOf: .savedBracket([photo(.unsigned(.turnedOff)), photo(.unsigned(.failed))])) == .failed)
+        #expect(Reason(photosOf: .savedBurst([photo(.signed), photo(.unsigned(.turnedOff))])) == .turnedOff)
+        #expect(Reason(photosOf: .savedBurst([photo(.signed)])) == nil)
+        for status in [CaptureStatus.idle, .capturing, .saving, .failed(.notRunning)] {
+            #expect(Reason(photosOf: status) == nil)
+        }
+        #expect(WatchResult.saved(isSigned: false).includesUnsignedPhotos)
+        #expect(WatchResult.savedSeveral(allSigned: false).includesUnsignedPhotos)
+        #expect(!WatchResult.saved(isSigned: true).includesUnsignedPhotos)
+        #expect(!WatchResult.cancelled.includesUnsignedPhotos)
     }
 
     @Test func delaysAreTheSelfTimersOrNone() {
@@ -169,13 +203,13 @@ struct WatchTests {
 
     @Test func outcomesBecomeResults() {
         #expect(WatchResult(ShortcutOutcome.saved(isSigned: true)) == .saved(isSigned: true))
-        #expect(WatchResult(ShortcutOutcome.savedSeveral(allSigned: false)) == .savedSeveral(allSigned: false))
+        #expect(WatchResult(ShortcutOutcome.savedSeveral(count: 2, allSigned: false)) == .savedSeveral(allSigned: false))
         #expect(WatchResult(ShortcutOutcome.notSaved(.saveFailed)) == .notSaved)
         let otherRequests: [ShortcutOutcome] = [
             .lensUnavailable, .lensSelected(.wide), .lightOn, .lightOff, .noLight, .lightUnavailable,
-            .intervalStarted, .intervalBlockedByAstro, .intervalStopped, .noIntervalRunning, .bracketUnavailable,
-            .focusRangeSet(.closeUp),
-            .focusRangeUnavailable, .photoSizeSet, .noPhotoSizeChoice, .presetUnavailable,
+            .intervalStarted, .intervalBlockedByAstro, .intervalNotShorterThanTime, .intervalStopped, .noIntervalRunning,
+            .bracketUnavailable, .focusBracketBlockedByAstro, .savedSome(saved: 1, total: 3), .focusRangeSet(.closeUp),
+            .focusRangeUnavailable, .photoSizeSet, .noPhotoSizeChoice, .presetUnavailable, .timerStarted(seconds: 20),
             .presetApplied(PresetApplyResult(choice: .factoryDefaults, name: nil, isApplied: true, notices: [])),
         ]
         for outcome in otherRequests { #expect(WatchResult(outcome) == .notSaved) }
@@ -251,8 +285,30 @@ struct WatchTests {
         let reply = update(await server.reply(to: WatchMessageCoding.encode(.takePhoto(delay: .none))))
         #expect(reply?.result == nil)
         await waitUntil { !link.sent.isEmpty }
-        #expect(link.sent == [PhoneUpdate(status: .ready, result: .saved(isSigned: false))])
+        // Signing is off by default (issue #80), so the watch hears it is off by choice.
+        #expect(link.sent == [PhoneUpdate(status: .ready, result: .saved(isSigned: false), unsignedReason: .turnedOff)])
         #expect(await backend.captureRequests.count == 1)
+    }
+
+    /// Owner decision 9 (docs/plans/1.0.0-finish.md, section 6): the Burst Limit doesn't change
+    /// the Apple Watch shutter. It sends `PhotoShortcut(delaySeconds:appliesBracketInApp: true)`
+    /// with a count of 1, which takes one photo whatever the drive mode, also in Burst with a
+    /// limit of 10.
+    @Test func theWatchShutterTakesOnePhotoInBurstWithABurstLimit() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await makeModel(backend)
+        await model.send(.drive(.setMode(.burst)))
+        await model.send(.drive(.setBurstLimit(.ten)))
+        let inbox = ShortcutInbox(sleep: ShortcutTests.neverTimesOut)
+        let shortcuts = Task { await model.serveShortcuts(from: inbox) }
+        defer { shortcuts.cancel() }
+        let link = FakeWatchLink()
+        let server = WatchCommandServer(model: model, inbox: inbox, link: link)
+        _ = await server.reply(to: WatchMessageCoding.encode(.takePhoto(delay: .none)))
+        await waitOrFail("the watch hears the result") { !link.sent.isEmpty }
+        #expect(link.sent.first?.result == .saved(isSigned: false))
+        #expect(await backend.captureRequests.count == 1)
+        #expect(model.drive.lastBurst == nil, "no burst was taken")
     }
 
     @Test func aDelayRunsThePhonesSelfTimer() async {
@@ -306,7 +362,7 @@ struct WatchTests {
         await waitUntil { server.undeliveredResult != nil }
         #expect(link.sent.isEmpty)
         let reply = update(await server.reply(to: WatchMessageCoding.encode(.requestStatus)))
-        #expect(reply == PhoneUpdate(status: .ready, result: .saved(isSigned: false)))
+        #expect(reply == PhoneUpdate(status: .ready, result: .saved(isSigned: false), unsignedReason: .turnedOff))
         // It is given once.
         #expect(update(await server.reply(to: WatchMessageCoding.encode(.requestStatus)))?.result == nil)
     }
@@ -322,6 +378,7 @@ struct WatchTests {
         _ = await server.reply(to: WatchMessageCoding.encode(.takePhoto(delay: .none)))
         await waitUntil { server.undeliveredResult != nil }
         #expect(server.undeliveredResult == .saved(isSigned: false))
+        #expect(server.undeliveredUnsignedReason == .turnedOff)
     }
 
     @Test func sendsEachStatusChangeWhileTheWatchIsReachable() async {
@@ -452,10 +509,17 @@ struct WatchTests {
         #expect(remote.canCancelTimer)
         remote.receive(WatchMessageCoding.encode(PhoneUpdate(status: .ready, result: .saved(isSigned: true))))
         #expect(remote.lastResult == .saved(isSigned: true))
+        #expect(remote.lastUnsignedReason == nil)
         #expect(remote.display == .ready)
         // The next photo clears the last result.
         await remote.takePhoto()
         #expect(remote.lastResult == nil)
+        remote.receive(
+            WatchMessageCoding.encode(PhoneUpdate(status: .ready, result: .saved(isSigned: false), unsignedReason: .turnedOff)))
+        #expect(remote.lastResult == .saved(isSigned: false))
+        #expect(remote.lastUnsignedReason == .turnedOff)
+        await remote.takePhoto()
+        #expect(remote.lastUnsignedReason == nil)
     }
 
     @Test func aRefusalEndsTheWaitAtOnce() async {

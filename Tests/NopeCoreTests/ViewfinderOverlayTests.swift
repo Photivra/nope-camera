@@ -10,11 +10,9 @@ struct OverlayOptionsTests {
         #expect(settings.overlays == OverlayOptions())
         #expect(!settings.overlays.isAnyOn)
         #expect(settings.overlays.gridStyle == .thirds)
-        #expect(settings.overlays.spiralPlacement == .standard)
 
         settings.setShowsGrid(true)
-        settings.setGridStyle(.goldenSpiral)
-        settings.turnSpiral()
+        settings.setGridStyle(.square)
         settings.setShowsLevel(true)
         settings.setShowsFocusPeaking(true)
         settings.setShowsHistogram(true)
@@ -26,8 +24,7 @@ struct OverlayOptionsTests {
         #expect(reloaded == settings.overlays)
         #expect(reloaded.showsGrid && reloaded.showsLevel && reloaded.showsFocusPeaking)
         #expect(reloaded.showsHistogram && reloaded.showsLiveReadout && reloaded.pinsLiveReadout)
-        #expect(reloaded.gridStyle == .goldenSpiral)
-        #expect(reloaded.spiralPlacement == SpiralPlacement(index: 1))
+        #expect(reloaded.gridStyle == .square)
     }
 
     @Test func theReadoutHidesInCleanViewUnlessPinned() {
@@ -60,43 +57,36 @@ struct OverlayOptionsTests {
     @Test func unreadableValuesFallBackToTheDefaults() {
         let scratch = ScratchDefaults()
         scratch.defaults.set("hexagons", forKey: OverlayOptions.Key.gridStyle)
-        scratch.defaults.set(13, forKey: OverlayOptions.Key.spiralPlacement)
         let options = OverlayOptions(defaults: scratch.defaults)
         #expect(options.gridStyle == .thirds)
-        #expect(options.spiralPlacement == SpiralPlacement(index: 5))
     }
 
-    @Test func spiralPlacementsCycleThroughAllEight() {
-        var placement = SpiralPlacement.standard
-        var seen: Set<SpiralPlacement> = []
-        for _ in 0..<SpiralPlacement.count {
-            seen.insert(placement)
-            placement = placement.next
+    /// Issue #76: the golden ratio and golden spiral grids are removed. A stored setting that
+    /// names one reads as thirds, and the spiral's stored placement is dropped on the next save.
+    @Test @MainActor func aRemovedGoldenGridReadsAsThirds() {
+        #expect(GridStyle.allCases == [.thirds, .fourByFour, .square])
+        for removed in ["goldenRatio", "goldenSpiral"] {
+            let scratch = ScratchDefaults()
+            scratch.defaults.set(true, forKey: OverlayOptions.Key.showsGrid)
+            scratch.defaults.set(removed, forKey: OverlayOptions.Key.gridStyle)
+            scratch.defaults.set(5, forKey: OverlayOptions.Key.removedSpiralPlacement)
+            let settings = NopeSettings(defaults: scratch.defaults)
+            #expect(settings.overlays.showsGrid)
+            #expect(settings.overlays.gridStyle == .thirds)
+            settings.setShowsLevel(true)
+            #expect(scratch.defaults.object(forKey: OverlayOptions.Key.removedSpiralPlacement) == nil)
+            #expect(scratch.defaults.string(forKey: OverlayOptions.Key.gridStyle) == "thirds")
         }
-        #expect(seen.count == 8)
-        #expect(placement == .standard)
-        #expect(SpiralPlacement(index: -1) == SpiralPlacement(quarterTurns: 3, isFlipped: true))
-        #expect(SpiralPlacement(quarterTurns: 5, isFlipped: false).quarterTurns == 1)
-        #expect(SpiralPlacement(quarterTurns: -1, isFlipped: false).quarterTurns == 3)
-        let flipped = SpiralPlacement(quarterTurns: 2, isFlipped: true)
-        #expect(flipped.index == 6)
-        #expect(flipped.turned(by: 3) == SpiralPlacement(quarterTurns: 1, isFlipped: true))
-        #expect(flipped.turned(by: -1) == SpiralPlacement(quarterTurns: 1, isFlipped: true))
     }
 }
 
 struct GridGeometryTests {
-    @Test func thirdsQuartersAndGoldenRatioCrossTheWholePicture() {
+    @Test func thirdsAndQuartersCrossTheWholePicture() {
         let thirds = GridGeometry.lines(for: .thirds, aspectRatio: 0.75)
         #expect(thirds.count == 4)
         #expect(thirds[0] == GuideLine(start: GuidePoint(x: 1.0 / 3.0, y: 0), end: GuidePoint(x: 1.0 / 3.0, y: 1)))
         #expect(thirds[3] == GuideLine(start: GuidePoint(x: 0, y: 2.0 / 3.0), end: GuidePoint(x: 1, y: 2.0 / 3.0)))
         #expect(GridGeometry.lines(for: .fourByFour, aspectRatio: 0.75).count == 6)
-        let golden = GridGeometry.lines(for: .goldenRatio, aspectRatio: 0.75)
-        #expect(golden.count == 4)
-        #expect(abs(golden[0].start.x - 0.381_966) < 0.000_001)
-        #expect(abs(golden[1].start.x - 0.618_034) < 0.000_001)
-        #expect(GridGeometry.lines(for: .goldenSpiral, aspectRatio: 0.75).isEmpty)
     }
 
     @Test func squareFrameFollowsTheShape() {
@@ -113,30 +103,6 @@ struct GridGeometryTests {
         #expect(GridGeometry.lines(for: .square, aspectRatio: 1).isEmpty)
         #expect(GridGeometry.lines(for: .square, aspectRatio: 0).isEmpty)
         #expect(GridGeometry.lines(for: .square, aspectRatio: .infinity).isEmpty)
-    }
-
-    @Test func spiralIsContinuousAndStaysInThePicture() throws {
-        let points = GoldenSpiral.points(placement: .standard)
-        #expect(points.count == GoldenSpiral.squareCount * GoldenSpiral.pointsPerQuarter + 1)
-        // It starts at the bottom-left corner and winds in toward the golden point on the right.
-        #expect(abs(points[0].x) < 0.000_001 && abs(points[0].y - 1) < 0.000_001)
-        for (point, next) in zip(points, points.dropFirst()) {
-            #expect(point.x >= -0.000_001 && point.x <= 1.000_001 && point.y >= -0.000_001 && point.y <= 1.000_001)
-            #expect(hypot(next.x - point.x, next.y - point.y) < 0.15)
-        }
-        let center = try #require(points.last)
-        #expect(center.x > 0.6 && center.y > 0.5)
-    }
-
-    @Test func placementsFlipThenTurn() {
-        let point = GuidePoint(x: 0.1, y: 0.2)
-        #expect(GoldenSpiral.place(point, .standard) == point)
-        #expect(GoldenSpiral.place(point, SpiralPlacement(quarterTurns: 0, isFlipped: true)) == GuidePoint(x: 0.9, y: 0.2))
-        #expect(GoldenSpiral.place(point, SpiralPlacement(quarterTurns: 1, isFlipped: false)) == GuidePoint(x: 0.8, y: 0.1))
-        let turnedTwice = GoldenSpiral.place(point, SpiralPlacement(quarterTurns: 2, isFlipped: false))
-        #expect(abs(turnedTwice.x - 0.9) < 0.000_001 && abs(turnedTwice.y - 0.8) < 0.000_001)
-        let placed = GoldenSpiral.points(placement: SpiralPlacement(quarterTurns: 1, isFlipped: false))
-        #expect(abs(placed[0].x) < 0.000_001 && abs(placed[0].y) < 0.000_001)
     }
 }
 
@@ -237,7 +203,7 @@ struct LevelTests {
         let model = LevelModel()
         let task = Task { await model.run(StreamSource(stream: stream)) }
         continuation.yield(Self.upright(turnedBy: 0))
-        while model.state == nil { await Task.yield() }
+        await waitOrFail("a reading arrives") { model.state != nil }
         #expect(model.state?.isLevel == true)
         continuation.finish()
         await task.value

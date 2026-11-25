@@ -9,7 +9,7 @@ extension CameraModel {
     /// apart." while it is `true`.
     public var comparisonAppliesToNextPhoto: Bool {
         comparison.isOn && drive.mode != .burst && drive.mode != .interval && !astro.isOn && manual.intervalProgress == nil
-            && manual.bracketFrames() == nil
+            && manual.bracketPlan == nil
     }
 
     /// The backend that takes the phone's version when the next photo is a comparison shot,
@@ -33,11 +33,13 @@ extension CameraModel {
     /// - Parameters:
     ///   - photo: the app's photo, just taken.
     ///   - started: When the app's photo was started.
+    ///   - takenAt: When the shutter took the app's photo, by the device's clock.
     ///   - request: the app's request, which the phone's version repeats.
     ///   - settings: The settings the app's photo is saved with.
     ///   - backend: The backend that takes the phone's version.
     func saveComparing(
-        _ photo: CapturedPhoto, started: ContinuousClock.Instant, request: CaptureRequest, settings: SaveSettings,
+        _ photo: CapturedPhoto, started: ContinuousClock.Instant, takenAt: Date, request: CaptureRequest,
+        settings: SaveSettings,
         backend: any ComparisonCaptureBackend
     ) async {
         let captureDuration = now() - started
@@ -49,7 +51,10 @@ extension CameraModel {
         }
         captureStatus = .saving
         do {
-            let result = try await saver.saveReturningFiles(photo, settings: settings, captureDuration: captureDuration)
+            let result = try await saver.saveReturningFiles(
+                photo, settings: settings, captureDuration: captureDuration,
+                distortionCorrection: distortionCorrection(of: photo))
+            keepInSession((result.saved, result.preview), lens: request.lens, takenAt: takenAt)
             captureStatus = .saved(result.saved)
             await comparison.present(
                 phone, saved: result.saved, files: result.files, delay: secondStart - started,

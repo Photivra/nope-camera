@@ -2,7 +2,7 @@
 
 How Photivra Nope Camera handles every metadata item it writes or removes. Status: in development.
 The app saves photos to Photos with metadata built from the allowlist below and checked by reading
-each file back; photos are not signed yet. The list follows issue #1, "Privacy"; the saved files are
+each file back, and signs them only when the person turns signing on. The list follows issue #1, "Privacy"; the saved files are
 **still to be confirmed by the device tag check** (issue #1, step 2; "Device checks" below). Wording
 for any user-facing claim comes from
 [`docs/research/privacy-claims.md`](research/privacy-claims.md).
@@ -12,8 +12,13 @@ for any user-facing claim comes from
 - **Network:** none. The app contains no networking code; `scripts/check-security.sh` fails a
   pull request that adds any.
 - **Data collected:** none. `PrivacyInfo.xcprivacy` declares no tracking, no tracking domains and
-  no collected data types. Its only required-reason API is `UserDefaults` (`CA92.1` and
-  `1C8F.1`), for the settings below.
+  no collected data types. It declares three required-reason API categories: `UserDefaults`
+  (`CA92.1` and `1C8F.1`), for the settings below; system boot time (`35F9.1`), because
+  `ProcessInfo.systemUptime` throttles the exposure readings; and disk space (`E174.1` and
+  `85F4.1`), for the low storage warning and the number of photos that fit (issue #44). The Lock
+  Screen camera's manifest declares the same three (`UserDefaults` with `CA92.1` only), the
+  controls extension's `UserDefaults` with `1C8F.1`, and the watch app's `UserDefaults` with
+  `CA92.1` (`docs/SECURITY_AUDIT.md`, check 6).
 - **Permissions:** the usage strings for the camera (`NSCameraUsageDescription`) and add-only
   Photos access (`NSPhotoLibraryAddUsageDescription`) are present and localized. The app asks
   for camera access when the person presses "Allow Camera Access", and for add-only Photos access
@@ -26,8 +31,10 @@ for any user-facing claim comes from
   are one Photos asset: the DNG is the main resource and the processed file the alternate, as
   Apple documents ("Capturing Photos in RAW and Apple ProRAW Formats"). With RAW, HEIF and JPEG
   all selected, Settings › Formats › Paired with RAW chooses which copy is the alternate (HEIF by
-  default); the other is its own asset (issue #50). Pairing changes nothing in any file. The formats are RAW plus
-  HEIF by default (`SaveSettings`); a lens without RAW saves its labeled processed fallback. If a
+  default); the other is its own asset (issue #50). Pairing changes nothing in any file. The format is RAW only by
+  default (`SaveSettings`, issue #80); HEIF and JPEG copies are added in Settings › Formats, and
+  settings a person saved before keep their formats. A lens without RAW saves its labeled
+  processed fallback (see "Processing"). If a
   file fails the check, nothing is saved and the screen says "Not saved: nope. couldn't confirm
   that the photo holds only the details you chose." Files aren't written to disk, with one
   exception PhotoKit requires: the processed copy paired with a RAW is added to Photos from a
@@ -39,14 +46,15 @@ for any user-facing claim comes from
   with the Lock Screen camera, or still saving after the screen locked, would be split into two
   photos. It exists only for the moment the save takes.
 - **Signing:** every file is signed with Content Credentials when the signature switch is on
-  (the default), and the screen says "Saved and signed." If signing fails, the photo is saved
+  (off by default, issue #80), and the screen says "Saved and signed." With it off, the screen
+  says "Saved. Not signed: signing is off in Settings." If signing fails, the photo is saved
   unsigned and the screen says "Saved. Not signed: the signature couldn't be created." Signing
   runs before the read-back, so a signed file is checked like any other (see "Content
   Credentials").
 - **Last photo and its details:** after each save, the last-photo thumbnail beside the shutter
   is made from the saved HEIF or JPEG (or the DNG when only RAW is saved) with ImageIO, in memory
-  (`ImageIOThumbnailer`, no cache). "What's in This Photo" (issue #53, opened from the
-  thumbnail's long-press menu or its VoiceOver action) lists what the read-back found in each
+  (`ImageIOThumbnailer`, no cache). "What's in This Photo" (issue #53, opened from Photo
+  Details in the Last Photo viewer or the thumbnail's VoiceOver action) lists what the read-back found in each
   saved file (pixel size, bit depth, file size, the DNG's color filter pattern, black and white
   levels and whether it stores lens correction instructions; the share of clipped highlights and
   shadows counted from the RAW sensor buffer at capture time (counts only, `RAWClipping`; the
@@ -55,9 +63,55 @@ for any user-facing claim comes from
   signature (the manifest's claim generator and description, and the SHA-256 hash of the
   manifest store the C2PA library returned), and how long each step took. Both are kept in
   memory for this session only: never written to disk, logged or copied, and gone when the app
-  quits. The app can't reopen older photos (add-only access). Tapping the thumbnail opens the
-  Photos app with its `photos-redirect://` URL, only when the person taps; it reads nothing from
-  Photos and makes no network request.
+  quits. The details also keep, with the photo, the shutter speed and ISO the camera reported
+  and the lens it was taken with (`PhotoDetails.CaptureReport`, from `CapturedPhoto`), so What's
+  in This Photo can show them marked "Not in the files" when Exposure Settings or Lens and
+  Camera names are off; like the rest of the details they stay in memory until the app quits
+  and are never written to a file, logged or copied. Identifying values (the location, maker
+  notes, unique IDs) read "Hidden" until the person taps Show Value, what was shown is forgotten
+  when the sheet closes, and the sheet's contents are covered while the app isn't active, so the
+  app switcher's snapshot holds none of them.
+  A bracket's frame also carries its place in the bracket (the frame's number, its planned
+  exposure, the bracket's offsets and order; for a focus bracket, the planned lens position, the
+  position the lens reported, every frame's planned position and the order; `SavedPhoto.bracket`),
+  held in memory with the photo until the app quits and written to no file, so the metadata
+  allowlist is unchanged. The app can't
+  reopen older photos (add-only access). So before the first photo since the app opened, the
+  Last Photo spot holds Open Photos, which opens the Photos app (its `photos-redirect:` URL,
+  where the person left it), and only when the person taps; nothing is read from the library
+  and no picture is kept between launches (`docs/design/device-feedback-1.0.md`, section 1; the
+  Honesty entry Your Photo Library Is Never Read). The Lock Screen camera can't open Photos,
+  so its spot stays empty.
+- **Last Photo viewer previews:** for the viewer that shows this session's photos inside the
+  app (`docs/design/BUILD-SPEC.md`, 3.14; `PhotoViewer.swift`), each save also makes a screen-size preview from the
+  same file as the thumbnail, in memory (`ImageIOPreviewer`, no cache): decoded upright at most
+  3072 pixels on its longest side, drawn into a new 8-bit sRGB image, and compressed as a JPEG
+  with the system encoder. The preview carries nothing from the photo's metadata (no location,
+  date, device or Content Credentials); the encoder writes only the picture's size, the sRGB
+  profile and EXIF `ColorSpace` and pixel dimensions. `CameraModel.sessionPhotos`
+  (`SessionPhotos`) keeps it with the photo's saved record, the lens and the time the shutter
+  took it, under these rules:
+  - never written to disk, logged or copied, and never read from Photos (add-only access);
+  - only the newest 20 photos keep a preview; when a 21st is saved, the oldest of them loses its
+    preview, and only its thumbnail remains;
+  - at most 100 photo records are kept; a 101st drops the oldest record;
+  - every preview is released when the app goes to the background (and
+    `CameraModel.isViewerOpen` becomes false) and when the system reports low memory; a photo whose save finishes while the app is in the
+    background gets none;
+  - pixels are decoded from a preview only on request (`SessionPhotos.picture(of:maximumPixelSize:)`),
+    and `SessionPhotos` keeps no decoded pixels;
+  - the records (formats, signature, thumbnail, details, lens and time) follow the rule above
+    for the thumbnail and details: in memory until the app quits.
+  The viewer decodes pictures only for the page shown and its two neighbors, and lets them go
+  when the page changes or a preview is released. Its contents are hidden while the app isn't
+  the active app, so the app switcher's snapshot shows no photo, and it closes when the app goes
+  to the background. It writes nothing to disk and logs nothing.
+  The Lock Screen camera (the capture extension) makes no previews, so its viewer shows each
+  photo's thumbnail with "No Preview" and says that it doesn't make previews on the Lock Screen.
+  Tapping the thumbnail opens the viewer; the viewer's
+  Open in Photos opens the Photos app with its `photos-redirect://` URL, only when the person
+  taps (not in the Lock Screen camera); it reads nothing from Photos and makes no network
+  request.
 - **Settings:** the person's choices (formats, the RAW pairing, metadata switches, signing, the
   HEIF and JPEG look and file options, front camera mirroring, manual controls) are stored in
   `UserDefaults` on the device. They are never synced or sent. The name and copyright fields of
@@ -73,7 +127,7 @@ for any user-facing claim comes from
   needs no permission) only while it is shown; focus peaking and the histogram sample a few
   reduced preview frames a second in memory only while they are shown; the live camera readout
   reads values the camera reports. None of this is written to a photo, stored, logged or copied.
-- **Comparison shot (issue #55):** off unless the person turns Compare on (quick-controls tray;
+- **Comparison shot (issue #55):** off unless the person turns Compare on (a tile in Q, the quick menu;
   not remembered). Each single or self-timer photo is then followed by a second photo with the
   phone's processing at `.quality` prioritization, which keeps the system's own metadata, so the
   compare view can show what it carries. That photo is never saved, signed, written to a file,
@@ -104,13 +158,28 @@ for any user-facing claim comes from
   manifest declares no tracking, no tracking domains and no collected data; it declares
   `UserDefaults` (`CA92.1`) because the shared `NopeCore` code linked into it contains the
   iPhone app's settings code, which the watch app never runs.
-- **Entitlements:** none.
+- **Links:** three, on the About screen: the privacy policy (`https://nope.photivra.com/privacy/`)
+  and the source code, which open in the browser, and Rate or Review, which opens the App Store's
+  write-review page for the app (`https://apps.apple.com/app/id<App Store ID>?action=write-review`).
+  1.0.0 ships with all three: Rate or Review is shown when `AboutScreen.appStoreID` is set, and
+  `scripts/check-app-store-id.sh`, which fails while it is `nil`, must pass before the release
+  build. Each hands its `https` address to the system when tapped; the
+  app has no web view, fetches nothing, never asks for a rating and stores nothing about whether a
+  link was tapped. What happens in the browser or the App Store is under their own privacy terms,
+  and ratings and reviews written in the App Store are public.
+- **Entitlements:** the app and the controls extension each have one, the App Group
+  (`com.apple.security.application-groups`, `group.<bundle identifier>`;
+  `App/NopeApp.entitlements`, `App/NopeControls.entitlements`), which lets them share the
+  settings and presets on the device (see "Settings shared with the extensions"). The Lock Screen
+  camera and the watch app have none. `security/allowed-entitlements.txt` also allows
+  `com.apple.developer.locked-camera-capture`, which no target requests today.
 - **Files and logs:** Release builds write no files except the paired copy above, which
-  Photos moves into the library (photos otherwise go from memory to Photos). They log only why
-  adding to Photos failed: the error's domain and code and the resource types, marked private;
-  never photo data or metadata. Debug builds include the
+  Photos moves into the library (photos otherwise go from memory to Photos). They log only fixed
+  error messages (for example that the camera couldn't be configured or a pair was saved as two
+  photos) and, for a failed save to Photos or a settings hand-off, the error's domain and code
+  and the resource types, marked private; never photo data or metadata. Debug builds include the
   tag check (below), which writes test captures to the app's container only when launched with
-  `-NopeTagCheck`; it isn't compiled into Release builds. The `-NopeCameraProbe` diagnostic
+  `-NopeTagCheckRun`; it isn't compiled into Release builds. The `-NopeCameraProbe` diagnostic
   also saves one live video frame as a JPEG, to check exposure (see [`TESTING.md`](TESTING.md),
   "Black frames").
 
@@ -153,26 +222,80 @@ drive and astro values, saved when the person taps Save Current Settings.
 - **What is stored:** the preset's name as typed, a random identifier, an encoding version, the
   same settings values as above and the camera values (lens identifier, kind and magnification,
   ISO, shutter, aperture, focus position, white balance, exposure compensation, metering, Close-Up,
-  drive mode, bracket, interval and astro choices). No photo, location, date, counter or
+  drive mode, bracket (frames, step and order), interval and astro choices). No photo, location, date, counter or
   device identifier. The lens identifier is the app's own name for the lens on this device and is
   never written to a photo.
 - **Where:** in the same on-device store as the settings (the App Group's `UserDefaults`, key
-  `NopePresets.saved`). Presets are not part of the copy handed to the Lock Screen camera, are
-  never synced through iCloud and never leave the device; device backups include them as they
-  include the settings.
+  `NopePresets.saved`). Presets are not part of the copy handed to the Lock Screen camera, and
+  the app never syncs or sends them; device backups (iCloud Backup or a computer) include them as
+  they include the settings. The app's wording: "nope. doesn't sync or send presets. Your device
+  backups include them, like other app settings."
+- **Typing a name.** The preset's name is typed with the system keyboard. A third-party keyboard
+  or dictation the person uses handles that text under its own rules; the app can't change that.
 - **Permissions are never bypassed.** Applying a preset that has Location on asks for location
   access through the normal prompt; if access isn't allowed, Location stays off and the person
   is told. A preset can't grant camera or Photos access either: those prompts are unchanged.
 - **Deleting** a preset removes it from the store; Factory Defaults resets every setting but
   keeps the saved presets.
 
+## Siri, Shortcuts and assistants
+
+Assistant Access (issue #82; `docs/design/assistant-access.md`) decides whether Siri, the
+Shortcuts app and other assistants that run App Intents may use the app's actions.
+
+- **The setting.** Settings › Privacy › Assistant Access: a switch, off by default for new
+  installs and updates, and Ask First (Every Action by default, Only Before a Photo, Never).
+  Both are stored with the other settings (`NopeSettings.assistantAccess`, `assistantAsk`) and
+  are in the Lock Screen camera's snapshot, where the row is read only. No preset stores or
+  applies them; Factory Defaults applied in the app returns them to their defaults. No action,
+  control or preset changes them.
+- **The check.** Every gated action asks `AssistantAccess` inside `perform()`, through one
+  helper (`AssistantGate`); with access off it answers that access is off and changes nothing.
+  Every gated action requires an unlocked device. The entry points are listed in
+  `security/assistant-entry-points.txt`, enforced by `scripts/check-security.sh`.
+- **What an answer contains.** One sentence about what happened ("Photo saved. It isn't
+  signed."), and for Take Photo, Take Bracket and Start Interval Shooting a number: the photos
+  this request saved. Never a photo, a thumbnail, a file, a location, a photo's details, the
+  camera's state or the Privacy settings' values.
+- **Preset names.** Apply Preset offers the names of saved presets, the person's own text, only
+  while access is on; Factory Defaults is always offered. Through an assistant a preset applies
+  everything except the Privacy settings (Details in Each Photo, Location, Sign Each Photo) and
+  Assistant Access, and the answer says so.
+- **Nothing indexed or donated.** No Core Spotlight or indexed entity, no
+  `IntentDonationManager`, no `NSUserActivity`, no URL scheme and no on-screen content described
+  to the system. No assistant schema is adopted.
+- **The session record.** The page's This Session list (up to 20 lines: an action's name and
+  what happened) and the camera's refusal count are kept in memory only, and cleared when the
+  process ends. The one stored value is the tip's counter (`NopeAssistant.confirmedCount`), a
+  number that stops at six, outside the settings snapshot and presets.
+- **Outside the app's control:** photos saved to Photos, what a person lets an assistant see on
+  the screen, and opening the app are the system's.
+
+## The how-to-use guide (issue #117)
+
+Whether the guide's invitation card on the camera was answered (Open, Dismiss, or the guide
+opened from Settings or About) is one Boolean, `NopeGuide.invitationAnswered`, in the app's
+settings store on the device. It is not a count, a date or a record of which pages were read,
+and it is never sent. It is outside the settings snapshot and presets, so the Lock Screen camera
+doesn't receive it and Factory Defaults doesn't change it. Nothing about the guide's use is
+stored otherwise.
+
 ## Content Credentials (signing)
 
 The app signs each saved file (DNG, HEIF, JPEG) with C2PA Content Credentials
 (`ContentCredentialsSigner` in `NopeSigning`, called by `PhotoSaver` before the read-back).
-Signing has its own switch (`MetadataSettings.signsPhotos`), on by default, outside the "Remove
-all optional details" master switch. If signing fails, the photo is saved unsigned and the
-screen says so.
+Signing has its own switch (Settings › Privacy › Sign Each Photo, `MetadataSettings.signsPhotos`),
+outside the "Remove all optional details" master switch. It is **off by default** (owner
+decision, issue #80): a signed file shows that it was made by Photivra Nope Camera and which
+version (the claim generator, below), so signing is the person's choice, and the switch's
+explanation says so. A value the person already saved is kept; a fresh install and Factory
+Defaults start with it off. If signing fails, the photo is saved unsigned and the screen says
+so. The camera then shows a "Not Signed" warning after a photo that could not be signed, until
+the next photo is signed or signing is turned off. The warning follows only the last press that
+saved photos (one photo, or a bracket's or burst's frames): it shows while signing is on and any
+of that press's photos isn't signed, so turning signing on again before the next photo brings it
+back, and a press that saves nothing leaves it as it is. Signing that is off is not a warning:
+the message after each photo says the photo isn't signed.
 
 **What it proves.** The signature proves the file hasn't changed since the app signed it. It
 doesn't prove who took the photo or on which device. Each file is signed with a new key and a
@@ -218,11 +341,16 @@ no creator, no location, no device model, no operating system, no device ID, no 
 Descriptions (written into the file in English; owner-approved wording pending):
 
 - DNG: "Captured by Photivra Nope Camera as a single frame of RAW sensor data, with as little processing as the
-  phone allows."
-- HEIF or JPEG developed from the RAW: "Developed by Photivra Nope Camera on the phone from a single frame of
+  device allows."
+- HEIF or JPEG developed from the RAW: "Developed by Photivra Nope Camera on the device from a single frame of
   RAW sensor data."
-- HEIF or JPEG from a lens without Bayer RAW: "Captured by Photivra Nope Camera and processed by the phone's
+- HEIF or JPEG from a lens without Bayer RAW: "Captured by Photivra Nope Camera and processed by the device's
   camera, because this lens can't save RAW."
+
+They say "device", not "phone", because an iPad writes the same text, and a description written
+into a signed file can't be corrected later. The signature names the app and its version as the
+maker, but each file certifies its own key, so anyone could make a file whose manifest says the
+same: the signature shows whether the file changed after signing, not that the app made it.
 
 **What signing adds to each file.** Exactly one item, checked by the tests on synthetic files
 and with c2patool 0.28.6; the metadata read-back allowlist permits it for signed files only
@@ -244,11 +372,52 @@ check." (`SignatureStatus.UnsignedReason.signedFileFailedCheck`).
 **Signing must be the last change.** Any later change to the bytes (an edit in Photos, export,
 re-encoding by a sharing app) breaks the signature or removes it.
 
+## Processing
+
+The app asks the camera for as little processing as the device allows
+(`ProcessingSwitches.leastProcessing` in `NopeCapture`): `.speed` quality prioritization; Apple
+ProRAW, zero shutter lag, responsive capture, deferred delivery, constant color and
+content-aware distortion correction off where the photo output offers them; the camera's
+geometric distortion correction off where the camera allows it; and zoom 1.0.
+
+- **A lens with Bayer RAW:** the DNG holds the sensor data. Apple's documentation says "RAW photo
+  captures never have GDC applied, regardless of the value of
+  AVCaptureDevice.geometricDistortionCorrectionEnabled" (`AVCaptureDevice.h`). HEIF and JPEG
+  copies are developed by the app from the RAW (`DevelopedLook`): one global tone curve
+  (Standard) or none (Flat), with noise reduction, sharpening, local tone mapping and lens
+  correction turned off. The default is RAW only (issue #80).
+- **A lens without Bayer RAW (the processed fallback):** the phone's camera makes the HEIF (or
+  JPEG, on a lens without HEVC). AVFoundation offers apps no switch for how it turns the sensor
+  data into that image (its colors, tone and any noise reduction and sharpening). The app saves
+  the file without changing its pixels and writes only the allowlisted metadata.
+- **The "Processed" marker (issue #80):** before a photo is taken with such a lens, the camera
+  shows "Processed" with an amber triangle in its format status, also in clean view (VoiceOver:
+  "Processed: no RAW on this lens"). Tapping it opens the lens's processing note: what the phone
+  does, the lens's distortion correction, and what the app does to the files it saves; on that
+  lens the format list is read-only, naming the one file it saves. Settings › Screen › Show
+  Processed Marker hides the marker (on by default; offered only on a device with such a lens,
+  `NopeSettings.showsProcessedMarker`). Hiding it changes nothing else: the format status names
+  the file, VoiceOver still names the format in the status and the viewfinder's description, "What's in This Photo" says "Processed by the phone's
+  camera", and a signed file's manifest says the phone processed it.
+- **Distortion correction per lens (issue #80):** `Lens.distortionCorrection` is what the camera
+  reports, not a measurement. `turnedOff`: the camera offers the switch
+  (`isGeometricDistortionCorrectionSupported`) and the app turns it off. `notSwitchable`: the
+  camera offers no switch and doesn't report whether the processed photo is corrected, so the
+  note says its photos may be corrected. The processing note and "What's in This Photo" (for a
+  processed fallback) show it. Which lenses correct their processed photos anyway is a device
+  check (`TESTING.md`, "Processing disclosure on a device").
+- **Focus on Faces (issue #80; Face Detection before 1.0.0):** Settings › Camera › Focus on
+  Faces, off by default. Off sets
+  `automaticallyAdjustsFaceDrivenAutoFocusEnabled` and `isFaceDrivenAutoFocusEnabled` (and the
+  auto exposure pair) to false where the camera supports continuous autofocus or auto exposure;
+  on hands them back to the system. The app never reads which faces the camera found: it has no
+  metadata output. A value the person already saved is kept.
+
 ## Tag check
 
 The metadata plan below is confirmed by dumping every tag from real files captured on a device.
 
-- **Capture:** a debug-only mode (`-NopeTagCheck`, Debug builds only) captures, with each
+- **Capture:** a debug-only mode (`-NopeTagCheckRun`, Debug builds only) captures, with each
   physical camera, a Bayer RAW DNG and a processed HEIF through the app's own capture backend,
   so the files carry exactly what the app's captures carry: `.speed` prioritization, no ProRAW,
   zoom 1.0, no deferred delivery, constant color or distortion correction, and no location
@@ -334,7 +503,7 @@ turning the master on clears every item, turning it off always starts from these
 | Maker notes (Apple) | Off | Nothing visible; they hold time since restart and per-photo IDs | Present (`0x927C`) |
 | Your name and copyright | Off | Nothing; only written if you enter them | Not written by the system |
 | App name and version ("Photivra Nope Camera" and its version) | On | Apps can't show what made the file | Written by the app |
-| Content Credentials signature (outside the master switch) | On | The photo can't be checked for changes. The signature never has a timestamp (see "Content Credentials") | Written by the app |
+| Content Credentials signature (outside the master switch) | Off (issue #80) | The photo can't be checked for changes. The signature never has a timestamp (see "Content Credentials") | Written by the app |
 
 Serial numbers, unique image IDs and raw data IDs are never written, by the system or by the app,
 so they have no switch.
@@ -353,7 +522,7 @@ details" turns it off like every other item.
 
 - **Asking:** turning the switch on asks for "while using the app" location access first
   (`LocationTagging.turnOn(in:)`); if access is declined or restricted, the switch stays off and
-  Choose Details says how to allow it in Settings. The app never asks for "always" access and has no
+  Details in Each Photo says how to allow it in Settings. The app never asks for "always" access and has no
   background mode.
 - **When it runs:** location updates run only while the switch is on, access is allowed and the
   camera is running (`LocationTagging.update(isOn:cameraIsRunning:)`); they stop on any
@@ -389,7 +558,7 @@ copy. Orientation is a locked item and the read-back accepts all eight values.
 
 ### Developed file options
 
-Settings › Photos › File Options (issue #57): the compression of the HEIF and JPEG copies, the
+Settings › Photos › HEIF and JPEG Copies (issue #57; File Options before 1.0.0): the compression of the HEIF and JPEG copies, the
 HEIF bit depth (10 or 8), the color space (Display P3 or sRGB) and the copy size (full, half or a
 quarter of the RAW's width and height). They change only how the developed copies are encoded,
 never the RAW; the only metadata they touch is EXIF `PixelXDimension` and `PixelYDimension` of a
@@ -399,7 +568,7 @@ app can control, and what the app offers, is in
 
 ### Standard File Tags
 
-Settings › Privacy › Choose Details › Standard File Tags, **on by default** (owner decision,
+Settings › Privacy › Details in Each Photo › Standard File Tags, **on by default** (owner decision,
 2026-11-16) and outside "Remove all optional details", like signing
 (`MetadataSettings.writesStandardFileTags`). It writes the tags the Exif standard requires that
 are fixed values and say nothing about the photo, the device or the person:
@@ -438,7 +607,10 @@ allows only where no system API exists, with fuzzing; that is an open owner deci
 | Orientation | Without it the photo shows sideways or upside down |
 | Color profile (HEIF and JPEG) | Without it colors look washed out or oversaturated |
 
-None of the locked items identify you or link your photos.
+The locked items describe the camera's sensor and color, not the person. Whether any of them
+(the color matrices, the as-shot white balance, the black and white levels) differs between two
+devices of the same model hasn't been checked, so the app doesn't say they can't identify a
+device or link photos (`docs/TESTING.md`, "What was tested on real hardware").
 
 ## How each file's metadata is built and checked
 
@@ -456,7 +628,8 @@ allow, from the system's metadata. A tag the system adds that isn't listed here 
   "up", no embedded thumbnail, and the person's file options (compression, HEIF bit depth,
   color space; see "Developed file options"). Both looks (`SaveSettings.developedLook`, owner decision
   2026-11-12) demosaic the sensor data and apply the file's white balance and color matrices,
-  with no noise reduction, sharpening, local contrast, local tone mapping or lens correction:
+  with noise reduction, sharpening, local contrast, local tone mapping and lens correction
+  turned off:
   - **Standard** (default): one global tone curve, Core Image's default for the camera, so the
     photo looks like a normal photo.
   - **Flat:** no tone curve; the image stays linear to the scene, and only Display P3's
@@ -544,6 +717,16 @@ image's structure segments; no XMP segment, comments, other `APPn` segments or d
 end of the image. A HEIF may hold only the image (`hvc1` items, or a `grid` of them), its `Exif`
 item, the XMP item when an XMP property above is on, and the image's layout properties; no
 thumbnails (`thmb`) or auxiliary images (`auxl`, such as depth or gain maps).
+
+**ImageIO's own keys.** When the read-back opens a file with ImageIO, it also accepts the keys
+ImageIO derives from the image rather than from a tag in the file
+(`MetadataPlan.derivedImageIOKeys`: `ColorModel`, `Depth`, `PixelWidth`, `PixelHeight`,
+`ProfileName`, `DPIWidth`, `DPIHeight`, `PrimaryImage`, `HasAlpha`, `IsFloat`, `IsIndexed`),
+a JPEG's `{JFIF}` dictionary and, in a HEIF only, the `ContentLightLevelInfo` dictionary and
+the top-level `Headroom` key (`MetadataPlan.heifDerivedImageIOKeys`). The iOS 26.5 Simulator's
+reader reports `Headroom` on every HEIF the app writes, where iOS 27.2 reports
+`ContentLightLevelInfo`; on both, the HEIF block check finds no box, item or property beyond the
+allowed ones. Any other ImageIO key fails the read-back.
 
 ### Device checks
 

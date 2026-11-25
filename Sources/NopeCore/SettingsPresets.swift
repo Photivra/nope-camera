@@ -143,6 +143,11 @@ public struct PresetApplyResult: Equatable, Sendable {
     /// as saved.
     public let notices: [PresetNotice]
 
+    /// Whether the Privacy settings were left as they were, because an assistant applied the
+    /// preset (``SettingsPresets/apply(_:camera:location:keepsPrivacySettings:)``). The answer
+    /// says so.
+    public let keptPrivacySettings: Bool
+
     /// Creates a result.
     ///
     /// - Parameters:
@@ -150,11 +155,15 @@ public struct PresetApplyResult: Equatable, Sendable {
     ///   - name: Its name, or `nil` for Factory Defaults.
     ///   - isApplied: Whether the settings changed.
     ///   - notices: What the person should be told.
-    public init(choice: PresetChoice, name: String?, isApplied: Bool, notices: [PresetNotice]) {
+    ///   - keptPrivacySettings: Whether the Privacy settings were left as they were.
+    public init(
+        choice: PresetChoice, name: String?, isApplied: Bool, notices: [PresetNotice], keptPrivacySettings: Bool = false
+    ) {
         self.choice = choice
         self.name = name
         self.isApplied = isApplied
         self.notices = notices
+        self.keptPrivacySettings = keptPrivacySettings
     }
 }
 
@@ -174,7 +183,7 @@ public enum PresetNameProblem: Error, Equatable, Sendable {
 ///
 /// Every interface uses the same object: it lists ``saved``, saves the current settings with
 /// ``saveCurrent(named:camera:)``, renames and deletes with ``rename(_:to:)`` and
-/// ``delete(_:)``, and applies with ``apply(_:camera:location:)``. The rules live here:
+/// ``delete(_:)``, and applies with ``apply(_:camera:location:keepsPrivacySettings:)``. The rules live here:
 ///
 /// - A preset changes settings only when the person applies it; nothing is ever applied on its
 ///   own (owner principle: the app never changes manual settings by itself).
@@ -272,7 +281,7 @@ public final class SettingsPresets {
     public func saveCurrent(named name: String, camera: CameraModel?) throws -> SettingsPreset {
         if let problem = problem(withName: name) { throw problem }
         let preset = SettingsPreset(
-            name: Self.trimmed(name), settings: try settings.makeSnapshot(), camera: camera?.cameraSetup ?? .factory)
+            name: Self.trimmed(name), settings: try settings.makePresetSnapshot(), camera: camera?.cameraSetup ?? .factory)
         saved.append(preset)
         store()
         return preset
@@ -302,6 +311,13 @@ public final class SettingsPresets {
 
     /// Applies a preset: every setting, then the camera's state.
     ///
+    /// Assistant Access is never stored in a preset and never changed by one; Factory Defaults
+    /// applied in the app (`keepsPrivacySettings` false) returns it to its defaults, off and
+    /// Every Action, and removes the tip's counter (``AssistantSession/tipCounter``). Applied through an assistant (`keepsPrivacySettings` true), the Privacy
+    /// settings (``NopeSettings/metadata``: Details in Each Photo, Location, Sign Each Photo) and
+    /// Assistant Access stay as they are, and everything else applies
+    /// (`docs/design/assistant-access.md`, 7.4).
+    ///
     /// Side effects: changes and saves every setting; may show the system location prompt when
     /// the preset includes Location; may switch the lens, which restarts the camera.
     ///
@@ -311,11 +327,13 @@ public final class SettingsPresets {
     ///     skipped, with ``PresetNotice/cameraNotReady``).
     ///   - location: Location tagging, or `nil` when the app has no location service, in which
     ///     case Location stays off.
+    ///   - keepsPrivacySettings: Whether the Privacy settings stay as they are: `true` when an
+    ///     assistant applies the preset.
     /// - Returns: What happened, also kept in ``lastResult``.
     @discardableResult
-    public func apply(_ choice: PresetChoice, camera: CameraModel?, location: LocationTagging?) async
-        -> PresetApplyResult
-    {
+    public func apply(
+        _ choice: PresetChoice, camera: CameraModel?, location: LocationTagging?, keepsPrivacySettings: Bool = false
+    ) async -> PresetApplyResult {
         let preset: SettingsPreset? =
             switch choice {
             case .factoryDefaults:
@@ -332,16 +350,23 @@ public final class SettingsPresets {
         }
         let before = try? SettingsPreset(
             name: "", settings: settings.makeSnapshot(), camera: camera?.cameraSetup ?? .factory)
-        guard let notices = await replaceSettings(with: preset, camera: camera, location: location) else {
+        let keepsAssistantAccess = keepsPrivacySettings || choice != .factoryDefaults
+        guard
+            let notices = await replaceSettings(
+                with: preset, camera: camera, location: location, keepsPrivacySettings: keepsPrivacySettings,
+                keepsAssistantAccess: keepsAssistantAccess)
+        else {
             return finish(PresetApplyResult(choice: choice, name: name, isApplied: false, notices: [.unreadable]))
         }
         beforeLastApply = before
-        return finish(PresetApplyResult(choice: choice, name: name, isApplied: true, notices: notices))
+        return finish(
+            PresetApplyResult(
+                choice: choice, name: name, isApplied: true, notices: notices, keptPrivacySettings: keepsPrivacySettings))
     }
 
     /// Returns every setting, and the camera, to what they were before the last apply.
     ///
-    /// Side effects: as ``apply(_:camera:location:)``.
+    /// Side effects: as ``apply(_:camera:location:keepsPrivacySettings:)``.
     ///
     /// - Parameters:
     ///   - camera: The camera to set up again, or `nil`.
@@ -353,7 +378,12 @@ public final class SettingsPresets {
     public func undo(camera: CameraModel?, location: LocationTagging?) async -> Bool {
         guard let before = beforeLastApply, camera?.isBusyForPresets != true, !isApplying else { return false }
         beforeLastApply = nil
-        guard await replaceSettings(with: before, camera: camera, location: location) != nil else { return false }
+        // Undo never changes Assistant Access: it changes on its own page only.
+        guard
+            await replaceSettings(
+                with: before, camera: camera, location: location, keepsPrivacySettings: false, keepsAssistantAccess: true)
+                != nil
+        else { return false }
         lastResult = nil
         return true
     }
@@ -385,19 +415,31 @@ public final class SettingsPresets {
     ///   - preset: The preset.
     ///   - camera: The camera, or `nil`.
     ///   - location: Location tagging, or `nil`.
+    ///   - keepsPrivacySettings: Whether the Privacy settings stay as they are.
+    ///   - keepsAssistantAccess: Whether Assistant Access stays as it is.
     /// - Returns: The notices, or `nil` when the preset's settings can't be read and nothing
     ///   changed.
     @discardableResult
-    private func replaceSettings(with preset: SettingsPreset, camera: CameraModel?, location: LocationTagging?) async
-        -> [PresetNotice]?
-    {
+    private func replaceSettings(
+        with preset: SettingsPreset, camera: CameraModel?, location: LocationTagging?, keepsPrivacySettings: Bool,
+        keepsAssistantAccess: Bool
+    ) async -> [PresetNotice]? {
         isApplying = true
         defer { isApplying = false }
+        let metadata = settings.metadata
+        let assistant = (isOn: settings.assistantAccess, ask: settings.assistantAsk)
         guard settings.apply(preset.settings) else { return nil }
+        settings.restore(
+            metadata: keepsPrivacySettings ? metadata : nil, assistant: keepsAssistantAccess ? assistant : nil)
+        // Factory Defaults in the app also removes the Assistant Access tip's counter, the one
+        // counter the app stores (docs/SECURITY_AUDIT.md, "Local data"); an interface tells its
+        // ``AssistantSession`` (``AssistantSession/reloadTipCounter()``).
+        if !keepsAssistantAccess { settings.defaults.removeObject(forKey: AssistantSession.tipCounterKey) }
         // Set before the first wait, so an interface that follows the option sees it at once.
         if camera != nil { manualControlsSetUp = settings.showsManualControls }
         var notices: [PresetNotice] = []
-        if settings.metadata.isOn(.location) {
+        // Kept privacy settings include Location as it already was, with its permission.
+        if !keepsPrivacySettings, settings.metadata.isOn(.location) {
             settings.setMetadataItem(.location, isIncluded: false)
             let isOn = await location?.turnOn(in: settings) ?? false
             if !isOn { notices.append(.locationNotAllowed) }

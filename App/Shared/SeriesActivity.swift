@@ -19,7 +19,7 @@ struct SeriesActivityAttributes: ActivityAttributes {
     typealias ContentState = LiveActivityContent
 }
 
-/// Stops the interval series or astro run from the Live Activity's Stop button.
+/// Stops the interval series, astro run or focus bracket from the Live Activity's Stop button.
 ///
 /// A `LiveActivityIntent` runs in the app's process, not the widget extension's (App Intents,
 /// `LiveActivityIntent`), so the app's ``SeriesActivityActions/stop`` does the work; it holds no
@@ -28,13 +28,13 @@ struct StopSeriesIntent: LiveActivityIntent {
     /// The action's name.
     static let title = LocalizedStringResource(
         "Stop Series",
-        comment: "The name of the action behind the Stop button on nope.'s Live Activity: stops interval shooting or the night sky helper's frames. Keep \"nope.\" unchanged if it appears.")
+        comment: "The name of the action behind the Stop button on nope.'s Live Activity: stops interval shooting, the night sky helper's frames or a focus bracket. Keep \"nope.\" unchanged if it appears.")
 
     /// What the action does.
     static let description = IntentDescription(
         LocalizedStringResource(
-            "Stops nope.'s interval shooting or astro frames. Every photo already taken is saved.",
-            comment: "Describes the action behind the Stop button on nope.'s Live Activity. Keep \"nope.\" unchanged."))
+            "Stops nope.'s interval shooting, astro frames or focus bracket. Every photo already taken is saved.",
+            comment: "Describes the action behind the Stop button on nope.'s Live Activity. Keep \"nope.\" unchanged. Draft for the Honesty review."))
 
     /// Not listed in the Shortcuts app.
     static let isDiscoverable = false
@@ -61,10 +61,23 @@ enum SeriesActivityActions {
 }
 
 /// The Live Activity's colors: the system's, or red on black in night mode (issue #61), the same
-/// red as the app's night mode.
+/// red as the app's night mode. The values are the design tokens (`DesignTokens.swift`, which
+/// the app, the widget extension and the watch app compile with their own sources).
 enum SeriesActivityStyle {
-    /// Night mode's red.
-    static let nightRed = Color(.sRGB, red: 1, green: 0, blue: 0)
+    /// Night mode's red (``NopeColor/night``).
+    static var nightRed: Color { NopeColor.night }
+
+    /// The outline of the activity and of Stop in night mode (``NopeColor/nightOutline``), as on
+    /// the app's controls that are off.
+    static var nightOutline: Color { NopeColor.nightOutline }
+
+    /// The color of the signing line: secondary, or the red in night mode.
+    ///
+    /// - Parameter content: What the activity shows.
+    /// - Returns: The color.
+    static func secondary(_ content: LiveActivityContent) -> Color {
+        content.isNightMode ? nightRed : .secondary
+    }
 
     /// The color of the text and symbols.
     ///
@@ -93,6 +106,7 @@ struct SeriesActivityIcon: View {
         case .astro: "moon.stars"
         case .burst: "square.stack.3d.down.right"
         case .timer: "clock"
+        case .focusBracket: "square.3.layers.3d"
         }
     }
 }
@@ -114,6 +128,8 @@ enum SeriesActivityText {
             Text("Burst", comment: "Title on nope.'s Live Activity: a rapid run of single photos.")
         case .timer:
             Text("Self-Timer", comment: "Title on nope.'s Live Activity: the countdown before a photo.")
+        case .focusBracket:
+            Text("Focus Bracket", comment: "Title on nope.'s Live Activity: a series of single photos, each at the next focus position.")
         }
     }
 
@@ -132,6 +148,14 @@ enum SeriesActivityText {
             Text("Taking the photo…", comment: "Live Activity: the self-timer's photo is being taken.")
         case .photosTaken(let taken, let total):
             Text("\(taken) of \(total) photos taken", comment: "Live Activity: interval shooting progress. Both numbers are counts of photos; the second is at least 2.")
+        case .photosTakenTimeLeft(let taken):
+            Text("\(taken) photos taken · \(timeLeft(content)) left", comment: "Live Activity: interval shooting that stops after a time. The number is a count of photos; the placeholder is the time left, such as 1:12:00, counted down by the system.")
+        case .pausedTimeLeft(let taken):
+            Text("Paused: \(taken) photos taken · \(timeLeft(content)) left. Open nope. to continue.", comment: "Live Activity after the person left nope. during interval shooting that stops after a time: the series continues when nope. is opened again, and its time keeps running meanwhile. The number is a count of photos; the placeholder is the time left, such as 1:12:00, counted down by the system. Keep \"nope.\" unchanged.")
+        case .seriesDoneAfterTime(let taken):
+            Text("Done: \(taken) photos taken", comment: "Live Activity: interval shooting that stops after a time reached its time. The number is a count of photos.")
+        case .seriesStoppedBeforeTime(let taken):
+            Text("Stopped: \(taken) photos taken", comment: "Live Activity: interval shooting that stops after a time was stopped before its time was up. The number is a count of photos.")
         case .frame(let number, let total):
             Text("Frame \(number) of \(total)", comment: "Live Activity: which frame of the night sky helper's series is being taken, of how many.")
         case .burstPhotosTaken(let taken):
@@ -152,6 +176,8 @@ enum SeriesActivityText {
             Text("Stopped: \(taken) of \(total) photos taken", comment: "Live Activity: interval shooting was stopped early. Both numbers are counts of photos.")
         case .photosSaved(let saved):
             Text("Photos saved: \(saved)", comment: "Live Activity: a burst, the night sky helper or the self-timer finished. The number is how many photos were saved.")
+        case .bracketStopped(let saved, let total):
+            Text("Bracket stopped: \(saved) of \(total) photos saved", comment: "Live Activity: a focus bracket was stopped before its last frame, as the camera's card says it. Both numbers are counts of photos; the second is how many the bracket was to take.")
         case .stoppedPhotosSaved(let saved):
             Text("Stopped. Photos saved: \(saved)", comment: "Live Activity: a burst or the night sky helper stopped early, for example because the camera stopped. The number is how many photos were saved.")
         case .noPhotoTaken:
@@ -159,6 +185,14 @@ enum SeriesActivityText {
         case .failed:
             Text("A photo wasn't saved. Open nope. for details.", comment: "Live Activity: a photo couldn't be taken or saved; nope. says why. Keep \"nope.\" unchanged.")
         }
+    }
+
+    /// The time left of an interval series that stops after a time, counted down by the system.
+    ///
+    /// - Parameter content: What the activity shows.
+    /// - Returns: The time left, such as 1:12:00.
+    static func timeLeft(_ content: LiveActivityContent) -> Text {
+        countdown(to: content.seriesTime?.upperBound)
     }
 
     /// The system's countdown, drawn without updates.
@@ -181,25 +215,95 @@ enum SeriesActivityText {
             Text("Signed.", tableName: "Honesty", comment: "Live Activity, after photos were saved: every saved photo has a Content Credentials signature. Honesty wording: says only that they are signed.")
         case .notSigned:
             Text("Not signed. Open nope. for details.", tableName: "Honesty", comment: "Live Activity, after one photo was saved without a Content Credentials signature; nope. says why. Honesty wording: never imply the photo is signed. Keep \"nope.\" unchanged.")
+        case .signingOff:
+            Text("Not signed: signing is off in Settings.", tableName: "Honesty", comment: "Live Activity, after photos were saved without a Content Credentials signature because the person turned signing off in the app's settings. Honesty wording: never imply a photo is signed.")
         case .notAllSigned:
             Text("Not every photo is signed. Open nope. for details.", tableName: "Honesty", comment: "Live Activity, after photos were saved and at least one has no Content Credentials signature; nope. says why. Honesty wording: never imply they are all signed. Keep \"nope.\" unchanged.")
         }
     }
 }
 
-/// The Stop button, shown while an interval series runs or is paused.
+/// The Stop button, shown while an interval series, astro run or focus bracket runs or is
+/// paused, and during a focus bracket's start delay: a capsule, filled with the tile gray, or
+/// black with the red outline in night mode (docs/design/system.html). The visible word is
+/// always "Stop"; for a focus bracket VoiceOver names it "Stop Bracket", as the camera's card
+/// does (docs/design/device-feedback-1.0.md, section 6).
 struct SeriesStopButton: View {
+    /// Whether the activity is in night mode.
+    var isNightMode = false
+
+    /// What runs, for the VoiceOver name.
+    var kind: LiveActivityContent.Kind = .interval
+
     /// The button, which runs ``StopSeriesIntent`` in the app.
     var body: some View {
         Button(intent: StopSeriesIntent()) {
             Label {
                 Text("Stop", comment: "Button on nope.'s Live Activity that stops interval shooting or the night sky helper's frames. Every photo already taken is saved.")
             } icon: {
-                Image(systemName: "stop.fill")
+                Image(systemName: "stop")
             }
         }
+        .buttonStyle(SeriesStopButtonStyle(isNightMode: isNightMode))
+        // Its own width: beside the status lines, which take the row's priority, the capsule was
+        // squeezed to its symbol and the word was cut.
+        .fixedSize()
+        .accessibilityLabel(accessibilityName)
         .accessibilityHint(
             Text("Every photo already taken is saved.", comment: "VoiceOver hint of the Stop button on nope.'s Live Activity."))
+    }
+
+    /// "Stop Bracket" for a focus bracket, as on the camera's card; otherwise "Stop".
+    private var accessibilityName: Text {
+        kind == .focusBracket
+            ? Text("Stop Bracket", comment: "VoiceOver name of the Stop button on nope.'s Live Activity while a focus bracket runs: stops after the current frame; every photo taken is kept. The same name as the button on the camera's focus bracket card.")
+            : Text("Stop", comment: "Button on nope.'s Live Activity that stops interval shooting or the night sky helper's frames. Every photo already taken is saved.")
+    }
+}
+
+/// The capsule of the Live Activity's Stop button, with the tokens of the app's capsule buttons:
+/// at least 44 points high, 16 points of padding, the status font.
+///
+/// At accessibility text sizes the capsule shows the stop symbol only, at least 44 points wide,
+/// and the Large Content Viewer shows "Stop": with the word, the capsule took so much of the
+/// row's width that the status lines wrapped into a row 842 points tall instead of 722
+/// (`SystemSurfacesUITests`; BUILD-SPEC.md 3.13, "no taller than today"). VoiceOver still reads
+/// "Stop".
+struct SeriesStopButtonStyle: ButtonStyle {
+    /// Whether the activity is in night mode.
+    let isNightMode: Bool
+
+    /// The text size, to drop the word at accessibility sizes.
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// The label in its capsule, dimmed while pressed.
+    ///
+    /// - Parameter configuration: The button's label and pressed state.
+    /// - Returns: The styled button.
+    func makeBody(configuration: Configuration) -> some View {
+        let isSymbolOnly = dynamicTypeSize.isAccessibilitySize
+        return Group {
+            if isSymbolOnly {
+                configuration.label.labelStyle(.iconOnly)
+            } else {
+                configuration.label
+            }
+        }
+            .font(NopeFont.status)
+            .padding(.horizontal, isSymbolOnly ? NopeSpace.xs : NopeSpace.m)
+            .frame(minWidth: NopeSize.minTarget, minHeight: NopeSize.capsuleLarge)
+            .background {
+                Capsule().fill(
+                    isNightMode ? Color.black : NopeMaterial.tileGray.opacity(NopeMaterial.tileFillOpacity))
+            }
+            .overlay {
+                if isNightMode {
+                    Capsule().strokeBorder(SeriesActivityStyle.nightOutline, lineWidth: NopeSize.outline)
+                }
+            }
+            .contentShape(Capsule())
+            .opacity(configuration.isPressed ? NopeMotion.pressedOpacity : 1)
+            .accessibilityShowsLargeContentViewer { configuration.label.labelStyle(.titleAndIcon) }
     }
 }
 
@@ -210,7 +314,7 @@ struct SeriesActivityDetails: View {
 
     /// The lines.
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: NopeSpace.xxs) {
             // Lines wrap instead of being cut off at large text sizes or beside Stop.
             SeriesActivityText.status(content)
                 .font(.subheadline)
@@ -218,12 +322,22 @@ struct SeriesActivityDetails: View {
             if let line = content.signingLine {
                 SeriesActivityText.signing(line)
                     .font(.footnote)
+                    .foregroundStyle(SeriesActivityStyle.secondary(content))
                     .fixedSize(horizontal: false, vertical: true)
             }
             if let progress = content.progress {
                 ProgressView(value: progress)
                     .tint(SeriesActivityStyle.foreground(content))
                     .accessibilityHidden(true)
+            } else if content.showsTimeLeft, let time = content.seriesTime {
+                // Filled by the system as time passes, so the content isn't updated for it.
+                ProgressView(timerInterval: time, countsDown: false) {
+                    EmptyView()
+                } currentValueLabel: {
+                    EmptyView()
+                }
+                .tint(SeriesActivityStyle.foreground(content))
+                .accessibilityHidden(true)
             }
         }
         .accessibilityElement(children: .combine)
@@ -237,10 +351,10 @@ struct SeriesActivityLockScreenView: View {
 
     /// The layout: symbol, title and lines, and Stop when it applies.
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(alignment: .center, spacing: NopeSpace.s) {
             SeriesActivityIcon(kind: content.kind)
                 .font(.title2)
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: NopeSpace.xxs) {
                 SeriesActivityText.title(content.kind)
                     .font(.headline)
                     .fixedSize(horizontal: false, vertical: true)
@@ -249,11 +363,19 @@ struct SeriesActivityLockScreenView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .layoutPriority(1)
             if content.canStop {
-                SeriesStopButton()
+                SeriesStopButton(isNightMode: content.isNightMode, kind: content.kind)
             }
         }
-        .padding()
+        .padding(NopeSpace.m)
         .foregroundStyle(SeriesActivityStyle.foreground(content))
+        .overlay {
+            // Night mode: the red outline of the design, on the activity's own corner shape.
+            if content.isNightMode {
+                ContainerRelativeShape()
+                    .strokeBorder(SeriesActivityStyle.nightOutline, lineWidth: NopeSize.outline)
+                    .accessibilityHidden(true)
+            }
+        }
     }
 }
 
@@ -268,7 +390,7 @@ struct SeriesActivityCompactCount: View {
             if let end = content.countdownEnd {
                 SeriesActivityText.countdown(to: end)
                     .monospacedDigit()
-                    .frame(maxWidth: 44)
+                    .frame(maxWidth: NopeSize.minTarget)
             } else if let count = content.compactCount {
                 Text(count, format: .number)
                     .monospacedDigit()

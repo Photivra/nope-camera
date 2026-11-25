@@ -76,13 +76,19 @@ struct LockedCameraView: View {
         // The volume buttons and the Camera Control are the shutter while the camera runs, as in
         // the app (AVKit, `onCameraCaptureEvent`).
         .onCameraCaptureEvent(isEnabled: model.handlesHardwareButtons) { event in
-            let phase: HardwareButtonPhase =
+            let phase: ShutterPhase =
                 switch event.phase {
                 case .began: .pressed
                 case .ended: .released
                 default: .cancelled
                 }
-            Task { await model.send(.drive(.hardwareButton(phase))) }
+            // Straight to the model, with no task in between: the events arrive on the main
+            // actor in the order the system made them (issue #100).
+            model.shutter(phase, from: .hardware)
+        }
+        // A press that is down as the buttons are given back may never report its end (S6).
+        .onChange(of: model.handlesHardwareButtons) { _, isOn in
+            if !isOn { model.hardwareButtonsTurnedOff() }
         }
         .onChange(of: settings.save, initial: true) { _, save in
             model.saveSettings = save
@@ -107,6 +113,11 @@ struct LockedCameraView: View {
         }
         .task(id: settings.torchLevel) {
             await model.send(.light(.setTorchLevel(settings.torchLevel)))
+        }
+        // Burst Limit (issue #121): how many photos a press takes in Burst, applied when the
+        // camera opens and whenever the setting changes (in Settings or by a preset).
+        .task(id: settings.burstLimit) {
+            await model.send(.drive(.setBurstLimit(settings.burstLimit)))
         }
     }
 

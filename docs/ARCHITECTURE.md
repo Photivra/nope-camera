@@ -30,7 +30,7 @@ signed with Content Credentials when signing is on.
 | `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
 | `NopeSigning` | C2PA signing. Now: `ContentCredentialsSigner` (implements `PhotoSigning`), a new Secure Enclave key and self-issued certificate for every file, fully offline | `NopeCore`, CryptoKit, Security, C2PA, X509 and SwiftASN1 (swift-certificates, for the certificate) |
-| `NopeUI` | SwiftUI views. Now: `CameraScreen` (the clean layout of issue #68: format chip, state pills, warning chips, viewfinder, lens row with the quick-controls tray, manual readout and dial, shutter, camera flip, last-photo slot, failure banner, first-run screen) and `SettingsScreen` (Photos, Privacy, Camera, More: Accessibility, Honesty, About and licenses) | `NopeCore`, SwiftUI |
+| `NopeUI` | SwiftUI views. Now: `CameraScreen` (the 1.0.0 layout of issue #74, direction B: format status and state pills, warning chips, viewfinder, lens row with the Manual Controls button, drive strip and mode cards, manual readouts and dial, shutter row with Q (the quick menu), camera flip, last-photo slot, failure banner, first-run screen) and `SettingsScreen` (search, Presets, Photos, Privacy, Camera, Screen, More: Accessibility, Honesty, About and licenses) | `NopeCore`, SwiftUI |
 | App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, `ContentCredentialsSigner`) into `NopeCore`, supplies the preview view and the hardware shutter, hosts `NopeUI`, and holds the App Intents and the Apple Watch link (`PhoneWatchSession`) | Everything |
 | Watch app (`NopeWatch`) | The Apple Watch remote shutter: hosts `WatchRemote` from `NopeCore` with a WatchConnectivity link and its own SwiftUI screen; it takes no photos | `NopeCore`, SwiftUI, WatchConnectivity |
 | Extensions (`NopeCaptureExtension`, `NopeControls`) | The Lock Screen camera, wired like the app; the "Open nope." and Night Mode controls and the Live Activity's layouts | Everything; `NopeControls` uses only `NopeCore` (`NopeSettings`, and `LiveActivityContent` for the Live Activity), ActivityKit, AppIntents, WidgetKit and SwiftUI |
@@ -57,8 +57,12 @@ signed with Content Credentials when signing is on.
    `.unavailable`; otherwise `.ready(capabilities)`, with the rear wide lens selected.
 4. The model chooses the `CaptureFormat` for the lens (Bayer RAW, or the processed fallback when
    the lens has none) and asks the backend to start with a `CaptureRequest`. `sessionStatus`
-   goes from `.starting` to `.running`.
-5. `.selectLens` reconfigures the backend for another lens. `.capture` builds a `MetadataPlan`
+   goes from `.starting` to `.running`. `isFirstStart` is `true` from the model's creation until
+   the first start ends: the first time `state` becomes `.needsPermission`, `.permissionDenied`
+   or `.unavailable`, or `sessionStatus` becomes anything other than `.stopped` or `.starting`.
+   It never becomes `true` again (see "Launch screen" below).
+5. `.selectLens` reconfigures the backend for another lens, only while `canChangeLens` is true
+   (below). `.capture` builds a `MetadataPlan`
    from `saveSettings` and asks the backend for one photo, whose file is written with that
    plan's metadata. `PhotoSaver` then develops, reads back, signs (when a signer exists), reads
    back again, checks and saves it (below). The result is `captureStatus = .saved(photo)` or
@@ -67,6 +71,63 @@ signed with Content Credentials when signing is on.
    multitasking), critical heat (the model stops the camera and restarts it when the device
    cools), and runtime errors (the model restarts the camera).
 7. The interface renders the new state. It holds no rules of its own.
+
+### One clock (issue #107)
+
+`CameraModel` takes one `NopeClock` (`CameraModel(backend:saver:clock:)`, `.system` by default)
+and passes it to `ManualControlsModel`, `DriveModel` and its `Countdown`; the app's
+`LiveActivityCoordinator` uses the same source. The clock has two readings and one wait:
+
+- `date()`, the wall clock, only for dates people see or that go into files: a photo's date, an
+  end time shown on the camera, and the dates a Live Activity needs. `clock.date(of:)` turns a
+  moment of the monotonic clock into the date it is shown as, worked out when it is needed.
+- `now()`, `ContinuousClock`, for everything that measures elapsed time: deadlines, waits and
+  durations. A change of the device's time doesn't move it, and it keeps counting while the
+  device sleeps.
+- `sleep(_:)`, a wait until a moment of `now()`.
+
+Tests replace this one value with a clock they move by hand (`FakeClock` in the unit tests).
+`scripts/check-architecture.sh` fails on `Date()`, `Date.now` or `Date.init` anywhere in
+`NopeCore` outside `NopeClock.swift`. Tests written before the clock existed pass a sleep of a
+number of seconds instead; `NopeClock.stepped(by:now:)` turns it into a clock whose own time
+moves by each completed wait, so their deadlines are reached in step with their sleeps.
+
+### The lens while the camera is busy (issue #96)
+
+Changing the lens restarts the camera, so it is refused while a photo or a series depends on the
+running session. `CameraModel.lensChangeBlocker` says why (`LensChangeBlocker`):
+`.takingPhoto` while a photo or bracket is taken or saved, `.runningSeries` during a countdown,
+burst, interval series (its waits included) or astro run, and `.comparing` while the compare view
+is open; a series wins over its own photos. `canChangeLens` is true when there is no blocker, and
+it is the one rule for every way of changing the lens: `.selectLens` does nothing while it is
+false, `isBusyForPresets` is its negation (a preset may switch the lens), Siri's Switch Lens
+answers `ShortcutOutcome.lensBusy` ("nope. is busy. The lens didn't change."), and Take Photo or
+Take Bracket with a lens answers `.busy` before switching. `NopeUI` disables every lens control
+but the lens in use (`LensBusy.swift`; docs/design/lens-while-busy.md): at once, drawn dimmed at
+once for a series and after `NopeMotion.busyDimDelay` (0.5 s) for a single photo.
+
+The capture backend checks too: each `PhotoSettingsPlan` names the camera it was made for
+(`deviceID`), and `SystemCaptureHardware` starts a capture only while that camera is attached
+(`CapturePolicy.camera(_:matches:)`), failing with `.notRunning` otherwise. The backend is an
+actor, and a session reconfiguration could otherwise run while a photo waits for the output.
+
+### Pinch to switch lenses (issue #95)
+
+A pinch on the viewfinder chooses between the rear cameras, in the lens row's order; it never
+scales or crops the picture (the app has no digital zoom). `NopeCore` holds the rules:
+`LensPinch` is the step logic (a first step at scale 1.25 spreading or 0.80 pinching, a further
+factor of 1.35 for each further lens, a 10% return margin, no wrap, never the front camera;
+starting values for tuning on devices), `CameraModel.pinchSwitchesLenses(setting:)` says whether
+a pinch is used now (the Pinch setting, `canChangeLens`, Astro off, the camera running or
+restarting for a lens change, a rear lens and two or more of them), and `LensPinchSwitcher`
+sends the settled target through `.selectLens`, one switch at a time, only the latest target
+and only when it isn't the lens in use. The setting is `NopeSettings.pinch` (`PinchAction`,
+Switch Lenses by default), in presets and Factory Defaults through its `NopeSettings.` key.
+`NopeUI` adds the gesture beside tap, hold and swipe (`ViewfinderTouches`), masked out while a
+pinch can't switch lenses, the dial, Q or a sheet is open, or the lens can't be changed
+(`\.lensBusy`), and off in the scrolling layout; `ViewfinderPinch` follows the fingers, sends a
+target after 0.25 s without change or when the fingers lift, and keeps the lens label
+(`LensPinchLabel`) for 0.8 s; the lens row shows the target while the label does.
 
 ### The AVFoundation backend
 
@@ -84,8 +145,9 @@ signed with Content Credentials when signing is on.
 ### Manual controls
 
 Manual controls are off by default. The "Manual controls" option is
-`NopeSettings.showsManualControls`; the app target sends `.manual(.setEnabled(_:))` when it
-changes. "Start in clean view" (`NopeSettings.startsInCleanView`) sends `.setCleanView(_:)`
+`NopeSettings.showsManualControls`; the camera's Manual Controls button turns it on and off with
+`CameraModel.setManualControls(_:settings:)`, which stores the option and sends
+`.manual(.setEnabled(_:))` at once (Settings no longer has a switch for it, issue #77). "Start in clean view" (`NopeSettings.startsInCleanView`) sends `.setCleanView(_:)`
 when the camera opens and when the option changes.
 
 ```
@@ -144,19 +206,39 @@ when the camera opens and when the option changes.
   With manual controls on nothing is limited; the hint shows when the shutter is slower than the
   handheld rule.
 - **Close-Up** sets `autoFocusRangeRestriction = .near`; **Far Focus** (manual controls on, issue
-  #57) sets `.far`, and the two replace each other. **Face Detection** (Settings, on by default)
-  leaves face-driven autofocus and auto exposure to the system, or turns both off
+  #57) sets `.far`, and the two replace each other. **Focus on Faces** (Settings, off by default, issue
+  #80) leaves face-driven autofocus and auto exposure to the system, or turns both off
   (`DeviceControls.followsFaces`). The **photo size** of a lens without Bayer RAW
   (`CameraIntent.setPhotoSizes`, `Lens.photoSizeChoices`) is configured when the session starts.
 - The **close-up hint** suggests the ultra
   wide lens when the lens stays at its nearest position while autofocus searches; the app never
   switches lenses itself. The **magnifier** scales the preview view only.
 - **Focus peaking** is part of the live frame analysis (below, "Viewfinder overlays").
+- **Focus bracketing** (issue #90) is a series of single photos, not a system bracket: for each
+  frame `CameraModel+FocusBracket.swift` locks focus at the planned lens position with
+  `ManualCaptureBackend.setFocus(lensPosition:)` (AVFoundation: `setFocusModeLocked(lensPosition:
+  completionHandler:)`, returning the `lensPosition` read after the handler), waits
+  `CameraModel.focusSettleSeconds`, takes one photo with `capturePhoto` and saves it through the
+  same pipeline as any photo. Exposure and white balance are held at the first frame's values
+  (`ManualControlsModel.holdsControls` keeps the model's own controls from reaching the camera
+  meanwhile) and restored at the end. `BracketModel` (`CameraModel.bracketing`) holds the type,
+  the focus settings and the progress; the run pauses and stops by the astro run's rules.
 - **Bracketing** uses `AVCapturePhotoBracketSettings` with
   `AVCaptureManualExposureBracketedStillImageSettings`; each frame is a separate single-frame
   photo, and each is saved through the same pipeline as a single photo
   (`CaptureStatus.savedBracket`). Bayer RAW rules still apply: `.speed`, zoom 1.0, no
-  multi-frame processing.
+  multi-frame processing. A bracket is the drive strip's Bracket word: `ManualControlsModel.bracket`
+  (frames, step and `BracketOrder`) with the drive mode Single, or the self-timer for its start
+  delay (`CameraModel.bracketStartDelay`); there is no bracket drive mode. It works in full auto,
+  planned around the camera's last reading, and with manual controls on, around the values set by
+  hand (`ManualControlsModel.bracketPlan`, one `BracketFramePlan` per frame, which marks a frame
+  beyond the lens's ranges). The frames are requested in the bracket's order, and the system
+  takes them in the order of the array. Choosing Burst or Interval turns the bracket off, and an
+  interval series never takes one (`CameraModel+Bracket.swift`). While it is taken and saved,
+  `CameraModel.bracketProgress` says how far it is; a frame that can't be saved stops the saving,
+  and `failedBracket` says how many were saved. Each saved frame carries a `BracketPlace`
+  (`SavedPhoto.bracket`), in memory only, for the viewer's chip and the Bracket group of What's in
+  This Photo; it is in no file.
 - **Interval shooting** calls the same capture path as the shutter; it works in full auto (each
   photo a full-auto photo) and with manual controls on (each photo with the manual settings), and
   turning manual controls off doesn't stop a series. It starts from the Interval drive mode's
@@ -169,29 +251,109 @@ when the camera opens and when the option changes.
   series is marked paused (`IntervalProgress.isPaused`); it also waits while another photo is
   being taken or saved. A photo cut short by a pause is taken again, also when its error arrives
   before the pause (`failureWasAPause()` waits `CameraModel.pauseAfterErrorSeconds` for it); any
-  other failure ends the series. A series doesn't start while Astro is on or the self-timer or a
-  burst runs (`CameraModel.intervalBlocker`). While a series runs in the
+  other failure ends the series, as stopped, also when it fails at or after a timed series' end
+  (issue #105). A series doesn't start while Astro is on or the self-timer or a burst runs
+  (`CameraModel.intervalBlocker`).
+- **Start to start** (issue #123, owner decision): each photo starts one interval after the last
+  one really started (`takeIntervalPhoto()` returns the moment, after any wait for the camera),
+  measured on the monotonic clock; the series waits on `CameraModel.clock` until then. A photo
+  that takes longer than the interval makes the next start as soon as it is saved, and
+  `IntervalProgress.isBehindSchedule` is set until a photo fits its interval again; no photo is
+  taken twice to catch up. A series paused past a start takes that photo when it resumes, and the
+  schedule continues from it. `IntervalProgress.nextPhotoStart` is the next start, which the card
+  counts "Next photo in" down to; behind schedule it says "Each photo takes longer than the
+  interval" instead. Interval Shooting says how photos are spaced ("Takes 10 photos, starting one
+  every 10 seconds."), or, when a shutter set by hand is longer than the interval
+  (`ManualControlsModel.isShutterLongerThanInterval`), that photos follow one another.
+- **Stop After** (`IntervalSettings.stopAfter`): a series stops after a number of photos (the
+  default) or after a time, 1 minute to 24 hours (`.time`, `IntervalSettings.duration`). A timed
+  series fixes its end when it starts, as a moment of the monotonic clock
+  (`IntervalProgress.deadline`, from `CameraModel.clock`, issue #106). The time keeps running
+  while the series is paused and while the device sleeps, so "1 hour from 8:41 PM" ends at
+  9:41 PM however long the app was away, and a change of the device's time doesn't make it end
+  early or late. The end is shown as a date only when it is shown: `IntervalProgress.endDate(clock:)`
+  and `timeSpan(date:now:)` (for the Live Activity) count it from now's date and the time left.
+  It takes another photo while the next start is before the end; when the end passes while the
+  series waits for the camera, a wait on the clock until the end wakes it (only while it waits)
+  and the series ends without another photo. `ManualControlsModel.lastIntervalEnd` says whether the last series
+  finished (its count or its time) or was stopped early; a stop, a failed or unsaved photo and a
+  camera that stops end a timed series as they end a counted one. The interval must be shorter
+  than the time (`IntervalBlocker.intervalNotShorterThanTime`); the sheet then disables Start, the
+  card says why, and the Interval shutter is disabled. `IntervalSettings.maximumPhotoCount` is the
+  most a timed series can take (one at the start and one at each start before the end); it takes
+  that many while each photo fits its interval, and a photo that takes longer delays the ones
+  after it, so the sheet says "At most".
+- While a series runs in the
   foreground, `SeriesScreenKeeper` turns the idle timer off and dims the screen; it puts both
   back when the series ends or stops, the camera screen goes away, or the app goes to the
-  background (issue #48). The app supplies the UIKit screen (`SystemScreen`).
+  background (issue #48). The app supplies the UIKit screen (`SystemScreen`). A screen already
+  at 10% or darker isn't dimmed and gets no Brighten Screen cover (issue #99).
+- Keep Screen On (`NopeSettings.keepsScreenOn`, issue #97) is the keeper's second reason. The
+  rule is the pure `KeepScreenOnRule`: given `KeepScreenOnConditions` (the switch, the app
+  active, the camera screen in front, the camera running, Battery Low, Low Power Mode), the
+  last activity and the time now, it answers whether to keep the screen awake, whether to dim,
+  and when that next changes. The keeper applies the answer, schedules one wake-up for the next
+  change (its clock can be replaced in tests), and a running series wins. Activity reaches it
+  from `CameraModel.activityCount` (the person's intents, `CameraIntent.isActivity`, and each
+  saved photo), and from the app: touches on the window and VoiceOver focus changes
+  (`ReportsScreenActivity`). The Lock Screen camera has no keeper, so it neither uses the
+  setting nor shows its row.
 
 ### Drive modes: single, self-timer, burst
 
-`CameraIntent.capture` is what every shutter sends (the on-screen shutter, the volume buttons,
-the Camera Control, the Space bar); `CameraModel` applies `drive.mode`. Single takes one photo;
-a timer mode starts `drive.countdown` (`Countdown`, 3 or 10 seconds), which takes one photo at
-zero; burst takes frames until it is stopped. While a countdown or burst runs, the same intent
-stops it (`canPressShutter`). `.drive(.startTimer(seconds:))` starts a countdown of any length,
-for Siri and Shortcuts (issue #62). The app maps the hardware buttons' capture event phases to
-`.drive(.hardwareButton(_:))`: a photo on release, as the system Camera app does, or in burst
-mode a burst while the button is held.
+`CameraIntent.capture` is what every shutter sends that reports no phases (an on-screen tap
+outside burst mode, assistive activation, the Space bar); `CameraModel` applies `drive.mode`.
+Single takes one photo; a timer mode starts `drive.countdown` (`Countdown`, 3 or 10 seconds),
+which takes one photo at zero; burst takes one photo (a burst of one). While a countdown or burst
+runs, the same intent stops it (`canPressShutter`). `.drive(.startTimer(seconds:))` starts a
+countdown of any length, for Siri and Shortcuts (issue #62). A countdown counts to a fixed
+deadline on `CameraModel.clock` (`Countdown.deadline`, issue #122): it shows the whole seconds left,
+rounded up, waits until the next whole second before the deadline, and fires when it is reached,
+so a late wake skips a number rather than making the photo late.
+
+Shutters that report how they move send `ShutterPhase` values through one synchronous entry,
+`CameraModel.shutter(_:from:press:)` (issue #100): the app passes the hardware buttons' capture
+event phases from `ShutterSource.hardware`, and the interface the on-screen shutter's touch from
+`ShutterSource.onScreen`, in burst mode only (docs/design/BURST.md). Both are called straight
+from the event, with no task in between, so they are handled in the order they happened; the
+hold changes at once and the work (a photo or a burst) starts in a task. Each press is numbered
+by its source and its release repeats the number, so a late press or release is dropped and a
+release that arrives before its press makes the press a tap (`ShutterHolds`). Each source has
+its own hold: a second button's press and release doesn't end a burst the first one holds.
+`.drive(.hardwareButton(_:))` and `.drive(.shutter(_:))` take the same path and wait for its
+work. In burst mode a press requests the first photo at once and starts a burst with
+`BurstStart.held`; once no shutter is down (coming up, sliding off or a cancelled touch) it
+ends after the photo being taken, so a tap gives one photo. Outside burst mode a hardware button takes a photo on release,
+as the system Camera app does. `.drive(.startBurst)` starts a burst that needs no holding
+(`BurstStart.started`), for Start Burst, the VoiceOver action and Voice Control; the shutter,
+`.drive(.stopBurst)` or a hardware release ends it. With a Burst Limit
+(`.drive(.setBurstLimit(_:))`, from `NopeSettings.burstLimit`; issue #121) a press, assistive
+activation and Start Burst take that many photos instead (`BurstStart.limited`, with the count
+in `BurstProgress.limit` and `BurstResult.limit`): coming up doesn't end it, a second press stops
+it after the photo being taken, and reaching the count ends it as `BurstEnd.countReached`. Siri
+and Shortcuts keep their own count.
 
 A burst is single frames through `capturePhoto`, each saved through the same `PhotoSaver` as any
 photo (allowlist, read-back, a signature per file); nothing is merged. Each frame is saved while
-the next one is taken, so at most two frames are in memory. The burst stops when asked, at
-`DriveModel.maximumBurstFrames`, when the next frame wouldn't fit in storage, when the camera
-stops, or at the first frame that can't be taken or saved; frames already taken are still
-saved. It ends as `CaptureStatus.savedBurst` (or `.failed`) and `drive.lastBurst`.
+the next one is taken, so at most two frames are in memory (no deeper saving buffer: BURST.md,
+decision 4, waits for a device measurement). The speed is `drive.burstSpeed`
+(`.drive(.setBurstSpeed(_:))`, for the session only, Fast at launch): Fast requests each frame as
+soon as the camera is ready; Slow waits until at least `BurstSpeed.minimumFrameInterval` (0.5 s)
+after the previous frame's start, with the drive's injected sleep, and checks again whether to
+stop after the wait. A Siri or Shortcuts count (`BurstStart.counted`) always runs at Fast.
+`CameraModel.burstSpeeds` leaves Slow out on a lens where a Fast burst in this session measured
+under `DriveModel.slowBurstMinimumFastRate` (3 a second), and `CameraModel.burstSpeed` is the
+speed a burst on the selected lens uses.
+
+`drive.burstProgress` carries the count, who began the burst, the rate measured over the last
+`DriveModel.rateWindow` photos from the third on (`rate`), and `isSaving` once the last photo is
+taken and only saving is left; `canPressShutter` is false then, so no new burst starts while the
+last one saves. The burst stops when asked, at `DriveModel.maximumBurstFrames`, when the next
+frame wouldn't fit in storage, when the camera stops, or at the first frame that can't be taken
+or saved; frames already taken are still saved. It ends as `CaptureStatus.savedBurst` (or
+`.failed`) and `drive.lastBurst` (`BurstResult`: the end, the photos taken and saved, the time
+from the first photo to the last and the whole burst's rate; `hasSummary` for a burst of two or
+more that the person ended).
 
 ### Astro helper (issue #60)
 
@@ -217,9 +379,22 @@ frame that wouldn't fit in storage, at or below `AstroModel.stopBatteryLevel` un
 the storage. Turning it off turns manual controls off again only if it turned them on. The torch
 can't be turned on while it is on, and a lens it can't use turns it off. It is offered only
 where `DeviceStatus.canRead` (`CameraModel.canUseAstro`): the Lock Screen capture extension has
-no storage and battery reader, so it has no Astro. `NopeUI` turns night
-mode on with it (`NopeSettings.setNightMode(_:)`), shows an Astro tray item, pill and panel and
-an Astro Settings sheet, and keeps the screen awake and dimmed while frames run
+no storage and battery reader, so it has no Astro. `NopeUI` turns it on and off with
+`CameraModel.setAstro(_:settings:)`, which turns night mode on with it and returns night mode to
+what it was before when Astro ends, as for manual controls: night mode that was off goes off again
+however Astro ends in a running session (another drive mode, a lens without Astro, manual controls
+off, a preset); after the app is quit or closed by the system during Astro, the next launch keeps
+night mode as it was, so it opens red in the dark, and clears the record
+(`CameraModel.forgetNightModeFromAstroAtLaunch(settings:)`, when the camera screen appears; owner
+decision, 2026-11-18); night mode that was on before, or that the person changed while Astro was on (Settings,
+Q, the Control Center and Lock Screen control, Siri and Shortcuts, all through
+`NopeSettings.setNightMode(_:)`), stays as it is; and Keep Night Mode After Astro
+(`NopeSettings.keepsNightModeAfterAstro`, off by default) keeps it on. Which night mode Astro
+turned on is recorded in the shared store (`NopeSettings.isNightModeFromAstro`, under a key outside
+the settings prefix, so presets and the Lock Screen snapshot never carry it), so a change from
+another process clears it; applying a preset or snapshot clears it. The helper
+alone (`CameraIntent.astro`, as a preset turns it on) never changes night mode. `NopeUI` shows it as the Astro word of the drive strip
+with its mode card and an Astro Settings sheet, and keeps the screen awake and dimmed while frames run
 (`SeriesScreenKeeper`).
 
 ### Storage and battery
@@ -241,7 +416,9 @@ applies at 20% unplugged. `NopeUI` shows them as `CameraWarnings` chips and anno
 or the torch is on), and `AVFoundationCaptureBackend` applies it to that photo's settings only
 (`CapturePolicy.photoSettings(_:flashMode:)`), so the session's configuration and prepared
 settings never depend on it. Brackets never use it (`AVCapturePhotoBracketSettings` doesn't
-support it). The torch goes through `LightCaptureBackend.setTorch(level:)`, which
+support it), and neither do bursts and astro frames. `CameraModel.shutterUsesFlash` says whether
+the shutter's photos can fire it, and `CameraModel.flashModeForShutter` is the mode they use, so
+an interface shows the flash only where it fires (issue #92). The torch goes through `LightCaptureBackend.setTorch(level:)`, which
 `SystemCaptureHardware` implements with `setTorchModeOn(level:)`; it turns the torch off before
 a camera leaves the session and reports `CaptureEvent.torchUnavailable` when `isTorchAvailable`
 turns false. The model turns it off on interruptions, heat pauses and lenses without a torch,
@@ -252,8 +429,8 @@ mode and brightness are `NopeSettings.flashMode` and `torchLevel`, passed in by 
 
 ### Night mode (issue #61)
 
-`NopeSettings.isNightModeOn` (and `setNightMode(_:)`, for features such as the Astro helper) and
-`tintsViewfinderInNightMode`. `NopeUI` applies `NightModeStyle` at the root of the camera screen
+`NopeSettings.isNightModeOn` (and `setNightMode(_:)`, the person's choice), `tintsViewfinderInNightMode`
+and `keepsNightModeAfterAstro` (see "Astro helper" for how Astro turns night mode on and off). `NopeUI` applies `NightModeStyle` at the root of the camera screen
 and of each sheet: every text style is drawn white, then everything is multiplied by pure red,
 so white becomes red (5.25:1 on black), grays darker reds and black stays black; `CameraColor`
 turns teal and amber white first, so they don't vanish. To keep the viewfinder in natural
@@ -268,6 +445,21 @@ the ready camera, and on the viewfinder in `CameraScreen`, so all three stay ali
 keyboard and the status bar are drawn by the system in the dark appearance night mode asks for.
 
 ### Siri, Shortcuts, Control Center and the Lock Screen (issues #42, #62)
+
+**Assistant Access (issue #82).** Every gated intent's `perform()` calls one helper in the app
+target, `AssistantGate.answer`, which runs `AssistantSession.perform(_:access:confirm:run:)` in
+`NopeCore`: it reads `AssistantAccess` (from `NopeSettings.assistantAccess`, `assistantAsk` and
+whether the device is locked), refuses, asks with the system's `requestConfirmation`, or goes on;
+records the request in memory; reads the check again after a confirmation; opens the app with
+`continueInForeground` if the action needs the camera; then runs the code described below. The
+gated intents run in the background first (`supportedModes`) and require an unlocked device
+(`authenticationPolicy`). `PresetQuery` lists saved presets only while access is on
+(`AssistantAccess.offeredPresets(_:)`), and the shortcut path applies a preset with
+`keepsPrivacySettings: true`. Open the Camera, Open Assistant Access, the Control Center controls,
+the Live Activity's Stop button and the Apple Watch app are not gated. The camera shows the
+session's hint, refusal card and tip (`AssistantHints`), and Settings › Privacy › Assistant Access
+(`AssistantAccessSettingsView`) the This Session list; `\.assistantSession` is `nil` in the Lock
+Screen camera, where the row is read only.
 
 The App Intents hold no rules (AGENTS.md, "Siri and Shortcuts"). `TakePhotoIntent` (a delay of
 none, 3 or 10 seconds or a custom number up to 60, and an optional lens) opens the app, turns its
@@ -293,15 +485,18 @@ it.
 Take Photo also has a count (1 to 50): more than one takes a burst of exactly that many frames
 with the burst's own loop (`takeBurst(frames:)`, the same `takeFrames` loop as the shutter's
 burst and astro runs), ending with `BurstEnd.countReached`. The other requests follow the same
-path: `SwitchLensIntent` (`.selectLens(_:)`), `TurnOnLightIntent` and `TurnOffLightIntent`
-(`.setLight(isOn:)`, the tray's `LightIntent.setTorch(_:)`), and `StartIntervalIntent` and
-`StopIntervalIntent` (`.startInterval(_:)` with an optional interval and count, and
-`.stopInterval`, the `ManualControlIntent` values the Interval drive mode and Pro Tools send).
+path: `SwitchLensIntent` (`.selectLens(_:)`, refused with `.lensBusy` while `canChangeLens` is
+false), `TurnOnLightIntent` and `TurnOffLightIntent`
+(`.setLight(isOn:)`, Q's `LightIntent.setTorch(_:)`), and `StartIntervalIntent` and
+`StopIntervalIntent` (`.startInterval(_:)` with an optional interval, count and duration in
+minutes; a duration makes the series stop after that time, `IntervalShortcut`; and
+`.stopInterval`, the `ManualControlIntent` values the Interval drive mode sends; Pro Tools no longer starts a
+series in 1.0.0).
 `TakeBracketIntent` is a separate action from Take Photo, because a bracket and a burst are
-different captures with different limits: it asks for 3, 5 or 7 frames and a step of 1/3, 2/3,
-1 or 2 stops (`BracketShortcut` moves any value to the nearest of `BracketSettings.frameCounts`
-and `BracketSettings.steps`), checks the lens with `ManualControlsModel.canBracket(_:)` (the
-same limits as the Pro Tools bracket), waits up to two seconds for the camera's first exposure
+different captures with different limits: it asks for 3, 5 or 7 frames, a step of 1/3, 2/3,
+1 or 2 stops and an order (Darkest First by default; `BracketShortcut` moves any value to the
+nearest of `BracketSettings.frameCounts` and `BracketSettings.steps`), checks the lens with
+`ManualControlsModel.canBracket(_:)` (the same limits as the drive strip's bracket), waits up to two seconds for the camera's first exposure
 reading, and takes it once with `capture(onceBracket:)` through the same bracket path
 (`ManualControlsModel.bracketFrames(once:)`, planned around the last reading in full auto or the
 manual ISO and shutter where set). The person's bracket setting and manual controls don't
@@ -310,7 +505,7 @@ change.
 Settings actions (Shortcuts only, no Siri phrases): `SetFocusRangeIntent` (No Limit, Close-Up or
 Far Focus in one action, because the camera has one autofocus range restriction, so the two
 limits exclude each other), `SetPhotoSizeIntent` (Standard or Largest for a lens, or the lens
-in use) and `ApplyPresetIntent` (see "Settings presets") open the app and go through the inbox: `.setFocusRange(_:)` sends the tray's
+in use) and `ApplyPresetIntent` (see "Settings presets") open the app and go through the inbox: `.setFocusRange(_:)` sends Q's
 `AutoControlIntent` values on a lens that supports them, and `.setPhotoSize(_:)` stores the
 choice with `NopeSettings.setPhotoSize(_:for:)`, which the model can do because the app passes
 its settings to `serveShortcuts(from:settings:presets:)`; the app then applies the new size as it does
@@ -363,15 +558,19 @@ signed. It is off by default (`NopeSettings.showsLiveActivity`).
 
 `LiveActivityCoordinator` (`NopeCore`) holds the rules. `CameraModel.liveActivityContent(...)`
 turns the model's state into a `LiveActivityContent` (kind, phase, counts, countdown end, signing,
-night mode) and `liveActivityOutcome(after:)` into the final content. The coordinator follows the
+night mode, and for an interval series that stops after a time its start and end, `seriesTime`,
+which the system counts down and fills the progress bar by, without updates) and `liveActivityOutcome(after:)` into the final content. The coordinator follows the
 model with Observation (`observe(_:)`, no polling) and calls a `LiveActivityPresenting`, which the
 app implements with ActivityKit (`SystemLiveActivities`): an activity can only be started in the
 foreground, so it starts when the run starts while the app is active (`isActive`, scene phase
 `active`); the content counts an inactive app (Control Center or a system alert over it) as in the
 foreground (`isInForeground`, any phase but `background`), since the camera keeps taking photos
 then; while the app is in the foreground a change of the
-counts alone is sent at most every 30 seconds, and phase changes and the content at the moment
-the app leaves are sent at once; countdowns are drawn by the system from their end time. Updates
+counts alone is sent at most every 30 seconds, measured on the monotonic clock (issue #125), and
+phase changes and the content at the moment the app leaves are sent at once; countdowns and a
+timed series' time are drawn by the system from their dates, so when the system says the device's
+clock changed (`NSSystemClockDidChange`) the coordinator sends content with dates again at once
+(`clockChanged(_:)`), worked out from the monotonic clock. Updates
 are local only: no push type, no push token, no network. The coordinator also asks iOS for time to
 finish saving (`BackgroundTimeRequesting`, `UIApplication.beginBackgroundTask`) while photos are
 still being taken or saved out of the foreground. When the app leaves the foreground the camera
@@ -446,7 +645,8 @@ Nothing applies a preset on its own: the app never changes the person's settings
   `NopeSettings` key (formats, file options, pairing, privacy, signing, location, mirroring,
   overlays, flash, night mode and anything added later) and a `CameraSetup` with the camera's own
   state, which the app doesn't remember between launches: the lens, the manual exposure values,
-  Close-Up, the drive mode, the bracket, the interval series and the astro helper. Left out on
+  Close-Up, the drive mode, the bracket, the interval series (with Stop After and its time; an
+  older preset reads as a number of photos) and the astro helper. Left out on
   purpose, because they belong to one moment: the torch being on (the light always starts off),
   a tapped focus point and the locks, the magnifier, clean view while open, and the comparison
   shot.
@@ -459,7 +659,7 @@ Nothing applies a preset on its own: the app never changes the person's settings
   read. A setting missing from an older preset gets its default when the preset is applied
   (`NopeSettings.apply(_:)` removes keys the snapshot doesn't have); a choice a later version adds
   is read as the default. One damaged preset is skipped without hiding the others.
-- **Applying** (`SettingsPresets.apply(_:camera:location:)`): the snapshot replaces the
+- **Applying** (`SettingsPresets.apply(_:camera:location:keepsPrivacySettings:)`): the snapshot replaces the
   settings, then `CameraModel.applyCameraSetup(_:manualControlsOn:)` sets the camera through the
   same intents as the interface, so every lens rule still applies. Factory Defaults is an empty
   snapshot and `CameraSetup.factory`; saved presets are kept. Location is never turned on by the
@@ -474,14 +674,15 @@ Nothing applies a preset on its own: the app never changes the person's settings
   Applying writes the settings store, so `SharedSettingsSync` posts the change signal and the app
   hands the new settings to the Lock Screen camera as after any other change.
 - **Interface.** `PresetsScreen` (a native `List`) opens from the first row of Settings and from
-  Presets in the quick-controls tray (`PresetsSheet`, a sheet so night mode stays red): Factory
-  Defaults and the saved presets, each applied with one tap; the result, its notices and Undo;
-  Save Current Settings (`PresetNameScreen`) and Rename or Delete (`EditPresetsScreen`).
+  the Presets tile in Q (`PresetsSheet`, a sheet so night mode stays red): Factory Defaults and
+  the saved presets, each applied with one tap; the result, its notices and Undo; Save Current
+  Settings (`PresetNameScreen`); and for each saved preset a More menu with Rename (the Rename
+  Preset page) and Delete, which asks first; the same two are swipe and VoiceOver actions.
 - **Shortcuts.** `ApplyPresetIntent` (a Shortcuts action with no Siri phrase; every App Shortcut
   slot is used) picks a `PresetEntity` (Factory Defaults, then the saved presets, from
   `PresetQuery` over the app's `SettingsPresets`, registered with `AppDependencyManager`). It
   opens the app and sends `ShortcutRequest.applyPreset(_:)` through the inbox; the model waits for
-  the camera, then calls the same `SettingsPresets.apply(_:camera:location:)` (a camera that
+  the camera, then calls the same `SettingsPresets.apply(_:camera:location:keepsPrivacySettings:)` (a camera that
   can't start leaves the camera values unchanged, `PresetNotice.cameraNotReady`). The outcome,
   `ShortcutOutcome.presetApplied(_:)`, `.busy` or `.presetUnavailable`, becomes one spoken
   sentence: which preset, whether everything applied as saved, and that Presets can undo it,
@@ -524,7 +725,10 @@ is a `CaptureSessionPreviewSource`; the app target's `Viewfinder` view turns it 
 `AVCaptureVideoPreviewLayer` and passes it to `CameraScreen(model:settings:viewfinder:)`. The app also
 attaches `onCameraCaptureEvent` (AVKit), so the volume buttons and the Camera Control are the
 shutter (enabled only while `CameraModel.handlesHardwareButtons`, so the buttons keep their
-system behavior otherwise), and `CameraCommands`, so a hardware keyboard's Space bar is.
+system behavior otherwise), and `CameraCommands`, so a hardware keyboard's Space bar is. From iOS
+26, Apple delivers AirPods (H2 chip) stem clicks to the same handler as primary capture events,
+with a system tone, so they reach the same path with no app code (WWDC25 session 253); this is
+pending verification on a device (issue #81, `docs/TESTING.md`).
 
 `CaptureSessionPreviewSource.connect(_:)` attaches the session to the app's preview layer and
 keeps the preview and photos upright with `AVCaptureDevice.RotationCoordinator`
@@ -537,18 +741,24 @@ angle as the Exif orientation and doesn't rotate pixels (`AVCaptureSession.h`,
 
 Guides and live aids drawn over the picture (issues #40, #47, #51 and #52), each off by default
 and each its own switch in `NopeSettings.overlays` (`OverlayOptions`; Settings, "Viewfinder
-Overlays"; Grid and Level are also in the quick-controls tray, and the live aids in Pro Tools).
+Overlays"; Grid, Level, Focus Peaking and the readout are also tiles in Q, and the live aids in
+Pro Tools).
 Nothing they show is written to a photo, stored or logged, and nothing takes touches.
 
-- **Grid** (`GridStyle`): rule of thirds, 4 × 4, a centered square, golden ratio lines or a
-  golden spiral in one of eight placements (`SpiralPlacement`, "Turn Spiral" in Settings). The
-  lines come from `GridGeometry` and `GoldenSpiral` in unit coordinates; `NopeUI` draws them as
-  thin white lines on a dark outline. The spiral turns with an iPhone held sideways.
+- **Grid** (`GridStyle`): rule of thirds, 4 × 4 or a centered square (the golden ratio and
+  golden spiral grids were removed in 1.0.0, issue #76). The lines come from `GridGeometry` in
+  unit coordinates; `NopeUI` draws them as thin white lines on a dark outline.
 - **Level** (`LevelModel`, `LevelTracker`): a horizon bar, or a top-down level when the device
   points straight down, from gravity readings of a `GravitySource`. The app target supplies Core
   Motion device motion (`MotionGravitySource`, no permission needed) through
-  `EnvironmentValues.cameraGravitySource`; updates run only while the level is shown. A haptic
-  marks the moment it becomes level; VoiceOver reads the tilt as the level's value.
+  `EnvironmentValues.cameraGravitySource`; updates run only while the level is shown. A tap
+  (`NopeHaptic.levelReached`, `.alignment`) and a low-priority VoiceOver announcement ("Level")
+  mark the moment it becomes level; VoiceOver also reads the tilt as the level's value. When
+  they play is decided in `NopeCore` by `LevelTapRule` (once per entry, at least one second
+  apart, none for the first reading) and `CameraModel.holdsBackLevelTap` (no tap while a photo
+  is taken, during a burst, countdown, interval series or Astro, or with the camera not
+  running); `LevelOverlay` adds a sheet over the camera and an inactive app, and only plays it
+  (`docs/design/level-haptic.md`).
 - **Live analysis** (`LiveViewModel`, `CameraModel.live`, `LiveViewBackend`): focus peaking and
   the histogram with clipping indicators. `SystemLiveView` adds an `AVCaptureVideoDataOutput`
   only while one of them is shown (`LiveAnalysisNeeds`: peaking whenever on; the histogram only
@@ -557,7 +767,10 @@ Nothing they show is written to a photo, stored or logged, and nothing takes tou
   critical heat, `LiveUpdateRate`) are sampled to about 160 × 120 cells (`LumaSampler`), turned to
   the viewfinder's orientation and analyzed (`Histogram`, `FocusPeakingMap`). The photo output
   and its settings are untouched. Peaking is drawn on the picture itself, so the focus magnifier
-  enlarges it with the preview; the grid and level stay on the whole frame.
+  enlarges it with the preview; the grid and level stay on the whole frame. The overlays report
+  when they appear and disappear (`LiveViewModel.interfaceDidAppear()`/`interfaceDidDisappear()`);
+  the analysis and readout stop only when no copy of them is left, because a layout change can
+  replace the overlays with a new copy that has already asked for the same aids.
 - **Live camera readout** ("stats for nerds"): the values AVFoundation reports
   (`CameraStatsReading`), built from the camera readings' own key-value observations (at most
   four a second) while the readout is shown; no second set of observations and no video. Hidden
@@ -574,21 +787,26 @@ Nothing they show is written to a photo, stored or logged, and nothing takes tou
 
 ### Camera layout
 
-The camera screen follows the approved layout in [`design/camera.html`](design/camera.html)
-(issue #68). `CameraLayout` chooses the arrangement from the space and the text size:
+The camera screen follows the 1.0.0 design, direction B ([`design/BUILD-SPEC.md`](design/BUILD-SPEC.md),
+3.1, 3.11 and 3.12; issue #74), which replaced the 0.3.0 layout of issue #68. `CameraLayout`
+chooses the arrangement from the space and the text size:
 
-- **iPhone (stacked):** top bar (pills, format chip, Settings), the whole 4:3 picture, the lens
-  row with the quick-controls button (⋯), the manual readout when manual controls are on, and the
-  shutter row (last photo, shutter, camera flip). When the bands don't fit below the picture, as
+- **iPhone (stacked):** a status line (the format status leading, the state pills trailing; no
+  Settings button), the whole 4:3 picture with the manual readouts and the selected drive mode's
+  card on its lower edge, the lens row (the Manual Controls button, the lenses, Switch Camera),
+  the drive strip (Single, Timer, Burst, Interval and, where offered, Astro), and the shutter row
+  (last photo, shutter, Q). Q opens the quick menu (`QuickPanel`, or `QuickMenuList` at
+  accessibility sizes), whose foot holds Hide Controls and Settings. When the bands don't fit below the picture, as
   on a 4.7-inch iPhone, they overlay its bottom on a dark backing. The app target keeps the
   iPhone interface in portrait (`AppDelegate`, `application(_:supportedInterfaceOrientationsFor:)`)
   and tells `NopeUI` which way up the phone is (`EnvironmentValues.cameraUprightRotation`, from
   `UIDevice.orientation`); icons and text blocks turn upright as units (`UprightUnit`), and the
-  chip, pills and warnings move to the picture's upper edge. While Settings or another sheet is
+  format status, pills and warnings move to the picture's upper edge. While Settings or another sheet is
   open, the app lets the interface rotate (`EnvironmentValues.cameraPresentsSheet`).
 - **iPad, or any window wider than tall (column):** the interface rotates; the picture sits
-  beside a trailing column with the shutter centered, and Settings and the format details open as
-  popovers. The column's halves above and below the shutter share its height, and the upper one
+  beside a trailing column (Settings, the lenses and Manual Controls at the top, Q above the
+  shutter and the last photo below it) with the shutter centered, the drive strip on the
+  picture's lower edge, and Settings and the format details open as popovers. The column's halves above and below the shutter share its height, and the upper one
   scrolls if its buttons don't fit, so nothing passes under the shutter in a short window. In a
   reduced window the camera shows the multitasking pause.
 - **Accessibility text sizes (scrolling), in every window:** the iPhone bands in a scroll view
@@ -610,11 +828,11 @@ The camera screen follows the approved layout in [`design/camera.html`](design/c
   every orientation for such a window, never forces it back to portrait when a sheet closes, and
   asks UIKit again when the size classes change (`FollowsWindowSizeClasses`), so a phone folded
   while on its side returns the outer display to portrait. Folding or unfolding changes only the
-  layout: the dial, the tray, sheets and runs (self-timer, interval, astro) are state in the
+  layout: the dial, Q, sheets and runs (self-timer, interval, astro) are state in the
   model or in `CameraReadyView` and carry over.
 
 Three registries let later features add to the camera without touching the layout:
-`QuickControls.builders` (tray items: buttons, switches or native menus), `StatePills.builders`
+`QuickControls.builders` (Q's tiles: buttons, switches or native menus), `StatePills.builders`
 (pills for settings not at their defaults, at most three then "+n") and
 `CameraWarnings.builders` (persistent amber chips, such as "Not Signed"). Feedback has three
 tiers: a good save is quiet (the last-photo slot with a teal seal, a light haptic and a
@@ -658,9 +876,30 @@ never for offset tags), and `ImageIOReadBack` reports ImageIO's pixel size and b
 (`ImageProperties`). `PhotoDetails` turns these into plain facts; it estimates nothing, so a
 value the file doesn't hold is left out. `PhotoSaver` and `CameraModel` time each step with an
 injected monotonic clock (`ContinuousClock`), so tests use a scripted one. The camera screen
-shows the thumbnail in the last-photo slot: a tap opens Photos through
-`EnvironmentValues.openPhotosApp` (or the details when that is `nil`), and its long-press menu
-and accessibility actions offer Open in Photos and Photo Details.
+shows the thumbnail in the last-photo slot: a tap opens the Last Photo viewer, and its
+accessibility actions offer Open in Photos (through `EnvironmentValues.openPhotosApp`) and Photo
+Details.
+
+**Last Photo viewer (docs/design/BUILD-SPEC.md, 3.14).** `PhotoViewer.swift` presents
+`PhotoViewerScreen` in a full-screen cover while `CameraModel.isViewerOpen` is true: the
+thumbnail sends `CameraIntent.setViewerOpen(true)`, and closing sends `false`. The model closes
+it too, on a hardware shutter press (which then takes no photo) and in the background. The
+screen pages through `CameraModel.sessionPhotos`, oldest first, opening on the newest, and
+decodes previews with `SessionPhotos.picture(of:maximumPixelSize:)` only for the page shown and
+its neighbors. Its rules that draw nothing (the caption, the VoiceOver value, New Photo, the zoom
+limit and arithmetic, the fallback's size) are in `PhotoViewerFacts` and `PhotoViewerZoom`, with
+unit tests. Photo Details opens the existing `PhotoDetailsSheet` for the photo shown.
+
+What's in This Photo (`docs/design/BUILD-SPEC.md`, 3.15) needs no new reading: `PhotoDetails`
+also names the EXIF codes it shows (`ExposureModeValue`, `ExposureProgramValue`,
+`MeteringValue`, `RAWCompression`, with the number kept for a code it doesn't name), the lens and
+camera names (`LensAndCamera`), a DNG's structure (`RAWStructure`), each written item's value
+(`ItemReceipt.value`: text, a `Date`, or a `PhotoLocation`), every entry of each file grouped by
+where it lives (`File.entries`, `TagEntry`, built as `MetadataComparison` builds its items),
+the developed copies' color space and quality, how Photos pairs a RAW and a copy
+(`PhotosPairing`), whether the Standard File Tags were written, and what the camera reported
+(`CaptureReport`: shutter, ISO and lens, shown only where the files don't hold them).
+`NopeUI` decodes nothing; it formats these values and hides identifying ones until asked.
 
 **RAW clipping (issue #53).** The saved DNG's RAW data is lossless-JPEG compressed, and the app
 has no decoder for it (and adds none: byte-level parsing would need fuzzing). Instead the capture
@@ -774,25 +1013,33 @@ Lock Screen capture extension sets no renderer, so it isn't offered on a locked 
   shows it as a full-screen cover (`ComparisonScreen`): the pictures with a divider (a slider,
   VoiceOver adjustable action, nope. Only / Split / Phone Only buttons, pinch and zoom buttons),
   and a pushed Details list. It hides its contents while the scene isn't active, so the app
-  switcher's snapshot doesn't show them. The Compare item is in the quick-controls tray, with a
+  switcher's snapshot doesn't show them. The Compare tile is in Q, with a
   pill and the hint "Hold the camera steady or use a tripod. Two photos are taken, a moment apart."
 
 ## Settings
 
 `NopeSettings` (in `NopeCore`, main actor, Observation) holds the person's choices:
-`SaveSettings` (the formats, at least one, RAW and HEIF by default; `MetadataSettings`, with the
+`SaveSettings` (the formats, at least one, RAW only by default, issue #80; `MetadataSettings`, with the
 master switch "Remove all optional details", on by default, one switch per optional item, as in
-[`PRIVACY.md`](PRIVACY.md), "Metadata plan", and signing, on by default; and the HEIF and JPEG
+[`PRIVACY.md`](PRIVACY.md), "Metadata plan", and signing, off by default; and the HEIF and JPEG
 look, `DevelopedLook`, standard by default, or flat, which never changes the RAW), manual
-controls (off) and clean view (off). Interfaces change it only through its methods, which hold the rules (the
+controls (off), clean view (off) and the "Processed" marker of a lens without Bayer RAW (on,
+`showsProcessedMarker`). Values the person stored are read back as stored, so a change of
+default applies only to a fresh install and Factory Defaults. Interfaces change it only through its methods, which hold the rules (the
 last format can't be turned off; turning on one item turns the master switch off). Each change
 is written at once to the app's own `UserDefaults` on the device: never iCloud, never the
-network. The app target creates one `NopeSettings` and passes it to `CameraScreen`, whose
-Settings button opens `SettingsScreen` (a sheet on iPhone, a popover on iPad) in every camera
-state. Settings is a short grouped list: Presets (see "Settings presets"), Photos (formats with the RAW pairing, look, file
-options), Privacy (the master switch, "Choose Details", signing), Camera (manual controls, clean
-view, front camera mirroring) and More (Accessibility, Honesty, About); explanations are in
-footers and on the detail screens.
+network. The app target creates one `NopeSettings` and passes it to `CameraScreen`, which opens
+`SettingsScreen` (a sheet on iPhone, a popover on iPad) from Q's Settings on the stacked camera,
+from the Settings button in the column and on the screens before the camera is ready, and at a
+page or row through `openSettingsAt` (`SettingsID`, `SettingsNavigation`). Settings is a short
+grouped list with a search field (`SettingsSearch.swift`): Presets (see "Settings presets"),
+Photos (Formats with the RAW pairing, HEIF and JPEG Copies with the look and the file options,
+Photo Size, Mirror Front Camera), Privacy (Details in Each Photo, with the master switch, and
+Sign Each Photo), Camera (Fast Shutter, Focus on Faces, and Pinch with two or more rear lenses), Screen (Start in Clean View, Viewfinder
+Overlays, Show Processed Marker, Night Mode, Keep Night Mode After Astro where the device offers
+Astro, Red Viewfinder, Live Activity) and More
+(Accessibility, Honesty, About). Manual controls are turned on and off on the camera, with the
+Manual Controls button; explanations are under each row and on the detail screens.
 
 The app passes `NopeSettings.save` to `CameraModel.saveSettings` whenever it changes, so the
 next photo uses it. For each capture, `CameraModel` adds two per-photo values to the metadata
@@ -822,13 +1069,16 @@ Simulator (docs/TESTING.md). Release builds always use `AVFoundationCaptureBacke
 The camera screen and its own sheets (the format details, What's in This Photo, Compare, the
 astro and interval settings, Pro Tools) are always dark: a camera is used in every light, and a
 dark frame doesn't change how a scene looks. Settings and its pages, Presets (from Settings or
-the quick-controls tray), Honesty, About and Licenses, first run and the camera access screens
+Q), Honesty, About and Licenses, first run and the camera access screens
 follow the system's light or dark setting, as a sheet on iPhone and a popover on iPad (owner
 decision for 0.3.0). A sheet changes with the setting while it is open; the iPad popover keeps
 the setting it opened with until it closes, because a popover whose scheme changed while open
-kept its glass half in the old appearance, a mid gray behind white text. The brief "Starting the camera…" message
-is dark, like the camera it leads to. Night mode is red on black everywhere: `NightModeStyle` on
-the dark appearance.
+kept its glass half in the old appearance, a mid gray behind white text. The brief state before
+the camera state is known is black, like the camera it leads to and the launch screen before it
+(below). Night mode is red on black everywhere: `NightModeStyle` on
+the dark appearance. Settings pages and sheets use `NopeForm` and `NopeList`, the system's `Form`
+and `List` with night mode rows: `#1C0000` rows on a black page, where the night red is 5.0:1
+(docs/design/tokens.md, "Night mode rows").
 
 `ScreenAppearance` holds the rule: `.camera` is always dark, `.system` is the system's scheme,
 and night mode is dark for both; `ScreenAppearance.of(_:)` picks it from the camera state.
@@ -864,9 +1114,43 @@ the camera follow the window and stay dark.
 screen, a change of the setting while Settings is open and while only the camera shows, and
 that the camera's sheets stay dark in the light setting; the Settings screens are audited in both settings (docs/TESTING.md).
 
+### Launch screen
+
+The design is `docs/design/LAUNCH-SCREEN.md` (option B, accepted 2026-11-18). The app's
+Info.plist (`App/NopeApp-Info.plist`) has a `UILaunchScreen` dictionary with `UIColorName`
+`LaunchBackground`, a black color set with no appearance variant, and `UIImageName`
+`LaunchMark`, the icon's frame, "n" and period without its ground (`LaunchMark.svg`, a copy of
+`docs/design/launch-mark.svg`), drawn at 96 × 96 points with `UIImageRespectsSafeAreaInsets` off,
+in `App/NopeApp/Assets.xcassets`. The generated empty dictionary
+(`INFOPLIST_KEY_UILaunchScreen_Generation`) is off, and `UIStatusBarStyleLightContent` keeps the
+status bar's content white on the black in the light appearance.
+
+The app's first frames match it. `CameraScreen`'s background is `NopeColor.launchBackground`
+(black) whenever the camera's appearance applies or night mode is on, so it doesn't depend on
+the window's dark style, which the app applies a turn of the main actor later. Before the
+camera state is known (`.starting`) it draws only that background: no spinner and no Settings
+button. While `CameraModel.isFirstStart` is `true` it shows `StartIndicator` over the whole
+screen: `StartMark`, the same three shapes in the icon's fixed colors (white in night mode, so
+night mode's multiply makes it red), with its center at the window's center, and, once the
+camera is ready and starting, "Starting the camera…" under it on a black plate; the session's
+spinner (`SessionStatusView`) isn't drawn meanwhile. Nothing is drawn under the plate: in the
+scrolling layout (accessibility text sizes) `CameraReadyView` lays out everything that scrolls
+but doesn't draw it, and hides it from touches and VoiceOver, until the first start ends, while
+the pinned row (Last Photo, shutter, Q) is drawn from the start; the pinned row reports its top
+edge (`PinnedRowTop`), and where the plate would come within `NopeSpace.s` of it the indicator
+leaves out the words and the plate and shows the mark alone (docs/design/LAUNCH-SCREEN.md, 13).
+The indicator fades (`NopeMotion.fade`)
+when the first start ends; later starts use the spinner. The Lock Screen camera has no launch
+screen of its own: it draws black until its settings arrive, then the same `CameraScreen`, so it
+shows the indicator for its first start too. `scripts/check-launch-screen.sh` checks the color
+set, the image and, given a built app, its Info.plist; `LaunchHandOffUITests` checks the first
+frames with the `slowStart` scenario (docs/TESTING.md, "Launch screen").
+
 ## Signing and secrets
 
-Development builds use automatic signing with the bundle identifier `com.photivra.nope.dev`. The
+Development builds use automatic signing with the bundle identifier `com.photivra.nope.dev`; the
+App Store build uses `com.photivra.nope`, set in `Config/Local.xcconfig` for that build only
+(`docs/RELEASING.md`, "The app build"). The
 development team is read from `Config/Local.xcconfig`, which git ignores; copy
 `Config/Local.xcconfig.example` to create it. No team ID, certificate or profile is committed.
 CI builds for the Simulator with `CODE_SIGNING_ALLOWED=NO`.

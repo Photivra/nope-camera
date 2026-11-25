@@ -3,7 +3,8 @@ import SwiftUI
 
 /// The viewfinder overlays: grid and its style, level, focus peaking, histogram and live camera
 /// readout, each its own switch, all off by default (issues #40, #47, #51 and #52). Settings
-/// links to it from its Camera section.
+/// links to it from its Screen section, with a value that names what is on. Grid, Level, Focus
+/// Peaking and the readout are also Q tiles; each changes the same value.
 ///
 /// The screen renders `NopeSettings` and changes it only through its methods.
 struct OverlaySettingsView: View {
@@ -20,20 +21,25 @@ struct OverlaySettingsView: View {
     /// The options.
     private var options: OverlayOptions { settings.overlays }
 
+    /// Where Settings is, to scroll to a row search opened, or `nil`.
+    @Environment(SettingsNavigation.self) private var navigation: SettingsNavigation?
+
     /// The form.
     var body: some View {
-        Form {
+        NopeForm {
             Section {
                 Toggle(isOn: Binding(get: { options.showsGrid }, set: { settings.setShowsGrid($0) })) {
                     SettingLabel(
                         title: Self.gridTitle,
                         explanation: Text("Guide lines over the viewfinder. They aren't saved in the photo.", bundle: .module, comment: "Explains the Grid switch."))
                 }
+                .settingsRow(.overlaysGrid)
                 Toggle(isOn: Binding(get: { options.showsLevel }, set: { settings.setShowsLevel($0) })) {
                     SettingLabel(
                         title: Self.levelTitle,
-                        explanation: Text("A horizon bar, or a top-down level when you point straight down. Uses the motion sensors only while it shows.", bundle: .module, comment: "Explains the Level switch."))
+                        explanation: Text("A horizon bar, or a top-down level when you point straight down. On iPhone, you feel a tap when it's level. Uses the motion sensors only while it shows.", bundle: .module, comment: "Explains the Level switch."))
                 }
+                .settingsRow(.overlaysLevel)
             } header: {
                 Text("Guides", bundle: .module, comment: "Settings section header above the grid and level switches.")
             }
@@ -46,18 +52,17 @@ struct OverlaySettingsView: View {
                 Text("Live Aids", bundle: .module, comment: "Settings section header above focus peaking, the histogram and the live camera readout.")
             }
             // A row rather than a section footer: footers under switches were reported by the
-            // accessibility audit as not following Dynamic Type (see LookSettingsView).
+            // accessibility audit as not following Dynamic Type (see CopiesSettingsView).
             Section {
                 Text("Live aids are measured on the preview, a few times a second, only while they show. Nothing is saved.", tableName: "Honesty", bundle: .module, comment: "Note under the focus peaking, histogram and live readout switches. Must not claim more than the English.")
                     .font(.footnote)
             }
         }
         .navigationTitle(Self.rowTitle)
+        .modifier(SettingsScrollTarget(navigation: navigation, page: .overlays))
     }
 
-    /// The grid style, as an inline list that grows with the text size, and Turn Spiral while
-    /// the spiral is chosen (a button, so it is also a VoiceOver, Voice Control and Switch
-    /// Control action).
+    /// The grid style, as an inline list that grows with the text size.
     private var gridStyleSection: some View {
         Section {
             Picker(selection: Binding(get: { options.gridStyle }, set: { settings.setGridStyle($0) })) {
@@ -68,21 +73,8 @@ struct OverlaySettingsView: View {
                 Text("Grid Style", bundle: .module, comment: "Picker for which guide lines the grid draws.")
             }
             .pickerStyle(.inline)
-            if options.gridStyle == .goldenSpiral {
-                Button {
-                    settings.turnSpiral()
-                } label: {
-                    LabeledContent {
-                        Text("\(options.spiralPlacement.index + 1) of \(SpiralPlacement.count)", bundle: .module, comment: "Which of the golden spiral's eight placements is in use, such as 3 of 8.")
-                    } label: {
-                        Self.turnSpiralTitle
-                    }
-                }
-                // Primary text, not the tint: the tinted label measured just under 4.5:1 in the
-                // accessibility audit.
-                .tint(.primary)
-            }
         }
+        .settingsRow(.overlaysGridStyle)
     }
 
     /// The row and screen title, "Viewfinder Overlays".
@@ -92,17 +84,17 @@ struct OverlaySettingsView: View {
 
     /// "Grid".
     static var gridTitle: Text {
-        Text("Grid", bundle: .module, comment: "Name of the switch and quick control that draws guide lines over the viewfinder.")
+        Text(SettingsText.grid)
     }
 
     /// "Level".
     static var levelTitle: Text {
-        Text("Level", bundle: .module, comment: "Name of the horizon level shown over the viewfinder, and of its switch.")
+        Text(SettingsText.level)
     }
 
-    /// "Turn Spiral".
-    static var turnSpiralTitle: Text {
-        Text("Turn Spiral", bundle: .module, comment: "Button that moves the golden spiral grid to its next placement (turned or flipped).")
+    /// "Focus Peaking".
+    static var focusPeakingTitle: Text {
+        Text(SettingsText.focusPeaking)
     }
 
     /// The name of a grid style.
@@ -113,26 +105,41 @@ struct OverlaySettingsView: View {
         case .thirds: Text("Thirds", bundle: .module, comment: "Grid style: two lines each way, at thirds (rule of thirds).")
         case .fourByFour: Text("4 × 4", bundle: .module, comment: "Grid style: three lines each way, dividing the picture into 4 by 4.")
         case .square: Text("Square", bundle: .module, comment: "Grid style: a centered square frame, for photos cropped square later.")
-        case .goldenRatio: Text("Golden Ratio", bundle: .module, comment: "Grid style: lines at the golden ratio (phi).")
-        case .goldenSpiral: Text("Golden Spiral", bundle: .module, comment: "Grid style: a golden (Fibonacci) spiral.")
         }
     }
 
-    /// A navigation row to the overlays, showing "On" when any is on.
+    /// The Settings row's value: "Off"; the names when one or two overlays are on ("Grid,
+    /// Level"); a count from three ("3 On"). Keep Readout in Clean View is part of the readout,
+    /// not an overlay of its own.
     ///
-    /// - Parameter settings: The settings.
-    static func link(settings: NopeSettings) -> some View {
-        NavigationLink {
-            OverlaySettingsView(settings: settings)
-        } label: {
-            LabeledContent {
-                settings.overlays.isAnyOn
-                    ? Text("On", bundle: .module, comment: "Live readout value: a feature is on.")
-                    : Text("Off", bundle: .module, comment: "Live readout value: a feature is off.")
-            } label: {
-                rowTitle
-            }
+    /// - Parameter options: The overlay options.
+    /// - Returns: The value text.
+    static func summary(of options: OverlayOptions) -> Text {
+        let names = onNames(of: options).map { String(localized: $0) }
+        switch names.count {
+        case 0:
+            return Text("Off", bundle: .module, comment: "Live readout value: a feature is off.")
+        case 1:
+            return Text(verbatim: names[0])
+        case 2:
+            return Text("\(names[0]), \(names[1])", bundle: .module, comment: "Value of the Viewfinder Overlays row in Settings: the names of the two overlays that are on, such as Grid, Level.")
+        default:
+            return Text("\(names.count) On", bundle: .module, comment: "Value of the Viewfinder Overlays row in Settings: how many overlays are on, three or more.")
         }
+    }
+
+    /// The names of the overlays that are on, in the order of the page.
+    ///
+    /// - Parameter options: The overlay options.
+    /// - Returns: The names.
+    static func onNames(of options: OverlayOptions) -> [LocalizedStringResource] {
+        [
+            (options.showsGrid, SettingsText.grid),
+            (options.showsLevel, SettingsText.level),
+            (options.showsFocusPeaking, SettingsText.focusPeaking),
+            (options.showsHistogram, SettingsText.histogram),
+            (options.showsLiveReadout, SettingsText.liveReadout),
+        ].filter(\.0).map(\.1)
     }
 }
 
@@ -153,25 +160,29 @@ struct LiveAidToggles: View {
         let options = settings.overlays
         Toggle(isOn: Binding(get: { options.showsFocusPeaking }, set: { settings.setShowsFocusPeaking($0) })) {
             SettingLabel(
-                title: Text("Focus Peaking", bundle: .module, comment: "Name of the switch that highlights in-focus edges over the viewfinder."),
+                title: OverlaySettingsView.focusPeakingTitle,
                 explanation: Text("Highlights the sharpest edges in magenta.", bundle: .module, comment: "Explains the Focus Peaking switch."))
         }
+        .settingsRow(.overlaysFocusPeaking)
         Toggle(isOn: Binding(get: { options.showsHistogram }, set: { settings.setShowsHistogram($0) })) {
             SettingLabel(
                 title: Text("Histogram", bundle: .module, comment: "Name of the live brightness histogram shown with the manual controls, and of its switch."),
                 explanation: Text("Shown with the manual controls. It measures the processed live preview, not the RAW.", tableName: "Honesty", bundle: .module, comment: "Explains the Histogram switch. RAW is a file format name. Must not claim more than the English."))
         }
+        .settingsRow(.overlaysHistogram)
         Toggle(isOn: Binding(get: { options.showsLiveReadout }, set: { settings.setShowsLiveReadout($0) })) {
             SettingLabel(
                 title: LiveReadoutText.title,
                 explanation: Text("The camera's live values, such as shutter, ISO, focus and white balance.", bundle: .module, comment: "Explains the Live Camera Readout switch. ISO is the usual camera abbreviation."))
         }
+        .settingsRow(.overlaysLiveReadout)
         if options.showsLiveReadout {
             Toggle(isOn: Binding(get: { options.pinsLiveReadout }, set: { settings.setPinsLiveReadout($0) })) {
                 SettingLabel(
                     title: LiveReadoutText.pinTitle,
                     explanation: Text("Keeps the readout on screen when the other controls are hidden.", bundle: .module, comment: "Explains the Keep Readout in Clean View switch. Clean view hides every control but the shutter."))
             }
+            .settingsRow(.overlaysKeepReadout)
         }
     }
 }
@@ -227,6 +238,19 @@ extension QuickControls {
                         settings.setPinsLiveReadout(choice.isPinned)
                     }
                 }))
+    }
+
+    /// Focus Peaking: a switch for the same value as Settings › Viewfinder Overlays and Pro Tools
+    /// (`docs/design/BUILD-SPEC.md`, 3.6; decision 7.7), so it is two taps away in full auto
+    /// too. Shown in full auto and with manual controls on, wherever the live aids can run.
+    ///
+    /// - Parameter context: The model and settings.
+    static func focusPeaking(_ context: CameraControlContext) -> QuickControlItem? {
+        guard context.model.live.isSupported else { return nil }
+        let settings = context.settings
+        return QuickControlItem(
+            id: "focusPeaking", title: OverlaySettingsView.focusPeakingTitle, systemImage: "scope",
+            kind: .toggle(isOn: settings.overlays.showsFocusPeaking) { settings.setShowsFocusPeaking($0) })
     }
 
     /// Level: a switch.

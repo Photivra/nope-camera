@@ -59,10 +59,12 @@ final class PhoneWatchSession: NSObject, WatchLink {
     /// - Returns: Whether the watch confirmed it.
     func send(_ message: Data) async -> Bool {
         guard let session else { return false }
+        // WatchConnectivity calls these handlers on its own background queue; `@Sendable` keeps
+        // them from inheriting this class's main-actor isolation (see WatchSessionLink.send).
         return await withCheckedContinuation { continuation in
             session.sendMessageData(
-                message, replyHandler: { _ in continuation.resume(returning: true) },
-                errorHandler: { _ in continuation.resume(returning: false) })
+                message, replyHandler: { @Sendable _ in continuation.resume(returning: true) },
+                errorHandler: { @Sendable _ in continuation.resume(returning: false) })
         }
     }
 

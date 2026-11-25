@@ -80,10 +80,16 @@ extension EnvironmentValues {
     /// `UIApplication.openSettingsURLString`.
     @Entry public var openAppSettings: CameraAction?
 
-    /// Opens the Photos app, for the last-photo thumbnail (issue #36). `nil` makes a tap on the
-    /// thumbnail show the photo's details instead, and hides Open in Photos. The app target sets
-    /// it; it runs only when the person taps.
+    /// Opens the Photos app, for Open in Photos in the Last Photo viewer and among Last Photo's
+    /// VoiceOver actions (issue #36; docs/design/BUILD-SPEC.md, 3.14). A tap on Last Photo opens
+    /// the viewer, not Photos. `nil` hides Open in Photos, as in the Lock Screen camera. The app
+    /// target sets it; it runs only when the person taps.
     @Entry public var openPhotosApp: CameraAction?
+
+    /// Whether to behave as with VoiceOver or Switch Control on, which the Simulator can't run:
+    /// the focus square and Lock then never fade (docs/design/device-feedback-1.0.md, section 5).
+    /// `false` by default; the app sets it only for a UI test launch argument.
+    @Entry public var simulatesAssistiveTechnology = false
 
     /// Called with `true` when the camera screen presents Settings or another sheet, and `false`
     /// when it closes. The iPhone app keeps the camera layout in portrait and lets sheets rotate

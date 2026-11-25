@@ -64,10 +64,10 @@ extension NopeAppUITests {
         XCTAssertTrue(flashPill.waitForExistence(timeout: 5))
         flashPill.tap()
         XCTAssertFalse(flashPill.waitForExistence(timeout: 2))
-        // The ultra wide has neither: the tray doesn't offer them.
+        // The ultra wide has neither: Q doesn't offer them.
         closeTray(app)
         app.buttons["Ultra Wide"].tap()
-        app.buttons["Quick Controls"].tap()
+        quickMenuButton(app).tap()
         XCTAssertTrue(app.buttons["Hide Controls"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["Light"].exists)
         XCTAssertFalse(app.buttons["Flash"].exists)
@@ -102,9 +102,10 @@ extension NopeAppUITests {
         try audit(app)
     }
 
+    /// What's in This Photo is red on black in night mode, as the camera's other sheets are.
     @MainActor
     func testNightModeCameraWithPhotoWarningAndLight() throws {
-        let app = launch("signingFails", extraArguments: Self.nightModeOn)
+        let app = launch("signingFails", extraArguments: Self.signingOn + Self.nightModeOn)
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
         app.buttons["Take Photo"].tap()
         XCTAssertTrue(app.buttons["Not Signed"].waitForExistence(timeout: 10))
@@ -114,7 +115,7 @@ extension NopeAppUITests {
         try audit(app)
         app.terminate()
 
-        let large = launch("signingFails", extraArguments: Self.nightModeOn + Self.largestTextSize)
+        let large = launch("signingFails", extraArguments: Self.signingOn + Self.nightModeOn + Self.largestTextSize)
         XCTAssertTrue(large.buttons["Take Photo"].waitForExistence(timeout: 10))
         try auditScrollingScreen(large)
     }
@@ -161,8 +162,7 @@ extension NopeAppUITests {
     func testNightModeSettingsScreensPassAccessibilityAudits() throws {
         let app = launch("photosDenied", extraArguments: Self.nightModeOn)
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
-        app.buttons["Settings"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        openSettings(app)
         let tint = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Red Viewfinder")).firstMatch
         var swipes = 0
         while !tint.isHittable && swipes < 6 {
@@ -194,9 +194,9 @@ extension NopeAppUITests {
         try auditSettingsScreens(rightToLeft, checksDynamicType: false, checksContrast: !isPad)
     }
 
-    /// The Choose Details footer and header, which the audit's Dynamic Type check is not asked
-    /// about (``NopeAppUITests/measuredDynamicTypeLabels``), and the master switch's title are
-    /// measured here instead: each is larger at every one of the nine text sizes than at the
+    /// The Details in Each Photo footer and header (Choose Details before 1.0.0), which the
+    /// audit's Dynamic Type check is not asked about (``NopeAppUITests/measuredDynamicTypeLabels``),
+    /// are measured here instead: each is larger at every one of the nine text sizes than at the
     /// size before, in night mode, where Settings is a sheet on iPad too.
     @MainActor
     func testChooseDetailsTextGrowsAtEveryTextSize() throws {
@@ -204,19 +204,22 @@ extension NopeAppUITests {
             "L", "XL", "XXL", "XXXL", "AccessibilityM", "AccessibilityL", "AccessibilityXL", "AccessibilityXXL",
             "AccessibilityXXXL",
         ]
-        let labels = Self.measuredDynamicTypeLabels + ["Remove All Optional Details"]
+        // The master switch's title isn't measured since 1.0.0: in night mode its row is the
+        // switch (NightModeSwitch), whose title has no element of its own and whose row keeps
+        // its height until the title wraps; the audit checks the switch at the largest size.
+        let labels = Self.measuredDynamicTypeLabels
         var previous: [String: CGFloat] = [:]
         for category in categories {
             let app = launch(
                 "photosDenied",
                 extraArguments: Self.nightModeOn + ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategory" + category])
             XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
-            app.buttons["Settings"].tap()
-            XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
-            open(app, row: "Choose Details")
-            XCTAssertTrue(app.navigationBars["Choose Details"].waitForExistence(timeout: 5))
+            openSettings(app)
+            open(app, row: "Details in Each Photo")
+            XCTAssertTrue(app.navigationBars["Details in Each Photo"].waitForExistence(timeout: 5))
             for label in labels {
-                let text = app.staticTexts[label]
+                // "Location" is also the switch's title; the header is the first match, above it.
+                let text = app.staticTexts[label].firstMatch
                 XCTAssertTrue(text.waitForExistence(timeout: 5), "\(label) at \(category)")
                 // The text's area: a line that wraps gets narrower and taller.
                 let area = text.frame.width * text.frame.height
@@ -250,13 +253,34 @@ extension NopeAppUITests {
     /// item.
     private static var homeIndicatorHeight: CGFloat { 20 }
 
+    /// The window's bottom trailing corner, where iPadOS draws the window's resize handle: a
+    /// gray arc of the system's, outside the app's views, so night mode's red can't reach it
+    /// (seen in the night mode screenshot on the iPad Simulator, iOS 27.2).
+    /// `persistentSystemOverlays(.hidden)` hides it only after a delay. Empty on iPhone.
+    @MainActor
+    func windowCorner(_ app: XCUIApplication) -> CGRect {
+        guard isPad else { return .null }
+        let window = app.windows.firstMatch.frame
+        let side: CGFloat = 40
+        return CGRect(x: window.maxX - side, y: window.maxY - side, width: side, height: side)
+    }
+
     /// Counts sampled screen pixels outside a frame (and below the status bar) that aren't
-    /// black or red: any white, green or blue light. Samples every fourth point.
+    /// black or red: any white, green or blue light. Samples every fourth point. On iPad the
+    /// system's window corner control is left out too (``windowCorner(_:)``; docs/TESTING.md).
     @MainActor
     func nonRedPixels(_ app: XCUIApplication, outside excluded: CGRect) -> Int {
         // Anti-aliased edges and the system's glass highlights mix in a little green and blue;
         // a pixel counts when green or blue is more than a quarter of its red (and visible).
-        countPixels(app, outside: excluded) { red, green, blue in max(green, blue) > max(24, red / 4) }
+        nonRedPixels(app, outsideAll: [excluded])
+    }
+
+    /// Counts sampled screen pixels outside several frames (and below the status bar) that
+    /// aren't black or red, as the one-frame `nonRedPixels(_:outside:)` does, and, on iPad,
+    /// outside the system's window corner control (``windowCorner(_:)``).
+    @MainActor
+    func nonRedPixels(_ app: XCUIApplication, outsideAll excluded: [CGRect]) -> Int {
+        countPixels(app, outside: excluded + [windowCorner(app)]) { red, green, blue in max(green, blue) > max(24, red / 4) }
     }
 
     /// At the largest text size the camera scrolls, and the viewfinder, drawn behind the
@@ -328,17 +352,19 @@ extension NopeAppUITests {
         return count
     }
 
-    /// Closes the quick-controls tray if it is open.
+    /// Closes Q, the quick menu that replaced the quick-controls tray, if it is open.
     @MainActor
     func closeTray(_ app: XCUIApplication) {
-        let tray = app.buttons["Quick Controls"]
-        if tray.isSelected { tray.tap() }
+        let quick = quickMenuButton(app)
+        guard quick.exists, quick.isSelected else { return }
+        quick.tap()
+        _ = app.descendants(matching: .any)["quickMenu"].waitForNonExistence(timeout: 5)
     }
 
     /// Counts sampled pixels of a screenshot that match a test.
     @MainActor
     private func countPixels(
-        _ app: XCUIApplication, outside excluded: CGRect, matching test: (Int, Int, Int) -> Bool
+        _ app: XCUIApplication, outside excluded: [CGRect], matching test: (Int, Int, Int) -> Bool
     ) -> Int {
         settle()
         let image = XCUIScreen.main.screenshot().image
@@ -347,9 +373,35 @@ extension NopeAppUITests {
         var count = 0
         let size = app.windows.firstMatch.frame.size
         for y in stride(from: Self.statusBarHeight, to: size.height - Self.homeIndicatorHeight, by: 4) {
-            for x in stride(from: CGFloat(0), to: size.width, by: 4) where !excluded.contains(CGPoint(x: x, y: y)) {
+            for x in stride(from: CGFloat(0), to: size.width, by: 4) where !excluded.contains(where: { $0.contains(CGPoint(x: x, y: y)) }) {
                 let (red, green, blue) = pixels.color(x: Int(x * scale), y: Int(y * scale))
                 if test(red, green, blue) { count += 1 }
+            }
+        }
+        return count
+    }
+
+    /// Counts the pixels of text or symbols inside a frame, sampled every point: pixels whose
+    /// red, green or blue differs by more than 60 from the background, read at the middle of the
+    /// frame's top edge (3 points in, where a vertically centered row draws nothing). Returns -1
+    /// when the screenshot can't be read.
+    ///
+    /// - Parameters:
+    ///   - app: The app on screen.
+    ///   - frame: The region to count, such as half of a list row.
+    ///   - background: The point whose color is the background, such as the row's top middle.
+    @MainActor
+    func inkPixels(_ app: XCUIApplication, in frame: CGRect, background: CGPoint) -> Int {
+        settle()
+        let image = XCUIScreen.main.screenshot().image
+        guard let pixels = Pixels(image) else { return -1 }
+        let scale = image.scale
+        let paper = pixels.color(x: Int(background.x * scale), y: Int(background.y * scale))
+        var count = 0
+        for y in stride(from: frame.minY, to: frame.maxY, by: 1) {
+            for x in stride(from: frame.minX, to: frame.maxX, by: 1) {
+                let (red, green, blue) = pixels.color(x: Int(x * scale), y: Int(y * scale))
+                if max(abs(red - paper.0), abs(green - paper.1), abs(blue - paper.2)) > 60 { count += 1 }
             }
         }
         return count

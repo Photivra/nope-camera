@@ -67,7 +67,7 @@ public enum MetadataItem: String, CaseIterable, Codable, Hashable, Sendable {
 /// - Turning the master back on turns every item off again.
 /// - Turning the master off sets every item to its documented default
 ///   (``MetadataItem/isOnWhenCustomizing``).
-/// - Signing (``signsPhotos``) is outside the master switch and on by default.
+/// - Signing (``signsPhotos``) is outside the master switch and off by default (issue #80).
 ///
 /// ```swift
 /// var settings = MetadataSettings()          // master on, every item off
@@ -83,8 +83,10 @@ public struct MetadataSettings: Equatable, Codable, Sendable {
     /// The optional items that are on. Always empty while ``removesAllOptionalDetails`` is on.
     public private(set) var enabledItems: Set<MetadataItem>
 
-    /// Whether each photo is signed with Content Credentials. Outside the master switch; on by
-    /// default.
+    /// Whether each photo is signed with Content Credentials. Outside the master switch; off by
+    /// default (owner decision, issue #80): a signed photo names the app and its version as its
+    /// maker (the manifest's claim generator, `docs/PRIVACY.md`, "Content Credentials"), so
+    /// signing is the person's choice. A stored value is kept as saved.
     public var signsPhotos: Bool
 
     /// The name written as the photo's artist when ``MetadataItem/nameAndCopyright`` is on.
@@ -114,12 +116,12 @@ public struct MetadataSettings: Equatable, Codable, Sendable {
         set { storedWritesStandardFileTags = newValue ? nil : false }
     }
 
-    /// The settings on first launch: every optional detail removed, photos signed, and no name
-    /// or copyright entered.
+    /// The settings on first launch: every optional detail removed, photos not signed, and no
+    /// name or copyright entered.
     public init() {
         removesAllOptionalDetails = true
         enabledItems = []
-        signsPhotos = true
+        signsPhotos = false
         ownerName = ""
         copyrightNotice = ""
         storedWritesStandardFileTags = nil

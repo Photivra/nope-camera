@@ -3,7 +3,7 @@
 The owner principle (issue #57, AGENTS.md "Code"): anything about the file or the exposure that the
 device lets an app control should be controllable by the person, behind the manual or advanced
 options, with full auto as the default; and every file Photivra Nope Camera can save must open. This
-page lists every capture and file setting AVFoundation and ImageIO expose to an app on iOS 18 to 27,
+page lists every capture and file setting AVFoundation and ImageIO expose to an app on iOS 26 and 27,
 what the app offers, and why anything isn't offered. Keep it current when an SDK adds a setting.
 
 Sources are the iOS 27.2 SDK headers (Xcode 27.2): `AVFoundation/AVCapturePhotoOutput.h`
@@ -41,7 +41,7 @@ control appears only where the lens's active format reports it (`ManualCapabilit
 | Live Photo, depth, portrait matte, semantic mattes, camera calibration data (`livePhotoMovieFileURL`, `isDepthDataDeliveryEnabled`, `isPortraitEffectsMatteDeliveryEnabled`, `enabledSemanticSegmentationMatteTypes`, `isCameraCalibrationDataDeliveryEnabled`) | Not offered | Processed or extra data, not single-frame RAW; auxiliary images fail the read-back. |
 | Shutter sound (`isShutterSoundSuppressionEnabled`) | Not offered | The shutter sound follows the system (AGENTS.md, "Hearing"). |
 | Quality prioritization (`photoQualityPrioritization`, `maxPhotoQualityPrioritization`) | Fixed `.speed` | `CapturePolicy`: the least processing for the fallback; the header documents `.balanced` and `.quality` as allowing more processing time. Its effect on Bayer RAW data isn't measured. |
-| Content-aware distortion correction, geometric distortion correction, constant color, auto red-eye reduction, virtual device fusion, still image stabilization | Fixed off | Each changes pixels; the app stores lens corrections as DNG opcodes instead (docs/PRIVACY.md). |
+| Content-aware distortion correction, geometric distortion correction, constant color, auto red-eye reduction, virtual device fusion, still image stabilization | Fixed off | Each changes pixels; the app stores lens corrections as DNG opcodes instead (docs/PRIVACY.md). Geometric distortion correction can be turned off only where the camera reports the switch (`isGeometricDistortionCorrectionSupported`); each lens's processing note says which (issue #80, docs/PRIVACY.md, "Processing"). |
 | Zero shutter lag, responsive capture, fast capture prioritization, deferred delivery (`isZeroShutterLagEnabled`, `isResponsiveCaptureEnabled`, `isFastCapturePrioritizationEnabled`, `isAutoDeferredPhotoDeliveryEnabled`) | Fixed (`CapturePolicy`) | Timing and processing pipeline choices, not file or exposure settings; deferred delivery is off so the file is never processed later. |
 
 ## Exposure settings
@@ -56,12 +56,13 @@ control appears only where the lens's active format reports it (`ManualCapabilit
 | AE lock, AF lock | Offered | |
 | Focus position (`setFocusModeLocked(lensPosition:)`) | Offered | Where the lens supports manual focus. |
 | Focus range restriction (`autoFocusRangeRestriction`) | Offered (near; far since 0.3.0) | Close-Up (issues #35, #41, #51, #56) is the near limit, in full auto too. Far Focus (`.far`, "subject matter that is far from the camera", `AVCaptureDevice.h`) is in the quick-controls tray with manual controls on, with a pill; the two replace each other, since the device has one restriction; All Auto clears both. Both need autofocus and `isAutoFocusRangeRestrictionSupported`. |
-| Face-driven AE/AF (`automaticallyAdjustsFaceDrivenAutoFocusEnabled`, `isFaceDrivenAutoFocusEnabled`, and the exposure equivalents) | Offered (0.3.0) | Settings › Camera › Face Detection, on by default: on leaves the system's automatic choice (`automaticallyAdjusts…` = YES, the default); off sets `automaticallyAdjusts…` to NO and the face-driven value to NO. Each is set only where the camera supports continuous autofocus or auto exposure, because AVFoundation raises an exception otherwise, and before the focus and exposure modes, which apply it (`AVCaptureDevice.h`). Applies only while focus or exposure is automatic. |
+| Face-driven AE/AF (`automaticallyAdjustsFaceDrivenAutoFocusEnabled`, `isFaceDrivenAutoFocusEnabled`, and the exposure equivalents) | Offered (0.3.0) | Settings › Camera › Face Detection, off by default (issue #80): on leaves the system's automatic choice (`automaticallyAdjusts…` = YES, the default); off sets `automaticallyAdjusts…` to NO and the face-driven value to NO. Each is set only where the camera supports continuous autofocus or auto exposure, because AVFoundation raises an exception otherwise, and before the focus and exposure modes, which apply it (`AVCaptureDevice.h`). Applies only while focus or exposure is automatic. |
 | Smooth autofocus (`isSmoothAutoFocusEnabled`) | Not offered | `AVCaptureDevice.h` documents it as "appropriate for movie recording": slower focusing, with no effect on a still photo's file or exposure. |
 | White balance temperature and tint, presets, gains (`setWhiteBalanceModeLocked(with:)`, `deviceWhiteBalanceGains`) | Offered | Temperature and tint (2500–10,000 K) are converted to gains within `maxWhiteBalanceGain`; direct gains aren't shown, because temperature and tint describe the same values. |
 | Aperture (`lensAperture`, iOS 27 variable aperture) | Offered | Where the lens has more than one stop. |
 | Max exposure duration in auto (`activeMaxExposureDuration`) | Offered | Fast Shutter in Settings (issues #35, #41, #51, #56): a shutter limit for auto exposure. |
-| Exposure bracket (`AVCaptureManualExposureBracketedStillImageSettings`) | Offered | Pro Tools; each frame a separate single-frame photo. |
+| Exposure bracket (`AVCaptureManualExposureBracketedStillImageSettings`) | Offered | Bracket on the drive strip, in full auto and with Manual Controls on (docs/design/BRACKETING.md); 3, 5 or 7 frames up to `maxBracketedCapturePhotoCount`, 1/3 to 2 EV apart, darkest, metered or brightest first (the frames are requested in the order of the array); each frame a separate single-frame photo. |
+| Focus bracket (`setFocusModeLocked(lensPosition:completionHandler:)`) | Offered | Bracket › Type › Focus, where `isLockingFocusWithCustomLensPositionSupported` is true (issue #90, docs/design/BRACKETING.md, section 5): 3 to 50 separate single-frame photos at evenly spaced lens positions from the nearest to the farthest set, nearest or farthest first; each photo is taken after the handler reports the position applied. Positions are the lens's own 0 to 1 scale, not distances (Apple: "a given lens position value does not correspond to an exact physical distance"); `minimumFocusDistance` is not shown until device check D5 confirms it for a lens. |
 | Longest exposure (`activeFormat.maxExposureDuration`) | Offered | Through the manual shutter; the Astro helper (issue #60) starts from it. The value per lens is still to be recorded on the test devices (`docs/TESTING.md`, "Astro helper on a device"). |
 | Low-light boost (`automaticallyEnablesLowLightBoostWhenAvailable`) | Not offered | Never turned on by the app; it is documented for low-light frame rates, and its effect on photos isn't measured. |
 | Global tone mapping, video HDR, Center Stage | Not offered | Video and preview processing, not the RAW. |
@@ -83,9 +84,14 @@ Display P3, BT.2100 PQ and BT.2100 HLG:
   no file was written. ImageIO doesn't make a gain map from one HDR image this way.
 - **ISO HDR request (and an HDR image without a request):** a PQ or HLG HEIF carries
   `Headroom`, `AverageLightLevelNits` and the ICC `CLL` (content light level) key, and a PQ or HLG
-  JPEG carries `Headroom`; the read-back reports each as an unexpected ImageIO key
-  (`MetadataViolation.unexpectedImageIOKey`), so the photo wouldn't be saved. An extended linear
-  Display P3 image is written as an ordinary SDR file with no gain map.
+  JPEG carries `Headroom`. Since 1.0.0 `Headroom` is allowed in a HEIF, by name and whatever its
+  value (`MetadataPlan.heifDerivedImageIOKeys`), because the iOS 26.5 Simulator's reader reports
+  it on every HEIF, SDR ones included. So in a PQ or HLG HEIF the read-back reports
+  `AverageLightLevelNits` and the ICC `CLL` key as unexpected ImageIO keys
+  (`MetadataViolation.unexpectedImageIOKey`), and in a PQ or HLG JPEG it reports `Headroom`;
+  either way the photo wouldn't be saved. Not measured: which keys an HDR HEIF reports on
+  iOS 26.5, where `Headroom` alone no longer stops it. An extended linear Display P3 image is
+  written as an ordinary SDR file with no gain map.
 - **The RAW developer is SDR:** `CoreImageRAWRenderer` renders the DNG to 16-bit Display P3 with
   the RAW filter's default (SDR) range, so there is no HDR rendition to map. Making one needs the
   RAW filter's extended dynamic range output, which is more processing than the app's neutral

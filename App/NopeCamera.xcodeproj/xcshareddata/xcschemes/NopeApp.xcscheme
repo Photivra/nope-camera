@@ -38,6 +38,16 @@
                ReferencedContainer = "container:NopeCamera.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "C10000000000000000000402"
+               BuildableName = "NopeAppIntentsUITests.xctest"
+               BlueprintName = "NopeAppIntentsUITests"
+               ReferencedContainer = "container:NopeCamera.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

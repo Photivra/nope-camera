@@ -73,11 +73,11 @@ struct OverlayDrawingTests {
     @Test func gridPathsCoverEveryStyle() {
         let size = CGSize(width: 300, height: 400)
         for style in GridStyle.allCases {
-            let path = GridOverlay.path(style: style, placement: .standard, in: size)
+            let path = GridOverlay.path(style: style, in: size)
             #expect(!path.isEmpty, "\(style)")
             #expect(path.boundingRect.width <= 300.5 && path.boundingRect.height <= 400.5)
         }
-        #expect(GridOverlay.path(style: .square, placement: .standard, in: .zero).isEmpty)
+        #expect(GridOverlay.path(style: .square, in: .zero).isEmpty)
     }
 
     @Test func levelAndHistogramDescriptions() {

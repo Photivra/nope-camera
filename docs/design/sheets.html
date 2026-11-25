@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nope. design: Sheets, details and confirmations</title>
+<style>
+
+:root{--bg:#f2f2f7;--card:#fff;--ink:#1c1c1e;--muted:#5f5f64;--rule:#d1d1d6;--pick:#0b6b60}
+@media (prefers-color-scheme: dark){:root{--bg:#000;--card:#1c1c1e;--ink:#f2f2f7;--muted:#a1a1a6;--rule:#3a3a3c;--pick:#5fe0d0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+main{max-width:1120px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:28px;letter-spacing:-.02em;margin:0 0 8px}
+h2{font-size:22px;letter-spacing:-.01em;margin:48px 0 8px}
+h3{font-size:17px;margin:24px 0 4px}
+p{margin:0 0 12px;max-width:820px}
+a{color:inherit}
+.muted{color:var(--muted)}
+nav.set{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0}
+nav.set a{display:inline-block;padding:6px 12px;border-radius:16px;background:var(--card);text-decoration:none;font-size:13px;font-weight:600}
+nav.set a.here{background:var(--ink);color:var(--bg)}
+ul{margin:0 0 12px;padding-left:20px;max-width:820px}li{margin:0 0 4px}
+.figs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:32px 24px;margin-top:16px;align-items:start}
+.figs.wide{grid-template-columns:repeat(auto-fill,minmax(480px,1fr))}
+.figs.small{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+figure{margin:0}
+figure img{display:block;max-width:100%;height:auto;background:#000;box-shadow:0 0 0 1px var(--rule)}
+figcaption{font-size:13px;color:var(--muted);margin-top:12px}
+figcaption b{display:block;color:var(--ink);font-size:14px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:16px 0;background:var(--card);border-radius:12px;overflow:hidden;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:8px 12px;border-bottom:1px solid var(--rule)}
+tr:last-child td{border-bottom:0}
+thead th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+code{font:13px ui-monospace,Menlo,monospace}
+.pick{border-left:4px solid var(--pick);background:var(--card);border-radius:0 12px 12px 0;padding:16px 24px;margin-top:16px}
+.pick p:last-child,.pick ul:last-child{margin-bottom:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:16px}
+.cards a{display:block;background:var(--card);border-radius:16px;padding:16px 20px;text-decoration:none}
+.cards a b{display:block;font-size:17px}.cards a span{color:var(--muted);font-size:13px}
+.sw{border-radius:12px;padding:16px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.swl{font-size:12px;color:var(--muted);margin:16px 0 4px;font-weight:600}
+.scale{display:flex;align-items:flex-end;gap:16px;margin:8px 0 16px}
+.scale div{text-align:center;font-size:12px;color:var(--muted)}
+.scale i{display:block;background:var(--ink);height:16px;margin:0 auto 4px;border-radius:1px}
+.radii{display:flex;gap:16px;margin:8px 0}
+.radii div{text-align:center;font-size:12px;color:var(--muted)}
+.radii i{display:block;width:64px;height:64px;border:2px solid var(--ink);border-bottom-color:transparent;border-right-color:transparent;margin:0 auto 4px}
+.chip2{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;box-shadow:0 0 0 1px var(--rule)}
+
+
+</style>
+</head>
+<body>
+<main>
+<h1>Sheets, details and confirmations</h1>
+<p class="muted">Design version: 1.0.0, direction B · Reach (2026-11-17). Planned design for release 1.0.0; the app is built to match it. Includes the Settings structure and the device coverage accepted on 2026-11-17 (SETTINGS-PLAN.md), and the Last Photo viewer and the Photo Details redesign of 2026-11-18.</p>
+<nav class="set"><a href="overview.html">Overview</a><a href="design-system.html">Design system</a><a href="camera.html">Camera</a><a href="drive.html">Drive modes</a><a href="burst.html">Burst</a><a href="quick-menu.html">Q</a><a href="manual-controls.html">Manual Controls</a><a href="sheets.html" class=here>Sheets</a><a href="viewer.html">Last Photo viewer</a><a href="photo-details.html">Photo Details</a><a href="settings.html">Settings</a><a href="layouts.html">Layouts</a><a href="ipad.html">iPad</a><a href="duo.html">iPhone Duo</a><a href="system.html">System</a><a href="watch.html">Apple Watch</a><a href="navigation.html">Navigation map</a><a href="icon.html">Icon</a></nav>
+
+<p>The camera’s own sheets are always dark (red on black in night mode). Presets follows the system appearance. The app has no alerts of its own; one confirmation is added, for deleting a preset. What’s in This Photo, the sheet behind Photo Details in the <a href="viewer.html">Last Photo viewer</a>, has its own page: <a href="photo-details.html">Photo Details</a> (2026-11-18).</p><div class="figs "><figure id="sheet-format"><a href="screens/sheet-format.html"><img src="screens/sheet-format.png" width="260" alt="Photo Format sheet" loading="lazy" style="border-radius:12px"></a><figcaption><b>Photo Format sheet</b>One tap on the status line. Says what the next photo will be, then lists the formats. RAW only is the default (issue 80). All Photo Settings opens Settings at Photos, so HEIF and JPEG Copies and Photo Size are not a dead end from here.</figcaption></figure><figure id="sheet-format-copy"><a href="screens/sheet-format-copy.html"><img src="screens/sheet-format-copy.png" width="260" alt="Photo Format sheet, with a HEIF copy" loading="lazy" style="border-radius:12px"></a><figcaption><b>Photo Format sheet, with a HEIF copy</b>With a HEIF or JPEG copy on, the Look row shows, as today. It opens HEIF and JPEG Copies, where Look is the first section, so the look is three taps from the camera. The names on this sheet match the Settings rows: Formats, Look, HEIF and JPEG Copies.</figcaption></figure><figure id="sheet-processing-note"><a href="screens/sheet-processing-note.html"><img src="screens/sheet-processing-note.png" width="260" alt="Processing note" loading="lazy" style="border-radius:12px"></a><figcaption><b>Processing note</b>The Processed marker opens the same sheet with the processing note first (issue 80): what the phone does on this lens, the per-lens distortion line where it has been verified on a device, and what the app does to its own copies. The wording is a draft for the Honesty review; each per-lens line needs device evidence before it ships.</figcaption></figure><figure id="sheet-interval"><a href="screens/sheet-interval.html"><img src="screens/sheet-interval.png" width="260" alt="Interval Settings" loading="lazy" style="border-radius:12px"></a><figcaption><b>Interval Settings</b>The existing sheet at a medium height, so the picture stays visible above it. Interval from 1 second to 60 minutes; Stop After: Number of Photos (the default), with Photos from 2 to 999, or Time.</figcaption></figure><figure id="sheet-interval-time"><a href="screens/sheet-interval-time.html"><img src="screens/sheet-interval-time.png" width="260" alt="Interval Settings, stop after a time" loading="lazy" style="border-radius:12px"></a><figcaption><b>Interval Settings, stop after a time</b>Stop After: Number of Photos (the default) or Time, set in hours and minutes from 1 minute to 24 hours. Photos then shows the most the series can take. The time keeps running while the series is paused. Start is disabled while the interval isn&#8217;t shorter than the time.</figcaption></figure><figure id="sheet-astro"><a href="screens/sheet-astro.html"><img src="screens/sheet-astro.png" width="260" alt="Astro Settings" loading="lazy" style="border-radius:12px"></a><figcaption><b>Astro Settings</b>The existing sheet in night mode: Frames (5 to 300), Start Delay (3 or 10 seconds), the read-only frame values and the estimates.</figcaption></figure><figure id="sheet-presets"><a href="screens/sheet-presets.html"><img src="screens/sheet-presets.png" width="260" alt="Presets" loading="lazy" style="border-radius:12px"></a><figcaption><b>Presets</b>From the Presets tile or Settings. Tapping a preset applies it. Each saved preset has a More menu with Rename and Delete, which replaces the separate Rename or Delete list and keeps every page within two levels.</figcaption></figure><figure id="sheet-presets-applied"><a href="screens/sheet-presets-applied.html"><img src="screens/sheet-presets-applied.png" width="260" alt="Presets, after applying" loading="lazy" style="border-radius:12px"></a><figcaption><b>Presets, after applying</b>The result and its notices head the list, with Undo. Factory Defaults applies at once and is undone the same way, so it needs no confirmation.</figcaption></figure><figure id="sheet-preset-save"><a href="screens/sheet-preset-save.html"><img src="screens/sheet-preset-save.png" width="260" alt="Save Preset" loading="lazy" style="border-radius:12px"></a><figcaption><b>Save Preset</b>A name field and Save. Problems appear under the field: Enter a name; Use fewer characters; Another preset has this name.</figcaption></figure><figure id="sheet-preset-delete"><a href="screens/sheet-preset-delete.html"><img src="screens/sheet-preset-delete.png" width="260" alt="Delete a preset: confirmation" loading="lazy" style="border-radius:12px"></a><figcaption><b>Delete a preset: confirmation</b>New in this design: deleting a preset cannot be undone, so it asks first. This is the only confirmation dialog in the app.</figcaption></figure><figure id="sheet-compare"><a href="screens/sheet-compare.html"><img src="screens/sheet-compare.png" width="260" alt="Compare" loading="lazy" style="border-radius:12px"></a><figcaption><b>Compare</b>Shown after a photo taken with Compare on: the app’s photo beside the phone-processed version, which is never saved. Restyled with the new tokens only: the view buttons, the Divider slider, Zoom Out and Zoom In, Details and Done.</figcaption></figure></div>
+</main>
+</body>
+</html>
