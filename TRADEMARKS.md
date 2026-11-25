@@ -25,6 +25,6 @@ The following files are not covered by the GNU General Public License. All right
 - The site's copies of the app icon: `site/assets/icon.svg`, `site/assets/apple-touch-icon.png`, `site/assets/favicon.ico`, and the social image `site/assets/social.png`.
 - *(the logo will be listed here when it's added)*
 
-The App Store badge, once added as `site/assets/app-store-badge.svg`, is Apple's artwork, used under Apple's terms; it is not covered by the GNU General Public License and is not ours to license.
+The App Store badge, `site/assets/app-store-badge.svg` (Apple's black U.S. English "Download on the App Store" badge, downloaded unchanged from Apple's App Store marketing tools on 2026-11-25), is Apple's artwork, used under Apple's terms; it is not covered by the GNU General Public License and is not ours to license.
 
 To ask about other uses, open an issue.

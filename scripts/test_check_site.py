@@ -59,6 +59,12 @@ def make_tree(base):
     # "Last updated" dates are today too, so only the rule a case tests can stop its build.
     for page in ("site/content/support.json", "site/content/accessibility.json"):
         set_last_updated(tree, page, TODAY)
+    # The cases start from the site before the app is on the App Store (no id, no badge), whatever
+    # the repository's site.json says; "available" below checks the published state.
+    config = tree / "site/site.json"
+    config.write_text(re.sub(r'"appStoreId": [^,]+,\n  "available": (true|false),', '"appStoreId": null,\n  "available": false,',
+                             config.read_text(), count=1))
+    (tree / "site/assets/app-store-badge.svg").unlink(missing_ok=True)
     policy = tree / "docs/store/privacy-policy-draft.md"
     policy.write_text(re.sub(r"(?m)^(Effective date: .+?\. )Last updated: [0-9-]+\.", rf"\g<1>Last updated: {TODAY}.",
                              policy.read_text(), count=1))
@@ -242,6 +248,14 @@ def build_cases(base):
         if result.returncode == 0:
             result = check(tree, out)
         expect(name, result, False, needle)
+
+    tree, out = fresh("available")
+    edit(tree, "site/site.json", "\"appStoreId\": null,\n  \"available\": false", "\"appStoreId\": \"6838151647\",\n  \"available\": true")
+    shutil.copy(ROOT / "site/assets/app-store-badge.svg", tree / "site/assets/app-store-badge.svg")
+    expect("on the App Store: the badge and the link build", build(tree, out), True)
+    home = (out / "index.html").read_text() if (out / "index.html").exists() else ""
+    if "https://apps.apple.com/us/app/id6838151647" not in home or "Not on the App Store yet" in home:
+        failures.append("on the App Store: the home page doesn't link the App Store, or still says it isn't on it")
 
     tree, out = fresh("support-stale")
     set_last_updated(tree, "site/content/support.json", "2026-01-01")

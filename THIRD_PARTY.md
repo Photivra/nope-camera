@@ -25,6 +25,7 @@ The C2PA library (c2pa-rs and its Swift wrapper) is the only non-platform depend
 ## Notices and terms that apply
 
 - **Adobe DNG.** Photivra Nope Camera writes DNG files. Notice required by Adobe's DNG specification patent license: "This product includes DNG technology under license by Adobe." It appears in `NOTICE`, `README.md` and the app's Licenses screen.
+- **App Store badge.** `site/assets/app-store-badge.svg` is Apple's black U.S. English "Download on the App Store" badge, unchanged, from Apple's App Store marketing tools (2026-11-25). It is Apple's artwork, used under Apple's App Store marketing guidelines, and isn't covered by the project's license (`TRADEMARKS.md`).
 - **SF Symbols and Apple system fonts.** Used only in the app's interface, as Apple's terms allow. Never in logos, the icon or artwork.
 
 The site's other build and check packages, all in `site/package-lock.json`, are under MIT, ISC, BSD-2-Clause, BSD-3-Clause, 0BSD, Apache-2.0, MPL-2.0 or BlueOak-1.0.0 (`type-fest` is MIT or CC0-1.0; GitHub's dependency data reports `jpeg-js` 0.4.4 as Apache-2.0 AND BSD-3-Clause, while its `package.json` says BSD-3-Clause, and both are allowed). The `site` workflow's dependency review allows only these licenses, so a pull request that brings in any other fails until it is reviewed. They run only when the site is built or checked; nothing but the generated CSS, the Inter subsets and the brand files is served.
