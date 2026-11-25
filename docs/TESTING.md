@@ -1279,6 +1279,47 @@ two texts (by label, `measuredDynamicTypeLabels`), and `testChooseDetailsTextGro
 checks what the audit was asked instead, on iPhone and iPad: both texts and the master switch's
 title are larger at every text size than at the size before.
 
+#### Findings on an element that is gone
+
+An audit finding's element is bound to the accessibility element the audit found, and the
+screen can change before the finding is judged: on iPad the Settings popover lays its rows out
+again after a scroll (issue #177), and the row the audit named is replaced by a new one with the
+same text. Reading the `label`, `frame`, `identifier` or `elementType` of such an element records
+a test failure, "Failed to get matching snapshot: No matches found for Descendant with identity
+binding to AX element", even when `exists` answered true a moment before. That was
+`testGuideOpensFromSettingsAndAbout` failing on the iPad Air 11-inch (M4) with iOS 27.2 (3 of 4
+runs on 2026-11-22, and again in the iPad shard 3 run of 2026-11-24): a finding on the "How to Use nope."
+row's text, read by a rule that set aside other findings.
+
+So the rules never read the element itself:
+
+- Every rule that judges a finding, and every failure message, reads the element through
+  `XCUIAccessibilityAuditIssue.currentElement` (`UITestSupport.swift`): `exists`, then one
+  `snapshot()`, which throws instead of failing the test. It is `nil` when the audit named no
+  element or the element is gone; a failure on such an element says "an element no longer on
+  screen".
+- When an audit reports a finding whose element is already gone,
+  `performCompleteAccessibilityAudit` waits three seconds for the screen to settle and audits it
+  once more, and that audit's findings are judged instead.
+- A finding whose element is gone again is not one the audit named no element for: the rules for
+  element-less findings don't apply to it, and a rule that places or names an element (by frame,
+  label or identifier) can't set it aside, so it fails. Only the rules that already skipped an
+  element that doesn't exist still do: after a scroll (`audit(_:afterScrolling: true)`) a finding
+  whose element is gone is skipped as one whose text isn't on screen now, and a contrast finding
+  on a scrolling camera screen is skipped as one not wholly on screen.
+- Between the three audits of `audit(_:)`, each finding's label is read before the next audit,
+  and the next audit's finding is the one kept, so a row laid out again between audits still
+  counts as reported again. A finding whose element was gone before its label could be read
+  counts as reported again by a later finding of the same type and description.
+
+The lazy Settings list on iPad also removes rows scrolled out of the popover. In
+`testOverlaySettingsAndProTools` full-window swipes looked for the Viewfinder Overlays row: one
+swipe brought it in below the popover's lower edge, where it reads as not hittable, and the next
+flung it past the top, after which it no longer existed and the tap failed ("No matches found",
+about one run in three on the iPad Air 11-inch (M4) with iOS 27.2). The test now opens the page
+with `openOverlaySettings`, as the other overlay tests do: drags of a third of the popover's height,
+until the row is wholly inside it; the Grid Style choices on the page are found the same way.
+
 #### Audits that don't finish
 
 In build 44185929631 two tests failed with "Audit failed to complete in time" (XCTest's error
@@ -1510,9 +1551,12 @@ the results here):
 
 ## What was tested on real hardware
 
-The real hardware for the 1.0.0 checks is an iPhone 16 Pro Max (iOS 27.2.1) and an iPad Air
-(5th generation). Everything else, including other iPhone and iPad models, iOS and iPadOS 26
-and the Apple Watch app, was tested only in Apple's Simulator, which has no real camera. The only
+The real hardware for the 1.0.0 checks is an iPhone 16 Pro Max (iOS 27.2.1), an iPad Air
+(5th generation) and an Apple Watch Series 10 (watchOS 27.2.1) paired with that iPhone: the watch
+app connected, showed the camera's status and took photos, and showed the unreachable warning
+with the iPhone locked or nope. in the background (2026-11-23 and 2026-11-24, builds 3 to 6).
+Everything else, including other iPhone, iPad and Apple Watch models and iOS, iPadOS and watchOS
+26, was tested only in Apple's Simulator, which has no real camera. The only
 recorded device result so far is the debug tag check on the iPhone 16 Pro Max (2026-11-11 and
 2026-11-12, "Tag check" below); the release save path is still to be checked on a device.
 

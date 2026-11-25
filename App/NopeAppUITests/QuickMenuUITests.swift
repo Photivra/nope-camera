@@ -77,7 +77,7 @@ extension NopeAppUITests {
             return true
         }
         for issue in issues where issue.element != nil {
-            XCTFail("\(issue.compactDescription): \(issue.element?.debugDescription ?? "")", file: file, line: line)
+            XCTFail(issue.failureDescription, file: file, line: line)
         }
     }
 

@@ -110,7 +110,7 @@ extension NopeAppUITests {
     @MainActor
     private func auditApertureDial(_ app: XCUIApplication) throws {
         try app.performCompleteAccessibilityAudit { issue in
-            issue.auditType == .sufficientElementDescription && (issue.element?.label.hasPrefix("f/") ?? false)
+            issue.auditType == .sufficientElementDescription && (issue.currentElement?.label.hasPrefix("f/") ?? false)
         }
     }
 
@@ -261,8 +261,9 @@ extension NopeAppUITests {
         // The readouts' A and M letters are nearly square, so that rule can't tell them turned;
         // their contrast is audited upright in testManualReadoutRow.
         try app.performCompleteAccessibilityAudit { issue in
-            guard let element = issue.element else { return issue.auditType == .textClipped || issue.auditType == .contrast }
-            guard issue.auditType == .contrast, element.exists else { return false }
+            guard issue.element != nil else { return issue.auditType == .textClipped || issue.auditType == .contrast }
+            guard let element = issue.currentElement else { return false }
+            guard issue.auditType == .contrast else { return false }
             return element.frame.height > element.frame.width || ["A", "M"].contains(element.label)
         }
     }

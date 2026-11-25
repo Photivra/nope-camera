@@ -151,7 +151,7 @@ extension NopeAppUITests {
                 // Every finding on Use the Whole Range fails, contrast included. The other rows
                 // are audited in the focus bracket tests with their known exceptions; after the
                 // scroll one may sit under the navigation bar's scroll edge effect.
-                !(issue.element?.label.contains("Use the Whole Range") ?? false)
+                !(issue.currentElement?.label.contains("Use the Whole Range") ?? false)
             }
         }
     }

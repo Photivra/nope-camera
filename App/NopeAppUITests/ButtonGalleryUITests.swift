@@ -48,9 +48,9 @@ extension NopeAppUITests {
         // A control cut by the window's edge (the gallery scrolls past the iPad's window) is
         // measured at its clipped edge; it is measured whole on iPhone and after scrolling.
         let window = app.windows.firstMatch.frame
-        for issue in issues where issue.element?.isEnabled != false {
-            if let element = issue.element, element.exists, !window.contains(element.frame) { continue }
-            XCTFail("\(issue.compactDescription): \(issue.element?.debugDescription ?? "no element")")
+        for issue in issues where issue.currentElement?.isEnabled != false {
+            if let element = issue.currentElement, !window.contains(element.frame) { continue }
+            XCTFail(issue.failureDescription)
         }
     }
 

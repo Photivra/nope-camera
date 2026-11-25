@@ -307,7 +307,7 @@ final class NopeAppUITests: XCTestCase {
             remaining = try reportedIssues(app, types).filter { !ignored($0) }
         }
         for issue in remaining {
-            XCTFail("\(issue.compactDescription): \(issue.element?.debugDescription ?? "no element")", file: file, line: line)
+            XCTFail(issue.failureDescription, file: file, line: line)
         }
     }
 
@@ -343,7 +343,7 @@ final class NopeAppUITests: XCTestCase {
     /// still fails.
     @MainActor
     static func isDimAfterOrLiveActivityClippedText(_ issue: XCUIAccessibilityAuditIssue, in app: XCUIApplication) -> Bool {
-        guard issue.auditType == .textClipped, let element = issue.element, element.exists else { return false }
+        guard issue.auditType == .textClipped, let element = issue.currentElement else { return false }
         // Without the direction marks iOS may put around a label (U+200E and the like).
         let label = String(element.label.unicodeScalars.filter { $0.properties.generalCategory != .format })
         let isRowText =
@@ -367,7 +367,7 @@ final class NopeAppUITests: XCTestCase {
     /// exempt. Whether to keep the exemption is issue #142 (1.1.0).
     @MainActor
     static func isDisabledControlContrast(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
-        guard let element = issue.element, element.exists else { return false }
+        guard let element = issue.currentElement else { return false }
         return isExemptFromContrast(auditType: issue.auditType, isEnabled: element.isEnabled)
     }
 
@@ -387,7 +387,7 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     private static func isClippedContrastIssue(_ issue: XCUIAccessibilityAuditIssue, in app: XCUIApplication) -> Bool {
         guard issue.auditType == .contrast else { return false }
-        guard let element = issue.element, element.exists else { return true }
+        guard let element = issue.currentElement else { return true }
         // Only a row that runs from above the pinned row into it; the pinned row's own buttons
         // are still checked.
         let quick = app.buttons["Quick Menu"]
@@ -716,29 +716,48 @@ final class NopeAppUITests: XCTestCase {
         // findings in five tests, nine of them Dynamic Type, none reported again), on text the
         // screen recordings of build 44124454610 show whole at every size. A real finding is
         // reported every time (docs/TESTING.md).
+        //
+        // Each finding's label is read before the next audit, while its element is still on
+        // screen, and the later audit's finding is the one kept: on iPad the Settings popover can
+        // lay its rows out again between audits (issue #177), and a row's element from an earlier
+        // audit is then gone although the same row, with the same text, is still there.
         var round = 2
         while !remaining.isEmpty && round <= 3 {
+            let earlier = remaining.map { (issue: $0, label: $0.currentElement?.label) }
             settle()
             let again = try judged(reportedIssues(app, types), in: app, round: round, ignored: ignored)
-            remaining = remaining.filter { issue in again.contains { Self.isSameFinding($0, issue) } }
+            remaining = again.filter { later in
+                earlier.contains { Self.isSameFinding(later, as: $0.issue, labeled: $0.label) }
+            }
             round += 1
         }
         for issue in remaining {
-            XCTFail(
-                "\(issue.compactDescription): \(issue.element?.debugDescription ?? "no element")", file: file, line: line)
+            XCTFail(issue.failureDescription, file: file, line: line)
         }
     }
 
-    /// Whether two audits reported the same finding: the same type on an element with the same
-    /// label, or the same type and description when the audit named no element.
+    /// Whether a later audit reported the same finding as an earlier one: the same type on an
+    /// element with the same label, or the same type and description when the audit named no
+    /// element.
+    ///
+    /// - Parameters:
+    ///   - later: The later audit's finding.
+    ///   - earlier: The earlier audit's finding.
+    ///   - label: The label of the earlier finding's element, read before the later audit, or
+    ///     `nil` if it was already gone then. A finding whose element was gone before its label
+    ///     could be read matches a later finding of the same type and description on any
+    ///     element, so that it still fails when the later audits report it again
+    ///     (docs/TESTING.md, "Findings on an element that is gone").
     @MainActor
-    private static func isSameFinding(_ first: XCUIAccessibilityAuditIssue, _ second: XCUIAccessibilityAuditIssue) -> Bool {
-        guard first.auditType == second.auditType else { return false }
-        guard let firstElement = first.element, let secondElement = second.element else {
-            return first.element == nil && second.element == nil && first.compactDescription == second.compactDescription
+    private static func isSameFinding(
+        _ later: XCUIAccessibilityAuditIssue, as earlier: XCUIAccessibilityAuditIssue, labeled label: String?
+    ) -> Bool {
+        guard later.auditType == earlier.auditType else { return false }
+        guard later.element != nil, earlier.element != nil else {
+            return later.element == nil && earlier.element == nil && later.compactDescription == earlier.compactDescription
         }
-        guard firstElement.exists, secondElement.exists else { return false }
-        return firstElement.label == secondElement.label
+        guard let label else { return later.compactDescription == earlier.compactDescription }
+        return later.currentElement?.label == label
     }
 
     /// Returns the issues that aren't ignored, and writes one line to the test log for each
@@ -757,10 +776,11 @@ final class NopeAppUITests: XCTestCase {
             if !isIgnored { remaining.append(issue) }
             guard issue.auditType == .dynamicType || issue.auditType == .elementDetection || !isIgnored else { continue }
             // A decision by type alone needs no element; the others are the frame rules'.
-            guard let element = issue.element, element.exists else {
+            guard let element = issue.currentElement else {
                 NSLog(
-                    "Audit round %d: %@ (type %lu), no element, ignored: %d", round, issue.compactDescription,
-                    UInt(issue.auditType.rawValue), isIgnored ? 1 : 0)
+                    "Audit round %d: %@ (type %lu), %@, ignored: %d", round, issue.compactDescription,
+                    UInt(issue.auditType.rawValue), issue.element == nil ? "no element" : "element no longer on screen",
+                    isIgnored ? 1 : 0)
                 continue
             }
             NSLog(
@@ -828,12 +848,13 @@ final class NopeAppUITests: XCTestCase {
     /// build 44209365138 the iPad runner's audit reported both in three audits in a row in the
     /// night-mode Settings sheet at the largest text size, where they measure 167 and 83.5 points
     /// high and grow at every step from the default size (docs/TESTING.md).
+    @MainActor
     private static func isMeasuredDynamicTypeFinding(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
-        guard issue.auditType == .dynamicType || issue.auditType == .textClipped, let label = issue.element?.label
+        guard issue.auditType == .dynamicType || issue.auditType == .textClipped, let element = issue.currentElement
         else { return false }
-        if issue.auditType == .dynamicType, measuredDynamicTypeLabels.contains(label) { return true }
-        guard let element = issue.element, element.elementType == .staticText else { return false }
-        return measuredTypeRowLabels.contains(label) && measuredTypeRowIdentifiers.contains(element.identifier)
+        if issue.auditType == .dynamicType, measuredDynamicTypeLabels.contains(element.label) { return true }
+        guard element.elementType == .staticText else { return false }
+        return measuredTypeRowLabels.contains(element.label) && measuredTypeRowIdentifiers.contains(element.identifier)
     }
 
     /// Whether an issue is "Text clipped" on an element in the bottom fifth of the list or popover
@@ -854,7 +875,7 @@ final class NopeAppUITests: XCTestCase {
     ///     window, read before the audit.
     @MainActor
     private static func isEnlargedPastTheLowerEdge(_ issue: XCUIAccessibilityAuditIssue, of frame: CGRect) -> Bool {
-        guard issue.auditType == .textClipped, let element = issue.element, element.exists else { return false }
+        guard issue.auditType == .textClipped, let element = issue.currentElement else { return false }
         return element.frame.maxY > frame.maxY - frame.height / 5
     }
 
@@ -893,7 +914,7 @@ final class NopeAppUITests: XCTestCase {
     /// fails.
     @MainActor
     func isApprovedAuditException(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
-        guard let element = issue.element else { return false }
+        guard let element = issue.currentElement else { return false }
         // The Settings audits that walk every page: in night mode (by default, at the largest
         // text size and right to left) and in the system appearance (dark and light).
         if name.contains("testNightModeSettingsScreens") || name.contains("testSettingsScreensPassAccessibilityAudits") {
@@ -911,9 +932,10 @@ final class NopeAppUITests: XCTestCase {
     /// reports it as "Dynamic Type font sizes are partially unsupported" in the iPad control
     /// column, although it is visibly enlarged at the largest text size (43 × 13.5 points at the
     /// default size, 143.5 × 48 at the largest) and passes on iPhone. Listed in docs/TESTING.md.
+    @MainActor
     private static func isOpenIPadFinding(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
         UIDevice.current.userInterfaceIdiom == .pad && issue.auditType == .dynamicType
-            && issue.element?.label == "No RAW"
+            && issue.currentElement?.label == "No RAW"
     }
 
     /// Whether an issue is one the audit reports for text drawn turned a quarter turn on an
@@ -929,10 +951,10 @@ final class NopeAppUITests: XCTestCase {
     /// unturned over the same gray on iPad. Other findings on real elements still fail.
     @MainActor
     private static func isTurnedTextFinding(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
-        guard let element = issue.element else {
+        guard issue.element != nil else {
             return issue.auditType == .textClipped || issue.auditType == .contrast
         }
-        guard issue.auditType == .contrast, element.exists else { return false }
+        guard issue.auditType == .contrast, let element = issue.currentElement else { return false }
         return element.frame.height > element.frame.width
     }
 
@@ -946,13 +968,16 @@ final class NopeAppUITests: XCTestCase {
         // clipped edge, and a contrast issue with no element comes from such a row; both are
         // audited whole after scrolling. Every element fully in the window is checked.
         let window = app.windows.firstMatch.frame
-        if let element = issue.element, !window.contains(element.frame) { return true }
+        // The element as it is now, read once; `nil` when the audit named none or it is gone. The
+        // frame rules below place only an element that is still on screen.
+        let element = issue.currentElement
+        if let element, !window.contains(element.frame) { return true }
         // The same for a row cut by the lower or upper edge of a popover (Settings on iPad): in
         // build 44098207588 the Choose Details header "In Each Photo", 27 points past the
         // popover's lower edge, was reported as "Dynamic Type font sizes are partially
         // unsupported" (docs/TESTING.md). Only an element within the popover's sides counts.
         let popover = app.popovers.firstMatch
-        if let element = issue.element, popover.exists {
+        if let element, popover.exists {
             let frame = element.frame, edges = popover.frame
             let withinSides = frame.minX >= edges.minX && frame.maxX <= edges.maxX
             if withinSides && edges.intersects(frame) && !edges.contains(frame) { return true }
@@ -960,7 +985,7 @@ final class NopeAppUITests: XCTestCase {
         // A Dynamic Type finding on text in the bottom fifth of the window: the audit enlarges
         // the text, pushes it past the edge and can't measure it. The same text styles are
         // measured higher up on other screens (Formats, Choose Details).
-        if issue.auditType == .dynamicType, let element = issue.element, element.frame.maxY > window.maxY - window.height / 5 {
+        if issue.auditType == .dynamicType, let element, element.frame.maxY > window.maxY - window.height / 5 {
             return true
         }
         // Clipped text with no element: the finding says the text "may be clipped at larger
@@ -972,7 +997,9 @@ final class NopeAppUITests: XCTestCase {
         if issue.element == nil && (issue.auditType == .contrast || issue.auditType == .textClipped) { return true }
         if isDisabledControlContrast(issue) { return true }
         guard afterScrolling else { return false }
-        guard issue.auditType != .contrast, let element = issue.element else { return true }
+        // After scrolling, a finding whose element is gone is skipped as one whose text isn't on
+        // screen now: the screen it was found on has moved.
+        guard issue.auditType != .contrast, let element else { return true }
         let current = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", element.label))
             .firstMatch
         return !current.exists || !current.isHittable || current.frame != element.frame
@@ -1314,7 +1341,8 @@ final class NopeAppUITests: XCTestCase {
             if Self.isOpenIPadFinding(issue) { return true }
             // A contrast issue with no element comes from the row cut off at the bottom edge, which
             // the audit can't attach to an element; every whole element is still checked.
-            guard let element = issue.element else { return issue.auditType == .contrast }
+            guard issue.element != nil else { return issue.auditType == .contrast }
+            guard let element = issue.currentElement else { return false }
             return !window.contains(element.frame)
         }
     }

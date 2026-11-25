@@ -44,7 +44,7 @@ extension NopeAppUITests {
         let pinnedTop = app.buttons["Quick Menu"].frame.minY - 2 * 8
         try auditScrollingScreen(app, checksContrast: false, file: file, line: line)
         try app.performCompleteAccessibilityAudit(for: .contrast) { issue in
-            guard let element = issue.element, element.exists else { return true }
+            guard let element = issue.currentElement else { return true }
             return element.frame.maxY > pinnedTop || !app.frame.contains(element.frame)
         }
     }
@@ -409,8 +409,9 @@ extension NopeAppUITests {
             // Text drawn a quarter turn is measured unturned by the audit (see
             // isTurnedTextFinding in NopeAppUITests.swift); those findings are skipped here.
             try app.performCompleteAccessibilityAudit { issue in
-                guard let element = issue.element else { return issue.auditType == .textClipped || issue.auditType == .contrast }
-                return issue.auditType == .contrast && element.exists && element.frame.height > element.frame.width
+                guard issue.element != nil else { return issue.auditType == .textClipped || issue.auditType == .contrast }
+                guard let element = issue.currentElement else { return false }
+                return issue.auditType == .contrast && element.frame.height > element.frame.width
             }
         }
         XCUIDevice.shared.orientation = .portrait

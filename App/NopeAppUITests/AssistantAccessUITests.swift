@@ -119,8 +119,9 @@ extension NopeAppUITests {
         var findings: [String] = []
         let types: XCUIAccessibilityAuditType = isPad ? XCUIAccessibilityAuditType.all.subtracting(.contrast) : .all
         try app.performCompleteAccessibilityAudit(for: types) { issue in
-            let isTitle = issue.element?.label == "Assistant Access" && [.dynamicType, .textClipped].contains(issue.auditType)
-            if !isTitle, !self.isApprovedAuditException(issue) { findings.append("\(issue.compactDescription): \(issue.element?.label ?? "no element") \(issue.element?.frame ?? .zero)") }
+            let element = issue.currentElement
+            let isTitle = element?.label == "Assistant Access" && [.dynamicType, .textClipped].contains(issue.auditType)
+            if !isTitle, !self.isApprovedAuditException(issue) { findings.append("\(issue.compactDescription): \(element?.label ?? "no element") \(element?.frame ?? .zero)") }
             return true
         }
         XCTAssertEqual(findings, [])

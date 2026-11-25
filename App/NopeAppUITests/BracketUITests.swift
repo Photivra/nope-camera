@@ -95,7 +95,8 @@ extension NopeAppUITests {
         try app.performCompleteAccessibilityAudit(for: Self.auditTypes(contrast: !afterScrolling, dynamicType: false)) { issue in
             if issue.auditType == .elementDetection, issue.element == nil { return true }
             // A row cut by the window's edge is measured at its clipped edge (see auditVisibleElements).
-            guard let element = issue.element else { return issue.auditType == .contrast }
+            guard issue.element != nil else { return issue.auditType == .contrast }
+            guard let element = issue.currentElement else { return false }
             return !window.contains(element.frame)
         }
     }
@@ -358,8 +359,9 @@ extension NopeAppUITests {
         // Text drawn a quarter turn is measured unturned by the audit, as in
         // testCameraShellSideways; those findings are skipped.
         try app.performCompleteAccessibilityAudit { issue in
-            guard let element = issue.element else { return issue.auditType == .textClipped || issue.auditType == .contrast }
-            return issue.auditType == .contrast && element.exists && element.frame.height > element.frame.width
+            guard issue.element != nil else { return issue.auditType == .textClipped || issue.auditType == .contrast }
+            guard let element = issue.currentElement else { return false }
+            return issue.auditType == .contrast && element.frame.height > element.frame.width
         }
     }
 

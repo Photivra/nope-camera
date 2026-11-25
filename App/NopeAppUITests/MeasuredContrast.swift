@@ -119,10 +119,10 @@ extension XCUIApplication {
     /// - Parameter issue: A finding of the accessibility audit.
     @MainActor
     func isSetAsideByMeasuredContrast(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
-        guard issue.auditType == .contrast, let element = issue.element, element.exists else { return false }
+        guard issue.auditType == .contrast, let live = issue.element, let element = issue.currentElement else { return false }
         let frame = element.frame
         guard !frame.isEmpty, windows.firstMatch.frame.contains(frame) else { return false }
-        let screenshot = element.screenshot()
+        let screenshot = live.screenshot()
         guard let image = screenshot.image.cgImage, let measured = MeasuredContrast.ratio(of: image) else { return false }
         let system = "iOS \(UIDevice.current.systemVersion)"
         guard measured >= MeasuredContrast.setAsideMinimum else {

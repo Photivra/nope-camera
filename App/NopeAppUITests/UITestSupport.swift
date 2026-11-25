@@ -70,6 +70,9 @@ extension XCUIApplication {
     /// measured ratio is 7:1 or more (``isSetAsideByMeasuredContrast(_:)``; docs/TESTING.md,
     /// "Contrast findings set aside by measurement"). Every other issue reaches the handler.
     ///
+    /// When an issue's element is gone by the time the audit ends, the screen is audited once
+    /// more after it settles, and the second audit's issues are judged instead.
+    ///
     /// - Parameters:
     ///   - types: The audit types.
     ///   - file: The file a failure is reported in.
@@ -80,37 +83,53 @@ extension XCUIApplication {
         for types: XCUIAccessibilityAuditType = .all, file: StaticString = #filePath, line: UInt = #line,
         _ handler: @escaping (XCUIAccessibilityAuditIssue) throws -> Bool
     ) throws {
-        var reported: [XCUIAccessibilityAuditIssue] = []
-        let collect = { (issue: XCUIAccessibilityAuditIssue) -> Bool in
-            reported.append(issue)
-            return true
-        }
-        // Timed on the monotonic clock, as every wait in the UI tests is (issue #124).
-        let clock = ContinuousClock()
-        let started = clock.now
-        do {
-            try performAccessibilityAudit(for: types, collect)
-        } catch let error as NSError
-            where error.domain == Self.auditErrorDomain && error.code == Self.auditTimedOutCode {
-            // The test log says which check was slow: XCTest's error doesn't.
-            NSLog("Audit of types %llu didn't finish in %.1f s; running one audit per type", types.rawValue, (clock.now - started).timeInterval)
-            // The audits per type report every issue again.
-            reported.removeAll()
-            for type in Self.singleAuditTypes where types.contains(type) {
-                let typeStarted = clock.now
-                do {
-                    try performAccessibilityAudit(for: type, collect)
-                } catch {
-                    NSLog("Audit of type %llu alone failed after %.1f s", type.rawValue, (clock.now - typeStarted).timeInterval)
-                    throw error
-                }
-                NSLog("Audit of type %llu alone took %.1f s", type.rawValue, (clock.now - typeStarted).timeInterval)
+        // One complete audit: every issue it reports, without judging them.
+        func audited() throws -> [XCUIAccessibilityAuditIssue] {
+            var reported: [XCUIAccessibilityAuditIssue] = []
+            let collect = { (issue: XCUIAccessibilityAuditIssue) -> Bool in
+                reported.append(issue)
+                return true
             }
+            // Timed on the monotonic clock, as every wait in the UI tests is (issue #124).
+            let clock = ContinuousClock()
+            let started = clock.now
+            do {
+                try performAccessibilityAudit(for: types, collect)
+            } catch let error as NSError
+                where error.domain == Self.auditErrorDomain && error.code == Self.auditTimedOutCode {
+                // The test log says which check was slow: XCTest's error doesn't.
+                NSLog("Audit of types %llu didn't finish in %.1f s; running one audit per type", types.rawValue, (clock.now - started).timeInterval)
+                // The audits per type report every issue again.
+                reported.removeAll()
+                for type in Self.singleAuditTypes where types.contains(type) {
+                    let typeStarted = clock.now
+                    do {
+                        try performAccessibilityAudit(for: type, collect)
+                    } catch {
+                        NSLog("Audit of type %llu alone failed after %.1f s", type.rawValue, (clock.now - typeStarted).timeInterval)
+                        throw error
+                    }
+                    NSLog("Audit of type %llu alone took %.1f s", type.rawValue, (clock.now - typeStarted).timeInterval)
+                }
+            }
+            return reported
+        }
+        var reported = try audited()
+        // An issue whose element is already gone: the screen changed during the audit (on iPad
+        // the Settings popover lays its rows out again after a scroll, issue #177), so its
+        // findings can't be placed or named. The screen settles for three seconds and is audited
+        // once more, and that audit's issues are judged. An issue whose element is gone again is
+        // judged as the rules judge such an element (``XCUIAccessibilityAuditIssue/currentElement``;
+        // docs/TESTING.md, "Findings on an element that is gone").
+        if reported.contains(where: { $0.element != nil && $0.currentElement == nil }) {
+            NSLog("Audit: an issue's element is no longer on screen; auditing again after the screen settles")
+            _ = XCTWaiter().wait(for: [XCTestExpectation(description: "The screen settles")], timeout: 3)
+            reported = try audited()
         }
         for issue in reported {
             if isSetAsideByMeasuredContrast(issue) { continue }
             if try handler(issue) { continue }
-            XCTFail("\(issue.compactDescription): \(issue.element?.debugDescription ?? "no element")", file: file, line: line)
+            XCTFail(issue.failureDescription, file: file, line: line)
         }
     }
 
@@ -125,5 +144,35 @@ extension XCUIApplication {
             _ = previous.wait(for: .notRunning, timeout: 30)
         }
         launch()
+    }
+}
+
+extension XCUIAccessibilityAuditIssue {
+    /// The issue's element as it is now, read in one query, or `nil` when the audit named no
+    /// element or the element is no longer on screen.
+    ///
+    /// The audit's elements are bound to the accessibility element it found, and the screen can
+    /// change before the issue is judged: on iPad the Settings popover lays its rows out again
+    /// after a scroll (issue #177), and the row the audit named is replaced by a new one with
+    /// the same text. Reading `label`, `frame`, `identifier` or `elementType` of such an element
+    /// records a test failure ("Failed to get matching snapshot: No matches found for Descendant
+    /// with identity binding to AX element"), even after `exists` answered true a moment earlier;
+    /// `snapshot()` throws instead, and every attribute comes from the same reading. Every rule
+    /// that judges an audit finding reads the element through this (docs/TESTING.md, "Findings on
+    /// an element that is gone").
+    @MainActor
+    var currentElement: XCUIElementSnapshot? {
+        guard let element, element.exists else { return nil }
+        return try? element.snapshot()
+    }
+
+    /// The text a test failure gives for the issue: its description and the element's label,
+    /// identifier and frame, or that the audit named no element, or that the element is no
+    /// longer on screen. Safe to build for an element that is gone (``currentElement``).
+    @MainActor
+    var failureDescription: String {
+        guard element != nil else { return "\(compactDescription): no element" }
+        guard let current = currentElement else { return "\(compactDescription): an element no longer on screen" }
+        return "\(compactDescription): \"\(current.label)\" (identifier \"\(current.identifier)\") at \(current.frame)"
     }
 }

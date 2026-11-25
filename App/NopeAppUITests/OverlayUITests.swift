@@ -65,14 +65,15 @@ final class OverlayUITests: XCTestCase {
             if issue.element == nil && [.contrast, .textClipped, .dynamicType].contains(issue.auditType) { continue }
             // Text of the camera screen cut by the edge of the Settings popover on iPad.
             if NopeAppUITests.isTextCutByAPopover(issue, in: app) { continue }
-            if let element = issue.element, element.exists, !window.contains(element.frame) { continue }
-            if let element = issue.element, element.exists, belowTheFold.contains(element.label) { continue }
-            if issue.auditType == .contrast, let element = issue.element, element.exists, element.frame.minY < barBottom { continue }
+            let element = issue.currentElement
+            if let element, !window.contains(element.frame) { continue }
+            if let element, belowTheFold.contains(element.label) { continue }
+            if issue.auditType == .contrast, let element, element.frame.minY < barBottom { continue }
             // In the scrolling layout the shutter row is pinned over the bottom of the scroll
             // view; an element partly under it is measured against the shutter row.
-            if let visibleBottom, let element = issue.element, element.exists, element.frame.maxY > visibleBottom { continue }
+            if let visibleBottom, let element, element.frame.maxY > visibleBottom { continue }
             if isMeasuredGridStyleFinding(issue) { continue }
-            XCTFail("\(issue.compactDescription): \(issue.element?.debugDescription ?? "no element")", file: file, line: line)
+            XCTFail(issue.failureDescription, file: file, line: line)
         }
     }
 
@@ -87,7 +88,7 @@ final class OverlayUITests: XCTestCase {
     @MainActor
     private func isMeasuredGridStyleFinding(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
         guard name.contains("testOverlaySettingsAtTheLargestTextSize"), issue.auditType == .dynamicType,
-            let element = issue.element
+            let element = issue.currentElement
         else { return false }
         return element.identifier == "settings.overlays.gridStyle" && element.label == "Grid Style"
     }
@@ -257,15 +258,10 @@ final class OverlayUITests: XCTestCase {
     @MainActor
     func testOverlaySettingsAndProTools() throws {
         let app = launch("manual", ["-NopeSettings.showsManualControls", "YES", "-NopeSettings.overlays.showsLiveReadout", "YES"])
-        openSettings(app)
-        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Viewfinder Overlays'")).firstMatch
-        var swipes = 0
-        while !row.isHittable && swipes < 6 {
-            app.swipeUp()
-            swipes += 1
-        }
-        row.tap()
-        XCTAssertTrue(app.navigationBars["Viewfinder Overlays"].waitForExistence(timeout: 5))
+        // Short drags inside the popover, not full swipes: on iPad a swipe flung the lazy list
+        // past the row, which the list then removed, so the row was never found (docs/TESTING.md,
+        // "Findings on an element that is gone").
+        openOverlaySettings(app)
         // Dynamic Type is audited at the largest size (testOverlaySettingsAtTheLargestTextSize):
         // at the default size the iOS 27.2 Simulator reports form rows as "partially
         // unsupported", as for the other settings screens (NopeAppUITests). iPad: Settings is a
@@ -280,9 +276,11 @@ final class OverlayUITests: XCTestCase {
 
         // A grid style; the golden grids and Turn Spiral were removed (issue #76).
         let fourByFour = app.buttons["4 × 4"].firstMatch
+        let popover = app.popovers.firstMatch
+        let page: XCUIElement = popover.exists ? popover : app
         var styleSwipes = 0
-        while !(fourByFour.exists && fourByFour.isHittable) && styleSwipes < 6 {
-            app.swipeUp()
+        while !(fourByFour.exists && fourByFour.isHittable && page.frame.contains(fourByFour.frame)) && styleSwipes < 12 {
+            scrollUp(page)
             styleSwipes += 1
         }
         fourByFour.tap()
