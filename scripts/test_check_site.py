@@ -55,6 +55,13 @@ def make_tree(base):
         else:
             shutil.copy(source, target)
     (tree / "site/node_modules").symlink_to(ROOT / "site/node_modules")
+    # Cases edit page text without committing, which the build dates today (UTC): the pages'
+    # "Last updated" dates are today too, so only the rule a case tests can stop its build.
+    for page in ("site/content/support.json", "site/content/accessibility.json"):
+        set_last_updated(tree, page, TODAY)
+    policy = tree / "docs/store/privacy-policy-draft.md"
+    policy.write_text(re.sub(r"(?m)^(Effective date: .+?\. )Last updated: [0-9-]+\.", rf"\g<1>Last updated: {TODAY}.",
+                             policy.read_text(), count=1))
     git(tree, "init", "-q")
     git(tree, "add", "-A")
     git(tree, "commit", "-q", "-m", "test tree", date=TREE_DATE)
