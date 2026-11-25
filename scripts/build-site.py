@@ -654,10 +654,11 @@ def page_home(home, config, version, available, badge):
         lis = "".join(f'<li class="mb-2.5">{inline(item, "description.txt")}</li>' for item in items)
         group_html.append(f'<div><h3 class="mb-2 font-semibold text-h3 tracking-[-0.01em]">{html.escape(names[heading])}</h3><ul class="list-disc pl-5">{lis}</ul></div>')
     if available:
+        # HTML's width and height are whole pixels; Apple's badge says 119.66407 × 40.
         width, height = svg_size(f"site/{config['badge']}")
         store_url = f"https://apps.apple.com/us/app/id{config['appStoreId']}"
         get = (f'<div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4"><a class="inline-block m-2.5" href="{store_url}">'
-               f'<img class="h-10 w-auto" src="{badge}" width="{width:g}" height="{height:g}" alt="{html.escape(plain(home["text"]["badgeLabel"]))}"></a>'
+               f'<img class="h-10 w-auto" src="{badge}" width="{round(width)}" height="{round(height)}" alt="{html.escape(plain(home["text"]["badgeLabel"]))}"></a>'
                f'<p class="text-small text-muted max-w-[19rem]">{t["badgeLine"]}</p></div>')
     else:
         get = (f'<div class="mt-8 max-w-[34rem] px-5 py-4 border border-rule rounded-small">'
