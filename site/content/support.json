@@ -1,6 +1,6 @@
 {
   "about": "Site-only sentences of the support page (docs/design/nope-site.md, section 6). \"claims\" as in home.json. The device list itself is read from README.md, \"Requirements\". lastUpdated is checked against the last change to this file.",
-  "lastUpdated": "2026-11-23",
+  "lastUpdated": "2026-11-25",
   "title": {"md": "Support · Photivra Nope Camera", "claims": ["none"]},
   "description": {"md": "How to get help with Photivra Nope Camera, report a problem, and check which devices it runs on.", "claims": ["none"]},
   "text": {
@@ -21,7 +21,8 @@
     "include3": {"md": "What you did, what you expected, and what happened instead.", "claims": ["none"]},
     "questionsHeading": {"md": "Common questions", "claims": ["none"]},
     "devicesHeading": {"md": "Devices", "claims": ["none"]},
-    "tested": {"md": "For version 1.0.0 the app was run on real hardware on an iPhone 16 Pro Max and an iPad Air (5th generation). On other models, on iOS and iPadOS 26, and on Apple Watch, it was run only in Apple’s Simulator, which has no real camera. If something on these pages isn’t true on your device, tell us: it’s handled as a bug.", "claims": ["none"], "readme": ["The real hardware for 1.0.0 is an iPhone 16 Pro Max", "an iPad Air (5th generation)", "Other models, iOS and iPadOS 26, and the Apple Watch app were tested only", "tested only in Apple's Simulator, which has no real camera"]},
+    "tested": {"md": "For version 1.0.0 the app was run on real hardware on an iPhone 16 Pro Max, an iPad Air (5th generation) and an Apple Watch Series 10. On other models and on iOS, iPadOS and watchOS 26, it was run only in Apple’s Simulator, which has no real camera. If something on these pages isn’t true on your device, tell us: it’s handled as a bug.", "claims": ["none"], "readme": ["The real hardware for 1.0.0 is an iPhone 16 Pro Max", "an iPad Air (5th generation)", "an Apple Watch Series 10 (watchOS 27.2.1)",
+    "Other models, and iOS, iPadOS and watchOS 26, were tested only", "tested only in Apple's Simulator, which has no real camera"]},
     "a11yHeading": {"md": "Accessibility", "claims": ["none"]},
     "a11y": {"md": "What the app has for VoiceOver, Voice Control, Switch Control, a keyboard and large text, and what has and hasn’t been checked, is on the [accessibility page](/accessibility/). A problem with any of them is handled as a bug: report it in the same way.", "claims": ["C11"]}
   },

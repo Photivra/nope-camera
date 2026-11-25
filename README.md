@@ -14,7 +14,7 @@ Photivra Nope Camera supports the two latest versions of each operating system: 
 
 These are the devices that run iOS, iPadOS and watchOS 26, as Apple lists them. Devices that run only an earlier version, such as iPhone XS, XS Max and XR, aren't supported. The app detects each camera feature at run time and shows only what the device supports.
 
-**What was tested.** The real hardware for 1.0.0 is an iPhone 16 Pro Max (iOS 27.2.1) and an iPad Air (5th generation). Other models, iOS and iPadOS 26, and the Apple Watch app were tested only in Apple's Simulator, which has no real camera. Details and the known limits are in [`docs/TESTING.md`](docs/TESTING.md), "What was tested on real hardware".
+**What was tested.** The real hardware for 1.0.0 is an iPhone 16 Pro Max (iOS 27.2.1), an iPad Air (5th generation) and an Apple Watch Series 10 (watchOS 27.2.1) paired with that iPhone. Other models, and iOS, iPadOS and watchOS 26, were tested only in Apple's Simulator, which has no real camera. Details and the known limits are in [`docs/TESTING.md`](docs/TESTING.md), "What was tested on real hardware".
 
 ## Languages
 

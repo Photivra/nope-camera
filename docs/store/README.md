@@ -103,9 +103,10 @@ Honesty screen and the privacy policy already say). C11 is rechecked in Spanish 
 For the App Review Information notes field in App Store Connect, and for TestFlight's What to
 Test. Draft, for the maintainer to review.
 
-- **What was tested.** The real hardware for 1.0.0 is an iPhone 16 Pro Max (iOS 27.2.1) and an
-  iPad Air (5th generation). Other iPhone and iPad models, iOS and iPadOS 26 and the Apple Watch
-  app were tested only in Apple's Simulator (`docs/TESTING.md`, "What was tested on real
+- **What was tested.** The real hardware for 1.0.0 is an iPhone 16 Pro Max (iOS 27.2.1), an
+  iPad Air (5th generation) and an Apple Watch Series 10 (watchOS 27.2.1) paired with that
+  iPhone. Other iPhone, iPad and Apple Watch models and iOS, iPadOS and watchOS 26 were tested
+  only in Apple's Simulator (`docs/TESTING.md`, "What was tested on real
   hardware").
 - **No network.** The app contains no networking code and opens no network connection. The three
   links in the app, on the About screen, leave the app only when the person taps them: the
