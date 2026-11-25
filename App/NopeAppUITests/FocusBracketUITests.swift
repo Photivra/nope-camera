@@ -150,8 +150,10 @@ extension NopeAppUITests {
             try app.performCompleteAccessibilityAudit(for: Self.auditTypes(contrast: true, dynamicType: false)) { issue in
                 // Every finding on Use the Whole Range fails, contrast included. The other rows
                 // are audited in the focus bracket tests with their known exceptions; after the
-                // scroll one may sit under the navigation bar's scroll edge effect.
-                !(issue.currentElement?.label.contains("Use the Whole Range") ?? false)
+                // scroll one may sit under the navigation bar's scroll edge effect. A finding on an
+                // element that is gone can't be told apart from one on Use the Whole Range, so it fails.
+                guard let element = issue.currentElement else { return issue.element == nil }
+                return !element.label.contains("Use the Whole Range")
             }
         }
     }

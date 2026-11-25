@@ -1310,7 +1310,7 @@ So the rules never read the element itself:
 - Between the three audits of `audit(_:)`, each finding's label is read before the next audit,
   and the next audit's finding is the one kept, so a row laid out again between audits still
   counts as reported again. A finding whose element was gone before its label could be read
-  counts as reported again by a later finding of the same type and description.
+  counts as reported again by a later finding of the same type and description, and so does a later finding whose element is gone.
 
 The lazy Settings list on iPad also removes rows scrolled out of the popover. In
 `testOverlaySettingsAndProTools` full-window swipes looked for the Viewfinder Overlays row: one
@@ -1553,8 +1553,8 @@ the results here):
 
 The real hardware for the 1.0.0 checks is an iPhone 16 Pro Max (iOS 27.2.1), an iPad Air
 (5th generation) and an Apple Watch Series 10 (watchOS 27.2.1) paired with that iPhone: the watch
-app connected, showed the camera's status and took photos, and showed the unreachable warning
-with the iPhone locked or nope. in the background (2026-11-23 and 2026-11-24, builds 3 to 6).
+app connected, showed the camera's status and took photos on the iPhone, and showed the
+unreachable warning with the iPhone locked or the iPhone app in the background (2026-11-23 and 2026-11-24, builds 3 to 6).
 Everything else, including other iPhone, iPad and Apple Watch models and iOS, iPadOS and watchOS
 26, was tested only in Apple's Simulator, which has no real camera. The only
 recorded device result so far is the debug tag check on the iPhone 16 Pro Max (2026-11-11 and
@@ -1566,7 +1566,7 @@ Known limits that no available device can close before release:
   black and white levels) differs between two devices of the same model. Only one unit of each
   model has been available, so the app doesn't say these values can't identify a device.
 - What a real iPhone camera writes on iOS 26, and whether photos save there.
-- Pairing, reach, timing and transport of a real Apple Watch, and the Live Activity on the watch.
+- An Apple Watch on watchOS 26, other Apple Watch models, the watch's reply time (not measured) and the Live Activity on the watch.
 - Lenses on other iPhone models: which have RAW, fixed-focus ultra wide lenses, RAW buffer layouts.
 
 The app and the store listing make no "tested" or "verified" claims; this section, the README's

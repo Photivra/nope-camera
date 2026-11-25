@@ -1,6 +1,6 @@
 {
   "about": "Site-only sentences of the accessibility page (docs/design/nope-site.md, 7.1). \"claims\" as in home.json. The status table comes from store/accessibility-status.json. Each statement under appStatements must be a string of the app's Accessibility screen (source) or be backed by the quoted evidence in its source file; held lists the screen's statements kept off the page, with the reason, until the reason no longer holds. lastUpdated is checked against the last change to this file and to the status file.",
-  "lastUpdated": "2026-11-23",
+  "lastUpdated": "2026-11-25",
   "title": {"md": "Accessibility · Photivra Nope Camera", "claims": ["none"]},
   "description": {"md": "What Photivra Nope Camera has for VoiceOver, Voice Control, Switch Control, a keyboard and large text, what has been checked, and how to report a problem.", "claims": ["none"]},
   "text": {
@@ -10,7 +10,7 @@
     "automatedLabel": {"md": "Automated audits", "claims": ["none"]},
     "automatedValue": {"md": "Run in Apple’s Simulator", "claims": ["none"]},
     "automated": {"md": "The project’s tests run Apple’s automated accessibility audit on the camera, Settings, the Last Photo viewer and What’s in This Photo, in Apple’s Simulator. An automated audit can’t show that a person can do everything with an assistive technology.", "claims": ["none"]},
-    "noPass": {"md": "A full pass by hand with VoiceOver, Voice Control, Switch Control and the largest text size has not yet been done on an iPhone or an iPad. The Apple Watch app has run only in the Simulator. Until a pass is done on a device, the app’s App Store page declares no accessibility features for that device, and this page doesn’t say the app works with them.", "claims": ["none"]},
+    "noPass": {"md": "A full pass by hand with VoiceOver, Voice Control, Switch Control and the largest text size has not yet been done on an iPhone, an iPad or an Apple Watch. Until a pass is done on a device, the app’s App Store page declares no accessibility features for that device, and this page doesn’t say the app works with them.", "claims": ["none"]},
     "hasHeading": {"md": "What the app has", "claims": ["none"]},
     "hasIntro": {"md": "These are the statements of the app’s own Accessibility screen, in Settings.", "claims": ["none"]},
     "reportHeading": {"md": "Report a problem", "claims": ["none"]},

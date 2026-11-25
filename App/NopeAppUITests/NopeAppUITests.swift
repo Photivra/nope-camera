@@ -747,7 +747,8 @@ final class NopeAppUITests: XCTestCase {
     ///     `nil` if it was already gone then. A finding whose element was gone before its label
     ///     could be read matches a later finding of the same type and description on any
     ///     element, so that it still fails when the later audits report it again
-    ///     (docs/TESTING.md, "Findings on an element that is gone").
+    ///     (docs/TESTING.md, "Findings on an element that is gone"). A later finding whose element
+    ///     is gone matches the same way.
     @MainActor
     private static func isSameFinding(
         _ later: XCUIAccessibilityAuditIssue, as earlier: XCUIAccessibilityAuditIssue, labeled label: String?
@@ -756,8 +757,10 @@ final class NopeAppUITests: XCTestCase {
         guard later.element != nil, earlier.element != nil else {
             return later.element == nil && earlier.element == nil && later.compactDescription == earlier.compactDescription
         }
-        guard let label else { return later.compactDescription == earlier.compactDescription }
-        return later.currentElement?.label == label
+        guard let label, let laterLabel = later.currentElement?.label else {
+            return later.compactDescription == earlier.compactDescription
+        }
+        return laterLabel == label
     }
 
     /// Returns the issues that aren't ignored, and writes one line to the test log for each
