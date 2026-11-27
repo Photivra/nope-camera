@@ -7,8 +7,9 @@
 # the watch app once (scripts/prepare-simulator.sh); when that fails or runs out of time it is
 # an infrastructure failure and is done once more. It then runs the NopeWatch scheme's tests
 # with test-without-building, and handles a failed run as the iPhone and iPad shards do
-# (scripts/ui-test-run-lib.sh): a test failure is never run again; an infrastructure failure is
-# run again once, without the tests that already passed. It writes the classification to the
+# (scripts/ui-test-run-lib.sh): an infrastructure failure is run again once, without the tests
+# that already passed; a test that failed runs once more, alone, and the job passes when it
+# passes there (recorded as flaky). It writes the classification and the retried tests to the
 # job summary and the per-test results to <result>-results.jsonl.
 set -euo pipefail
 

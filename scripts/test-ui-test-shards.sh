@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tests for scripts/ui-test-shards.sh, the classification and second-run rules of
+# Tests for scripts/ui-test-shards.sh, the classification, second-run and retry rules of
 # scripts/ui-test-run-lib.sh, scripts/flaky-tests.sh, scripts/stop-simulator-push.sh,
 # scripts/stop-simulator-background-tasks.sh, scripts/wait-for-simulator-runtimes.sh,
 # scripts/with-timeout.sh, scripts/prepare-simulator.sh and scripts/add-simulator-runtime.sh:
@@ -199,19 +199,27 @@ case_host no-crash "another process's crash report" "intelligencetasksd-2026-11-
 case_host no-crash "no crash reports" none newer
 
 # A whole job, with a stand-in for xcodebuild that prints a prepared log and exits with a
-# prepared status for each run: a test failure is never run again, an infrastructure failure is
-# run again once without the finished tests, and the summary names the classification.
-case_job() { # case_job "name" "want exit" "want runs" "want summary text" "prepare: ok|fails" "run 1 status" "run 1 log" ["run 2 status" "run 2 log"]
-  local name=$1 want_exit=$2 want_runs=$3 want_text=$4 prepare=$5 d got_exit=0 runs
+# prepared status for each run (and, given a number of seconds, then waits that long): an
+# infrastructure failure is run again once without the finished tests, a failed test runs once
+# more alone, and the summary names the classification.
+case_job() { # case_job "name" "want exit" "want runs" "want summary text" "prepare: ok|fails|once" ["run n status" "run n log"]…
+  local name=$1 want_exit=$2 want_runs=$3 want_text=$4 prepare=$5 d got_exit=0 runs n=0 status
+  shift 5
   d=$(mktemp -d); mkdir "$d/bin" "$d/reports"
-  printf '%s\n' "$7" >"$d/run1.log"; echo "$6" >"$d/run1.status"
-  printf '%s\n' "${9:-}" >"$d/run2.log"; echo "${8:-0}" >"$d/run2.status"
+  while [[ $# -ge 2 ]]; do
+    n=$((n + 1)); status=$1
+    printf '%s\n' "$2" >"$d/run$n.log"
+    if [[ $status == *+sleep* ]]; then echo "${status#*+sleep}" >"$d/run$n.sleep"; status=${status%%+*}; fi
+    echo "$status" >"$d/run$n.status"
+    shift 2
+  done
   cat >"$d/bin/xcodebuild" <<STUB
 #!/usr/bin/env bash
 n=\$(( \$(cat "$d/runs" 2>/dev/null || echo 0) + 1 )); echo "\$n" >"$d/runs"
 printf '%s\n' "\$*" >"$d/args\$n"
-cat "$d/run\$n.log"
-exit "\$(cat "$d/run\$n.status")"
+cat "$d/run\$n.log" 2>/dev/null
+[[ ! -e "$d/run\$n.sleep" ]] || exec sleep "\$(cat "$d/run\$n.sleep")"
+exit "\$(cat "$d/run\$n.status" 2>/dev/null || echo 0)"
 STUB
   chmod +x "$d/bin/xcodebuild"
   cat >"$d/job.sh" <<JOB
@@ -228,14 +236,22 @@ xcodebuild_args=(-xctestrun x)
 result="$d/out.xcresult" job_label="ui-tests 1/3" device_label="iPhone" shard_label="1/3"
 run_classified
 JOB
-  PATH="$d/bin:$PATH" NOPE_CRASH_REPORTS="$d/reports" GITHUB_STEP_SUMMARY="$d/summary" bash "$d/job.sh" >"$d/out" 2>&1 || got_exit=$?
+  touch "$d/output"
+  PATH="$d/bin:$PATH" NOPE_CRASH_REPORTS="$d/reports" GITHUB_STEP_SUMMARY="$d/summary" GITHUB_OUTPUT="$d/output" \
+    bash "$d/job.sh" >"$d/out" 2>&1 </dev/null || got_exit=$?
   runs=$(cat "$d/runs" 2>/dev/null || echo 0)
-  if [[ $got_exit == "$want_exit" && $runs == "$want_runs" ]] && grep -q "$want_text" "$d/summary" \
+  if [[ $got_exit == "$want_exit" && $runs == "$want_runs" ]] && grep -q -- "$want_text" "$d/summary" \
       && { [[ -z ${CASE_JOB_SECOND_RUN_ARGS:-} ]] || grep -q -- "$CASE_JOB_SECOND_RUN_ARGS" "$d/args2"; } \
-      && { [[ -z ${CASE_JOB_NOT_IN_SECOND_RUN:-} ]] || ! grep -q -- "$CASE_JOB_NOT_IN_SECOND_RUN" "$d/args2"; }; then
+      && { [[ -z ${CASE_JOB_NOT_IN_SECOND_RUN:-} ]] || ! grep -q -- "$CASE_JOB_NOT_IN_SECOND_RUN" "$d/args2"; } \
+      && { [[ -z ${CASE_JOB_LAST_RUN_ARGS:-} ]] || grep -q -- "$CASE_JOB_LAST_RUN_ARGS" "$d/args$runs"; } \
+      && { [[ -z ${CASE_JOB_NOT_IN_LAST_RUN:-} ]] || ! grep -q -- "$CASE_JOB_NOT_IN_LAST_RUN" "$d/args$runs"; } \
+      && { [[ -z ${CASE_JOB_RESULTS_TEXT:-} ]] || grep -q -- "$CASE_JOB_RESULTS_TEXT" "$d/out-results.jsonl"; } \
+      && { [[ ${CASE_JOB_OUTPUT-unset} == unset ]] || [[ $(cat "$d/output") == "$CASE_JOB_OUTPUT" ]]; }; then
     echo "ok   $name"
   else
-    echo "FAIL $name (exit $got_exit, $runs run(s)): $(cat "$d/summary" 2>/dev/null) $(cat "$d/args2" 2>/dev/null)"; failures=$((failures + 1))
+    echo "FAIL $name (exit $got_exit, $runs run(s)): $(cat "$d/summary" 2>/dev/null) $(cat "$d/args$runs" 2>/dev/null)"
+    cat "$d/out-results.jsonl" 2>/dev/null
+    failures=$((failures + 1))
   fi
   rm -rf "$d"
 }
@@ -245,16 +261,20 @@ two="Test Case '-[T.C testTwo]' started.
 Test Case '-[T.C testTwo]' passed (1.0 seconds)."
 three="Test Case '-[T.C testThree]' started.
 Test Case '-[T.C testThree]' passed (1.0 seconds)."
+two_failed="Test Case '-[T.C testTwo]' started.
+/x/C.swift:12: error: -[T.C testTwo] : XCTAssertTrue failed - the readout isn't there
+Test Case '-[T.C testTwo]' failed (1.0 seconds)."
+three_failed="Test Case '-[T.C testThree]' started.
+/x/C.swift:30: error: -[T.C testThree] : XCTAssertEqual failed
+Test Case '-[T.C testThree]' failed (1.0 seconds)."
+cut_short="Test Case '-[T.C testTwo]' started.
+Restarting after unexpected exit, crash, or test timeout; summary will include totals from previous launches."
 case_job "a job whose tests pass" 0 1 "ui-tests 1/3: Passed" ok 0 "$one
 $two
 $three"
-case_job "a test failure is not run again" 1 1 "ui-tests 1/3: Test failure" ok 65 "$one
-Test Case '-[T.C testTwo]' started.
-Test Case '-[T.C testTwo]' failed (1.0 seconds).
+CASE_JOB_OUTPUT="" case_job "a job without a retry sets no step output" 0 1 "Every test passed." ok 0 "$one
+$two
 $three"
-case_job "a failed test is listed in the summary" 1 1 "C/testTwo.: failed" ok 65 "$one
-Test Case '-[T.C testTwo]' started.
-Test Case '-[T.C testTwo]' failed (1.0 seconds)."
 case_job "no test started: the whole job runs once more" 0 2 "ui-tests 1/3: Passed" ok 65 "Testing started
 The test runner crashed while preparing to run tests" 0 "$one
 $two
@@ -266,18 +286,107 @@ CASE_JOB_SECOND_RUN_ARGS="-skip-testing:T/C/testOne" CASE_JOB_NOT_IN_SECOND_RUN=
 Test Case '-[T.C testTwo]' started.
 	The iOS 27.2 simulator runtime is not available." 0 "$two
 $three"
+CASE_JOB_RESULTS_TEXT='"retry": "infrastructure"' \
+  case_job "the second run's results say it followed an infrastructure failure" 0 2 "Passed" ok 65 "Testing started" 0 "$one
+$two
+$three"
 case_job "an infrastructure failure twice fails the job as one" 1 2 "ui-tests 1/3: Infrastructure failure" ok 65 "Testing started" 65 "Testing started"
-case_job "a test failure in the second run is a test failure" 1 2 "ui-tests 1/3: Test failure" ok 65 "Testing started" 65 "$one
-Test Case '-[T.C testTwo]' started.
-Test Case '-[T.C testTwo]' failed (1.0 seconds)."
 case_job "preparing the Simulator fails twice: no test runs" 1 0 "Preparing the Simulator failed twice" fails 0 ""
 case_job "preparing the Simulator fails once: it is done again and the tests run" 0 1 "Preparing the Simulator failed once" once 0 "$one
 $two
 $three"
-case_job "a test cut short without a sign of the Simulator dying is not run again" 1 1 "ui-tests 1/3: Test failure" ok 65 "$one
-Test Case '-[T.C testTwo]' started.
-Restarting after unexpected exit, crash, or test timeout; summary will include totals from previous launches.
+
+# A test failure: each failed test runs once more, alone. Failed and then passed is a pass,
+# recorded as flaky; failed twice fails the job.
+CASE_JOB_LAST_RUN_ARGS="-only-testing:T/C/testTwo -resultBundlePath .*/out-retry-1.xcresult" \
+  CASE_JOB_NOT_IN_LAST_RUN="-only-testing:T/C/testOne\|-only-testing:T/C/testThree" \
+  case_job "failed, then passed alone: the job passes" 0 2 "ui-tests 1/3: Passed with 1 flaky test(s)" ok 65 "$one
+$two_failed
+$three" 0 "$two"
+case_job "the summary lists the flaky test with its first failure and its retry" 0 2 \
+  "C/testTwo. (ui-tests 1/3 on iPhone): first failure: XCTAssertTrue failed - the readout isn't there; passed on the retry (flaky)" ok 65 "$one
+$two_failed
+$three" 0 "$two"
+CASE_JOB_RESULTS_TEXT='"test": "C/testTwo", "result": "passed", "seconds": 1.0, "attempt": 2, .*"retry": "test-failure", "first_failure": "XCTAssertTrue failed - the readout isn.t there"' \
+  case_job "the result file records the retry as a test-failure retry" 0 2 "Passed" ok 65 "$one
+$two_failed
+$three" 0 "$two"
+CASE_JOB_RESULTS_TEXT='"test": "C/testTwo", "result": "failed", .*"attempt": 1, .*"message": "XCTAssertTrue failed' \
+  case_job "the result file keeps the first failure's message" 0 2 "Passed" ok 65 "$one
+$two_failed
+$three" 0 "$two"
+CASE_JOB_OUTPUT="retried=1" case_job "a retry sets the step output that keeps the result bundles" 0 2 "Passed" ok 65 "$one
+$two_failed
+$three" 0 "$two"
+case_job "failed twice: the job fails" 1 2 "ui-tests 1/3: Test failure" ok 65 "$one
+$two_failed
+$three" 65 "$two_failed"
+case_job "failed twice: the summary says so" 1 2 "C/testTwo. failed on its retry too (failed)" ok 65 "$one
+$two_failed
+$three" 65 "$two_failed"
+case_job "failed twice: the test is listed as failed on its retry" 1 2 "failed on the retry too" ok 65 "$one
+$two_failed
+$three" 65 "$two_failed"
+case_job "two failed tests both pass alone: the job passes with two flaky tests" 0 3 "Passed with 2 flaky test(s)" ok 65 "$one
+$two_failed
+$three_failed" 0 "$two" 0 "$three"
+case_job "a test that fails twice stops the retries" 1 2 "Test failure" ok 65 "$one
+$two_failed
+$three_failed" 65 "$two_failed"
+# A test cut short (the app or the test runner crashed) with no sign of the Simulator dying.
+case_job "cut short, then passed alone: the job passes" 0 2 "Passed with 1 flaky test(s)" ok 65 "$one
+$cut_short
+$three" 0 "$two"
+case_job "cut short, and cut short again on the retry: the job fails" 1 2 "failed on its retry too (interrupted)" ok 65 "$one
+$cut_short
+$three" 65 "$cut_short"
+case_job "a retry in which the test never starts: the job fails" 1 2 "failed on its retry too (interrupted)" ok 65 "$one
+$two_failed
+$three" 65 "Testing started
+The test runner crashed while preparing to run tests"
+case_job "a retry that passes while a test of the shard never ran: the job fails" 1 2 "these tests have no result: C/testThree" ok 65 "$one
+$two_failed" 0 "$two"
+case_job "a failed run without a failed test to name: nothing is retried" 1 1 "none was retried" ok 65 "$one
+$two
 $three"
+case_job "a test failure after an infrastructure failure: the failed test is retried too" 0 3 "Passed with 1 flaky test(s)" ok \
+  65 "Testing started" 65 "$one
+$two_failed
+$three" 0 "$two"
+# The time limit: a retry runs only when it fits in what is left, and is ended when it doesn't
+# finish in it.
+NOPE_TEST_TIME_LIMIT_MINUTES=1 NOPE_TEST_TIME_MARGIN_SECONDS=60 \
+  case_job "a retry that doesn't fit in the time left isn't run" 1 1 "was not retried: its retry needs about 121 s and 0 s of the 1-minute limit were left" ok 65 "$one
+$two_failed
+$three"
+NOPE_TEST_TIME_LIMIT_MINUTES=1 NOPE_TEST_TIME_MARGIN_SECONDS=55 NOPE_RETRY_STARTUP_SECONDS=0 \
+  case_job "a retry that runs past the time left is ended and fails the job" 1 2 "ran past the [0-9]* s left of the 1-minute limit and was ended" ok 65 "$one
+$two_failed
+$three" "0+sleep30" "Test Case '-[T.C testTwo]' started."
+NOPE_TEST_TIME_LIMIT_MINUTES=150 case_job "a retry that fits in the time left runs" 0 2 "Passed with 1 flaky test(s)" ok 65 "$one
+$two_failed
+$three" 0 "$two"
+
+# The retry candidates are the tests whose last line failed or that have no result, with their target.
+log=$(mktemp)
+printf '%s\n' "$one" "$two_failed" "Test Case '-[T.C testThree]' started." "Test Case '-[T.D testFour]' started." \
+  "Test Case '-[T.D testFour]' failed (1.0 seconds)." "Test Case '-[T.D testFour]' started." "Test Case '-[T.D testFour]' passed (1.0 seconds)." >"$log"
+got=$("$lib" --retry-candidates "$log" | tr '\n' ' ')
+if [[ $got == "T/C/testTwo T/C/testThree " ]]; then echo "ok   retry candidates"; else echo "FAIL retry candidates: $got"; failures=$((failures + 1)); fi
+rm -f "$log"
+
+# The flaky list across result files, as the owner's Mac proof prints it.
+d=$(mktemp -d)
+printf '%s\n' '{"test": "C/testOne", "result": "passed", "attempt": 1, "job": "ui-tests 1/6", "device": "iPhone 18 Pro"}' \
+  '{"test": "C/testTwo", "result": "failed", "attempt": 1, "job": "ui-tests 1/6", "device": "iPhone 18 Pro", "message": "m"}' \
+  '{"test": "C/testTwo", "result": "passed", "attempt": 2, "job": "ui-tests 1/6", "device": "iPhone 18 Pro", "retry": "test-failure", "first_failure": "m"}' >"$d/a-results.jsonl"
+printf '%s\n' '{"test": "W/testThree", "result": "interrupted", "attempt": 2, "job": "ui-tests-watch", "device": "Watch", "retry": "test-failure", "first_failure": "x"}' >"$d/b-results.jsonl"
+got=$("$lib" --flaky "$d/a-results.jsonl" "$d/b-results.jsonl")
+# shellcheck disable=SC2016 # the backticks are Markdown
+want='- `C/testTwo` (ui-tests 1/6 on iPhone 18 Pro): first failure: m; passed on the retry (flaky)
+- `W/testThree` (ui-tests-watch on Watch): first failure: x; interrupted on the retry too'
+if [[ $got == "$want" ]]; then echo "ok   flaky list"; else echo "FAIL flaky list: $got"; failures=$((failures + 1)); fi
+rm -rf "$d"
 
 # The flaky test report: a test that passed and failed on one commit, tests that did across
 # commits, and a test that passed only in the second run after an infrastructure failure.
@@ -289,15 +398,26 @@ row() { # row <test> <result> <attempt> <job> <sha> <run>
   row C/testThree interrupted 1 "ui-tests-ipad 1/2" aaaaaaa1 1; row C/testThree passed 2 "ui-tests-ipad 1/2" aaaaaaa1 1
 } >"$d/1/a/results.jsonl"
 { row C/testTwo passed 1 "ui-tests 1/3" aaaaaaa1 2; row C/testOne failed 1 "ui-tests 1/3" bbbbbbb2 3; } >"$d/2/a/results.jsonl"
+# A test retried after failing, in two runs: it passed on one retry and failed on the other.
+retry_row() { # retry_row <result> <run>
+  printf '{"test": "C/testFour", "result": "%s", "seconds": 3, "attempt": 2, "job": "ui-tests-watch", "sha": "aaaaaaa1", "run_id": "%s", "run_attempt": "1", "retry": "test-failure", "first_failure": "m"}\n' "$@"
+}
+{ row C/testFour failed 1 ui-tests-watch aaaaaaa1 1; retry_row passed 1
+  row C/testFour failed 1 ui-tests-watch aaaaaaa1 2; retry_row failed 2; } >"$d/1/a/retried.jsonl"
 got=$("$here/flaky-tests.sh" --from "$d")
-want="5 results of 3 tests from 3 run(s) on 2 commit(s)
+want="7 results of 4 tests from 3 run(s) on 2 commit(s)
+
+Run once more after a test failure (flaky when the retry passed):
+  C/testFour (watch): 2 run(s), 1 passed on the retry, 1 failed on the retry too; retried in 2 or more runs: needs an issue
 
 Passed and failed on the same commit:
   C/testTwo (iPhone) at aaaaaaa: 1 passed, 1 failed
+  C/testFour (watch) at aaaaaaa: 1 passed, 1 failed
 
 Passed and failed across these commits:
   C/testTwo (iPhone): 1 passed, 1 failed
   C/testOne (iPhone): 1 passed, 1 failed
+  C/testFour (watch): 1 passed, 1 failed
 
 Passed only in the second run after an infrastructure failure:
   C/testThree (iPad): 1 time(s)"

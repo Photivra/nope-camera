@@ -19,13 +19,17 @@
 #    first launch of the app.
 # 3. Runs the shard's tests (scripts/ui-test-shards.sh args <device> <shard>) with
 #    test-without-building.
-# 4. Classifies a failed run (scripts/ui-test-run-lib.sh): a test that failed with a result is a
-#    test failure and is never run again. An infrastructure failure (preparing the Simulator
-#    failed, no test started, or the Simulator died under the tests) is run again once, after
-#    rebooting the Simulator, and only the tests without a result: tests that passed keep
-#    their result. The first run's result bundle is kept as <result>-interrupted.xcresult.
-# 5. Writes the classification to the job summary and the per-test results to
-#    <result>-results.jsonl (docs/TESTING.md, "Flaky tests").
+# 4. Classifies a failed run (scripts/ui-test-run-lib.sh). An infrastructure failure (preparing
+#    the Simulator failed, no test started, or the Simulator died under the tests) is run again
+#    once, after rebooting the Simulator, and only the tests without a result: tests that passed
+#    keep their result. The first run's result bundle is kept as <result>-interrupted.xcresult.
+#    A test failure (a test failed with a result, or was cut short) runs each such test once
+#    more, alone, with its own result bundle <result>-retry-<n>.xcresult; the shard passes when
+#    each passed on its retry, and they are recorded as flaky. A test that fails twice fails the
+#    shard. With NOPE_TEST_TIME_LIMIT_MINUTES set, a retry that doesn't fit in the time left
+#    isn't run, and the shard fails with a message.
+# 5. Writes the classification and the retried tests to the job summary and the per-test
+#    results to <result>-results.jsonl (docs/TESTING.md, "Flaky tests").
 set -euo pipefail
 
 [[ $# -ge 4 ]] || { echo "usage: $0 <shard> <device name> <products dir> <result bundle> [xcodebuild args…]" >&2; exit 2; }

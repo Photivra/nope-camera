@@ -8,11 +8,13 @@
 #   scripts/flaky-tests.sh --from <directory>
 #       reports on the .jsonl files under a directory instead (already downloaded results)
 #
-# It prints three lists, each with counts: tests that passed and failed on the same commit (the
-# test changed its result without the code changing), tests that passed and failed across the
-# commits looked at, and tests that passed only in the second run after an infrastructure
-# failure. A test's result in a job is its last attempt's; a test cut short by a dying
-# Simulator and not run again ("interrupted") is counted apart from a failure.
+# It prints four lists, each with counts: tests that were run once more after failing in a job
+# (flaky when the retry passed; one retried in two or more runs needs an issue, docs/TESTING.md,
+# "Flaky tests"), tests that passed and failed on the same commit (the test changed its result
+# without the code changing), tests that passed and failed across the commits looked at, and
+# tests that passed only in the second run after an infrastructure failure. A test's result in
+# a job is its last attempt's; a test cut short by a dying Simulator and not run again
+# ("interrupted") is counted apart from a failure.
 set -euo pipefail
 
 runs=20 repo= branch= from=
@@ -69,7 +71,8 @@ commits, run_ids = set(), set()
 for row in final.values():
     key = (row["test"], device(row))
     result = row["result"]
-    if result == "passed" and row.get("attempt", 1) > 1:
+    # A second run after an infrastructure failure; older files have no retry field.
+    if result == "passed" and row.get("attempt", 1) > 1 and row.get("retry", "infrastructure") == "infrastructure":
         overall[key]["passed on attempt 2"] += 1
     by_commit[key + (row.get("sha", ""),)][result] += 1
     overall[key][result] += 1
@@ -82,7 +85,23 @@ def counts(counter):
     parts = [f"{counter[name]} {name}" for name in ("passed", "failed", "interrupted", "passed on attempt 2") if counter[name]]
     return ", ".join(parts)
 
+# Tests run once more after a test failure, counted per run.
+retried = collections.defaultdict(lambda: {"runs": set(), "passed": 0, "failed": 0})
+for row in rows:
+    if row.get("retry") == "test-failure":
+        entry = retried[(row["test"], device(row))]
+        entry["runs"].add(row.get("run_id"))
+        entry["passed" if row["result"] == "passed" else "failed"] += 1
+
 print(f"{len(final)} results of {len(overall)} tests from {len(run_ids)} run(s) on {len(commits)} commit(s)")
+print()
+print("Run once more after a test failure (flaky when the retry passed):")
+for (test, kind), entry in sorted(retried.items(), key=lambda item: (-len(item[1]["runs"]), item[0])):
+    parts = [f"{entry[name]} {label}" for name, label in (("passed", "passed on the retry"), ("failed", "failed on the retry too")) if entry[name]]
+    issue = "; retried in 2 or more runs: needs an issue" if len(entry["runs"]) >= 2 else ""
+    print(f"  {test} ({kind}): {len(entry['runs'])} run(s), {', '.join(parts)}{issue}")
+if not retried:
+    print("  none")
 print()
 print("Passed and failed on the same commit:")
 same = sorted(((bad(c), key) for key, c in by_commit.items() if c["passed"] and bad(c)), reverse=True)

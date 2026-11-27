@@ -246,7 +246,8 @@ jobs:
     # About 93 to 102 minutes of tests by the listed times (most of them estimates, docs/TESTING.md;
     # `scripts/ui-test-shards.sh times`) and 7 of setup; on a runner that has to remount a
     # Simulator runtime first, scripts/wait-for-simulator-runtimes.sh waits up to 12.5 more. The
-    # rest is room for one second run of unfinished tests after an infrastructure failure.
+    # rest is room for one second run of unfinished tests after an infrastructure failure, or
+    # for running a failed test once more.
     timeout-minutes: 150
     strategy:
       fail-fast: false
@@ -254,6 +255,9 @@ jobs:
         shard: [1, 2, 3, 4, 5, 6]
     env:
       NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      # The test step's limit; scripts/ui-test-run-lib.sh runs a failed test once more only when
+      # the retry fits in what is left of it (docs/TESTING.md, "Infrastructure and test failures").
+      NOPE_TEST_TIME_LIMIT_MINUTES: "140"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -264,10 +268,13 @@ jobs:
           name: ui-tests-build
       - name: Unpack the build
         run: mkdir -p products && tar -xzf ui-tests-build.tgz -C products
-      # Boots the Simulator and waits for it, launches the app once, then runs the shard. A test
-      # failure is never run again; an infrastructure failure is, once, without the tests that
-      # passed (scripts/ui-test-run-lib.sh).
+      # Boots the Simulator and waits for it, launches the app once, then runs the shard. An
+      # infrastructure failure is run again once, without the tests that passed; a test that
+      # failed runs once more, alone, and passes the shard as flaky when it passes there
+      # (scripts/ui-test-run-lib.sh).
       - name: Run the UI tests of this shard with accessibility audits
+        id: tests
+        timeout-minutes: ${{ fromJSON(env.NOPE_TEST_TIME_LIMIT_MINUTES) }}
         run: scripts/run-ui-test-shard.sh "${{ matrix.shard }}" "iPhone 18 Pro" products ui-tests.xcresult
       - name: Upload the per-test results
         if: always()
@@ -278,13 +285,14 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
       - name: Upload test results
-        if: failure()
+        if: failure() || steps.tests.outputs.retried
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ui-tests-${{ matrix.shard }}-xcresult
           path: |
             ui-tests.xcresult
             ui-tests-interrupted.xcresult
+            ui-tests-retry-*.xcresult
           retention-days: 7
 
   # Passes when every shard passed; otherwise only with a valid proof from the owner's Mac, a
@@ -319,7 +327,8 @@ jobs:
     runs-on: xcode-27
     # About 117 to 124 minutes of tests by the listed times (most of them estimates;
     # `scripts/ui-test-shards.sh times`) and 7 of setup, up to 12.5 more for a runtime remount,
-    # and room for one second run of unfinished tests after an infrastructure failure.
+    # and room for one second run of unfinished tests after an infrastructure failure, or for
+    # running a failed test once more.
     timeout-minutes: 180
     strategy:
       fail-fast: false
@@ -327,6 +336,9 @@ jobs:
         shard: [1, 2, 3, 4, 5]
     env:
       NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      # The test step's limit; scripts/ui-test-run-lib.sh runs a failed test once more only when
+      # the retry fits in what is left of it (docs/TESTING.md, "Infrastructure and test failures").
+      NOPE_TEST_TIME_LIMIT_MINUTES: "170"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -338,6 +350,8 @@ jobs:
       - name: Unpack the build
         run: mkdir -p products && tar -xzf ui-tests-build.tgz -C products
       - name: Run the UI tests of this shard with accessibility audits on iPad
+        id: tests
+        timeout-minutes: ${{ fromJSON(env.NOPE_TEST_TIME_LIMIT_MINUTES) }}
         run: >
           scripts/run-ui-test-shard.sh "${{ matrix.shard }}" "iPad Air 11-inch (M4)" products ui-tests-ipad.xcresult
           -skip-testing:NopeAppUITests/NopeAppUITests/testSourceCodeIsAnHTTPSLink
@@ -350,13 +364,14 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
       - name: Upload test results
-        if: failure()
+        if: failure() || steps.tests.outputs.retried
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ui-tests-ipad-${{ matrix.shard }}-xcresult
           path: |
             ui-tests-ipad.xcresult
             ui-tests-ipad-interrupted.xcresult
+            ui-tests-ipad-retry-*.xcresult
           retention-days: 7
 
   # Passes when every shard passed; otherwise only with a valid proof from the owner's Mac, a
@@ -397,6 +412,9 @@ jobs:
     timeout-minutes: 45
     env:
       NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      # The test step's limit; scripts/ui-test-run-lib.sh runs a failed test once more only when
+      # the retry fits in what is left of it (docs/TESTING.md, "Infrastructure and test failures").
+      NOPE_TEST_TIME_LIMIT_MINUTES: "30"
     outputs:
       ended: ${{ steps.ended.outputs.ended }}
     steps:
@@ -429,10 +447,12 @@ jobs:
       # Boots the watch Simulator and its paired iPhone before the tests, so the iPhone doesn't
       # boot during the first test, whose launch then timed out. As for the iPhone and iPad
       # shards, the app is launched once before the tests (its first launch on a Simulator that
-      # has just booted took longer than XCTest waits), a test failure is never run again, and
-      # an infrastructure failure, a failed or stuck boot included, is run again once, without
-      # the tests that passed (scripts/run-watch-ui-tests.sh).
+      # has just booted took longer than XCTest waits), a test that failed runs once more, alone,
+      # and an infrastructure failure, a failed or stuck boot included, is run again once,
+      # without the tests that passed (scripts/run-watch-ui-tests.sh).
       - name: Run the watch UI tests with accessibility audits
+        id: tests
+        timeout-minutes: ${{ fromJSON(env.NOPE_TEST_TIME_LIMIT_MINUTES) }}
         run: scripts/run-watch-ui-tests.sh "$WATCH_SIMULATOR" DerivedData ui-tests-watch.xcresult
       - name: Upload the per-test results
         if: always()
@@ -443,13 +463,14 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
       - name: Upload test results
-        if: failure()
+        if: failure() || steps.tests.outputs.retried
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ui-tests-watch-xcresult
           path: |
             ui-tests-watch.xcresult
             ui-tests-watch-interrupted.xcresult
+            ui-tests-watch-retry-*.xcresult
           retention-days: 7
       # Reached whenever the job ends on its runner, whatever its result. When the runner itself
       # is lost, it isn't, and the job below runs the watch tests on a second runner.
@@ -466,6 +487,9 @@ jobs:
     timeout-minutes: 45
     env:
       NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      # The test step's limit; scripts/ui-test-run-lib.sh runs a failed test once more only when
+      # the retry fits in what is left of it (docs/TESTING.md, "Infrastructure and test failures").
+      NOPE_TEST_TIME_LIMIT_MINUTES: "30"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -496,10 +520,12 @@ jobs:
       # Boots the watch Simulator and its paired iPhone before the tests, so the iPhone doesn't
       # boot during the first test, whose launch then timed out. As for the iPhone and iPad
       # shards, the app is launched once before the tests (its first launch on a Simulator that
-      # has just booted took longer than XCTest waits), a test failure is never run again, and
-      # an infrastructure failure, a failed or stuck boot included, is run again once, without
-      # the tests that passed (scripts/run-watch-ui-tests.sh).
+      # has just booted took longer than XCTest waits), a test that failed runs once more, alone,
+      # and an infrastructure failure, a failed or stuck boot included, is run again once,
+      # without the tests that passed (scripts/run-watch-ui-tests.sh).
       - name: Run the watch UI tests with accessibility audits
+        id: tests
+        timeout-minutes: ${{ fromJSON(env.NOPE_TEST_TIME_LIMIT_MINUTES) }}
         run: scripts/run-watch-ui-tests.sh "$WATCH_SIMULATOR" DerivedData ui-tests-watch.xcresult
       - name: Upload the per-test results
         if: always()
@@ -510,13 +536,14 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
       - name: Upload test results
-        if: failure()
+        if: failure() || steps.tests.outputs.retried
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ui-tests-watch-second-runner-xcresult
           path: |
             ui-tests-watch.xcresult
             ui-tests-watch-interrupted.xcresult
+            ui-tests-watch-retry-*.xcresult
           retention-days: 7
 
   # Passes when the watch tests passed on either runner; otherwise only with a valid proof from
@@ -594,6 +621,9 @@ jobs:
     timeout-minutes: 160
     env:
       NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      # The test step's limit; scripts/ui-test-run-lib.sh runs a failed test once more only when
+      # the retry fits in what is left of it (docs/TESTING.md, "Infrastructure and test failures").
+      NOPE_TEST_TIME_LIMIT_MINUTES: "145"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -608,6 +638,8 @@ jobs:
         run: scripts/add-simulator-runtime.sh iOS "$OLDEST_OS" "$OLDEST_IPHONE_TYPE" "$OLDEST_IPHONE"
       # The same script as the iOS 27 shards, on the iOS 26 iPhone (SIMULATOR_OS).
       - name: Run the first iPhone UI test shard with accessibility audits on iOS 26
+        id: tests
+        timeout-minutes: ${{ fromJSON(env.NOPE_TEST_TIME_LIMIT_MINUTES) }}
         run: SIMULATOR_OS="$OLDEST_OS" scripts/run-ui-test-shard.sh 1 "$OLDEST_IPHONE" products ui-tests-oldest-os.xcresult
       - name: Upload the per-test results
         if: always()
@@ -618,13 +650,14 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
       - name: Upload test results
-        if: failure()
+        if: failure() || steps.tests.outputs.retried
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ui-tests-oldest-os-xcresult
           path: |
             ui-tests-oldest-os.xcresult
             ui-tests-oldest-os-interrupted.xcresult
+            ui-tests-oldest-os-retry-*.xcresult
           retention-days: 7
 
   ui-tests-watch-oldest-os:
@@ -636,6 +669,9 @@ jobs:
     timeout-minutes: 70
     env:
       NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      # The test step's limit; scripts/ui-test-run-lib.sh runs a failed test once more only when
+      # the retry fits in what is left of it (docs/TESTING.md, "Infrastructure and test failures").
+      NOPE_TEST_TIME_LIMIT_MINUTES: "50"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -662,6 +698,8 @@ jobs:
           -derivedDataPath DerivedData
           CODE_SIGNING_ALLOWED=NO
       - name: Run the watch UI tests with accessibility audits on watchOS 26
+        id: tests
+        timeout-minutes: ${{ fromJSON(env.NOPE_TEST_TIME_LIMIT_MINUTES) }}
         run: >
           scripts/run-watch-ui-tests.sh "platform=watchOS Simulator,name=$OLDEST_WATCH,OS=$OLDEST_OS"
           DerivedData ui-tests-watch-oldest-os.xcresult
@@ -674,13 +712,14 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
       - name: Upload test results
-        if: failure()
+        if: failure() || steps.tests.outputs.retried
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ui-tests-watch-oldest-os-xcresult
           path: |
             ui-tests-watch-oldest-os.xcresult
             ui-tests-watch-oldest-os-interrupted.xcresult
+            ui-tests-watch-oldest-os-retry-*.xcresult
           retention-days: 7
 
   oldest-os:

@@ -911,7 +911,10 @@ iPhone 18 Pro Simulator and every iPad shard on the iPad Air 11-inch (M4) Simula
 (`scripts/run-ui-test-shard.sh`, with the test the iPad jobs skip skipped), then builds the watch
 app and runs its UI tests (`scripts/run-watch-ui-tests.sh`). It refuses a tree with changes or
 untracked files, a gh login that isn't listed and a commit GitHub doesn't have. It stops at the
-first failure and then posts nothing, leaving the worktree and its result bundles.
+first failure and then posts nothing, leaving the worktree and its result bundles. A test that
+failed and then passed when run once more (see "Infrastructure and test failures") doesn't stop
+it: at the end it lists those tests as flaky, with their first failure, and the status's
+description says how many there were ("…, 2 after a retry; key …").
 
 Two differences from the GitHub shards:
 
@@ -1011,8 +1014,8 @@ two others failed to launch the app within its time limit; both happened on a Si
 runner had to boot itself. Such a run, in which the test runner failed before any test started (any "… while preparing to
 run tests" error, including "Test crashed with signal term while preparing to run tests", which
 ended an iPad shard of build 43786103024 after its Simulator took five minutes to boot), is an
-infrastructure failure and is run again once; a test that failed is never run again (see
-"Infrastructure and test failures" below). `scripts/test-ui-test-shards.sh` tests the scripts.
+infrastructure failure and is run again once; a test that failed is run once more, alone, and
+recorded as flaky when it passes there (see "Infrastructure and test failures" below). `scripts/test-ui-test-shards.sh` tests the scripts.
 
 On the runner the tests wait for state rather than assume speed: a new launch waits until the
 previous run of the app has exited (`launchAfterThePreviousRunExits()`; a launch right after
@@ -1198,9 +1201,10 @@ second job yet; a lost runner there fails the build.
 `scripts/ui-test-run-lib.sh`, used by the shard jobs and the watch job, classifies a failed
 run from its `xcodebuild` log:
 
-- **Test failure:** a test failed with a result (`Test Case '…' failed`). It is never run
-  again, whatever else happened in the run. A test that was cut short with no sign that the
-  Simulator died (the test runner crashed or was ended) counts as a test failure too.
+- **Test failure:** a test failed with a result (`Test Case '…' failed`), whatever else
+  happened in the run. A test that was cut short with no sign that the Simulator died (the test
+  runner crashed or was ended) counts as a test failure too. Such a test is run once more (see
+  "A failed test runs once more" below).
 - **Infrastructure failure:** no test failed with a result, and no test started, or the
   Simulator's host process left a new crash report (`SimLaunchHost*.ips` in
   `~/Library/Logs/DiagnosticReports`), or the log has "simulator runtime is not available" or
@@ -1212,9 +1216,33 @@ job, the tests that have no result yet (the finished ones are passed to `xcodebu
 run per job at most, and no workflow-level rerun, so no passed job or test is repeated. The
 first run's result bundle is kept and uploaded as `…-interrupted.xcresult`.
 
-The job summary on GitHub names the classification ("ui-tests 2/4: Passed", "Test failure" or
-"Infrastructure failure"), says whether a second run happened, and lists the tests that failed
-or were cut short.
+**A failed test runs once more** (issue #159, decided 2026-11-22). After a test failure, in
+the first run or in the second run after an infrastructure failure, each test that failed or
+was cut short runs once more, alone (`-only-testing`), in the same job on the same Simulator,
+with its own result bundle `…-retry-<n>.xcresult`. This is separate from the infrastructure
+second run, and preparing the Simulator is not repeated for it.
+
+- Failed, then passed alone: the job passes, and the test is recorded as flaky.
+- Failed twice: the job fails as a test failure, as before; no further test is retried.
+- Cut short (a crash) and cut short again, or the retry ends before the test starts: the test
+  has no result on its retry, and the job fails.
+- A failed run in which no test failed or was cut short by name: nothing is retried, and the
+  job fails.
+- The job passes only when every test of the shard has a result: a retry that passes while
+  another test of the shard never ran still fails it.
+
+The retry has to fit in the test step's time limit: each test job sets
+`NOPE_TEST_TIME_LIMIT_MINUTES`, which is also the step's `timeout-minutes`. A retry runs only
+when the test's time in its first run plus two minutes for starting `xcodebuild` fits in what
+is left of that limit less one minute, and it runs under `scripts/with-timeout.sh` with what is
+left. When it doesn't fit, or runs out of time, the job fails and its summary says so. On the
+owner's Mac there is no limit. The unit tests are never retried.
+
+The job summary on GitHub names the classification ("ui-tests 2/4: Passed", "Passed with 1
+flaky test(s)", "Test failure" or "Infrastructure failure"), says whether a second run
+happened, lists the tests that failed or were cut short, and lists every test run once more
+with its first failure message and its retry's result. A job that retried a test keeps its
+result bundles (the first run's and the retry's) as when it fails, for finding the cause.
 
 #### Flaky tests
 
@@ -1222,9 +1250,14 @@ Each shard job and the watch job uploads its per-test results as an artifact
 (`test-results-ui-tests-<n>`, `test-results-ui-tests-ipad-<n>`, `test-results-ui-tests-watch`,
 kept 30 days): a JSON Lines file with one line per test and run of it, holding `test`
 (Class/test), `result` (`passed`, `failed`, `skipped`, or `interrupted` for a test that
-started and has no result), `seconds`, `attempt` (2 for the second run after an infrastructure
-failure), `job`, `device`, `shard`, `runner_image`, `run_id`, `run_attempt` and `sha` (the
-pull request's head commit).
+started and has no result, or a retried test that didn't start), `seconds`, `attempt` (1 for
+the first run, then counted up for the second run after an infrastructure failure and for each
+retry), `job`, `device`, `shard`, `runner_image`, `run_id`, `run_attempt` and `sha` (the pull
+request's head commit). A failed test's line has `message`, its first failure in the log. A line
+from a second run has `retry`: `infrastructure` for the second run after an infrastructure
+failure, `test-failure` for a failed test run once more; a `test-failure` line also has
+`first_failure`. Every test with a `test-failure` line is flaky when that line's `result` is
+`passed`, and failed twice otherwise.
 
 ```sh
 scripts/flaky-tests.sh                 # the last 20 runs of the build workflow, with gh
@@ -1232,9 +1265,11 @@ scripts/flaky-tests.sh -n 50 -b main   # more runs, one branch
 scripts/flaky-tests.sh --from results  # result files already downloaded
 ```
 
-It lists, with counts, the tests that passed and failed on the same commit, the tests that
+It lists, with counts, the tests run once more after a test failure (with how many runs and
+how each retry ended), the tests that passed and failed on the same commit, the tests that
 passed and failed across the commits looked at, and the tests that passed only in the second
-run after an infrastructure failure.
+run after an infrastructure failure. A test retried in two or more runs gets an issue (it is
+marked "needs an issue"); issue #158 tracks fixing the causes.
 
 #### Dynamic Type findings on the iPad runner
 

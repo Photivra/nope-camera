@@ -18,7 +18,9 @@
 #   3. every iPad shard on the iPad Air 11-inch (M4) Simulator, without the test the iPad jobs skip;
 #   4. the NopeWatch build and its UI tests on the Apple Watch Series 12 (46mm) Simulator
 #      (scripts/run-watch-ui-tests.sh).
-# It stops at the first failure, leaving the worktree and its result bundles for inspection.
+# It stops at the first failure, leaving the worktree and its result bundles for inspection. A
+# test that failed and passed when run once more, alone (scripts/ui-test-run-lib.sh), doesn't
+# stop it: such tests are listed as flaky at the end and counted in the status's description.
 # Unlike build.yml it builds against the published C2PA library that Package.swift pins by
 # checksum, not one built from source (the c2pa-lib job checks that they are the same).
 # When all pass it posts the status on the commit, with the content key of its UI test inputs
@@ -129,6 +131,18 @@ step xcodebuild build-for-testing -project App/NopeCamera.xcodeproj -scheme Nope
 step scripts/run-watch-ui-tests.sh "$watch" DerivedData-watch results/ui-tests-watch.xcresult
 
 trap - ERR
+# The tests that failed once and passed when run once more: listed, and counted in the status.
+flaky=$(scripts/ui-test-run-lib.sh --flaky results/*-results.jsonl)
+if [[ -n $flaky ]]; then
+  count=$(grep -c . <<<"$flaky")
+  echo
+  echo "Run once more after a test failure ($count), recorded as flaky in results/*-results.jsonl:"
+  echo "$flaky"
+  description="iPhone, iPad and watch UI tests passed, $count after a retry; key $key"
+else
+  echo
+  echo "No test needed a retry."
+fi
 [[ $(scripts/ui-content-key.sh HEAD) == "$key" ]] || { echo "error: the worktree's content key changed; nothing was posted" >&2; exit 1; }
 "$gh" api "repos/$repo/statuses/$sha" -f state=success -f context="$context" -f description="$description" --silent \
   || { echo "error: every test passed but the status couldn't be posted; nothing was posted. The worktree is $work" >&2; exit 1; }
