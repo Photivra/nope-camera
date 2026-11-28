@@ -256,6 +256,8 @@ def build_cases(base):
     home = (out / "index.html").read_text() if (out / "index.html").exists() else ""
     if "https://apps.apple.com/us/app/id6838151647" not in home or "Not on the App Store yet" in home:
         failures.append("on the App Store: the home page doesn't link the App Store, or still says it isn't on it")
+    if 'app-store-badge' not in home or 'width="120" height="40"' not in home:
+        failures.append("on the App Store: the home page has no App Store badge drawn at 120 by 40")
 
     tree, out = fresh("support-stale")
     set_last_updated(tree, "site/content/support.json", "2026-01-01")

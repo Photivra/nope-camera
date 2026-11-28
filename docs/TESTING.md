@@ -10,16 +10,28 @@ Every test that CI runs is run and verified locally before a branch is pushed fo
 merged to `main` (AGENTS.md, "Pull requests and releases"). The maintainer runs them on their Mac:
 
 - the quick checks below and the repository checks (`scripts/check-repo.sh`,
-  `scripts/check-security.sh`, `scripts/check-docs.sh`);
+  `scripts/check-security.sh`);
 - the unit tests with the coverage gate ("Unit tests and coverage");
 - every iPhone and iPad UI test shard (`scripts/run-ui-test-shard.sh`) and the watch UI tests
-  (`scripts/run-watch-ui-tests.sh`), or all of them in one run with
-  `scripts/owner-mac-ui-proof.sh` ("UI tests and accessibility audits", "Continuous integration").
+  (`scripts/run-watch-ui-tests.sh`), as "UI tests and accessibility audits" and "Continuous
+  integration" describe;
+- when the change touches the website, the site's tests (`scripts/test-check-site.sh` and
+  `scripts/check-site.sh --preview`, "The website");
+- when the change touches the C2PA library, the build from source with its checks ("The C2PA
+  library and the networking check");
+- the advisory iOS 26 and watchOS 26 jobs, when those Simulator runtimes are installed on the Mac.
+  Without them, these jobs run on GitHub only, and a failure there is fixed before the merge.
 
 A failure is fixed, not rerun until it passes, and a test that passed only on a second try counts
 as a failure. The full run repeats after each fix until it is clean; only then does the branch go
-to CI. Run the UI tests when the Mac is otherwise idle: they are sensitive to load. A push that
-changes only files the build workflow doesn't run on needs none of this.
+to CI. Run the UI tests when the Mac is otherwise idle: they are sensitive to load.
+
+`scripts/owner-mac-ui-proof.sh` is not the routine local run. It is the release fallback described
+in "When the GitHub UI runners are failing": it runs every UI shard and the watch tests in a clean
+checkout of a commit that is already on GitHub, and then posts the `ui-tests (owner Mac)` status
+that the UI jobs accept in place of their GitHub shards. To use it before CI, push the commit to a
+branch that starts no workflow, run the script there, and only then move the pull request's branch
+to that commit.
 
 ## Quick checks (seconds, no build)
 
@@ -892,8 +904,8 @@ the deployment target at
 
 A fallback for when GitHub's macOS runners fail the UI shards for reasons outside the tests
 (Simulator setup failures, lost runners) run after run. The GitHub shards remain the default and
-run on every pull request and push; the ruleset and its required checks don't change, and
-`repo-checks`, `unit-tests` and `docs` run only on GitHub.
+run on every pull request and push; the ruleset and its required checks don't change. The proof
+stands in only for the UI jobs: `repo-checks`, `unit-tests` and `docs` must still pass on GitHub.
 
 `ui-tests`, `ui-tests-ipad` and `ui-tests-watch` pass when their shards pass. When they don't,
 each passes only with a valid proof (`scripts/check-owner-mac-proof.sh`): the newest commit
