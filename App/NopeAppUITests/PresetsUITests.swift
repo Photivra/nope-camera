@@ -15,13 +15,20 @@ extension NopeAppUITests {
         XCTAssertTrue(app.navigationBars["Presets"].waitForExistence(timeout: 5))
     }
 
-    /// Scrolls the list until a button is on screen, then taps it.
+    /// Scrolls the list until a button is on screen, then taps it. A row above the visible part
+    /// of the list is scrolled back to with a swipe down; the list is then not at its top, so the
+    /// swipe scrolls it and can't pull the sheet down and close it, as a swipe down at the top does.
     @MainActor
     func tapListButton(_ app: XCUIApplication, _ label: String) {
         let button = app.buttons[label]
         var swipes = 0
         while !(button.exists && button.isHittable) && swipes < 8 {
-            app.swipeUp()
+            let listTop = app.navigationBars.firstMatch.frame.maxY
+            if button.exists && button.frame.minY < listTop {
+                app.swipeDown()
+            } else {
+                app.swipeUp()
+            }
             swipes += 1
         }
         button.tap()
@@ -184,8 +191,6 @@ extension NopeAppUITests {
         XCTAssertTrue(app.navigationBars["Presets"].waitForExistence(timeout: 5))
         try audit(app, checksContrast: !isPad)
         savePreset(app, named: "Bugs at night")
-        app.swipeDown()
-        app.swipeDown()
         tapListButton(app, "Bugs at night")
         XCTAssertTrue(element(app, containing: "“Bugs at night” applied.").waitForExistence(timeout: 5))
         try audit(app, checksContrast: !isPad)

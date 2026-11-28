@@ -390,6 +390,11 @@ Code is written for the next person to read it, whether a human contributor or a
 ## Pull requests and releases
 
 - Work on a branch and open a pull request; merge when CI is green and coverage holds.
+- **Tests run locally before CI.** Every test that CI runs is run and verified locally before a
+  branch is pushed for a CI run or merged to `main`: the repository checks, the unit tests with
+  the coverage gate, every iPhone and iPad UI test shard, and the watch tests. The maintainer
+  runs them on their Mac (docs/TESTING.md, "Run every test locally before CI"). A failure is
+  fixed, not rerun until it passes; a test that passed only on a second try counts as a failure.
 - Sign off commits (`git commit -s`).
 - **Versioning:** semantic versioning ([semver.org](https://semver.org)), `MAJOR.MINOR.PATCH`.
   - MAJOR for changes that break what users rely on (formats, metadata defaults, signature

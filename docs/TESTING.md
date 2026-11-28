@@ -4,6 +4,23 @@ Every change ships with tests (AGENTS.md, "Full test coverage"). This page says 
 Local toolchain: Xcode 27.2 with the iOS 27.2 Simulator. The app supports iOS and iPadOS 26.0
 and later, and its Apple Watch app watchOS 26.0 and later (issue #78).
 
+## Run every test locally before CI
+
+Every test that CI runs is run and verified locally before a branch is pushed for a CI run or
+merged to `main` (AGENTS.md, "Pull requests and releases"). The maintainer runs them on their Mac:
+
+- the quick checks below and the repository checks (`scripts/check-repo.sh`,
+  `scripts/check-security.sh`, `scripts/check-docs.sh`);
+- the unit tests with the coverage gate ("Unit tests and coverage");
+- every iPhone and iPad UI test shard (`scripts/run-ui-test-shard.sh`) and the watch UI tests
+  (`scripts/run-watch-ui-tests.sh`), or all of them in one run with
+  `scripts/owner-mac-ui-proof.sh` ("UI tests and accessibility audits", "Continuous integration").
+
+A failure is fixed, not rerun until it passes, and a test that passed only on a second try counts
+as a failure. The full run repeats after each fix until it is clean; only then does the branch go
+to CI. Run the UI tests when the Mac is otherwise idle: they are sensitive to load. A push that
+changes only files the build workflow doesn't run on needs none of this.
+
 ## Quick checks (seconds, no build)
 
 ```sh
