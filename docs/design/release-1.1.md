@@ -6,6 +6,8 @@ This document covers the user-facing parts of three issues, and of six more that
 
 Sections 13 to 23 were added on 2026-11-22 for the 24 other issues of the milestone, all kept in 1.1.0 by the owner. The largest is the Appearance themes (issue 138, section 13), with a figure for every theme.
 
+Sections 24 to 38 were added on 2026-11-28 for the issues that joined the milestone after 1.0.0 was released (issues 163 to 184, 187 and 188). Section 24 lists them and the rules they share; their figures are HTML pages in [release-1.1/](release-1.1/).
+
 | Section | Issue | What |
 | --- | --- | --- |
 | 1 | 120 | The Show Controls button in clean view, made quieter |
@@ -31,12 +33,13 @@ Sections 13 to 23 were added on 2026-11-22 for the 24 other issues of the milest
 | 21 | 148, 149, 150 | Small changes to words and states |
 | 22 | 141, 146, 147, 151, 153 to 155, 157 to 162 | Changes without a screen (pointers to the plan, and the CI diagram) |
 | 23 | | Draft strings 122 to 151 |
+| 24 to 38 | 166 to 184, 188 | Added on 2026-11-28: see the table in section 24 |
 
 Evidence note: everything about today's behavior was read from the code on branch `n100-H` at `9cef00d`. Nothing here was measured on a device or run on a simulator. Contrast ratios are calculated from the color values with the WCAG 2.2 formula (the same one `MeasuredContrast` uses in the UI tests); they are not measured from a screen. Each statement that needs a device is listed as a device check in the plan, section 7.
 
-Q, the quick menu, gains one tile: Appearance, fixed and last, a button that opens a sheet (issue 138, section 13; decided by the owner on 2026-11-22). Nothing else here adds, removes or moves a tile; no tile is made editable, reorderable or swipeable; and Q still opens only from its button. The new settings are in Settings, and Share… is in the Last Photo viewer.
+Q, the quick menu, gains one tile: Appearance, fixed and last, a button that opens a sheet (issue 138, section 13; decided by the owner on 2026-11-22). The value text of the Presets tile changes (issue 167, section 33), which needs owner sign-off before build. Nothing else here adds, removes or moves a tile; no tile is made editable, reorderable or swipeable; and Q still opens only from its button. The new settings are in Settings, and Share… is in the Last Photo viewer.
 
-Names: the interface says "nope."; documents and the About screen say "Photivra Nope Camera" (AGENTS.md, "Name and wordmark").
+Names: documents and the About screen say "Photivra Nope Camera" (AGENTS.md, "Name and wordmark"). By issue 183 (section 35), Settings, the guide and the Honesty screen say it too, and "nope." stays only where the brand mark stands alone; section 24 says which earlier draft strings are reworded for it.
 
 ## 1. The Show Controls button (issue 120)
 
@@ -661,3 +664,355 @@ Notes:
 - **146 and 147** say "that nope. makes" only if decision 52 is (a). With (b) they say "made by the camera from the same capture".
 - **149 and 150** replace "The timer was canceled. No photo was taken." only for the cases named; a canceled timer keeps that answer.
 - **151** is used where the app draws the activity's text; what iOS adds to a stale activity is recorded in device check 23.
+
+## 24. Sections added on 2026-11-28
+
+Sections 25 to 37 were added on 2026-11-28 for the issues that joined the milestone after 1.0.0 was released: issues 163 to 184, 187 and 188, and five carried over from 1.0.0 (58, 81, 104, 126, 145). The figures of these sections are self-contained HTML pages in [release-1.1/](release-1.1/) (inline CSS and SVG, no scripts, fonts or other requests), drawn in the look of the 1.0.0 set and of the SVG figures above. They are sketches, as the others are.
+
+Evidence note for these sections: today's behavior was read from the code of the released 1.0.0 (branch `release-1.0.0`). Nothing was built, run or measured for them. What iOS or watchOS does is marked "to confirm" with the check that settles it.
+
+Three rules apply to every section below.
+
+- **Names (issue 183, section 35).** Settings, the guide, the Honesty screen and every document name the app "Photivra Nope Camera" on first use in a passage and "the app" after it. "nope." stays where the brand mark stands alone: the Home Screen name, the wordmark, the camera screen's own branding, and quotes of a Siri phrase or a permission prompt. The strings of section 38 are written this way. The earlier draft strings that name the app in Settings, Honesty or guide text are reworded by the same rule when they are built: strings 2, 5, 6, 34, 103, 107a, 114 to 116, 118 to 121, 127, 131, 132 and 146. Strings 106, 150 and 151 (the viewer, a Siri answer, the Live Activity) are not Settings or Honesty text; they say "the app" where that reads well, and are checked in the Honesty review.
+- **Q, the quick menu.** Its tiles stay fixed and button-opened, with no editing in place, no reordering and no swipe. One section changes Q: section 33 changes the value text of the Presets tile, and needs owner sign-off before build. No other section adds, removes, moves or edits a tile; the Light Meter (section 36) is opened from Pro Tools, not from Q.
+- **Burst Limit is removed (issue 180, section 32).** No figure or string below shows it, and the figures of 1.0.0 that do (`screens/burst-count-*`, and the Burst Limit sections of [finish-1.0.md](finish-1.0.md) and [BURST.md](BURST.md)) are removed when the removal is built, so that only the current set is kept.
+
+| Section | Issue | What | Figure |
+| --- | --- | --- | --- |
+| 25 | 169 | Camera rows: gaps, tile insets and the edge fade | [camera-rows.html](release-1.1/camera-rows.html) |
+| 26 | 170, 171, 181 | Apple Watch: connecting, one status at a time, Start Burst | [watch-status.html](release-1.1/watch-status.html) |
+| 27 | 172 | Shooting Modes | [shooting-modes.html](release-1.1/shooting-modes.html) |
+| 28 | 173 | Settings rows: one alignment rule | [settings-rows.html](release-1.1/settings-rows.html) |
+| 29 | 178 | Show Steady Hint | [settings-rows.html](release-1.1/settings-rows.html), panel D |
+| 30 | 166, 174, 175 | Clean view: the swipe area, the guide page, the bars | [clean-view.html](release-1.1/clean-view.html) |
+| 31 | 176 | Night Mode: the app's own time and battery | [night-status.html](release-1.1/night-status.html) |
+| 32 | 180 | Burst without a Burst Limit | none |
+| 33 | 167 | Q: the Presets tile at the same size as the others | [presets-tile.html](release-1.1/presets-tile.html) |
+| 34 | 168 | Honesty: the App Store's totals | none |
+| 35 | 183 | The pronunciation, and the full name in Settings and the documents | none |
+| 36 | 184 | Light Meter (go or no-go after research) | [light-meter.html](release-1.1/light-meter.html) |
+| 37 | 188, 179 | Monochrome copies (go or no-go after research); what capture speed and battery work shows on screen | [monochrome.html](release-1.1/monochrome.html) |
+| 38 | | Draft strings 152 to 190 | |
+
+## 25. Camera rows: gaps, tile insets and the edge fade (issue 169)
+
+Figure: [release-1.1/camera-rows.html](release-1.1/camera-rows.html).
+
+### 25.1 What exists
+
+`DriveStrip.swift` lays the drive words out in a row with `NopeSpace.xxs` (4 pt) between them where they fit and with no spacing in the scrolling row it falls back to (`ViewThatFits`). A word's visible capsule is as wide as its padded text, so neighbors touch. A manual readout shows its value at the tile's full width; a five-digit ISO reaches both edges. A row that scrolls is cut at the screen's edge with no sign that more follows.
+
+### 25.2 The rules
+
+- **Drive words.** The gap between the visible shapes of two neighboring drive words is `NopeSpace.xs` (8 pt), in the fitted row and in the scrolling row, at every text size, upright, sideways and on iPad. The gap is never reduced to make the row fit: a row that does not fit scrolls, as today, and the selected word is scrolled into view, as today. Each word keeps its 44 pt target; targets may meet, shapes may not.
+- **Readouts and setting tiles.** Text keeps `NopeSpace.xs` (8 pt) from each side of its tile, and never less than `NopeSpace.xxs` (4 pt). A value that does not fit is handled in this order: (1) shown in full; (2) scaled down, to 85% at most (`minimumScaleFactor(0.85)`); (3) the unit word moves up beside the mode letter ("M ISO" above "12,096"), so the number is whole. A value is never cut, rounded or abbreviated. VoiceOver reads the same label and value in all three forms.
+- **The edge fade.** A row that scrolls is clipped at its container's edge. At an edge with content beyond it, the content fades out over `NopeSize.edgeFade` (16 pt, a new token) by an alpha mask; at an edge with nothing beyond it there is no fade. The fade follows scrolling. With Reduce Transparency it is a plain clip. The mask has no color of its own, so it is the same in Night Mode and in every theme. Right to left it is mirrored.
+- **Where.** The drive strip and the manual readout row, and any other row of the camera screen that scrolls sideways. Not Q.
+
+### 25.3 Build notes
+
+- One modifier, `edgeFade(axis:)`, in a new `NopeUI/EdgeFade.swift`, with its rule as a pure function (`EdgeFadeRule.edges(offset:contentLength:containerLength:)` returning the leading and trailing fade) so that it is unit tested without a screen. The scroll position comes from `onScrollGeometryChange`.
+- The readout's three forms are one layout (`ReadoutValueLayout`) that measures and picks; no string is built by joining fragments.
+- `NopeSize.edgeFade` is added to `DesignTokens.swift` and [tokens.md](tokens.md) at integration (the token files are another group's in that wave).
+
+### 25.4 Accessibility
+
+The scroll rows keep their order and their labels. The fade is decoration and is hidden from assistive technologies. Nothing here is conveyed by the fade alone: VoiceOver reads every word of the row whether or not it is in view. Audits run at the default and the largest text size, in Night Mode and right to left.
+
+## 26. Apple Watch: connecting, one status at a time, Start Burst (issues 170, 171, 181)
+
+Figure: [release-1.1/watch-status.html](release-1.1/watch-status.html). **Issue 171 asks for these comps to be approved by the owner before the build: decision 56.**
+
+### 26.1 What exists
+
+`RemoteShutterView.swift` stacks the status line, the last result as a second line of the same weight, the main button and the Delay picker in one scrolling column. After a photo, leaving the camera on the phone shows a warning and "Saved, not signed" together; the disabled Take Photo looks close to enabled; and Delay is cut by the bottom edge. The watch asks the phone for its status only when its own session reports a change or the app becomes active, and the phone sends its status only when the camera's status changes (issue 170). Take Photo sends one photo per tap, so a burst cannot be taken from the watch (issue 181).
+
+### 26.2 One status at a time (issue 171)
+
+- **The status line** is the current state and nothing else: connecting, can't reach, a camera problem, ready, a countdown, taking, a running burst, saving. It is `headline` weight with its symbol, in the plain color, or in amber with the warning symbol for a warning.
+- **The instruction** for a state that needs one is a second, smaller line under the main button ("Open the app on your phone."), not a second warning above it. The warning says what is wrong; the instruction says what to do.
+- **The main button** when it cannot be used is drawn as an outline with a dimmed label (at least 3:1, decision 51), not as a filled button, so that it reads as unavailable at a glance. It keeps its label, and VoiceOver reads it as dimmed with the instruction as its hint.
+- **The last result** is a small chip in the bottom bar: a symbol and the time since the photo ("Just now", "1 min", "2 min"). Teal with the seal for saved and signed; plain with an info mark for saved without a signature by choice; amber with the warning symbol for every other result. It never appears as a status line. It is removed 30 minutes after the photo and when the watch app starts again.
+- **A tap on the chip** opens a sheet: "Last Photo", the time since it, the result in words, and for an unsigned photo the reason the phone reported (`lastUnsignedReason`: turned off, not available, failed), with where to see more. Strings 165 and 166.
+- **Layout A (recommended).** The status line, the main button, the instruction when there is one, and a bottom bar (`ToolbarItemGroup(placement: .bottomBar)`) with Delay on the leading side (the timer symbol and its value; a tap opens the picker as today) and the chip on the trailing side. Nothing scrolls at the default text size on 40 mm to 49 mm, so no control is cut. To confirm on the 40 mm Simulator as the first step of the build: that the bottom bar holds a labeled Delay item.
+- **Layout B (the fallback, and the owner's alternative).** No bottom bar. The first screen is exactly the status line, the main button and the instruction (the column's minimum height is the screen's), and scrolling shows the last result as a dated line and then Delay. Used if the check above fails or by decision 56.
+- At the largest text sizes both layouts scroll, as today. Always On keeps the status line and the button's outline.
+
+### 26.3 The states and their words
+
+| State | Status line | Instruction under the button | Main button |
+| --- | --- | --- | --- |
+| Connecting | Connecting… | | Take Photo, unavailable |
+| Phone not reachable | Can't reach your phone (warning) | Unlock it and open the app. | Take Photo, unavailable |
+| Camera not running | Camera not available (warning) | Open the app on your phone. | Take Photo, unavailable |
+| Camera access not asked | Camera access needed (warning) | Open the app on your phone to allow it. | Take Photo, unavailable |
+| Camera access declined | Camera access is off (warning) | Turn it on in your phone's Settings app. | Take Photo, unavailable |
+| No usable camera | No camera to use (warning) | Your phone has no camera the app can use. | Take Photo, unavailable |
+| Different versions | Update the app on your phone and watch (warning) | | Take Photo, unavailable |
+| Ready | Camera ready | | Take Photo |
+| Countdown | Photo in 3 seconds | | Cancel Timer |
+| Taking or saving | Taking photo… | | Take Photo, unavailable |
+| Ready, in Burst | Burst ready | With a Delay: Burst after 10 seconds. Tap Stop to end. | Start Burst |
+| Countdown, in Burst | Burst in 7 seconds | | Cancel Timer |
+| Burst running | Burst, with the phone's count below it ("12 photos") | | Stop |
+| Burst stopped, saving | Saving 12 photos… | | Start Burst, unavailable |
+
+The watch says "the app": the watch app is the remote for Photivra Nope Camera, the sentences have to fit a 40 mm screen, and "nope." in a sentence is what issue 183 removes.
+
+### 26.4 Connecting faster (issue 170)
+
+- **Phone.** `PhoneWatchSession` sends the current status at once when the watch becomes reachable (`sessionReachabilityDidChange`) and when activation completes, if the camera screen is serving.
+- **Watch.** While the status is Connecting or a can't-reach warning and the app is active, the watch asks again after 1, 2 and 4 seconds and then every 5 seconds. The schedule stops when the phone answers, when the app is no longer active and when the screen is off. A request that fails or times out moves to Connecting and is asked again; only the session reporting the phone unreachable shows "Can't reach your phone".
+- The schedule is a value type in `NopeCore` (`WatchRetrySchedule`) driven by `NopeClock`, so that it is unit tested with the fake clock.
+- No new screen: figure panel 2.
+
+### 26.5 Start Burst from the watch (issue 181; decided by the owner)
+
+- **The button.** While the phone's camera is in Burst, the watch's main button is **Start Burst**. A tap starts a burst on the phone exactly as the phone's Start Burst does (`BurstStart.started`), and the button becomes **Stop**. A tap on Stop ends the burst after the photo being taken. Stop on the phone, the phone's shutter and a hardware button end it too. In every other mode the button is unchanged.
+- **While it runs** the watch shows the running count from the phone. At the end the chip carries the result, and its sheet the phone's summary ("12 photos saved · 4.9 seconds · 2.4 a second"), with whether every photo was signed.
+- **Delay.** With a watch Delay set, Start Burst starts the countdown on the phone, shown and announced as today, with Cancel Timer; then the burst runs until Stop. The instruction line says so before the tap.
+- **Link lost.** A burst started from the watch is watched by the phone: when the watch stops being reachable, the phone keeps the burst running for a grace period of 5 seconds (provisional; set by device check 30) and then ends it as Stop does. If the watch is reachable again within the period, the burst continues. The usual limits (`maximumBurstFrames`, storage) always apply, the photos already taken are saved, and the phone's own Stop always works. The burst card on the phone says why it ended (string 168).
+- **Protocol.** Two commands, `startBurst(delay:)` and `stopBurst`, and in `PhoneUpdate` whether the camera is in Burst, the running count and the summary. `WatchMessageCoding.version` becomes 2; a phone and a watch of different versions show "Update the app on your phone and watch", as today.
+- **VoiceOver** names the button "Start Burst" and "Stop Burst", announces the start, and announces the count at the end, not during the burst.
+
+### 26.6 Accessibility
+
+One status element marked as updating often, as today; the chip is a button named for its result and age ("Last photo, 2 minutes ago, saved and signed"); the instruction is the button's hint and is not read twice. Amber and teal are never the only sign: each has its symbol and words. Audits run on 40 mm and 49 mm at the default and the largest text size, right to left.
+
+## 27. Shooting Modes (issue 172)
+
+Figure: [release-1.1/shooting-modes.html](release-1.1/shooting-modes.html).
+
+- **The row.** Settings › Camera gains a navigation row, Shooting Modes, after Focus on Faces, with the value "All" or "5 of 6" and the explanation "Choose the modes in the camera's row."
+- **The page** lists the six modes in the row's order, each with a one-line description (string 170) and a switch. All are on by default. **Single has no switch: it shows the value "Always Shown"**, with the footer "Single is always shown, so the camera always has a mode." A value in place of a switch is the pattern section 2 uses for a setting that cannot be changed; a disabled switch that is on reads as a fault.
+- **What hiding does.** A hidden mode leaves the camera's row and nothing else. Its settings are kept. It stays available where it is reachable today without the row: Siri and Shortcuts, the watch's Delay, Live Activities. The order of the row never changes, and the row cannot be edited on the camera screen.
+- **The current mode.** Hiding the mode the camera is in switches the camera to Single. An interval or astro series that is running continues to its end. A mode chosen from elsewhere while it is hidden (a preset, Shortcuts) is shown in the row while it is the current mode, and leaves the row when another is chosen: the row always shows the mode the camera is in.
+- **With only Single shown** the row stays, with its one word, so the layout does not change (panel D).
+- **Stored** as `NopeSettings.hiddenDriveModes`, a set that can never hold Single, with the other settings: it survives updates, is cleared by Factory Defaults, is part of the Lock Screen camera's settings copy, and is not stored in presets (applying a preset never changes which controls exist).
+- **Search:** "modes", "hide", "drive", and each mode's name.
+- **VoiceOver** reads each switch with the mode's name, its description as the hint and its state; Single reads "Single, always shown". On the camera, the row's order follows the visible modes.
+- The rule that decides the row (`DriveModeVisibility.shown(hidden:current:)`) is a pure function in `NopeCore`.
+
+## 28. Settings rows: one alignment rule (issue 173)
+
+Figure: [release-1.1/settings-rows.html](release-1.1/settings-rows.html), panels A to C.
+
+- **A navigation row with a value** (Fast Shutter, Viewfinder Overlays, Shooting Modes and the rest): the title is at the leading edge; the value and the chevron are on the title's first baseline at the trailing edge; the explanation and any note run under the title at the row's full text width. The chevron is centered on the title's first line, not on the row.
+- **A row with a choice** (Pinch, Dim After): the choice is a menu on the trailing side (`Picker` with the menu style), its value on the title's first baseline and its mark at the same trailing edge as a chevron. The segmented pickers inside rows are replaced by it. Every section does it the same way.
+- **Two shared edges:** every row's title and explanation start at the same leading edge, and every value's mark ends at the same trailing edge.
+- **At the largest text sizes** the value moves under the title, leading-aligned, as the system does; the chevron stays on the title's first line.
+- **Build:** one component, `SettingsValueRow`, in a new `NopeUI/SettingsRows.swift`, used by `pageRow` and by the choice rows; `PinchSettingRow` and `DimAfterSettingRow` become uses of it. The Burst Limit row is not converted: it is removed (section 32).
+- **Accessibility:** a row is one element, read as title, value, then explanation, as today. A menu row has the system's button trait and "double-tap to choose" behavior.
+
+## 29. Show Steady Hint (issue 178)
+
+Figure: [release-1.1/settings-rows.html](release-1.1/settings-rows.html), panel D.
+
+- **Decided (owner):** a switch in Settings only, on by default. No tile in Q.
+- **The row:** Settings › Screen, after Show Processed Marker: "Show Steady Hint", with the explanation "Shows “Hold it steady or use a tripod.” when the shutter is slow for hand-holding." (string 172).
+- **Off** hides only that hint on the camera screen. The readout, Photo Details and every warning are unchanged, and so is the tripod advice in Bracket Settings and on the comparison screen, which are instructions.
+- **Stored** as `NopeSettings.showsSteadyHint`, kept across updates, turned on by Factory Defaults, with the scope and the Shortcuts availability of Show Processed Marker (whatever that switch has, this one has). `CameraModel.showsSteadyHint` gains the setting as a condition; the rule that decides when a shutter is slow is not changed.
+- **Search:** tripod, steady, shake, blur, hint.
+
+## 30. Clean view: the swipe area, the guide page, the bars (issues 166, 174, 175)
+
+Figure: [release-1.1/clean-view.html](release-1.1/clean-view.html).
+
+### 30.1 The swipe in the empty area (issue 166)
+
+- A vertical swipe of at least 60 pt that is more vertical than horizontal, the same rule as on the picture (`ViewfinderGestures.swipeDistance`), also toggles clean view when it starts in the empty area below the picture, or beside it in the column layout: down hides the controls, up shows them.
+- **Never on a control.** The gesture is on a layer behind the controls, so a touch that starts on the shutter, Q, Last Photo, a drive word, a lens or any other control is that control's. Nothing about any control changes.
+- **A margin of 24 pt** at the bottom edge is left out, for the system's Home gesture.
+- **Off** in the scrolling layout at the largest text sizes, as the picture's swipe is; off while Q is open; never on Q or its tiles.
+- VoiceOver, Voice Control and Switch Control keep the Hide Controls and Show Controls buttons. The swipe is a shortcut only.
+
+### 30.2 The status bar and the Home indicator (issue 175)
+
+- While clean view is on, the camera screen hides the status bar (`statusBarHidden`) and the Home indicator (`persistentSystemOverlays(.hidden)`). Both return when the controls return, and on every other screen.
+- One pure rule decides both, shared with Night Mode (section 31): `SystemBarsRule` in `NopeCore`. On the camera screen the bars are hidden when clean view or Night Mode is on; in the Last Photo viewer, when Night Mode is on.
+- **The picture does not move.** The camera's layout keeps the top inset it had with the status bar showing (the larger of the remembered inset and the current one), so nothing shifts on a device whose safe area changes when the bar hides. The change is the system's fade; with Reduce Motion nothing slides.
+- Warnings about the photo stay where they are and do not move into the space the bar leaves.
+- Start in Clean View opens with the bars hidden. iPad: the same, in Split View and Stage Manager where the system allows it (device check 31).
+- What iOS always shows stays: the Dynamic Island and the camera-in-use dot. The system's swipes keep working.
+
+### 30.3 The guide page (issue 174)
+
+- A page, "Hide the Controls", after Lenses, so that the two pages about gestures on the picture are together: page 5 of 8. The page order is the enum's order; its raw values are not stored (`GuideInvitation` stores one Boolean).
+- Text (string 174): "Swipe down on the picture, or on the empty space below it, to hide everything except the shutter. Swipe up to bring the controls back. While the controls are hidden, the status bar is hidden too. Hide Controls in the Quick Menu and the Show Controls button do the same. Warnings about the photo always show. With VoiceOver or Switch Control, use the Hide Controls and Show Controls buttons."
+- The words "or on the empty space below it" ship only with issue 166, and the status bar sentence only with issue 175: the page describes what the same release does.
+- A link, "Start in Clean View", to its Settings row, through the page's existing `link`.
+- The illustration, in the guide's style: the picture with a downward arrow and the shutter below it; legible at the largest text size, in light and dark, red in Night Mode.
+- The guide's page count changes from 7 to 8 in the UI tests, `docs/TESTING.md` and the support page.
+
+## 31. Night Mode: the app's own time and battery (issue 176)
+
+Figure: [release-1.1/night-status.html](release-1.1/night-status.html).
+
+- **Decided (owner):** Night Mode hides the status bar and shows the app's own time, in the person's 12- or 24-hour format, and battery, in steps of 5% with the charging state, in red.
+- **Where the bar hides:** the camera screen and the Last Photo viewer, the screens where Night Mode already hides the Home indicator. It returns when Night Mode turns off. Clean view hides it too (section 30); either is enough.
+- **The indicator** is drawn in the band the status bar leaves: the time at the leading side, the battery at the trailing side, beside the Dynamic Island, where the system showed them. It covers no part of the picture and no warning, and nothing else moves.
+  - Time: `Date.FormatStyle` with hour and minute, which follows the 12- or 24-hour setting; updated on the minute (`TimelineView(.everyMinute)`).
+  - Battery: the percentage and a battery outline filled to the level, from `DeviceStatus.battery` (the level iOS reports, in steps of 5%), and a bolt while charging. Where the level is unknown (the Simulator), the battery part is not shown.
+  - Color and size: Night Mode's text red, `caption` weight semibold, digits monospaced so the time does not shift. It stays red in Low Power Mode and at a low charge; the existing Battery Low warning is separate and unchanged.
+  - No signal strength: an app cannot read it.
+- **Only in Night Mode.** In clean view without Night Mode the bar is hidden and no time is shown. In clean view with Night Mode the indicator stays.
+- **VoiceOver** reads one element, first on the screen: "10:42 PM, battery 45 percent, charging" (string 175). It is not marked as updating often.
+- **Sideways and iPad:** the same two corners of the window.
+- **The Lock Screen camera** uses the same screen, so the same rule; what iOS allows there is device check 32.
+- **Build:** `SystemBarsRule` and `NightStatus` (the label and the fill, from a time and a `BatteryReading`) in `NopeCore`; a new `NopeUI/NightStatusIndicator.swift`. The viewer's two lines are added by the group that has `PhotoViewer.swift` in that wave.
+
+## 32. Burst without a Burst Limit (issue 180)
+
+No figure: a setting is removed.
+
+- **Decided (owner):** the Burst Limit setting is removed. Start Burst stays. Siri and Shortcuts keep their own photo count.
+- **Burst then works one way:** hold the shutter for a burst and let go to stop; a tap takes one photo. Start Burst (the button, the VoiceOver action, Voice Control, and the watch by section 26.5) starts a burst that the shutter, Stop or a hardware release ends.
+- **Removed:** the Settings row and its search entry, `NopeSettings.burstLimit`, `BurstLimit`, `BurstStart.limited` with its progress and result fields ("n of m" on the burst card and in VoiceOver).
+- **People who set a limit in 1.0.0:** the stored value is ignored and deleted at first launch. Nothing else changes for them except that a press no longer takes a fixed count. CHANGELOG, under Removed, says so and names what to use: hold, or Start Burst.
+- **The Accessibility screen's sentence** becomes: "In Burst, hold the shutter, or use Start Burst to take photos without holding." (string 173). The accessibility page of the site is updated with it (its sentences are checked against that screen).
+- **Every mention** goes: the Honesty and Localizable strings, `docs/ARCHITECTURE.md`, `docs/BUILDING-AN-INTERFACE.md`, `docs/TESTING.md`, the guide, the support page, the store text, and the design files named in section 24.
+
+## 33. Q: the Presets tile at the same size as the others (issue 167)
+
+Figure: [release-1.1/presets-tile.html](release-1.1/presets-tile.html). **Needs owner sign-off before build, as every change to Q does (decision 57).**
+
+- **The cause:** the value "None Saved" does not fit beside the tile's symbol at the default text size, so `QuickTileGrid` puts the symbol above the value and the tile grows by a line.
+- **The change:** the tile's value is "None" when no preset is saved, and "2 Saved" as today when some are. Nothing else about the tile changes: its place, its symbol, what it opens.
+- VoiceOver's value stays in full: "None saved", "2 saved". The Presets row in Settings keeps "None Saved"; the tile and the row get their own strings (today they share one).
+- At larger text sizes the existing rule applies: names and values wrap only between words, nothing is cut, and the symbol may go above the value where it must.
+- If "None" still does not fit on a supported device, the tile's spacing is not changed without a second sign-off: the test's measurement is recorded and put to the owner.
+
+## 34. Honesty: the App Store's totals (issue 168)
+
+- One sentence beside the Share with App Developers line on the Honesty screen, the same as the privacy policy's: "The App Store gives the developer totals from Apple's own records, such as how many times the app was viewed in the store and downloaded. The app itself sends nothing." (string 176).
+- Search keywords: "App Store", "downloads".
+- Kept in step with the policy: the site check that compares the policy's sentences gains this one.
+
+## 35. The pronunciation, and the full name (issue 183)
+
+- **Decided (owner):** documents and Settings say "Photivra Nope Camera"; "nope." is for branding only. The pronunciation is written "Photivra (foh-TIV-ruh, /foʊˈtɪvɹə/)".
+- **One string, used unchanged** (string 177), as a short line of its own directly under the full name: on the About screen; on the site's home page under the app's name, and on the support page; and as the second line of the App Store description. A site check compares the three sources, so they cannot drift.
+- **VoiceOver:** on the About screen the line is hidden from assistive technologies, because the name is read on the line above it. On the site the respelling is text and the IPA is marked `lang="en-fonipa"`.
+- **The sweep:** every Settings row title, explanation and footer, the guide, the Honesty screen's explanations, and the documents follow the rule of section 24. Where the full name makes a tight string too long, the sentence is shortened; it does not go back to "nope.".
+- **Kept as "nope.":** the Home Screen name, the wordmark, the camera screen's branding, Siri phrases and permission prompts (they quote the name the person says or sees under the icon).
+- **The watch** says "the app" (section 26.3).
+- Every changed string is checked at the largest text size and on the 40 mm watch; translator comments are updated; UI tests that match the text are updated with it.
+- AGENTS.md, "Name and wordmark", is brought in step: the sentence "the rest of the interface keeps "nope."" becomes "Settings, the guide and the Honesty screen use the full name too; the camera screen's branding, Siri phrases and permission prompts keep "nope."" (plan, 3.57).
+
+## 36. Light Meter (issue 184)
+
+Figure: [release-1.1/light-meter.html](release-1.1/light-meter.html). **Built only if research step R16 is a go (plan, section 4.3; decision 59).**
+
+### 36.1 What it is, and what it is not
+
+- **What it measures:** the light reflected from the scene, as the camera's own exposure meter reads it through the selected lens. The app already receives this reading: the camera reports how far the current exposure is from the meter's (`exposureOffset`, in stops), and the app already shows that number on the dial. From the current ISO, shutter time, the lens's fixed aperture and that offset, the scene's exposure value follows by arithmetic: EV at ISO 100 = log2(N² / t) − log2(ISO / 100) + offset, with the sign as `AutoShutter` already uses it.
+- **Whole scene or a spot:** the Metering choices the app already has (Whole Frame, Center, Spot) apply. Spot is the area iOS meters around the focus and exposure point. iOS does not say how large it is; it is not a one-degree spot, and the design does not call it one.
+- **What it is not:** it is not an incident meter (it does not measure the light falling on the subject), and it assumes an average scene, as every reflected meter does: snow, backlight or a dark stage mislead it. It is not calibrated against a reference by Apple's documentation or by the project. Flash is not measured. Below and above the camera's range it has no reading.
+- **What it adds:** no image processing, no saved data, nothing written to a photo, no network.
+
+### 36.2 On the camera: the meter scale
+
+- With the Manual bar open and the shutter or the ISO set by hand, a scale from −3 to +3 stops in thirds shows under the readouts, with a marker and the number ("+1.3"). Beyond 3 stops the marker stays at the end and the number keeps counting ("+4.7 ›").
+- Within a sixth of a stop of 0 the marker is teal: the exposure matches the meter, a fact the app reads from the camera.
+- In full auto the scale is not shown: the camera already exposes to the meter.
+- VoiceOver: "Meter, 1.3 stops over", "Meter, 2 stops under", "Matches the meter" (string 181); not announced as it changes, read on focus.
+
+### 36.3 The Light Meter sheet
+
+- **Opened from Pro Tools:** a row "Light Meter" under Metering. Not from Q.
+- **The reading:** "EV 8.9", "at ISO 100 · reflected light", over the live picture with the metered area outlined. Hold keeps the reading; Resume returns to live.
+- **For This Photo** (only when a manual value is set): the current values and the offset, then one line per manual value that would bring the meter to 0 by changing that value alone ("1/640 s at ISO 400", "ISO 160 at 1/250 s"), each with Use, which sets that manual value. A value the lens cannot reach is shown without Use.
+- **For Another Camera:** Film or Sensor ISO (25 to 6400 in thirds), then either Aperture (f/1 to f/32 in thirds) or Shutter (30 s to 1/8000 s in thirds) chosen by the person, and the other one worked out: the nearest third of a stop in large type and the exact value under it. These choices are kept for the session only.
+- **Out of range:** "Too dark to meter" or "Too bright to meter" with the warning symbol, and no number, when the camera is at the end of its range and the offset cannot reach the meter.
+- **What This Measures:** the limits of 36.1 in plain words on the sheet itself (string 180), and an entry on the Honesty screen.
+- **Accuracy** is stated only as R16 measured it, for the devices tested ("within about a third of a stop of a reference meter on the devices tested", only if that is what was measured). Until then the sheet says it is not calibrated against a reference.
+
+### 36.4 Build notes and accessibility
+
+- The arithmetic is a value type in `NopeCore` (`LightMeter`): EV from a reading; a shutter or an aperture for a given ISO; the nearest third of a stop from the standard series; the suggestions. Unit tested against a table of known exposures (ISO 100, f/16, 1/125 s is EV 15).
+- The sheet is a new `NopeUI/LightMeterSheet.swift`; the scale a new `NopeUI/MeterScale.swift`. It reads `ManualControlsModel`'s reading; no new hardware call.
+- Every value has a label and a unit for VoiceOver; the scale is one adjustable-free element with its value; Use buttons name what they set ("Use 1/640 second"). Teal and amber always come with words. Night Mode: red. Audits at the default and the largest text size.
+
+## 37. Monochrome copies, and what capture speed shows on screen
+
+### 37.1 Monochrome (issue 188)
+
+Figure: [release-1.1/monochrome.html](release-1.1/monochrome.html). **Built only if research step R17 is a go and by decision 60.**
+
+- **The request:** to capture only the monochrome data, without taking the color version and removing the color afterwards.
+- **What is expected to be true (to confirm in R17):** no supported iPhone or iPad can do that. Their sensors have color filters, and the RAW data iOS gives an app is that color mosaic. A RAW file from these devices always holds the color data. If R17 finds a device that offers a monochrome capture, that is a different design and goes to the owner.
+- **What can be offered honestly:** the HEIF or JPEG copy in black and white. The app already develops every copy from the RAW data; Monochrome is a third Look beside Standard and Flat, applied in that same step. The RAW file is not changed and keeps the color data.
+- **How the gray is made:** one fixed weighted sum of the three linear color values at each pixel site, then the Standard look's tone curve. The same arithmetic is used on every path that renders a copy, the fast one and the full-quality one. **No per-channel lookup tables are used on any path.** A check in `scripts/check-architecture.sh` fails if `NopeDevelop` uses a color cube, color map or table-based curve filter.
+- **Stored as gray only**, with one channel, if R17 shows that ImageIO writes such a HEIF and JPEG with only allowlisted tags and that they open in the file-compatibility apps; then the copy holds no color data, and Photo Details says "Color Data · None (gray only)". Otherwise it is stored with three equal channels and Photo Details says "Gray, stored as RGB".
+- **Settings › HEIF and JPEG Copies › Look:** Standard, Flat, Monochrome, with the note of string 184. With RAW only and no copy, Monochrome has nothing to apply to and the page says so, as it does for the other looks today.
+- **On the camera:** the chip "Mono copy" in the status line while the look is on and a copy will be saved; the live picture shown in gray, on the screen only, the way Red Viewfinder shows it in red, if R17 shows no measurable energy cost. With Night Mode and Red Viewfinder on, the live picture stays red.
+- **Photo Details:** "Look · Monochrome", the Color Data row, and "Made from the color data when the copy was developed. The RAW file from the same press holds the color data." An entry on the Honesty screen says the same.
+- The copy is signed, checked and listed like any other. The metadata tests assert its exact tags.
+
+### 37.2 What capture speed and battery work shows on screen (issues 179, 104)
+
+Most of this work has no screen: it is measured and built by the plan (3.56). Three things are visible.
+
+- **The burst summary** keeps reporting the rate actually reached. No wording changes.
+- **"Camera paused"** (built only if R15 shows that pausing saves at least a fifth of the idle camera's measured power): after 3 minutes (provisional, set from R15) with no touch, photo, hardware press or watch request, and never during a countdown, a burst, a bracket, a series, a save or while the watch app is in use, the session stops and the picture's place shows the pause symbol and "Camera paused to save battery. Tap to resume." (string 190). Any touch, a hardware button, a watch request or a Siri request resumes it. The touch or press that resumes takes no photo, and VoiceOver says so in the hint. Keep Screen On does not prevent the pause; a running series does.
+- **Zero shutter lag** is not designed here. It is a go or no-go for the owner after R15 (decision 58), because it can save a frame from just before the press.
+
+Nothing in this work changes a file: one full-resolution RAW photo for each frame, the same save path, the same checks and signature.
+
+## 38. Draft strings added on 2026-11-28
+
+For the Honesty review, as sections 6 and 23. Numbers continue from 151. Written by the naming rule of section 24.
+
+| # | Where | Text | H |
+| --- | --- | --- | --- |
+| 152 | Watch, status | Camera ready · Burst ready · Connecting… · Taking photo… | |
+| 153 | Watch, warnings | Can't reach your phone · Camera not available · Camera access needed · Camera access is off · No camera to use · Update the app on your phone and watch | |
+| 154 | Watch, instructions | Unlock it and open the app. · Open the app on your phone. · Open the app on your phone to allow it. · Turn it on in your phone's Settings app. · Your phone has no camera the app can use. | |
+| 155 | Watch, countdowns | Photo in %@ · Burst in %@ | |
+| 156 | Watch, a running burst | Burst · %lld photos · Saving %lld photos… | H |
+| 157 | Watch, buttons | Take Photo · Start Burst · Stop · Cancel Timer | |
+| 158 | Watch, VoiceOver, the burst button | Start Burst · Stop Burst | |
+| 159 | Watch, instruction with a Delay in Burst | Burst after %@. Tap Stop to end. | |
+| 160 | Watch, bottom bar | Delay · Off | |
+| 161 | Watch, the chip's age | Just now · %lld min | |
+| 162 | Watch, the chip, VoiceOver | Last photo, %@ ago, %@ | |
+| 163 | Watch, sheet title and age | Last Photo · %@ ago | |
+| 164 | Watch, results (the sheet and VoiceOver) | Saved and signed · Saved, not signed · Photos saved and signed · Photos saved, not all signed · Not saved. Your phone shows why. · Timer canceled. No photo taken. · The camera was busy. No photo taken. · No photo taken. | H |
+| 165 | Watch, sheet, the burst's summary | %lld photos saved · %@ · %@ a second | H |
+| 166 | Watch, sheet, why a photo is not signed | Sign Each Photo is off in the app's settings on your phone. · Signing wasn't available for this photo. Open the photo on your phone for details. · Signing failed, so the photo was saved without a signature. Open the photo on your phone for details. | H |
+| 167 | Watch, VoiceOver, the main button when unavailable | Dimmed. %@ (the instruction) | |
+| 168 | Phone, burst card, and the watch's sheet | The burst ended because the watch lost its connection. | H |
+| 169 | Settings › Camera, row, values and explanation | Shooting Modes · All · %1$lld of %2$lld · Choose the modes in the camera's row. | |
+| 170 | Shooting Modes, descriptions | Single: One photo for each press. · Timer: Counts down, then takes the photo. · Burst: Takes photos while you hold the shutter. · Bracket: Takes a set that differs in exposure or focus. · Interval: Takes photos at a set interval, as a series. · Astro: Long exposures for the night sky. | |
+| 171 | Shooting Modes, Single's value and the footers | Always Shown · Single is always shown, so the camera always has a mode. · A hidden mode leaves the camera's row only. Its settings are kept. Siri, Shortcuts and the watch work as before. | H |
+| 172 | Settings › Screen, row and explanation | Show Steady Hint · Shows “Hold it steady or use a tripod.” when the shutter is slow for hand-holding. | |
+| 173 | Accessibility screen, Burst | In Burst, hold the shutter, or use Start Burst to take photos without holding. | |
+| 174 | Guide, page title, text and link | Hide the Controls · (the text of section 30.3) · Start in Clean View | |
+| 175 | Night Mode indicator, VoiceOver | %1$@, battery %2$lld percent · %1$@, battery %2$lld percent, charging · %@ (the time alone, when the level is unknown) | |
+| 176 | Honesty, beside Share with App Developers | The App Store gives the developer totals from Apple's own records, such as how many times the app was viewed in the store and downloaded. The app itself sends nothing. | H |
+| 177 | About, the site and the store description | Photivra (foh-TIV-ruh, /foʊˈtɪvɹə/) | |
+| 178 | Q, the Presets tile's value, and VoiceOver | None · %lld Saved · None saved · %lld saved | |
+| 179 | Pro Tools row; the sheet's title, reading, headings, rows and buttons | Light Meter · EV %@ · at ISO 100 · reflected light · For This Photo · For Another Camera · What This Measures · Film or Sensor ISO · Aperture · Shutter · Nearest third of a stop. Exact: %@. · Hold · Resume · Use | |
+| 180 | Light Meter, What This Measures, and the Honesty entry | The light reflected from the scene, as the camera's own exposure meter reads it through the selected lens. It assumes an average scene: snow, backlight or a dark stage can mislead it. It is not an incident meter and is not calibrated against a reference. Flash isn't measured. | H |
+| 181 | Meter scale, label and VoiceOver | Meter · Meter, %@ stops over · Meter, %@ stops under · Matches the meter | |
+| 182 | Light Meter, out of range | Too dark to meter · Too bright to meter · The meter is at the end of its range, so no value is shown. | H |
+| 183 | Light Meter, the suggestions' footer | Each line changes one manual value so the meter reads 0. A value this lens can't reach is shown without Use. | |
+| 184 | HEIF and JPEG Copies, Look, name and note | Monochrome · Monochrome makes the HEIF or JPEG copy black and white when the copy is developed from the RAW data. The camera's sensor always records color: the RAW file keeps it, and is not changed. | H |
+| 185 | Camera, status line chip | Mono copy | |
+| 186 | Photo Details, rows | Look · Monochrome · Color Data · None (gray only) · Gray, stored as RGB | H |
+| 187 | Photo Details, note | Made from the color data when the copy was developed. The RAW file from the same press holds the color data. | H |
+| 188 | Honesty, an entry (only if built) | Monochrome Copies · The camera's sensor always records color. A Monochrome copy is made black and white when Photivra Nope Camera develops it from the RAW data. The RAW file is not changed. | H |
+| 189 | Honesty, an entry (only if built) | The Light Meter · (string 180, and the accuracy sentence that R16 supports) | H |
+| 190 | Camera, paused (only if built) | Camera paused to save battery. Tap to resume. · VoiceOver hint: Resumes the camera. Doesn't take a photo. | H |
+
+Notes:
+
+- **152 to 168** replace the watch's strings in `WatchText.swift` and the watch catalog. "the app" follows section 26.3; decision 56 approves the wording with the comps.
+- **156 and 165** show the phone's own count and summary; the watch does not count for itself.
+- **166:** the three reasons are the three the phone reports. The second says no more than the phone reported.
+- **171:** "Siri, Shortcuts and the watch work as before" is checked against the build before it ships.
+- **177** is used unchanged in all three places.
+- **178:** needs owner sign-off before build (decision 57).
+- **180, 182, 189** ship only if R16 is a go; an accuracy sentence is added only as measured.
+- **184 to 188** ship only if R17 is a go and decision 60 chooses it. 186 uses the one of its two values that R17 supports.
+- **190** ships only if the pause is built (section 37.2).
