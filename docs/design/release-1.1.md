@@ -691,7 +691,7 @@ Three rules apply to every section below.
 | 34 | 168 | Honesty: the App Store's totals | none |
 | 35 | 183 | The pronunciation, and the full name in Settings and the documents | none |
 | 36 | 184 | Light Meter (go or no-go after research) | [light-meter.html](release-1.1/light-meter.html) |
-| 37 | 188, 179 | Monochrome copies (go or no-go after research); what capture speed and battery work shows on screen | [monochrome.html](release-1.1/monochrome.html) |
+| 37 | 179 | What capture speed and battery work shows on screen (37.1, Monochrome, removed) | |
 | 38 | | Draft strings 152 to 190 | |
 
 ## 25. Camera rows: gaps, tile insets and the edge fade (issue 169)
@@ -935,19 +935,9 @@ Figure: [release-1.1/light-meter.html](release-1.1/light-meter.html). **Built on
 
 ## 37. Monochrome copies, and what capture speed shows on screen
 
-### 37.1 Monochrome (issue 188)
+### 37.1 Monochrome (issue 188) — removed
 
-Figure: [release-1.1/monochrome.html](release-1.1/monochrome.html). **Built only if research step R17 is a go and by decision 60.**
-
-- **The request:** to capture only the monochrome data, without taking the color version and removing the color afterwards.
-- **What is expected to be true (to confirm in R17):** no supported iPhone or iPad can do that. Their sensors have color filters, and the RAW data iOS gives an app is that color mosaic. A RAW file from these devices always holds the color data. If R17 finds a device that offers a monochrome capture, that is a different design and goes to the owner.
-- **What can be offered honestly:** the HEIF or JPEG copy in black and white. The app already develops every copy from the RAW data; Monochrome is a third Look beside Standard and Flat, applied in that same step. The RAW file is not changed and keeps the color data.
-- **How the gray is made:** one fixed weighted sum of the three linear color values at each pixel site, then the Standard look's tone curve. The same arithmetic is used on every path that renders a copy, the fast one and the full-quality one. **No per-channel lookup tables are used on any path.** A check in `scripts/check-architecture.sh` fails if `NopeDevelop` uses a color cube, color map or table-based curve filter.
-- **Stored as gray only**, with one channel, if R17 shows that ImageIO writes such a HEIF and JPEG with only allowlisted tags and that they open in the file-compatibility apps; then the copy holds no color data, and Photo Details says "Color Data · None (gray only)". Otherwise it is stored with three equal channels and Photo Details says "Gray, stored as RGB".
-- **Settings › HEIF and JPEG Copies › Look:** Standard, Flat, Monochrome, with the note of string 184. With RAW only and no copy, Monochrome has nothing to apply to and the page says so, as it does for the other looks today.
-- **On the camera:** the chip "Mono copy" in the status line while the look is on and a copy will be saved; the live picture shown in gray, on the screen only, the way Red Viewfinder shows it in red, if R17 shows no measurable energy cost. With Night Mode and Red Viewfinder on, the live picture stays red.
-- **Photo Details:** "Look · Monochrome", the Color Data row, and "Made from the color data when the copy was developed. The RAW file from the same press holds the color data." An entry on the Honesty screen says the same.
-- The copy is signed, checked and listed like any other. The metadata tests assert its exact tags.
+Removed 2026-11-28 by the owner; #188 is closed (not planned).
 
 ### 37.2 What capture speed and battery work shows on screen (issues 179, 104)
 
@@ -1014,5 +1004,5 @@ Notes:
 - **177** is used unchanged in all three places.
 - **178:** needs owner sign-off before build (decision 57).
 - **180, 182, 189** ship only if R16 is a go; an accuracy sentence is added only as measured.
-- **184 to 188** ship only if R17 is a go and decision 60 chooses it. 186 uses the one of its two values that R17 supports.
+- **184 to 188** are withdrawn with #188 (removed 2026-11-28).
 - **190** ships only if the pause is built (section 37.2).
